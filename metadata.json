@@ -1,0 +1,6 @@
+{
+  "name": "Trauma Sim Director - Gestione Corso Day 2 & Day 3",
+  "description": "Simulation management, live control board, and shared interactive display for advanced trauma medical courses (Day 2 & Day 3) with 4 groups, 12 teams, pre-hospital/ED rotations, skills workshops, technician moulage checklists, faculty evaluations, and real-time network broadcast alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

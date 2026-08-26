@@ -1,0 +1,277 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // --- Course State ---
+    function isValidCourseState(data) {
+      return (!('activeDay' in data) || data.activeDay in [2, 3]) &&
+        (!('activeSlotIndex' in data) || data.activeSlotIndex is number) &&
+        (!('isTimerRunning' in data) || data.isTimerRunning is bool) &&
+        (!('timerSeconds' in data) || data.timerSeconds is number) &&
+        (!('timeMultiplier' in data) || data.timeMultiplier is number) &&
+        (!('autoAdvancePhases' in data) || data.autoAdvancePhases is bool) &&
+        (!('suspensionInfo' in data) || data.suspensionInfo is map) &&
+        (!('courseStartSchedule' in data) || data.courseStartSchedule is map);
+    }
+
+    match /course_state/{stateId} {
+      allow get: if isValidId(stateId);
+      allow list: if true;
+      allow create, update: if isValidId(stateId) && isValidCourseState(incoming());
+      allow delete: if false;
+    }
+
+    // --- Broadcast Alerts ---
+    function isValidBroadcastAlert(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('type' in data) || data.type in ['info', 'warning', 'emergency', 'phase_change', 'pause']) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 300)) &&
+        (!('message' in data) || (data.message is string && data.message.size() <= 2000)) &&
+        (!('senderName' in data) || (data.senderName is string && data.senderName.size() <= 150)) &&
+        (!('senderRole' in data) || (data.senderRole is string && data.senderRole.size() <= 100)) &&
+        (!('active' in data) || data.active is bool) &&
+        (!('priority' in data) || data.priority in ['normal', 'high', 'critical']) &&
+        (!('targetGroups' in data) || (data.targetGroups is list && data.targetGroups.size() <= 20));
+    }
+
+    match /broadcast_alerts/{alertId} {
+      allow get: if isValidId(alertId);
+      allow list: if true;
+      allow create, update: if isValidId(alertId) && isValidBroadcastAlert(incoming());
+      allow delete: if isValidId(alertId);
+    }
+
+    // --- Course Messages ---
+    function isValidCourseMessage(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('senderName' in data) || (data.senderName is string && data.senderName.size() <= 150)) &&
+        (!('senderRole' in data) || (data.senderRole is string && data.senderRole.size() <= 100)) &&
+        (!('type' in data) || data.type in ['info', 'warning', 'emergency']) &&
+        (!('subject' in data) || (data.subject is string && data.subject.size() <= 300)) &&
+        (!('content' in data) || (data.content is string && data.content.size() <= 3000)) &&
+        (!('status' in data) || data.status in ['pending', 'acknowledged']) &&
+        (!('senderTeamId' in data) || data.senderTeamId is number) &&
+        (!('senderStation' in data) || (data.senderStation is string && data.senderStation.size() <= 150)) &&
+        (!('acknowledgedBy' in data) || (data.acknowledgedBy is string && data.acknowledgedBy.size() <= 150));
+    }
+
+    match /course_messages/{messageId} {
+      allow get: if isValidId(messageId);
+      allow list: if true;
+      allow create, update: if isValidId(messageId) && isValidCourseMessage(incoming());
+      allow delete: if isValidId(messageId);
+    }
+
+    // --- Team Evaluations ---
+    function isValidEvaluation(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('teamId' in data) || (data.teamId is number && data.teamId >= 1 && data.teamId <= 50)) &&
+        (!('day' in data) || data.day in [2, 3]) &&
+        (!('period' in data) || data.period in ['mattina', 'pomeriggio', 'notturno']) &&
+        (!('facultyId' in data) || (data.facultyId is string && data.facultyId.size() <= 150)) &&
+        (!('scores' in data) || data.scores is map) &&
+        (!('strengths' in data) || (data.strengths is string && data.strengths.size() <= 3000)) &&
+        (!('criticalIssues' in data) || (data.criticalIssues is string && data.criticalIssues.size() <= 3000)) &&
+        (!('debriefingActionItems' in data) || (data.debriefingActionItems is string && data.debriefingActionItems.size() <= 3000)) &&
+        (!('proceduresCompleted' in data) || (data.proceduresCompleted is list && data.proceduresCompleted.size() <= 50));
+    }
+
+    match /evaluations/{evalId} {
+      allow get: if isValidId(evalId);
+      allow list: if true;
+      allow create, update: if isValidId(evalId) && isValidEvaluation(incoming());
+      allow delete: if isValidId(evalId);
+    }
+
+    // --- Simulator Patients ---
+    function isValidPatient(data) {
+      return (!('id' in data) || (data.id is number && data.id >= 1 && data.id <= 100)) &&
+        (!('day' in data) || data.day in [2, 3]) &&
+        (!('period' in data) || data.period in ['mattina', 'pomeriggio']) &&
+        (!('scenarioCode' in data) || (data.scenarioCode is string && data.scenarioCode.size() <= 150)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 150)) &&
+        (!('briefing' in data) || (data.briefing is string && data.briefing.size() <= 5000)) &&
+        (!('readinessStatus' in data) || data.readinessStatus in ['ready', 'critical', 'preparing']) &&
+        (!('techChecklist' in data) || data.techChecklist is map);
+    }
+
+    match /simulator_patients/{patientId} {
+      allow get: if isValidId(patientId);
+      allow list: if true;
+      allow create, update: if isValidId(patientId) && isValidPatient(incoming());
+      allow delete: if false;
+    }
+
+    // --- Teams ---
+    function isValidTeam(data) {
+      return (!('id' in data) || data.id is number) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 150)) &&
+        (!('groupId' in data) || data.groupId in ['A', 'B', 'C', 'D']) &&
+        (!('facultyId' in data) || (data.facultyId is string && data.facultyId.size() <= 150)) &&
+        (!('color' in data) || (data.color is string && data.color.size() <= 100));
+    }
+
+    match /teams/{teamId} {
+      allow get: if isValidId(teamId);
+      allow list: if true;
+      allow create, update: if isValidId(teamId) && isValidTeam(incoming());
+      allow delete: if false;
+    }
+
+    // --- Discenti ---
+    function isValidDiscente(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('role' in data) || (data.role is string && data.role.size() <= 150)) &&
+        (!('teamId' in data) || data.teamId is number) &&
+        (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+    }
+
+    match /discenti/{discenteId} {
+      allow get: if isValidId(discenteId);
+      allow list: if true;
+      allow create, update: if isValidId(discenteId) && isValidDiscente(incoming());
+      allow delete: if isValidId(discenteId);
+    }
+
+    // --- Faculty ---
+    function isValidFaculty(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 150)) &&
+        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 150)) &&
+        (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('assignedTeamId' in data) || data.assignedTeamId is number) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+    }
+
+    match /faculty/{facultyId} {
+      allow get: if isValidId(facultyId);
+      allow list: if true;
+      allow create, update: if isValidId(facultyId) && isValidFaculty(incoming());
+      allow delete: if isValidId(facultyId);
+    }
+
+    // --- Technicians ---
+    function isValidTechnician(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 150)) &&
+        (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('assignedStations' in data) || (data.assignedStations is list && data.assignedStations.size() <= 30)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+    }
+
+    match /technicians/{technicianId} {
+      allow get: if isValidId(technicianId);
+      allow list: if true;
+      allow create, update: if isValidId(technicianId) && isValidTechnician(incoming());
+      allow delete: if isValidId(technicianId);
+    }
+
+    // --- Directors ---
+    function isValidDirector(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 150)) &&
+        (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+    }
+
+    match /directors/{directorId} {
+      allow get: if isValidId(directorId);
+      allow list: if true;
+      allow create, update: if isValidId(directorId) && isValidDirector(incoming());
+      allow delete: if isValidId(directorId);
+    }
+
+    // --- Guests ---
+    function isValidGuest(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 200)) &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 200)) &&
+        (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('assignedDays' in data) || (data.assignedDays is list && data.assignedDays.size() <= 10)) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+    }
+
+    match /guests/{guestId} {
+      allow get: if isValidId(guestId);
+      allow list: if true;
+      allow create, update: if isValidId(guestId) && isValidGuest(incoming());
+      allow delete: if isValidId(guestId);
+    }
+
+    // --- Night Scenarios ---
+    function isValidNightScenario(data) {
+      return (!('teamId' in data) || data.teamId is number) &&
+        (!('teamName' in data) || (data.teamName is string && data.teamName.size() <= 150)) &&
+        (!('groupId' in data) || data.groupId in ['A', 'B', 'C', 'D']) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 300)) &&
+        (!('triageAssigned' in data) || data.triageAssigned in ['RED', 'YELLOW', 'GREEN', 'BLACK']);
+    }
+
+    match /night_scenarios/{scenarioId} {
+      allow get: if isValidId(scenarioId);
+      allow list: if true;
+      allow create, update: if isValidId(scenarioId) && isValidNightScenario(incoming());
+      allow delete: if false;
+    }
+
+    // --- Station Checklists ---
+    function isValidStationChecklist(data) {
+      return (!('stationId' in data) || (data.stationId is string && data.stationId.size() <= 150)) &&
+        (!('stationName' in data) || (data.stationName is string && data.stationName.size() <= 200)) &&
+        (!('sessionPeriod' in data) || data.sessionPeriod in ['mattina', 'pomeriggio', 'notturno']) &&
+        (!('day' in data) || data.day in [2, 3]) &&
+        (!('isFullyCertified' in data) || data.isFullyCertified is bool) &&
+        (!('readinessScore' in data) || (data.readinessScore is number && data.readinessScore >= 0 && data.readinessScore <= 100)) &&
+        (!('signalStatus' in data) || data.signalStatus in ['NONE', 'GREEN_LIGHT', 'YELLOW_WARNING']);
+    }
+
+    match /station_checklists/{checklistId} {
+      allow get: if isValidId(checklistId);
+      allow list: if true;
+      allow create, update: if isValidId(checklistId) && isValidStationChecklist(incoming());
+      allow delete: if isValidId(checklistId);
+    }
+
+    // Test connection doc
+    match /test/{testId} {
+      allow get: if isValidId(testId);
+      allow list: if true;
+    }
+  }
+}

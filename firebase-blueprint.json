@@ -1,0 +1,364 @@
+{
+  "entities": {
+    "CourseState": {
+      "title": "CourseState",
+      "description": "Global live state of the trauma course simulation including schedule, timer, and suspension status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "activeDay": { "type": "number", "enum": [2, 3] },
+        "activeSlotIndex": { "type": "number" },
+        "isTimerRunning": { "type": "boolean" },
+        "timerSeconds": { "type": "number" },
+        "timeMultiplier": { "type": "number" },
+        "autoAdvancePhases": { "type": "boolean" },
+        "suspensionInfo": {
+          "type": "object",
+          "properties": {
+            "isSuspended": { "type": "boolean" },
+            "reason": { "type": "string", "maxLength": 500 },
+            "suspendedAt": { "type": "string" },
+            "suspendedBy": { "type": "string" }
+          }
+        },
+        "courseStartSchedule": {
+          "type": "object",
+          "properties": {
+            "scheduledDate": { "type": "string" },
+            "scheduledTime": { "type": "string" },
+            "isoTimestamp": { "type": "string" },
+            "isGateEnabled": { "type": "boolean" },
+            "title": { "type": "string", "maxLength": 300 },
+            "location": { "type": "string", "maxLength": 200 }
+          }
+        },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["activeDay", "activeSlotIndex", "isTimerRunning", "timerSeconds"]
+    },
+    "BroadcastAlert": {
+      "title": "BroadcastAlert",
+      "description": "Emergency or operational broadcast alert sent to display boards and user role consoles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "senderRole": { "type": "string", "maxLength": 50 },
+        "senderName": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "enum": ["info", "warning", "emergency", "phase_change", "pause"] },
+        "title": { "type": "string", "maxLength": 200 },
+        "message": { "type": "string", "maxLength": 1000 },
+        "targetGroups": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "active": { "type": "boolean" },
+        "priority": { "type": "string", "enum": ["normal", "high", "critical"] }
+      },
+      "required": ["id", "type", "title", "message", "senderName", "senderRole", "active"]
+    },
+    "CourseMessage": {
+      "title": "CourseMessage",
+      "description": "Secure field communication message between instructors and course direction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "senderId": { "type": "string", "maxLength": 100 },
+        "senderName": { "type": "string", "maxLength": 100 },
+        "senderRole": { "type": "string", "maxLength": 50 },
+        "senderTeamId": { "type": "number" },
+        "senderStation": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "enum": ["info", "warning", "emergency"] },
+        "subject": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["pending", "acknowledged"] },
+        "acknowledgedBy": { "type": "string", "maxLength": 100 },
+        "acknowledgedAt": { "type": "string" }
+      },
+      "required": ["id", "senderName", "senderRole", "type", "subject", "content", "status"]
+    },
+    "TeamEvaluation": {
+      "title": "TeamEvaluation",
+      "description": "Standardized clinical simulation assessment and debriefing rubric for trauma teams",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "teamId": { "type": "number" },
+        "facultyId": { "type": "string", "maxLength": 100 },
+        "day": { "type": "number", "enum": [2, 3] },
+        "period": { "type": "string", "enum": ["mattina", "pomeriggio", "notturno"] },
+        "patientId": { "type": "number" },
+        "scenarioCode": { "type": "string", "maxLength": 100 },
+        "phase": { "type": "string", "enum": ["EXTRA", "INTRA", "NIGHT", "WORKSHOP"] },
+        "scores": {
+          "type": "object",
+          "properties": {
+            "abcdeApproach": { "type": "number" },
+            "technicalSkills": { "type": "number" },
+            "teamworkLeadership": { "type": "number" },
+            "handoverSbar": { "type": "number" },
+            "safetyTiming": { "type": "number" }
+          }
+        },
+        "proceduresCompleted": { "type": "array", "items": { "type": "string" } },
+        "strengths": { "type": "string", "maxLength": 2000 },
+        "criticalIssues": { "type": "string", "maxLength": 2000 },
+        "debriefingActionItems": { "type": "string", "maxLength": 2000 },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "teamId", "facultyId", "day", "period", "scores"]
+    },
+    "SimulatorPatient": {
+      "title": "SimulatorPatient",
+      "description": "Patient case profile, clinical moulage instructions, equipment requirements and tech checklist",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "day": { "type": "number", "enum": [2, 3] },
+        "period": { "type": "string", "enum": ["mattina", "pomeriggio"] },
+        "scenarioCode": { "type": "string", "maxLength": 100 },
+        "name": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 200 },
+        "briefing": { "type": "string", "maxLength": 3000 },
+        "moulageLevel": { "type": "string", "maxLength": 100 },
+        "groupExtraAssigned": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "groupIntraAssigned": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "teamExtraAssigned": { "type": "number" },
+        "teamIntraAssigned": { "type": "number" },
+        "lesioni": { "type": "array", "items": { "type": "string" } },
+        "procedureExtra": { "type": "array", "items": { "type": "string" } },
+        "procedureIntra": { "type": "array", "items": { "type": "string" } },
+        "moulageProtesi": { "type": "string", "maxLength": 500 },
+        "simulatori": { "type": "string", "maxLength": 500 },
+        "attoriCount": { "type": "number" },
+        "attoreDettagli": { "type": "string", "maxLength": 1000 },
+        "techNotes": { "type": "string", "maxLength": 1500 },
+        "readinessStatus": { "type": "string", "enum": ["ready", "critical", "preparing"] },
+        "criticalityNotes": { "type": "string", "maxLength": 1000 },
+        "criticalityReportedBy": { "type": "string", "maxLength": 100 },
+        "criticalityTimestamp": { "type": "string" },
+        "techChecklist": {
+          "type": "object",
+          "properties": {
+            "preDone": { "type": "boolean" },
+            "intraDone": { "type": "boolean" },
+            "postDone": { "type": "boolean" },
+            "verifiedAt": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "day", "period", "scenarioCode"]
+    },
+    "Team": {
+      "title": "Team",
+      "description": "Simulation team grouping, group assignment and assigned faculty mentor",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "name": { "type": "string", "maxLength": 100 },
+        "groupId": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "facultyId": { "type": "string", "maxLength": 100 },
+        "color": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "name", "groupId", "facultyId", "color"]
+    },
+    "Discente": {
+      "title": "Discente",
+      "description": "Registered course participant with team assignment and badge profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "maxLength": 100 },
+        "teamId": { "type": "number" },
+        "nationality": { "type": "string", "maxLength": 100 },
+        "specialty": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "experience": { "type": "string", "maxLength": 200 },
+        "organization": { "type": "string", "maxLength": 200 },
+        "badgeCode": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "name", "role", "teamId", "nationality"]
+    },
+    "Faculty": {
+      "title": "Faculty",
+      "description": "Trauma course faculty instructor details, station assignments, and badge credentials",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 100 },
+        "specialty": { "type": "string", "maxLength": 100 },
+        "nationality": { "type": "string", "maxLength": 100 },
+        "assignedTeamId": { "type": "number" },
+        "assignedStation": { "type": "string", "maxLength": 100 },
+        "affiliation": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "organization": { "type": "string", "maxLength": 150 },
+        "badgeCode": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "name", "title", "specialty", "nationality", "assignedTeamId"]
+    },
+    "Technician": {
+      "title": "Technician",
+      "description": "Simulation technician specialist with assigned moulage and hardware stations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 150 },
+        "assignedStations": { "type": "array", "items": { "type": "string" } },
+        "specialty": { "type": "string", "maxLength": 100 },
+        "nationality": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "organization": { "type": "string", "maxLength": 150 },
+        "badgeCode": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "name", "specialty", "nationality"]
+    },
+    "Director": {
+      "title": "Director",
+      "description": "Course director and scientific coordinator registry profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "maxLength": 100 },
+        "nationality": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "organization": { "type": "string", "maxLength": 150 },
+        "badgeCode": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "name", "title", "nationality"]
+    },
+    "Guest": {
+      "title": "Guest",
+      "description": "Visiting observer, government delegate, or international faculty guest",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 150 },
+        "organization": { "type": "string", "maxLength": 150 },
+        "nationality": { "type": "string", "maxLength": 100 },
+        "assignedDays": { "type": "array", "items": { "type": "number" } },
+        "phone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "badgeCode": { "type": "string", "maxLength": 50 },
+        "escortFaculty": { "type": "string", "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "name", "title", "organization", "nationality"]
+    },
+    "NightScenario": {
+      "title": "NightScenario",
+      "description": "Night mass casualty triage case and disaster simulation triage category assignment",
+      "type": "object",
+      "properties": {
+        "teamId": { "type": "number" },
+        "teamName": { "type": "string", "maxLength": 100 },
+        "groupId": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "injuries": { "type": "array", "items": { "type": "string" } },
+        "expectedTriageCategory": { "type": "string", "enum": ["IMMEDIATE", "DELAYED", "MINOR", "EXPECTANT_DEAD"] },
+        "procedures": { "type": "array", "items": { "type": "string" } },
+        "location": { "type": "string", "maxLength": 100 },
+        "triageAssigned": { "type": "string", "enum": ["RED", "YELLOW", "GREEN", "BLACK"] }
+      },
+      "required": ["teamId", "teamName", "groupId", "title"]
+    },
+    "StationChecklist": {
+      "title": "StationChecklist",
+      "description": "Technical pre-session readiness verification and checklist for simulation stations",
+      "type": "object",
+      "properties": {
+        "stationId": { "type": "string", "maxLength": 100 },
+        "stationName": { "type": "string", "maxLength": 150 },
+        "patientId": { "type": "number" },
+        "scenarioRef": { "type": "string", "maxLength": 100 },
+        "sessionPeriod": { "type": "string", "enum": ["mattina", "pomeriggio", "notturno"] },
+        "day": { "type": "number", "enum": [2, 3] },
+        "assignedTechId": { "type": "string", "maxLength": 100 },
+        "assignedTechName": { "type": "string", "maxLength": 150 },
+        "isFullyCertified": { "type": "boolean" },
+        "certifiedBy": { "type": "string", "maxLength": 100 },
+        "certifiedAt": { "type": "string" },
+        "readinessScore": { "type": "number" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "stationNotes": { "type": "string", "maxLength": 1000 },
+        "simulatedMannequinBatteryPct": { "type": "number" },
+        "simulatedBloodReservoirMl": { "type": "number" },
+        "signalStatus": { "type": "string", "enum": ["NONE", "GREEN_LIGHT", "YELLOW_WARNING"] },
+        "signalSentAt": { "type": "string" },
+        "signalNotes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["stationId", "stationName", "sessionPeriod", "day", "isFullyCertified"]
+    }
+  },
+  "firestore": {
+    "/course_state/{stateId}": {
+      "schema": "CourseState",
+      "description": "Global live state of the trauma course simulation (active day, slot, timer, suspension, schedule)"
+    },
+    "/broadcast_alerts/{alertId}": {
+      "schema": "BroadcastAlert",
+      "description": "High-priority broadcast alerts across director, faculty, technician, and student displays"
+    },
+    "/course_messages/{messageId}": {
+      "schema": "CourseMessage",
+      "description": "Direct communication messages between faculty instructors, coordinators, and course director"
+    },
+    "/evaluations/{evalId}": {
+      "schema": "TeamEvaluation",
+      "description": "Faculty debriefing and clinical performance evaluations for trauma teams"
+    },
+    "/simulator_patients/{patientId}": {
+      "schema": "SimulatorPatient",
+      "description": "Simulator patient data, moulage, technical checklists, and readiness status"
+    },
+    "/teams/{teamId}": {
+      "schema": "Team",
+      "description": "Trauma team assignments, assigned groups and lead instructors"
+    },
+    "/discenti/{discenteId}": {
+      "schema": "Discente",
+      "description": "Student participants, specializations, and team affiliations"
+    },
+    "/faculty/{facultyId}": {
+      "schema": "Faculty",
+      "description": "Instructors and faculty members registry"
+    },
+    "/technicians/{technicianId}": {
+      "schema": "Technician",
+      "description": "Simulation technicians and station assignments"
+    },
+    "/directors/{directorId}": {
+      "schema": "Director",
+      "description": "Course directors and management registry"
+    },
+    "/guests/{guestId}": {
+      "schema": "Guest",
+      "description": "Visiting observers and external delegates registry"
+    },
+    "/night_scenarios/{scenarioId}": {
+      "schema": "NightScenario",
+      "description": "Night-time mass casualty triage scenarios and team assignments"
+    },
+    "/station_checklists/{checklistId}": {
+      "schema": "StationChecklist",
+      "description": "Pre-session technical readiness checklists and equipment statuses"
+    }
+  }
+}
