@@ -45,7 +45,7 @@ const CourseMainContent: React.FC = () => {
   const [isStartupModalOpen, setIsStartupModalOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     const params = new URLSearchParams(window.location.search);
-    const hasParams =
+    const hasQrParams =
       params.has('discente') ||
       params.has('faculty') ||
       params.has('tecnico') ||
@@ -55,9 +55,10 @@ const CourseMainContent: React.FC = () => {
       params.has('ospite') ||
       params.has('guest') ||
       params.has('badge') ||
-      params.has('role') ||
-      params.has('id');
-    return !hasParams;
+      params.has('qr') ||
+      (params.has('role') && params.has('id'));
+    // If accessed via QR / badge / specific profile parameter, do NOT show Startup Modal (directly set role & profile)
+    return !hasQrParams;
   });
 
   // Check URL parameters for instant unique QR Code direct navigation (?discente=... , ?faculty=... , ?tecnico=... , ?direttore=... , ?ospite=...)

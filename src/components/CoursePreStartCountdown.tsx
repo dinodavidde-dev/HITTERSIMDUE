@@ -184,40 +184,28 @@ export const CoursePreStartCountdown: React.FC = () => {
           </div>
         </div>
 
-        {/* Personalized Participant Card or Public Standby Banner */}
-        {userRole === 'discente' && currentDiscente ? (
+        {/* Participant Profile Details Card (when accessed via QR) */}
+        {userRole === 'discente' && currentDiscente && (
           <div className="bg-neutral-900 border-2 border-emerald-500/60 p-5 text-left shadow-lg space-y-3">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
               <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-black uppercase">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{isEn ? 'PARTICIPANT IDENTIFICATION COMPLETED' : 'IDENTIFICAZIONE DISCENTE COMPLETATA'}</span>
+                <span>{isEn ? 'PARTICIPANT PROFILE ASSOCIATED' : 'PROFILO PARTECIPANTE ASSOCIATO'}</span>
               </div>
               <span className="font-mono text-xs font-black text-white bg-neutral-950 px-2.5 py-1 border border-neutral-700">
                 {currentDiscente.badgeCode || `DISC-${currentDiscente.id}`}
               </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-black text-white uppercase">{currentDiscente.name}</h3>
-                <p className="text-xs text-neutral-300 font-mono">
-                  {isEn ? 'Assigned Role: ' : 'Ruolo Assegnato: '}
-                  <strong className="text-orange-400">{translateRoleOrSpecialty(currentDiscente.role, language)}</strong>
-                  {assignedTeam && (
-                    <> • {assignedTeam.name} ({isEn ? 'Group' : 'Gruppo'} {assignedTeam.groupId})</>
-                  )}
-                </p>
-              </div>
-
-              <button
-                id="change-discente-countdown-btn"
-                type="button"
-                onClick={() => setIsQRModalOpen(true)}
-                className="px-3 py-1.5 bg-neutral-950 hover:bg-neutral-800 border border-neutral-700 text-xs font-mono text-neutral-300 flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <QrCode className="w-3.5 h-3.5 text-orange-400" />
-                {isEn ? 'Change / Scan Badge' : 'Cambia / Scannerizza Badge'}
-              </button>
+            <div>
+              <h3 className="text-lg font-black text-white uppercase">{currentDiscente.name}</h3>
+              <p className="text-xs text-neutral-300 font-mono">
+                {isEn ? 'Assigned Role: ' : 'Ruolo Assegnato: '}
+                <strong className="text-orange-400">{translateRoleOrSpecialty(currentDiscente.role, language)}</strong>
+                {assignedTeam && (
+                  <> • {assignedTeam.name} ({isEn ? 'Group' : 'Gruppo'} {assignedTeam.groupId})</>
+                )}
+              </p>
             </div>
 
             <div className="bg-neutral-950/90 border border-neutral-800 p-3 text-xs text-neutral-400 leading-relaxed font-mono">
@@ -225,30 +213,6 @@ export const CoursePreStartCountdown: React.FC = () => {
                 ? `Your terminal is verified and ready. The activity plan, simulated patient clinical chart, and scenario rotation will automatically unlock at ${courseStartSchedule.scheduledTime}.`
                 : `Il tuo terminale è pronto e verificato. Il piano delle attività, la scheda clinica del paziente simulato e la rotazione scenari si sbloccheranno automaticamente allo scoccare delle ${courseStartSchedule.scheduledTime}.`}
             </div>
-          </div>
-        ) : (
-          <div className="bg-neutral-900 border-2 border-neutral-800 p-5 text-left shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-neutral-400 font-mono text-xs font-bold uppercase">
-                <Users className="w-4 h-4 text-orange-400" />
-                <span>{isEn ? 'FIELD PARTICIPANTS ACCESS' : 'ACCESSO PARTECIPANTI SUL CAMPO'}</span>
-              </div>
-              <p className="text-xs text-neutral-300 font-mono">
-                {isEn
-                  ? 'Are you a participant with an individual QR badge? Scan it or enter your code to identify your workstation in advance.'
-                  : 'Sei un discente con badge QR individuale? Scannerizzalo o inserisci il tuo codice per identificare la tua postazione in anticipo.'}
-              </p>
-            </div>
-
-            <button
-              id="scan-badge-countdown-btn"
-              type="button"
-              onClick={() => setIsQRModalOpen(true)}
-              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs font-mono uppercase tracking-wider flex items-center gap-2 flex-shrink-0 transition-colors shadow-md cursor-pointer"
-            >
-              <QrCode className="w-4 h-4" />
-              {isEn ? 'IDENTIFY PARTICIPANT BADGE' : 'IDENTIFICA BADGE DISCENTE'}
-            </button>
           </div>
         )}
 
