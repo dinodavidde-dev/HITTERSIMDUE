@@ -163,9 +163,8 @@ const CourseMainContent: React.FC = () => {
   ]);
 
   const renderActiveView = () => {
-    // Before official start date/time: ONLY countdown screen for Discenti and Public
-    const isPublicOrDiscente = userRole === 'public' || userRole === 'discente';
-    if (!isCourseStarted && isPublicOrDiscente) {
+    // Before official start date/time (gate closed): ALL accesses (including QR scans for participants, faculty, techs) lead to countdown page
+    if (!isCourseStarted && userRole !== 'direttore') {
       return <CoursePreStartCountdown />;
     }
 
@@ -249,11 +248,23 @@ const CourseMainContent: React.FC = () => {
       {/* Startup Access Gateway Modal */}
       <StartupAccessModal
         isOpen={isStartupModalOpen}
+        directors={directors}
         onSelectPublic={() => {
           setUserRole('public');
           setIsStartupModalOpen(false);
         }}
-        onSelectDirector={() => {
+        onSelectDirector={(directorId) => {
+          if (directorId) {
+            setSelectedDirectorId(directorId);
+          }
+          setUserRole('direttore');
+          setIsStartupModalOpen(false);
+        }}
+        onSelectMaster={() => {
+          const masterDir = directors.find((d) => d.isMaster) || directors[0];
+          if (masterDir) {
+            setSelectedDirectorId(masterDir.id);
+          }
           setUserRole('direttore');
           setIsStartupModalOpen(false);
         }}
