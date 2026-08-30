@@ -557,6 +557,161 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to simulator_patients:', err);
     }
 
+    // 6. Listen to Teams
+    const teamsPath = 'teams';
+    try {
+      const unsubTeams = onSnapshot(
+        collection(db, teamsPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Team[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Team));
+            list.sort((a, b) => a.id - b.id);
+            setTeams(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, teamsPath);
+        }
+      );
+      unsubscribers.push(unsubTeams);
+    } catch (err) {
+      console.warn('Failed to listen to teams:', err);
+    }
+
+    // 7. Listen to Discenti
+    const discentiPath = 'discenti';
+    try {
+      const unsubDiscenti = onSnapshot(
+        collection(db, discentiPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Discente[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Discente));
+            setDiscenti(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, discentiPath);
+        }
+      );
+      unsubscribers.push(unsubDiscenti);
+    } catch (err) {
+      console.warn('Failed to listen to discenti:', err);
+    }
+
+    // 8. Listen to Faculty
+    const facultyPath = 'faculty';
+    try {
+      const unsubFaculty = onSnapshot(
+        collection(db, facultyPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Faculty[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Faculty));
+            setFaculty(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, facultyPath);
+        }
+      );
+      unsubscribers.push(unsubFaculty);
+    } catch (err) {
+      console.warn('Failed to listen to faculty:', err);
+    }
+
+    // 9. Listen to Technicians
+    const techsPath = 'technicians';
+    try {
+      const unsubTechs = onSnapshot(
+        collection(db, techsPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Technician[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Technician));
+            setTechnicians(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, techsPath);
+        }
+      );
+      unsubscribers.push(unsubTechs);
+    } catch (err) {
+      console.warn('Failed to listen to technicians:', err);
+    }
+
+    // 10. Listen to Directors
+    const directorsPath = 'directors';
+    try {
+      const unsubDirs = onSnapshot(
+        collection(db, directorsPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Director[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Director));
+            setDirectors(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, directorsPath);
+        }
+      );
+      unsubscribers.push(unsubDirs);
+    } catch (err) {
+      console.warn('Failed to listen to directors:', err);
+    }
+
+    // 11. Listen to Guests
+    const guestsPath = 'guests';
+    try {
+      const unsubGuests = onSnapshot(
+        collection(db, guestsPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Guest[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Guest));
+            setGuests(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, guestsPath);
+        }
+      );
+      unsubscribers.push(unsubGuests);
+    } catch (err) {
+      console.warn('Failed to listen to guests:', err);
+    }
+
+    // 12. Listen to Night Scenarios
+    const nightPath = 'night_scenarios';
+    try {
+      const unsubNight = onSnapshot(
+        collection(db, nightPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: NightScenarioCase[] = [];
+            snapshot.forEach((d) => list.push(d.data() as NightScenarioCase));
+            setNightScenarios(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, nightPath);
+        }
+      );
+      unsubscribers.push(unsubNight);
+    } catch (err) {
+      console.warn('Failed to listen to night_scenarios:', err);
+    }
+
     return () => {
       unsubscribers.forEach((u) => u());
     };

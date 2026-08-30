@@ -148,11 +148,13 @@ export const FacultyView: React.FC = () => {
     faculty.find((f) => f.name.toLowerCase().includes(facultyAuthSession.facultyName?.toLowerCase() || '')) ||
     faculty[0];
 
-  // Assigned team for current tutor (the ONLY team this faculty evaluates)
+  // Assigned team for current tutor
   const myAssignedTeam = teams.find((t) => t.id === currentFaculty.assignedTeamId) || teams[0];
-  const selectedTeam = myAssignedTeam;
+  const [selectedTeamId, setSelectedTeamId] = useState<number>(currentFaculty.assignedTeamId || myAssignedTeam.id);
+  const [isQuickNavOpen, setIsQuickNavOpen] = useState(false);
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId) || myAssignedTeam;
   const assignedFaculty = currentFaculty;
-  const teamDiscenti = discenti.filter((d) => d.teamId === myAssignedTeam.id);
+  const teamDiscenti = discenti.filter((d) => d.teamId === selectedTeam.id);
 
   // Helper to check if an activity is a practical simulation scenario (EXCLUDES workshops & lectures)
   const isPracticalScenarioActivity = (activityType: string | undefined): boolean => {
@@ -201,11 +203,11 @@ export const FacultyView: React.FC = () => {
       (p) =>
         p.day === 2 &&
         p.period === 'mattina' &&
-        (p.teamExtraAssigned === myAssignedTeam.id || p.teamIntraAssigned === myAssignedTeam.id)
+        (p.teamExtraAssigned === selectedTeam.id || p.teamIntraAssigned === selectedTeam.id)
     );
     const isD2MorningExtra = d2MorningPatient
-      ? d2MorningPatient.teamExtraAssigned === myAssignedTeam.id
-      : myAssignedTeam.id % 2 === 1;
+      ? d2MorningPatient.teamExtraAssigned === selectedTeam.id
+      : selectedTeam.id % 2 === 1;
 
     const sc1Procedures = d2MorningPatient
       ? isD2MorningExtra
@@ -221,13 +223,13 @@ export const FacultyView: React.FC = () => {
 
     const isSc1Evaluated = evaluations.some(
       (e) =>
-        e.teamId === myAssignedTeam.id &&
+        e.teamId === selectedTeam.id &&
         e.day === 2 &&
         e.period === 'mattina'
     );
 
     const sc1: CourseScenarioTarget = {
-      id: `scenario-d2-morning-team-${myAssignedTeam.id}`,
+      id: `scenario-d2-morning-team-${selectedTeam.id}`,
       scenarioIndex: 0,
       day: 2 as CourseDay,
       period: 'mattina',
@@ -248,7 +250,7 @@ export const FacultyView: React.FC = () => {
       procedures: sc1Procedures,
       moulageProtesi: d2MorningPatient?.moulageProtesi || 'Ferite penetranti complesse con simulazione emorragica attiva',
       simulatori: d2MorningPatient?.simulatori || 'Simulatore ad alta fedeltà con monitoraggio multiparametrico',
-      patientId: d2MorningPatient?.id || (200 + myAssignedTeam.id),
+      patientId: d2MorningPatient?.id || (200 + selectedTeam.id),
       isEvaluated: isSc1Evaluated,
     };
 
@@ -257,11 +259,11 @@ export const FacultyView: React.FC = () => {
       (p) =>
         p.day === 2 &&
         p.period === 'pomeriggio' &&
-        (p.teamExtraAssigned === myAssignedTeam.id || p.teamIntraAssigned === myAssignedTeam.id)
+        (p.teamExtraAssigned === selectedTeam.id || p.teamIntraAssigned === selectedTeam.id)
     );
     const isD2AfternoonExtra = d2AfternoonPatient
-      ? d2AfternoonPatient.teamExtraAssigned === myAssignedTeam.id
-      : myAssignedTeam.id % 2 === 0;
+      ? d2AfternoonPatient.teamExtraAssigned === selectedTeam.id
+      : selectedTeam.id % 2 === 0;
 
     const sc2Procedures = d2AfternoonPatient
       ? isD2AfternoonExtra
@@ -277,13 +279,13 @@ export const FacultyView: React.FC = () => {
 
     const isSc2Evaluated = evaluations.some(
       (e) =>
-        e.teamId === myAssignedTeam.id &&
+        e.teamId === selectedTeam.id &&
         e.day === 2 &&
         e.period === 'pomeriggio'
     );
 
     const sc2: CourseScenarioTarget = {
-      id: `scenario-d2-afternoon-team-${myAssignedTeam.id}`,
+      id: `scenario-d2-afternoon-team-${selectedTeam.id}`,
       scenarioIndex: 1,
       day: 2 as CourseDay,
       period: 'pomeriggio',
@@ -304,19 +306,19 @@ export const FacultyView: React.FC = () => {
       procedures: sc2Procedures,
       moulageProtesi: d2AfternoonPatient?.moulageProtesi || 'Grave trauma addomino-pelvico con emoperitoneo',
       simulatori: d2AfternoonPatient?.simulatori || 'Simulatore ad alta fedeltà con monitoraggio multiparametrico',
-      patientId: d2AfternoonPatient?.id || (300 + myAssignedTeam.id),
+      patientId: d2AfternoonPatient?.id || (300 + selectedTeam.id),
       isEvaluated: isSc2Evaluated,
     };
 
     // 3. Scenario Day 3 Notturno MCI (Triage Maxiemergenza 21:00)
     const isSc3Evaluated = evaluations.some(
       (e) =>
-        e.teamId === myAssignedTeam.id &&
+        e.teamId === selectedTeam.id &&
         (e.day === 3 && e.period === 'notturno' || e.phase === 'NIGHT' || e.scenarioCode === 'Scenario Notturno MCI')
     );
 
     const sc3: CourseScenarioTarget = {
-      id: `scenario-d3-night-team-${myAssignedTeam.id}`,
+      id: `scenario-d3-night-team-${selectedTeam.id}`,
       scenarioIndex: 2,
       day: 3 as CourseDay,
       period: 'notturno',
@@ -342,12 +344,12 @@ export const FacultyView: React.FC = () => {
       ],
       moulageProtesi: 'Moulage emorragie zampillanti, fumo artificiale, protesi amputazioni',
       simulatori: 'Manichino trauma avanzato corpo intero + task trainers',
-      patientId: 990 + myAssignedTeam.id,
+      patientId: 990 + selectedTeam.id,
       isEvaluated: isSc3Evaluated,
     };
 
     return [sc1, sc2, sc3];
-  }, [myAssignedTeam.id, simulatorPatients, evaluations]);
+  }, [selectedTeam.id, simulatorPatients, evaluations]);
 
   // Selected scenario in the 3-scenario board
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState<number>(0);
@@ -624,6 +626,17 @@ export const FacultyView: React.FC = () => {
           <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
             <LanguageSwitcher variant="badge" />
 
+            {/* Quick-Navigate Teams Button */}
+            <button
+              id="faculty-quick-navigate-btn"
+              onClick={() => setIsQuickNavOpen(true)}
+              className="flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-emerald-300 hover:text-white border border-emerald-600 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              title={isEn ? 'Quick-Navigate Teams & Evaluation Checklists' : 'Navigazione Rapida Squadre e Checklist di Valutazione'}
+            >
+              <Layers className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isEn ? 'QUICK NAV' : 'SQUADRE'}</span>
+            </button>
+
             {/* Mobile / Tablet Collapsible Menu Trigger */}
             <button
               id="faculty-mobile-drawer-toggle-btn"
@@ -635,29 +648,7 @@ export const FacultyView: React.FC = () => {
               <span>MENU</span>
             </button>
 
-            {faculty.length > 1 && (
-              <div className="flex-1 sm:flex-initial hidden sm:block">
-                <select
-                  id="faculty-selector-dropdown"
-                  value={selectedFacultyId || currentFaculty.id}
-                  onChange={(e) => {
-                    setSelectedFacultyId(e.target.value);
-                    const fac = faculty.find((f) => f.id === e.target.value);
-                    if (fac && fac.assignedTeamId) {
-                      setActiveFacultyTeamId(fac.assignedTeamId);
-                    }
-                  }}
-                  className="w-full sm:w-auto bg-neutral-900 border border-emerald-700 text-emerald-200 text-xs font-bold px-2.5 py-1.5 focus:outline-hidden cursor-pointer"
-                  aria-label={isEn ? 'Select Faculty Profile' : 'Seleziona Profilo Faculty'}
-                >
-                  {faculty.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      Tutor: {f.name} ({isEn ? `Team ${f.assignedTeamId}` : `Sq. ${f.assignedTeamId}`})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+
 
             <button
               id="faculty-live-feedback-trigger-btn"
@@ -1785,6 +1776,111 @@ export const FacultyView: React.FC = () => {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK-NAVIGATE TEAMS & ROTATIONS DRAWER / MODAL */}
+      {isQuickNavOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-neutral-950 border-2 border-emerald-500 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 bg-neutral-900 border-b border-emerald-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <h3 className="text-white font-black uppercase text-sm tracking-wide">
+                    {isEn ? 'QUICK-NAVIGATE TEAMS & ROTATIONS' : 'NAVIGAZIONE RAPIDA SQUADRE & ROTAZIONI'}
+                  </h3>
+                  <p className="text-[11px] text-neutral-400">
+                    {isEn ? 'Jump directly to the evaluation checklist of any team during rotation hours' : 'Passa direttamente alla checklist di valutazione di qualsiasi squadra in rotazione'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsQuickNavOpen(false)}
+                className="p-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-3 flex-1">
+              {teams.map((team) => {
+                const isSelected = selectedTeam.id === team.id;
+                const isMyAssigned = currentFaculty.assignedTeamId === team.id;
+                const teamActivity = currentSlot.groupActivities?.[team.groupId as GroupType];
+                const teamEvals = evaluations.filter((e) => e.teamId === team.id);
+
+                return (
+                  <div
+                    key={team.id}
+                    className={`p-3.5 border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                      isSelected
+                        ? 'bg-emerald-950/60 border-emerald-500 shadow-md'
+                        : 'bg-neutral-900/80 border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0"
+                        style={{ backgroundColor: team.color }}
+                      >
+                        T{team.id}
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-white font-bold uppercase text-sm">{team.name}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 font-mono uppercase ${GROUP_THEMES[team.groupId as GroupType]?.badge || 'bg-neutral-800 text-white'}`}>
+                            Gruppo {team.groupId}
+                          </span>
+                          {isMyAssigned && (
+                            <span className="bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 uppercase tracking-wider">
+                              {isEn ? 'Your Assigned Team' : 'La Tua Squadra'}
+                            </span>
+                          )}
+                          {isSelected && (
+                            <span className="bg-cyan-600 text-white text-[9px] font-black px-1.5 py-0.5 uppercase tracking-wider">
+                              {isEn ? 'Currently Active' : 'Attiva in Vista'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-neutral-300 flex items-center gap-2 flex-wrap">
+                          <span>
+                            {isEn ? 'Current Slot Activity' : 'Attività Slot Corrente'}: <strong className="text-emerald-300">{teamActivity?.title || 'Attività Generale / Workshop'}</strong>
+                          </span>
+                          <span className="text-neutral-600">•</span>
+                          <span>
+                            Evaluations: <strong className="text-amber-400">{teamEvals.length}/3</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedTeamId(team.id);
+                        setActiveSubTab('evaluation');
+                        setIsQuickNavOpen(false);
+                      }}
+                      className={`px-3 py-2 text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0 ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
+                          : 'bg-neutral-800 hover:bg-neutral-700 text-emerald-300 border border-emerald-600/60'
+                      }`}
+                    >
+                      <ListChecks className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'OPEN CHECKLIST' : 'APRI CHECKLIST'}</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-3 bg-neutral-900 border-t border-neutral-800 text-center">
+              <span className="text-[11px] text-neutral-400">
+                {isEn ? 'Click any team to inspect and evaluate their OSCE / Trauma simulation checklist instantly.' : 'Clicca su qualsiasi squadra per ispezionare e valutare istantaneamente la relativa checklist OSCE / Trauma.'}
+              </span>
             </div>
           </div>
         </div>

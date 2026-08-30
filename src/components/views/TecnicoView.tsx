@@ -21,6 +21,7 @@ import {
   Sparkles,
   Users,
   Wrench,
+  X,
   Zap,
 } from 'lucide-react';
 import { BroadcastModal } from '../BroadcastModal';
@@ -55,6 +56,7 @@ export const TecnicoView: React.FC = () => {
     courseMessages,
     userRole,
     suspensionInfo,
+    teams,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -62,6 +64,7 @@ export const TecnicoView: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<TecnicoSubTab>('checklist_presidi');
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [isMessengerOpen, setIsMessengerOpen] = useState(false);
+  const [isQuickNavOpen, setIsQuickNavOpen] = useState(false);
   const [selectedDayTab, setSelectedDayTab] = useState<number>(activeDay);
 
   // Active Technician Profile
@@ -138,6 +141,17 @@ export const TecnicoView: React.FC = () => {
           {/* Quick Actions & Technician Switcher */}
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <LanguageSwitcher variant="badge" />
+
+            {/* Quick-Navigate Teams / Stations Button */}
+            <button
+              id="tech-quick-navigate-btn"
+              onClick={() => setIsQuickNavOpen(true)}
+              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-orange-400 hover:text-orange-300 font-black text-xs uppercase tracking-wider border border-orange-600 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title={isEn ? 'Quick-Navigate Teams & Station Checklists' : 'Navigazione Rapida Squadre e Checklist Stazioni'}
+            >
+              <Layers className="w-3.5 h-3.5 text-orange-400" />
+              <span>{isEn ? 'QUICK NAV' : 'SQUADRE / STAZIONI'}</span>
+            </button>
 
             {technicians.length > 1 && (
               <select
@@ -589,6 +603,85 @@ export const TecnicoView: React.FC = () => {
         isOpen={isBroadcastModalOpen}
         onClose={() => setIsBroadcastModalOpen(false)}
       />
+
+      {/* QUICK-NAVIGATE TEAMS & STATIONS DRAWER / MODAL */}
+      {isQuickNavOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-neutral-950 border-2 border-orange-500 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 bg-neutral-900 border-b border-orange-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-orange-400" />
+                <div>
+                  <h3 className="text-white font-black uppercase text-sm tracking-wide">
+                    {isEn ? 'QUICK-NAVIGATE TEAMS & STATIONS' : 'NAVIGAZIONE RAPIDA SQUADRE & POSTAZIONI'}
+                  </h3>
+                  <p className="text-[11px] text-neutral-400">
+                    {isEn ? 'Inspect current rotation hours and station checklists for any team' : 'Ispeziona gli orari di rotazione e le checklist delle postazioni per qualsiasi squadra'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsQuickNavOpen(false)}
+                className="p-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-3 flex-1">
+              {teams.map((team) => {
+                const teamActivity = currentSlot.groupActivities?.[team.groupId as GroupType];
+
+                return (
+                  <div
+                    key={team.id}
+                    className="p-3.5 bg-neutral-900/80 border border-neutral-800 hover:border-orange-500/60 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0"
+                        style={{ backgroundColor: team.color }}
+                      >
+                        T{team.id}
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-white font-bold uppercase text-sm">{team.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 font-mono uppercase bg-neutral-800 text-orange-300">
+                            Gruppo {team.groupId}
+                          </span>
+                        </div>
+                        <div className="text-xs text-neutral-300 flex items-center gap-2 flex-wrap">
+                          <span>
+                            {isEn ? 'Current Activity' : 'Attività Corrente'}: <strong className="text-orange-300">{teamActivity?.title || 'Workshop / Sessione Standard'}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setActiveSubTab('checklist_presidi');
+                        setIsQuickNavOpen(false);
+                      }}
+                      className="px-3 py-2 text-xs font-black uppercase tracking-wider bg-orange-600 hover:bg-orange-500 text-white transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0 shadow-sm"
+                    >
+                      <PackageCheck className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'CHECKLIST PRESIDI' : 'CHECKLIST PRESIDI'}</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-3 bg-neutral-900 border-t border-neutral-800 text-center">
+              <span className="text-[11px] text-neutral-400">
+                {isEn ? 'Switch to Checklists or Preparation Schedule to inspect medical supplies and moulage gear.' : 'Passa alle Checklist Presidi o alla Preparazione per ispezionare materiale sanitario e moulage.'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
