@@ -42,7 +42,6 @@ import {
 import { Director, Discente, Faculty, SimulatorPatient, Team, Technician } from '../../types';
 import { BroadcastModal } from '../BroadcastModal';
 import { MasterAnagraficaManager } from '../anagrafica/MasterAnagraficaManager';
-import { PersonnelBadgeRegistry } from '../anagrafica/PersonnelBadgeRegistry';
 import { CourseSuspensionModal } from '../CourseSuspensionModal';
 import { CourseMessagesPanel } from '../messaging/CourseMessagesPanel';
 import { CourseMessengerModal } from '../messaging/CourseMessengerModal';
@@ -110,7 +109,7 @@ export const DirettoreView: React.FC = () => {
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_badges' | 'qr_login' | 'scenari' | 'analytics'
+    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics'
   >('timeline');
 
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -462,26 +461,7 @@ export const DirettoreView: React.FC = () => {
             </div>
           </button>
 
-          {/* Tab 7: Badge QR */}
-          <button
-            id="director-tab-badges-btn"
-            onClick={() => setActiveSubTab('qr_badges')}
-            className={`min-h-[48px] p-2.5 sm:py-3 sm:px-3 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border ${
-              activeSubTab === 'qr_badges'
-                ? 'bg-yellow-500 text-black border-yellow-300 shadow-lg font-black'
-                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
-            }`}
-          >
-            <QrCode className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeSubTab === 'qr_badges' ? 'text-black' : 'text-purple-400'}`} />
-            <div className="min-w-0">
-              <span className="font-black text-xs uppercase tracking-wider block truncate">
-                {isEn ? 'QR BADGES' : 'BADGE QR'}
-              </span>
-              <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'qr_badges' ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
-                {isEn ? 'Print & Badges' : 'Stampa & Accessi'}
-              </span>
-            </div>
-          </button>
+
 
           {/* Tab 7.5: QR Login Links */}
           <button
@@ -646,9 +626,6 @@ export const DirettoreView: React.FC = () => {
 
       {/* SUBTAB 4: ANAGRAFICA GENERALE */}
       {activeSubTab === 'anagrafica' && <MasterAnagraficaManager />}
-
-      {/* SUBTAB 5: BADGE QR & STAMPA */}
-      {activeSubTab === 'qr_badges' && <PersonnelBadgeRegistry />}
 
       {/* SUBTAB 5.5: QR LOGIN GENERATOR */}
       {activeSubTab === 'qr_login' && <DirectorQRLoginGenerator />}
