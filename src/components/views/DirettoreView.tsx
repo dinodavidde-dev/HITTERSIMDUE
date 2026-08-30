@@ -226,8 +226,13 @@ export const DirettoreView: React.FC = () => {
               )}
             </div>
 
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight truncate">
-              {currentDirector.name}
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2 flex-wrap truncate">
+              <span>{currentDirector.name}</span>
+              {Boolean((currentDirector as any).isMaster) && (
+                <span className="px-2 py-0.5 bg-amber-500 text-black font-black text-xs uppercase tracking-wider shadow-sm">
+                  ★ MASTER (ACCESSO TOTALE)
+                </span>
+              )}
             </h2>
             <p className="text-xs text-yellow-200/90 font-medium flex items-center gap-2 flex-wrap">
               <span>{isEn ? 'Role' : 'Ruolo'}: <strong className="text-white">{currentDirector.role}</strong></span>
@@ -239,63 +244,6 @@ export const DirettoreView: React.FC = () => {
           {/* Global Action Triggers & Language Switcher */}
           <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
             <LanguageSwitcher variant="badge" />
-
-            {/* Director Selector */}
-            {directors.length > 1 && (
-              <div className="flex-1 sm:flex-initial">
-                <select
-                  id="director-selector-dropdown"
-                  value={selectedDirectorId || currentDirector.id}
-                  onChange={(e) => setSelectedDirectorId(e.target.value)}
-                  className="w-full sm:w-auto bg-neutral-900 border border-yellow-600 text-yellow-200 text-xs font-bold px-2.5 py-1.5 focus:outline-hidden cursor-pointer"
-                  aria-label={isEn ? 'Select Director Profile' : 'Seleziona Profilo Direttore'}
-                >
-                  {directors.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} ({d.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* SOSPENSIONE / STOP CORSO BUTTON */}
-            <button
-              id="director-suspension-control-btn"
-              onClick={() => setIsSuspensionModalOpen(true)}
-              className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs ${
-                suspensionInfo.isSuspended
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-white animate-bounce'
-                  : 'bg-red-600 hover:bg-red-500 text-white border-white'
-              }`}
-            >
-              {suspensionInfo.isSuspended ? (
-                <>
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>{isEn ? 'RESUME' : 'RIPRENDI'}</span>
-                </>
-              ) : (
-                <>
-                  <Pause className="w-3 h-3 fill-current" />
-                  <span>{isEn ? 'PAUSE COURSE' : 'STOP CORSO'}</span>
-                </>
-              )}
-            </button>
-
-            {/* SIMULATORE & ACCELERATORE TEMPO */}
-            <button
-              id="director-simulation-modal-btn"
-              onClick={() => setIsSimulationModalOpen(true)}
-              className={`flex-1 sm:flex-initial px-3 py-1.5 text-xs font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs ${
-                timeMultiplier > 1
-                  ? 'bg-orange-500 hover:bg-orange-400 text-black border-white animate-pulse'
-                  : 'bg-neutral-900 hover:bg-neutral-800 text-orange-400 hover:text-orange-300 border-orange-500'
-              }`}
-              title={isEn ? 'Open simulation and time accelerator console' : 'Apri console simulazione ed accelerazione temporale'}
-            >
-              <Zap className="w-3 h-3 fill-current" />
-              <span>{isEn ? 'SIMULATE' : 'SIMULA'} ({timeMultiplier}x)</span>
-            </button>
 
             {/* BROADCAST BUTTON */}
             <button

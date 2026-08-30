@@ -790,14 +790,27 @@ export const MasterAnagraficaManager: React.FC = () => {
       {/* SECTION 4: DIRETTORI LIST */}
       {activeSection === 'direttori' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredDirectors.map((d) => (
-            <div key={d.id} className="bg-neutral-900 border-2 border-neutral-800 p-5 space-y-3">
+           {filteredDirectors.map((d) => (
+            <div key={d.id} className={`bg-neutral-900 border-2 ${d.isMaster ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-neutral-800'} p-5 space-y-3`}>
               <div className="flex items-start justify-between gap-2 border-b border-neutral-800 pb-2">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-2 py-0.5 bg-purple-950 text-purple-300 border border-purple-700 text-[10px] font-black uppercase">
                       DIREZIONE DEL CORSO
                     </span>
+                    {d.isMaster ? (
+                      <span className="px-2 py-0.5 bg-amber-500 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                        <span>★ DIRETORE MASTER (ACCESSO TOTALE)</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => updateDirector(d.id, { isMaster: true })}
+                        className="px-2 py-0.5 bg-neutral-800 hover:bg-amber-500 hover:text-black text-amber-400 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                        title="Designa come Direttore Master con accesso totale"
+                      >
+                        Designa Master
+                      </button>
+                    )}
                     <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
                       <span>{getCountryFlag(d.nationality)}</span>
                       <span>{d.nationality || 'Italiana'}</span>

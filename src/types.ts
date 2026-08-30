@@ -67,6 +67,7 @@ export interface Director {
   email?: string;
   organization?: string;
   badgeCode?: string;
+  isMaster?: boolean;
   notes?: string;
 }
 

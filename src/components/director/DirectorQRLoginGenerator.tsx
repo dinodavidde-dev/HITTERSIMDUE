@@ -40,6 +40,7 @@ interface LoginPersonItem {
   organization: string;
   badgeCode: string;
   teamName?: string;
+  isMaster?: boolean;
   loginUrl: string;
 }
 
@@ -80,7 +81,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrlId, setCopiedUrlId] = useState<string | null>(null);
-  const [qrCodesCache, setQrCodesCache] = useState<Record<string, string>>({});
+  const [qrCodesCache, setQrCodesCache] = useState<Record<string, { url: string; loginUrl: string }>>({});
   const [selectedBadgePrintPerson, setSelectedBadgePrintPerson] = useState<LoginPersonItem | null>(null);
   const [isBulkPrintOpen, setIsBulkPrintOpen] = useState(false);
   const [bulkPrintLayout, setBulkPrintLayout] = useState<'a4_cards' | 'badge_single' | 'attendance_sheet'>('a4_cards');
@@ -172,6 +173,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
         role: dir.role || 'Direttore Corso',
         organization: dir.organization || 'Direzione Trauma Center',
         badgeCode: dir.badgeCode || `DIR-0${dir.id}`,
+        isMaster: dir.isMaster,
         loginUrl: `${origin}${pathname}?direttore=${dir.id}&badge=${dir.badgeCode || dir.id}`,
       });
     });
@@ -215,10 +217,10 @@ export const DirectorQRLoginGenerator: React.FC = () => {
     });
   }, [personnelList, selectedCategory, searchQuery]);
 
-  // Generate QR code data URLs for filtered list
+  // Generate QR code data URLs for filtered list (regenerates automatically if loginUrl or credentials update)
   useEffect(() => {
     filteredPersonnel.forEach((p) => {
-      if (!qrCodesCache[p.id]) {
+      if (!qrCodesCache[p.id] || qrCodesCache[p.id].loginUrl !== p.loginUrl) {
         QRCode.toDataURL(
           p.loginUrl,
           {
@@ -229,7 +231,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
           },
           (err, url) => {
             if (!err && url) {
-              setQrCodesCache((prev) => ({ ...prev, [p.id]: url }));
+              setQrCodesCache((prev) => ({ ...prev, [p.id]: { url, loginUrl: p.loginUrl } }));
             }
           }
         );
@@ -246,7 +248,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
   };
 
   const handleDownloadQR = (p: LoginPersonItem) => {
-    const dataUrl = qrCodesCache[p.id];
+    const dataUrl = qrCodesCache[p.id]?.url;
     if (!dataUrl) return;
     const a = document.createElement('a');
     a.href = dataUrl;
@@ -596,7 +598,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
       {/* Personnel QR Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[650px] overflow-y-auto pr-1">
         {filteredPersonnel.map((p) => {
-          const qrUrl = qrCodesCache[p.id];
+          const qrUrl = qrCodesCache[p.id]?.url;
           const isCopied = copiedUrlId === p.id;
 
           return (
@@ -606,12 +608,19 @@ export const DirectorQRLoginGenerator: React.FC = () => {
             >
               {/* Top Category Badge & Actions */}
               <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                <span
-                  className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-black"
-                  style={{ backgroundColor: p.categoryColor }}
-                >
-                  {p.categoryLabel}
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-black"
+                    style={{ backgroundColor: p.categoryColor }}
+                  >
+                    {p.categoryLabel}
+                  </span>
+                  {p.isMaster && (
+                    <span className="px-1.5 py-0.5 bg-amber-500 text-black font-black text-[9px] uppercase tracking-wider shadow-xs">
+                      ★ MASTER
+                    </span>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-black text-yellow-400 px-2 py-0.5 bg-neutral-950 border border-neutral-700">
@@ -946,9 +955,9 @@ export const DirectorQRLoginGenerator: React.FC = () => {
               {/* QR Code */}
               <div className="flex justify-center py-2">
                 <div style={{ backgroundColor: '#ffffff' }} className="p-3 rounded shadow-inner">
-                  {qrCodesCache[selectedBadgePrintPerson.id] ? (
+                  {qrCodesCache[selectedBadgePrintPerson.id]?.url ? (
                     <img
-                      src={qrCodesCache[selectedBadgePrintPerson.id]}
+                      src={qrCodesCache[selectedBadgePrintPerson.id]?.url}
                       alt="Badge QR"
                       className="w-36 h-36 object-contain"
                     />

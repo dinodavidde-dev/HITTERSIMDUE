@@ -22,6 +22,7 @@ export const INITIAL_DIRECTORS: Director[] = [
     phone: '+39 340 1122334',
     email: 'm.valenti@traumacourse.org',
     badgeCode: 'DIR-01',
+    isMaster: true,
     notes: 'Coordinamento generale, supervisione didattica e debriefing plenari',
   },
   {

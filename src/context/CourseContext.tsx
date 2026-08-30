@@ -1215,11 +1215,29 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Director CRUD
   const updateDirector = useCallback((id: string, updates: Partial<Director>) => {
-    setDirectors((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
-    setDoc(doc(db, 'directors', id), updates, { merge: true }).catch((err) => {
-      handleFirestoreError(err, OperationType.UPDATE, `directors/${id}`);
-    });
-  }, []);
+    if (updates.isMaster) {
+      setDirectors((prev) =>
+        prev.map((d) => ({
+          ...d,
+          isMaster: d.id === id,
+        }))
+      );
+      // Update in firestore for all affected directors
+      directors.forEach((d) => {
+        const shouldBeMaster = d.id === id;
+        if (d.isMaster !== shouldBeMaster) {
+          setDoc(doc(db, 'directors', d.id), { isMaster: shouldBeMaster }, { merge: true }).catch((err) => {
+            handleFirestoreError(err, OperationType.UPDATE, `directors/${d.id}`);
+          });
+        }
+      });
+    } else {
+      setDirectors((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
+      setDoc(doc(db, 'directors', id), updates, { merge: true }).catch((err) => {
+        handleFirestoreError(err, OperationType.UPDATE, `directors/${id}`);
+      });
+    }
+  }, [directors]);
 
   const addDirector = useCallback((newDirector: Omit<Director, 'id'>) => {
     const id = `dir-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

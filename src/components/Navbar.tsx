@@ -249,8 +249,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 </button>
               </div>
 
-              {/* BLOCK 2.5: Staff / Addetti ai Lavori Access Button for Public View */}
-              {userRole === 'public' && (
+              {/* BLOCK 2.2: Public View Toggle / Staff Area Button */}
+              {userRole !== 'public' ? (
+                <button
+                  type="button"
+                  id="switch-to-public-mode-btn"
+                  onClick={() => handleRoleSelection('public')}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-slate-700 hover:border-cyan-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
+                  title={language === 'en' ? 'Switch to Public Shared Screen View' : 'Passa alla Modalità Pubblica / Vista Condivisa'}
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>{language === 'en' ? 'PUBLIC' : 'PUBBLICA'}</span>
+                </button>
+              ) : (
                 <button
                   type="button"
                   id="public-staff-access-btn"
@@ -258,7 +269,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     setPendingRole('direttore');
                     setIsFacultyAuthModalOpen(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider rounded border border-red-400 transition-all cursor-pointer shadow-md flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider rounded border border-red-400 transition-all cursor-pointer shadow-md flex-shrink-0"
                   title={language === 'en' ? 'Staff & Professionals Area Access' : 'Accesso Area Addetti ai Lavori'}
                 >
                   <Lock className="w-3 h-3 text-red-200" />
@@ -318,52 +329,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 )}
               </div>
 
-              {/* BLOCK 3B: Simulation & Acceleration Controller Button */}
-              <button
-                id="open-simulation-modal-btn"
-                onClick={() => setIsSimulationModalOpen(true)}
-                className={`flex items-center gap-1 px-2.5 py-1 font-bold text-[11px] uppercase tracking-wider rounded border transition-all cursor-pointer shadow-xs flex-shrink-0 ${
-                  timeMultiplier > 1
-                    ? 'bg-red-600 hover:bg-red-500 text-white border-white animate-pulse'
-                    : 'bg-slate-900 hover:bg-slate-800 text-red-400 hover:text-red-300 border-slate-700 hover:border-red-500'
-                }`}
-                title={language === 'en' ? 'Open Simulation Engine & Time Accelerator' : 'Apri Simulatore di Regia ed Acceleratore del Tempo'}
-              >
-                <Zap className="w-3 h-3 fill-current" />
-                <span>{language === 'en' ? 'SIMULATE' : 'SIMULA'}</span>
-                <span
-                  className={`text-[9px] font-mono px-1 py-0.1 ml-0.5 rounded border ${
-                    timeMultiplier > 1
-                      ? 'bg-black text-red-300 border-red-400 font-black'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
-                >
-                  {timeMultiplier}x
-                </span>
-              </button>
-
-              {/* BLOCK 4: QR Pass Quick Button */}
-              <button
-                id="open-qr-scanner-btn"
-                onClick={() => setIsQRScannerOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-slate-700 hover:border-cyan-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                title={language === 'en' ? 'Scan Badge QR Code' : 'Scansiona o apri QR Pass Badge partecipante'}
-              >
-                <QrCode className="w-3 h-3 text-cyan-400" />
-                <span>QR PASS</span>
-              </button>
-
-              {/* BLOCK 4.1: First Access Email Login Button */}
-              <button
-                id="open-email-access-btn"
-                onClick={() => setIsEmailAccessModalOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 bg-orange-600 hover:bg-orange-500 text-black font-black text-[11px] uppercase tracking-wider rounded border border-orange-400 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                title={language === 'en' ? 'First Access / Login with Email' : 'Primo Accesso / Login con Email'}
-              >
-                <KeyRound className="w-3 h-3 text-black" />
-                <span>{language === 'en' ? 'EMAIL LOGIN' : 'ACCESSO EMAIL'}</span>
-              </button>
-
               {/* BLOCK 4B: Quick Messenger Button */}
               <button
                 id="open-messenger-btn"
@@ -374,22 +339,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 <Send className="w-3 h-3" />
                 <span>{language === 'en' ? 'REPORT' : 'SEGNALA'}</span>
               </button>
-
-              {/* BLOCK 5: Broadcast Alert Button (Strictly Directors) */}
-              {userRole === 'direttore' && (
-                <button
-                  id="open-broadcast-btn"
-                  onClick={() => setIsBroadcastOpen(true)}
-                  className="relative flex items-center gap-1 px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] uppercase tracking-wider rounded border border-red-400 transition-all cursor-pointer shadow-md flex-shrink-0"
-                  title={language === 'en' ? 'Send global broadcast announcement across network' : 'Invia allerta broadcast generale su tutta la rete (Riservato Direzione Corso)'}
-                >
-                  <Radio className="w-3 h-3 animate-pulse" />
-                  <span>BROADCAST</span>
-                  {activeAlertsCount > 0 && (
-                    <span className="w-1.5 h-1.5 bg-yellow-300 rounded-full animate-ping ml-0.5" />
-                  )}
-                </button>
-              )}
 
               {/* BLOCK 6: Real-Time Connectivity & Client Sync Indicator */}
               <button
@@ -423,149 +372,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   {syncStatus.peerCount}
                 </span>
               </button>
-
-              {/* BLOCK 7: SECURE ROLE-SWITCHER TOGGLE FOR AUTHORIZED FACULTY */}
-              {facultyAuthSession.isAuthorized ? (
-                /* AUTHORIZED FACULTY QUICK-JUMP SEGMENTED CONTROL */
-                <div className="flex items-center bg-slate-900 border border-emerald-600/80 p-0.5 rounded shadow-md flex-shrink-0">
-                  {/* Faculty Active Pass Indicator & Lock Button */}
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-950/70 border-r border-emerald-800/80 mr-0.5 text-emerald-300">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400 leading-none">
-                        PASS
-                      </span>
-                      <span className="text-[9px] font-mono font-bold text-white max-w-[80px] truncate leading-tight">
-                        {facultyAuthSession.facultyName?.split(' ')[1] || (language === 'en' ? 'FACULTY' : 'DOCENTE')}
-                      </span>
-                    </div>
-                    <button
-                      id="faculty-lock-session-btn"
-                      onClick={deauthorizeFaculty}
-                      className="p-0.5 bg-slate-900 hover:bg-red-950 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-600 transition-colors ml-0.5 cursor-pointer rounded"
-                      title={language === 'en' ? 'Lock Faculty Session / Exit Faculty Mode' : 'Blocca sessione Faculty / Esci da modalità Istruttore'}
-                    >
-                      <Lock className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
-
-                  {/* Primary Quick-Jump Buttons */}
-                  <div className="flex items-center gap-0.5">
-                    <button
-                      id="quick-role-discente-btn"
-                      onClick={() => handleRoleSelection('discente')}
-                      className={`flex items-center gap-1 px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded flex-shrink-0 ${
-                        (userRole as string) === 'discente'
-                          ? 'bg-red-600 text-white shadow-xs font-black'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                      }`}
-                      title={language === 'en' ? 'Quick Jump: Learner View' : 'Salto Rapido: Vista Discente'}
-                    >
-                      <User className="w-3 h-3" />
-                      <span>{language === 'en' ? 'LEARNER' : 'DISCENTE'}</span>
-                    </button>
-
-                    <button
-                      id="quick-role-tecnico-btn"
-                      onClick={() => handleRoleSelection('tecnico')}
-                      className={`flex items-center gap-1 px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded flex-shrink-0 ${
-                        userRole === 'tecnico'
-                          ? 'bg-cyan-600 text-white shadow-xs font-black'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                      }`}
-                      title={language === 'en' ? 'Quick Jump: Technician Hub' : 'Salto Rapido: Console Tecnico'}
-                    >
-                      <Wrench className="w-3 h-3" />
-                      <span>{language === 'en' ? 'TECH' : 'TECNICO'}</span>
-                    </button>
-
-                    <button
-                      id="quick-role-faculty-btn"
-                      onClick={() => handleRoleSelection('faculty')}
-                      className={`flex items-center gap-1 px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded flex-shrink-0 ${
-                        userRole === 'faculty'
-                          ? 'bg-emerald-600 text-white shadow-xs font-black'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                      }`}
-                      title={language === 'en' ? 'Quick Jump: Faculty Scoring' : 'Salto Rapido: Scheda Faculty'}
-                    >
-                      <GraduationCap className="w-3 h-3" />
-                      <span>FACULTY</span>
-                    </button>
-
-                    <button
-                      id="quick-role-direttore-btn"
-                      onClick={() => handleRoleSelection('direttore')}
-                      className={`flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded flex-shrink-0 ${
-                        userRole === 'direttore'
-                          ? 'bg-slate-100 text-black shadow-xs font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                      }`}
-                      title={language === 'en' ? 'Director Overview' : 'Vista Regia Direttore'}
-                    >
-                      <ShieldCheck className="w-2.5 h-2.5" />
-                      <span>{language === 'en' ? 'DIR' : 'DIR'}</span>
-                    </button>
-
-                    <button
-                      id="quick-role-public-btn"
-                      onClick={() => handleRoleSelection('public')}
-                      className={`flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded flex-shrink-0 ${
-                        (userRole as string) === 'public'
-                          ? 'bg-slate-100 text-black shadow-xs font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                      }`}
-                      title={language === 'en' ? 'Public Shared Screen' : 'Vista Schermo Condiviso Pubblico'}
-                    >
-                      <Eye className="w-2.5 h-2.5" />
-                      <span>{language === 'en' ? 'PUB' : 'PUB'}</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* NON-AUTHORIZED / PUBLIC ROLE SELECTOR WITH FACULTY UNLOCK TRIGGER */
-                <div className="flex items-center bg-slate-900 p-0.5 border border-slate-700 rounded shadow-inner flex-shrink-0">
-                  <span className="text-[9px] font-bold text-slate-400 px-1.5 uppercase tracking-wider border-r border-slate-800 hidden sm:inline">
-                    {language === 'en' ? 'ROLE:' : 'RUOLO:'}
-                  </span>
-                  <div className="flex items-center gap-0.5">
-                    {roleOptions.map((opt) => {
-                      const isSelected = userRole === opt.role;
-                      const isProtectedRole = opt.role === 'faculty' || opt.role === 'tecnico' || opt.role === 'direttore';
-                      return (
-                        <button
-                          key={opt.role}
-                          id={`role-${opt.role}-btn`}
-                          onClick={() => handleRoleSelection(opt.role)}
-                          className={`flex items-center gap-1 px-2 py-1 text-[11px] font-bold uppercase tracking-wider rounded transition-all cursor-pointer flex-shrink-0 ${
-                            isSelected
-                              ? 'bg-red-600 text-white shadow-xs'
-                              : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                          }`}
-                          title={isProtectedRole ? `${opt.label} (${language === 'en' ? 'Requires PIN Unlock' : 'Richiede sblocco PIN Faculty'})` : `${opt.label}`}
-                        >
-                          {opt.icon}
-                          <span>{opt.shortLabel}</span>
-                          {isProtectedRole && (
-                            <Lock className="w-2 h-2 text-slate-500 ml-0.5 opacity-70" />
-                          )}
-                        </button>
-                      );
-                    })}
-
-                    {/* Proactive Unlock Trigger Button */}
-                    <button
-                      id="navbar-unlock-faculty-modal-btn"
-                      onClick={() => setIsFacultyAuthModalOpen(true)}
-                      className="flex items-center gap-1 px-2 py-1 bg-slate-950 hover:bg-red-600 hover:text-white text-red-400 font-bold text-[9px] uppercase tracking-wider rounded border border-slate-700 hover:border-red-400 transition-colors ml-0.5 cursor-pointer"
-                      title={language === 'en' ? 'Unlock Faculty Pass' : 'Attiva Faculty Pass per passare istantaneamente tra ruoli'}
-                    >
-                      <KeyRound className="w-2.5 h-2.5" />
-                      <span>{language === 'en' ? 'UNLOCK' : 'SBLOCCA'}</span>
-                    </button>
-                  </div>
-                </div>
-              )}
 
                 </div>
               )}
