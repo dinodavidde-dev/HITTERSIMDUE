@@ -41,6 +41,7 @@ export const CoursePreStartCountdown: React.FC = () => {
     selectedTechnicianId,
     selectedGuestId,
     facultyAuthSession,
+    isBeeping,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -144,17 +145,62 @@ export const CoursePreStartCountdown: React.FC = () => {
 
         {/* Major Countdown Digital Tiles */}
         <div className="space-y-4">
-        {/* 15-Minute Assembly Notice Banner */}
-        {courseStartSchedule.isGateEnabled && totalSeconds <= 900 && totalSeconds > 0 && (
-          <div className="bg-amber-950/90 border-2 border-amber-500 p-5 text-left shadow-2xl space-y-2">
+        {/* Lunch Break Gate Closed Banner */}
+        {courseStartSchedule.gateMode === 'lunch' && (
+          <div className="bg-amber-950/95 border-2 border-amber-500 p-5 text-left shadow-2xl space-y-2">
             <div className="flex items-center gap-2 text-amber-400 font-mono text-xs font-black uppercase tracking-wider">
-              <Users className="w-5 h-5 text-amber-400 animate-pulse" />
-              <span>{isEn ? '⚠️ 15-MINUTE ASSEMBLY NOTICE' : '⚠️ AVVISO DI RADUNO (-15 MINUTI)'}</span>
+              <Lock className="w-5 h-5 text-amber-400 animate-pulse" />
+              <span>{isEn ? 'GATE CLOSED • LUNCH BREAK' : 'GATE CHIUSO DURANTE LA PAUSA PRANZO'}</span>
             </div>
             <p className="text-white text-sm sm:text-base font-bold font-sans">
               {isEn
-                ? 'The course gate is opening in 15 minutes. All participants are kindly invited to gather with their assigned team and Faculty Tutor.'
-                : 'Mancano 15 minuti all\'apertura del gate. Si invitano tutti i partecipanti a riunirsi alla propria squadra e al proprio Faculty Tutor.'}
+                ? 'The course gate is closed for lunch break. Schedule: 12:00 - 13:00 | Location: Simulation Center Restaurant / Canteen.'
+                : 'Il gate del corso è chiuso durante la pausa pranzo. Orario: 12:00 - 13:00 | Luogo: Ristorante Centro Simulazione / Mensa.'}
+            </p>
+          </div>
+        )}
+
+        {/* Night Scenario Gate Closed Banner */}
+        {courseStartSchedule.gateMode === 'night' && (
+          <div className="bg-purple-950/95 border-2 border-purple-500 p-5 text-left shadow-2xl space-y-2">
+            <div className="flex items-center gap-2 text-purple-300 font-mono text-xs font-black uppercase tracking-wider">
+              <Lock className="w-5 h-5 text-purple-400 animate-pulse" />
+              <span>{isEn ? 'GATE CLOSED • NIGHT SCENARIO STANDBY' : 'GATE CHIUSO • STANDBY SCENARIO NOTTURNO'}</span>
+            </div>
+            <p className="text-white text-sm sm:text-base font-bold font-sans">
+              {isEn
+                ? 'The gate is in standby for the night scenario session. Opening Time: 20:30 | Location: Night Tactical Area.'
+                : 'Il gate è in standby per la sessione di scenario notturno. Orario Apertura: 20:30 | Luogo: Area Tattica Notturna.'}
+            </p>
+          </div>
+        )}
+
+        {/* Paused Countdown Banner */}
+        {courseStartSchedule.isGatePaused && (
+          <div className="bg-neutral-900 border-2 border-orange-500 p-4 text-left shadow-2xl flex items-center gap-3">
+            <Clock className="w-6 h-6 text-orange-400 animate-spin flex-shrink-0" />
+            <div>
+              <div className="text-orange-400 font-mono text-xs font-bold uppercase">
+                {isEn ? 'COUNTDOWN PAUSED BY DIRECTOR' : 'CONTO ALLA ROVESCIA IN PAUSA DALLA DIREZIONE'}
+              </div>
+              <p className="text-neutral-200 text-xs">
+                {isEn ? 'Timer is temporarily paused. Reopening countdown will resume shortly.' : 'Il timer è temporaneamente in pausa. Il conto alla rovescia riprenderà a breve.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 30-Minute Assembly Notice Banner */}
+        {courseStartSchedule.isGateEnabled && !courseStartSchedule.isGatePaused && totalSeconds <= 1800 && totalSeconds > 0 && (
+          <div className="bg-amber-950/90 border-2 border-amber-500 p-5 text-left shadow-2xl space-y-2">
+            <div className="flex items-center gap-2 text-amber-400 font-mono text-xs font-black uppercase tracking-wider">
+              <Users className={`w-5 h-5 text-amber-400 transition-all duration-300 ${isBeeping ? 'animate-ping scale-125 filter drop-shadow-[0_0_12px_rgba(245,158,11,1)]' : 'animate-pulse'}`} />
+              <span>{isEn ? '⚠️ 30-MINUTE ASSEMBLY NOTICE' : '⚠️ AVVISO DI RADUNO (-30 MINUTI)'}</span>
+            </div>
+            <p className="text-white text-sm sm:text-base font-bold font-sans">
+              {isEn
+                ? 'The course gate is opening in 30 minutes. All participants are kindly invited to gather with their assigned team and Faculty Tutor.'
+                : 'Mancano 30 minuti all\'apertura del gate. Si invitano tutti i partecipanti a riunirsi alla propria squadra e al proprio Faculty Tutor.'}
             </p>
           </div>
         )}

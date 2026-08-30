@@ -30,6 +30,10 @@ export interface NextModuleAlertInfo {
   roleDescription?: string;
   activityTitle?: string;
   location?: string;
+  ongoingPhaseTitle?: string;
+  ongoingActivityTitle?: string;
+  upcomingPhaseTitle?: string;
+  roleInstruction?: string;
 }
 
 export const ModuleCalloutBanner: React.FC = () => {
@@ -48,8 +52,10 @@ export const ModuleCalloutBanner: React.FC = () => {
     technicians,
     timerSeconds,
     isCourseStarted,
+    language,
   } = useCourse();
 
+  const isEn = language === 'en';
   const [dismissedKey, setDismissedKey] = useState<string | null>(null);
   const [hasPlayedChime, setHasPlayedChime] = useState<string | null>(null);
 
@@ -80,7 +86,6 @@ export const ModuleCalloutBanner: React.FC = () => {
         operatorTeamId = 1;
       }
     } else if (userRole === 'ospite' || userRole === 'public') {
-      // Default to Team Alpha (1) for public projection demo
       operatorTeamId = 1;
       operatorRoleName = 'Visualizzazione Operativa Plenaria';
     }
@@ -92,9 +97,6 @@ export const ModuleCalloutBanner: React.FC = () => {
 
     const userGroupId = team.groupId as GroupType;
 
-    // Look at the current slot countdown
-    // If timerSeconds is <= 900 (15 minutes) and > 0, we alert operators to assemble with their team
-    // for the upcoming module or transition!
     if (timerSeconds <= 900 && timerSeconds > 0) {
       const nextSlot = filteredSlots[activeSlotIndex + 1];
       const nextActivity: GroupActivitySlot | undefined = nextSlot?.groupActivities?.[userGroupId];
@@ -102,6 +104,26 @@ export const ModuleCalloutBanner: React.FC = () => {
 
       const moduleTitle = nextActivity ? nextActivity.title : currentActivity ? currentActivity.title : currentSlot.title;
       const location = nextActivity ? nextActivity.location : currentActivity ? currentActivity.location : 'Stazione Assegnata';
+
+      // Role specific instruction
+      let roleInst = '';
+      if (userRole === 'faculty') {
+        roleInst = isEn
+          ? 'Faculty: Prepare evaluation rubrics, scoring sheet, and team briefing.'
+          : 'Faculty: Preparare griglie di valutazione, checklist e briefing della squadra.';
+      } else if (userRole === 'discente') {
+        roleInst = isEn
+          ? 'Learner/Team: Gather with your assigned team and Faculty Tutor at the station.'
+          : 'Discente/Squadra: Riunirsi con il proprio Faculty Tutor alla postazione assegnata.';
+      } else if (userRole === 'tecnico') {
+        roleInst = isEn
+          ? 'Technician: Inspect mannequin status, equipment readiness, and setup.'
+          : 'Tecnico: Verificare stato manichini, set-up apparecchiature e postazione.';
+      } else {
+        roleInst = isEn
+          ? 'Plenary: Assemble teams for upcoming rotation block.'
+          : 'Plenaria: Riunire le squadre per il prossimo blocco di rotazione.';
+      }
 
       return {
         moduleName: nextSlot ? `Prossima Fase: ${nextSlot.title}` : `Conclusione ${currentSlot.title}`,
@@ -116,6 +138,10 @@ export const ModuleCalloutBanner: React.FC = () => {
         roleDescription: operatorRoleName,
         activityTitle: moduleTitle,
         location: location,
+        ongoingPhaseTitle: currentSlot.title,
+        ongoingActivityTitle: currentActivity?.title || (isEn ? 'Ongoing Activity' : 'Attività in Corso'),
+        upcomingPhaseTitle: nextSlot ? nextSlot.title : currentSlot.title,
+        roleInstruction: roleInst,
       };
     }
 
@@ -134,6 +160,7 @@ export const ModuleCalloutBanner: React.FC = () => {
     selectedTechnicianId,
     technicians,
     timerSeconds,
+    isEn,
   ]);
 
   // Audio chime trigger when countdown hits <= 15 min (900s) threshold
@@ -178,7 +205,7 @@ export const ModuleCalloutBanner: React.FC = () => {
             <Bell className="w-5 h-5 fill-current" />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 tracking-wider border ${
@@ -187,24 +214,32 @@ export const ModuleCalloutBanner: React.FC = () => {
                     : 'bg-amber-900 border-amber-400 text-amber-200'
                 }`}
               >
-                🔔 CHIAMATA OPERATIVA • AVVIO PROSSIMO MODULO (15 MIN)
+                {isEn ? '🔔 PRE-ALERT • ONGOING & UPCOMING PHASE' : '🔔 PRE-ALLERTAMENTO • FASE IN CORSO E IN ARRIVO'}
               </span>
               <span className="text-xs font-mono font-bold text-neutral-300">
                 {nextAlert.roleDescription}
               </span>
             </div>
 
+            {/* Ongoing Phase Indicator */}
+            <div className="text-xs font-mono text-neutral-300 bg-black/40 px-2 py-1 border border-neutral-800 flex items-center gap-2 flex-wrap">
+              <span className="text-orange-400 uppercase font-black">{isEn ? 'Ongoing Phase:' : 'Fase in Corso:'}</span>
+              <span className="text-white font-bold">{nextAlert.ongoingPhaseTitle}</span>
+              <span className="text-neutral-500">•</span>
+              <span className="text-neutral-300">{nextAlert.ongoingActivityTitle}</span>
+            </div>
+
             <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white flex items-center gap-2 flex-wrap">
-              <span>INVITO A RIUNIRSI CON:</span>
+              <span>{isEn ? 'Team Assignment:' : 'Assegnazione Squadra:'}</span>
               <span className="text-amber-400 bg-black/60 px-2 py-0.5 border border-amber-500/60 font-mono">
                 {nextAlert.teamName} (Gruppo {nextAlert.groupId})
               </span>
             </h4>
 
-            <p className="text-xs text-neutral-200 font-medium flex items-center gap-2 flex-wrap">
-              <span>{nextAlert.moduleName}</span>
+            <p className="text-xs text-amber-200 font-bold flex items-center gap-2 flex-wrap">
+              <span>{nextAlert.roleInstruction}</span>
               {nextAlert.location && (
-                <span className="inline-flex items-center gap-1 text-amber-300 font-bold">
+                <span className="inline-flex items-center gap-1 text-amber-300">
                   <MapPin className="w-3.5 h-3.5" />
                   {nextAlert.location}
                 </span>
@@ -218,10 +253,10 @@ export const ModuleCalloutBanner: React.FC = () => {
           <div className="bg-black/90 border-2 border-amber-500 px-4 py-2 flex items-center gap-3 shadow-inner">
             <div className="text-right">
               <div className="text-[10px] font-mono text-amber-400 uppercase font-bold tracking-wider">
-                TEMPO ALL'AVVIO
+                {isEn ? 'TIME TO START' : 'TEMPO ALL\'AVVIO'}
               </div>
               <div className="text-xs font-mono text-neutral-400">
-                Raduno Squadra
+                {isEn ? 'Assembly' : 'Raduno Squadre'}
               </div>
             </div>
 

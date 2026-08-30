@@ -103,6 +103,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const totalSeconds = Math.floor(timeRemainingMs / 1000);
+  const isGateActive = courseStartSchedule.isGateEnabled;
+  const isCurrentUnlocked = userRole === 'direttore' ? true : userRole === 'tecnico' ? (!isGateActive || isCourseStarted || totalSeconds <= 3600) : (!isGateActive || isCourseStarted || totalSeconds <= 1800);
+
   const activeAlertsCount = broadcastAlerts.filter((a) => a.active).length;
 
   const roleOptions: { role: UserRole; label: string; shortLabel: string; icon: React.ReactNode }[] = [
@@ -380,7 +384,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
       </div>
 
         {/* Tier 2: Views Navigation Bar - Horizontally Scrollable with Tabs */}
-        {!isCourseStarted && (userRole === 'discente' || userRole === 'public') ? (
+        {!isCurrentUnlocked && (userRole === 'discente' || userRole === 'public') ? (
           <div className="bg-slate-900 border-t border-red-500/80 py-1.5 px-3 sm:px-4 flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-1.5 text-red-400 font-bold">
               <Clock className="w-3.5 h-3.5 animate-pulse" />
@@ -457,7 +461,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     </>
                   )}
 
-                  {!isCourseStarted && (
+                  {!isCurrentUnlocked && (
                     <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/80 border border-red-600 text-red-300 font-mono text-[10px] font-bold rounded">
                       <Clock className="w-2.5 h-2.5 text-red-400" />
                       <span>{language === 'en' ? 'GATE STANDBY' : 'GATE STANDBY'}</span>

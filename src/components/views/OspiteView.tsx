@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCourse } from '../../context/CourseContext';
+import { CourseDay } from '../../types';
 import {
   Activity,
   Award,
@@ -21,13 +22,14 @@ import {
 } from 'lucide-react';
 import { QRCodeDisplay } from '../QRCodeDisplay';
 import { CourseMessengerModal } from '../messaging/CourseMessengerModal';
-import { LanguageSwitcher } from '../LanguageSwitcher';
 
 type OspiteSubTab = 'field' | 'my_pass' | 'programma';
 
 export const OspiteView: React.FC = () => {
   const {
     activeDay,
+    setActiveDay,
+    filteredSlots,
     currentSlot,
     timerSeconds,
     isTimerRunning,
@@ -87,25 +89,8 @@ export const OspiteView: React.FC = () => {
           </p>
         </div>
 
-        {/* Quick Actions & Guest Switcher */}
+        {/* Quick Actions */}
         <div className="flex items-center gap-2 flex-wrap">
-          <LanguageSwitcher variant="badge" />
-
-          {/* Guest selector */}
-          {guests.length > 1 && (
-            <select
-              value={selectedGuestId || currentGuest.id}
-              onChange={(e) => setSelectedGuestId(e.target.value)}
-              className="bg-neutral-900 border border-cyan-700 text-cyan-200 text-xs font-bold px-2.5 py-1.5 focus:outline-hidden cursor-pointer"
-            >
-              {guests.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name} ({g.organization})
-                </option>
-              ))}
-            </select>
-          )}
-
           <button
             id="guest-send-message-btn"
             onClick={() => setIsMessengerOpen(true)}
@@ -257,18 +242,94 @@ export const OspiteView: React.FC = () => {
 
       {/* SUBTAB 3: PROGRAMMA */}
       {activeSubTab === 'programma' && (
-        <div className="bg-neutral-900 border-2 border-neutral-800 p-6 shadow-xl space-y-4">
-          <h3 className="font-black text-xl text-white uppercase flex items-center gap-2">
-            <Building className="w-5 h-5 text-cyan-400" />
-            <span>{isEn ? 'VISIT ROUTE AND SIMULATION STRUCTURE' : 'PERCORSO DI VISITA E STRUTTURA DELLE SIMULAZIONI'}</span>
-          </h3>
-          <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-            {isEn
-              ? 'The advanced course consists of simultaneous rotations across 4 high-fidelity trauma scenarios featuring pre-hospital TCCC, structured SBAR handoff, and hospital-based resuscitation/damage control surgery (ED / Shock Room).'
-              : 'Il corso avanzato si articola in rotazioni simultanee su 4 scenari ad alta fedeltà con gestione extra-ospedaliera TCCC, passaggio di consegne SBAR e rianimazione/chirurgia di controllo del danno intra-ospedaliera (ED / Shock Room).'}
-          </p>
+        <div className="bg-neutral-900 border-2 border-neutral-800 p-6 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+            <div>
+              <h3 className="font-black text-xl text-white uppercase flex items-center gap-2">
+                <Building className="w-5 h-5 text-cyan-400" />
+                <span>{isEn ? 'VISIT ROUTE & REAL-TIME TIMELINE' : 'PERCORSO VISITA & TIMELINE IN TEMPO REALE'}</span>
+              </h3>
+              <p className="text-xs text-neutral-300 mt-1">
+                {isEn
+                  ? 'Simplified real-time course schedule and rotation timeline styled after Regia control.'
+                  : 'Programma semplificato in tempo reale del corso e timeline delle rotazioni stile Regia.'}
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            {/* Day Selector Tabs */}
+            <div className="flex items-center gap-1 bg-neutral-950 p-1 border border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setActiveDay(2 as CourseDay)}
+                className={`px-3 py-1.5 text-xs font-black font-mono transition-colors ${
+                  activeDay === 2 ? 'bg-cyan-500 text-black' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                DAY 02
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDay(3 as CourseDay)}
+                className={`px-3 py-1.5 text-xs font-black font-mono transition-colors ${
+                  activeDay === 3 ? 'bg-cyan-500 text-black' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                DAY 03
+              </button>
+            </div>
+          </div>
+
+          {/* Timeline Slots Stream */}
+          <div className="space-y-3">
+            {filteredSlots.map((slot, idx) => {
+              const isCurrentActive = activeDay === slot.day && currentSlot.id === slot.id;
+              return (
+                <div
+                  key={slot.id}
+                  className={`p-4 border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                    isCurrentActive
+                      ? 'bg-cyan-950/20 border-cyan-500 shadow-lg'
+                      : 'bg-neutral-950 border-neutral-800'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="bg-neutral-900 border border-neutral-700 px-3 py-2 text-center min-w-[76px] flex-shrink-0">
+                      <span className="text-[10px] font-mono text-neutral-400 block uppercase">
+                        {isEn ? `SLOT ${idx + 1}` : `FASE ${idx + 1}`}
+                      </span>
+                      <span className="text-xs font-mono font-black text-cyan-400">
+                        {slot.timeRange}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                          {slot.title}
+                        </h4>
+                        {isCurrentActive && (
+                          <span className="bg-red-600 text-white text-[10px] font-black uppercase px-2 py-0.5 animate-pulse">
+                            {isEn ? '🟢 IN PROGRESS' : '🟢 IN CORSO'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-neutral-300 leading-relaxed">
+                        {slot.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right flex-shrink-0 font-mono text-xs text-neutral-400 self-center sm:self-auto">
+                    <span className="px-2 py-1 bg-neutral-900 border border-neutral-800">
+                      {slot.durationMinutes} min
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
             <div className="p-4 bg-neutral-950 border border-neutral-800 space-y-2">
               <h4 className="font-black text-sm text-orange-400 uppercase">
                 {isEn ? '1. Pre-Hospital Area (TCCC)' : '1. Area Extra-Ospedaliera (TCCC)'}

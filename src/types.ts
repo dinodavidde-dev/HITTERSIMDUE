@@ -168,6 +168,11 @@ export interface CourseStartSchedule {
   isGateEnabled: boolean; // whether countdown lock is active
   title: string;
   location: string;
+  isGatePaused?: boolean;
+  pausedRemainingMs?: number;
+  gateMode?: 'start' | 'lunch' | 'night';
+  lunchTime?: string;
+  nightTime?: string;
 }
 
 export interface CourseMessage {
@@ -329,4 +334,16 @@ export interface StationPreSessionChecklist {
   signalStatus?: 'NONE' | 'GREEN_LIGHT' | 'YELLOW_WARNING';
   signalSentAt?: string;
   signalNotes?: string;
+}
+
+export interface PhaseShiftLogEntry {
+  id: string;
+  timestamp: string;
+  dateTimeStr: string;
+  alertId: string;
+  title: string;
+  message: string;
+  senderName: string;
+  alertType: string;
+  recordedByTechName: string;
 }

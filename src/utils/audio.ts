@@ -10,13 +10,35 @@ function getAudioContext(): AudioContext | null {
   if (!audioCtx) {
     const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (AudioCtxClass) {
-      audioCtx = new AudioCtxClass();
+      try {
+        audioCtx = new AudioCtxClass();
+      } catch {
+        // Fallback or unsupported
+      }
     }
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
   }
   return audioCtx;
+}
+
+// Global listener to unlock audio context on any user interaction (click/touchstart/keydown)
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    window.removeEventListener('click', unlockAudio);
+    window.removeEventListener('touchstart', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  };
+  window.addEventListener('click', unlockAudio, { once: true });
+  window.addEventListener('touchstart', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
 }
 
 /**

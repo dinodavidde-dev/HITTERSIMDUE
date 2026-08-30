@@ -771,7 +771,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           <div className="flex items-center gap-2 text-xs text-neutral-400">
             <User className="w-4 h-4 text-emerald-400" />
             <span>
-              Valutatore: <strong>{currentFaculty.name}</strong> • Squadra: <strong>Sq. {team.id} ({team.name})</strong>
+              Valutatore: <strong>{currentFaculty.name}</strong> • Squadra: <strong>{team.name}</strong>
             </span>
           </div>
 

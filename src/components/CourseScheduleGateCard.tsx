@@ -26,6 +26,8 @@ export const CourseScheduleGateCard: React.FC = () => {
     setCourseGateEnabled,
     startCourseImmediately,
     resetCourseScheduleToFuture,
+    toggleGatePause,
+    setGateMode,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -270,6 +272,71 @@ export const CourseScheduleGateCard: React.FC = () => {
                 </>
               )}
             </button>
+          </div>
+
+          {/* Pause Countdown & Gate Mode Selector Section for Master / Directors */}
+          <div className="pt-3 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono font-bold text-neutral-400 uppercase">
+                {isEn ? 'Gate Regia / Pause:' : 'Regia Gate / Pausa:'}
+              </span>
+              <button
+                id="toggle-gate-pause-btn"
+                type="button"
+                onClick={toggleGatePause}
+                className={`py-1.5 px-3 border font-mono text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                  courseStartSchedule.isGatePaused
+                    ? 'bg-amber-900 hover:bg-amber-800 border-amber-500 text-amber-200 animate-pulse'
+                    : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-700 text-neutral-200'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>
+                  {courseStartSchedule.isGatePaused
+                    ? (isEn ? 'RESUME COUNTDOWN' : 'RIPRENDI COUNTDOWN')
+                    : (isEn ? 'PAUSE COUNTDOWN' : 'METTI IN PAUSA COUNTDOWN')}
+                </span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono font-bold text-neutral-400 uppercase">
+                {isEn ? 'Scenario Mode:' : 'Modalità Gate:'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setGateMode('start', '08:30')}
+                className={`py-1.5 px-2.5 border font-mono text-xs font-bold ${
+                  courseStartSchedule.gateMode === 'start' || !courseStartSchedule.gateMode
+                    ? 'bg-orange-600 border-orange-500 text-black'
+                    : 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                {isEn ? 'Start Course' : 'Avvio Corso'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setGateMode('lunch', '13:00')}
+                className={`py-1.5 px-2.5 border font-mono text-xs font-bold ${
+                  courseStartSchedule.gateMode === 'lunch'
+                    ? 'bg-amber-500 border-amber-400 text-black'
+                    : 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                {isEn ? 'Lunch Break (12-13)' : 'Pausa Pranzo (12-13)'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setGateMode('night', '20:30')}
+                className={`py-1.5 px-2.5 border font-mono text-xs font-bold ${
+                  courseStartSchedule.gateMode === 'night'
+                    ? 'bg-purple-600 border-purple-500 text-white'
+                    : 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                {isEn ? 'Night Scenario (20:30)' : 'Scenario Notturno (20:30)'}
+              </button>
+            </div>
           </div>
         </div>
 

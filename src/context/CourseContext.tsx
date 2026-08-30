@@ -20,6 +20,7 @@ import {
   TimelineSlot,
   TriageCategory,
   UserRole,
+  PhaseShiftLogEntry,
 } from '../types';
 import {
   INITIAL_BROADCAST_ALERTS,
@@ -94,6 +95,9 @@ interface CourseContextType {
   latestAlert: BroadcastAlert | null;
   sendBroadcastAlert: (alert: Omit<BroadcastAlert, 'id' | 'timestamp' | 'active'>) => void;
   dismissAlert: (id: string) => void;
+  phaseShiftLogs: PhaseShiftLogEntry[];
+  recordPhaseShiftLog: (entry: Omit<PhaseShiftLogEntry, 'id' | 'timestamp' | 'dateTimeStr'>) => void;
+  clearPhaseShiftLogs: () => void;
 
   simulatorPatients: SimulatorPatient[];
   updateSimulatorPatient: (patientId: number, updates: Partial<SimulatorPatient>) => void;
@@ -161,6 +165,9 @@ interface CourseContextType {
   setCourseGateEnabled: (enabled: boolean) => void;
   startCourseImmediately: () => void;
   resetCourseScheduleToFuture: (minutesFromNow?: number) => void;
+  setGatePaused: (paused: boolean) => void;
+  toggleGatePause: () => void;
+  setGateMode: (mode: 'start' | 'lunch' | 'night', customTime?: string) => void;
 
   syncStatus: SyncStatusInfo;
   triggerManualSync: () => void;
@@ -196,6 +203,8 @@ interface CourseContextType {
   triggerSimulatedClinicalEvent: () => void;
 
   resetAllData: () => void;
+
+  isBeeping: boolean;
 }
 
 const CourseContext = createContext<CourseContextType | null>(null);
@@ -293,6 +302,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
   const [latestAlert, setLatestAlert] = useState<BroadcastAlert | null>(null);
 
+  const [phaseShiftLogs, setPhaseShiftLogs] = useState<PhaseShiftLogEntry[]>(() =>
+    getStoredOrDefault('phaseShiftLogs', [])
+  );
+
   const [simulatorPatients, setSimulatorPatients] = useState<SimulatorPatient[]>(() =>
     getStoredOrDefault('simulatorPatients', INITIAL_SIMULATOR_PATIENTS)
   );
@@ -369,23 +382,37 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const targetStartTimeMs = new Date(courseStartSchedule.isoTimestamp).getTime() || 0;
-  const timeRemainingMs = Math.max(0, targetStartTimeMs - currentTime);
+  const rawRemainingMs = Math.max(0, targetStartTimeMs - currentTime);
+  const timeRemainingMs = courseStartSchedule.isGatePaused 
+    ? (courseStartSchedule.pausedRemainingMs ?? rawRemainingMs)
+    : rawRemainingMs;
   const isCourseStarted = !courseStartSchedule.isGateEnabled || targetStartTimeMs <= currentTime;
 
-  const [hasPlayed15MinBeep, setHasPlayed15MinBeep] = useState(false);
+  const [hasPlayed30MinBeep, setHasPlayed30MinBeep] = useState(false);
+  const [isBeeping, setIsBeeping] = useState<boolean>(false);
+
+  const triggerLongBeepWithAnimation = useCallback(() => {
+    playLongBeep();
+    setIsBeeping(true);
+    setTimeout(() => {
+      setIsBeeping(false);
+    }, 3000);
+  }, []);
 
   useEffect(() => {
     if (courseStartSchedule.isGateEnabled && timeRemainingMs > 0) {
       const totalSecs = Math.floor(timeRemainingMs / 1000);
-      if (totalSecs <= 900 && totalSecs >= 885 && !hasPlayed15MinBeep) {
-        playLongBeep();
-        setHasPlayed15MinBeep(true);
+      if (totalSecs <= 1800 && totalSecs >= 1785 && !hasPlayed30MinBeep) {
+        if (userRole !== 'tecnico' && userRole !== 'direttore') {
+          triggerLongBeepWithAnimation();
+        }
+        setHasPlayed30MinBeep(true);
       }
-      if (totalSecs > 915) {
-        setHasPlayed15MinBeep(false);
+      if (totalSecs > 1815) {
+        setHasPlayed30MinBeep(false);
       }
     }
-  }, [timeRemainingMs, courseStartSchedule.isGateEnabled, hasPlayed15MinBeep]);
+  }, [timeRemainingMs, courseStartSchedule.isGateEnabled, hasPlayed30MinBeep, triggerLongBeepWithAnimation, userRole]);
 
   // Course Field Messages (Private to Directors and Faculty)
   const [courseMessages, setCourseMessages] = useState<CourseMessage[]>(() =>
@@ -847,6 +874,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.setItem(STORAGE_KEY_PREFIX + 'courseStartSchedule', JSON.stringify(courseStartSchedule));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'courseMessages', JSON.stringify(courseMessages));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'facultyAuthSession', JSON.stringify(facultyAuthSession));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'phaseShiftLogs', JSON.stringify(phaseShiftLogs));
     } catch (e) {
       console.warn('Storage sync failed', e);
     }
@@ -867,6 +895,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     courseStartSchedule,
     courseMessages,
     facultyAuthSession,
+    phaseShiftLogs,
   ]);
 
   // Helper to persist course state changes to Firestore
@@ -1198,6 +1227,25 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const recordPhaseShiftLog = useCallback((entryData: Omit<PhaseShiftLogEntry, 'id' | 'timestamp'>) => {
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const newEntry: PhaseShiftLogEntry = {
+      ...entryData,
+      id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: timeStr,
+      dateTimeStr: now.toLocaleString(),
+    };
+    setPhaseShiftLogs((prev) => [newEntry, ...prev]);
+    setDoc(doc(db, 'phase_shift_logs', newEntry.id), newEntry).catch((err) => {
+      // ignore
+    });
+  }, []);
+
+  const clearPhaseShiftLogs = useCallback(() => {
+    setPhaseShiftLogs([]);
+  }, []);
+
   const updateSimulatorPatient = useCallback((patientId: number, updates: Partial<SimulatorPatient>) => {
     setSimulatorPatients((prev) =>
       prev.map((p) => (p.id === patientId ? { ...p, ...updates } : p))
@@ -1476,7 +1524,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const wasGateEnabled = prev.isGateEnabled;
       const updated = { ...prev, isGateEnabled: enabled };
       if (wasGateEnabled && !enabled) {
-        playLongBeep();
+        triggerLongBeepWithAnimation();
       }
       syncCourseStateToFirestore({ courseStartSchedule: updated });
       return updated;
@@ -1497,7 +1545,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     setCourseStartSchedule(updated);
     syncCourseStateToFirestore({ courseStartSchedule: updated });
-    playLongBeep();
+    triggerLongBeepWithAnimation();
   }, [courseStartSchedule, syncCourseStateToFirestore]);
 
   const resetCourseScheduleToFuture = useCallback((minutesFromNow: number = 10) => {
@@ -1511,10 +1559,76 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       scheduledTime: t,
       isoTimestamp: `${d}T${t}:00`,
       isGateEnabled: true,
+      isGatePaused: false,
+      pausedRemainingMs: undefined,
     };
     setCourseStartSchedule(updated);
     syncCourseStateToFirestore({ courseStartSchedule: updated });
   }, [courseStartSchedule, syncCourseStateToFirestore]);
+
+  const setGatePaused = useCallback((paused: boolean) => {
+    setCourseStartSchedule((prev) => {
+      const now = Date.now();
+      const currentTarget = new Date(prev.isoTimestamp).getTime() || now;
+      const currentRemaining = prev.isGatePaused ? (prev.pausedRemainingMs || 0) : Math.max(0, currentTarget - now);
+      
+      let newIso = prev.isoTimestamp;
+      if (!paused && prev.isGatePaused) {
+        newIso = new Date(now + currentRemaining).toISOString();
+      }
+
+      const updated: CourseStartSchedule = {
+        ...prev,
+        isGatePaused: paused,
+        pausedRemainingMs: paused ? currentRemaining : undefined,
+        isoTimestamp: newIso,
+      };
+      syncCourseStateToFirestore({ courseStartSchedule: updated });
+      return updated;
+    });
+  }, [syncCourseStateToFirestore]);
+
+  const toggleGatePause = useCallback(() => {
+    setGatePaused(!courseStartSchedule.isGatePaused);
+  }, [courseStartSchedule.isGatePaused, setGatePaused]);
+
+  const setGateMode = useCallback((mode: 'start' | 'lunch' | 'night', customTime?: string) => {
+    setCourseStartSchedule((prev) => {
+      let tTime = customTime;
+      let title = prev.title;
+      let location = prev.location;
+      if (mode === 'lunch') {
+        tTime = customTime || '13:00';
+        title = 'PAUSA PRANZO • GATE CHIUSO IN STANDBY';
+        location = 'Ristorante Centro Simulazione / Mensa (12:00 - 13:00)';
+      } else if (mode === 'night') {
+        tTime = customTime || '20:30';
+        title = 'SCENARIO NOTTURNO • GATE CHIUSO IN STANDBY';
+        location = 'Area Tattica Notturna';
+      } else {
+        tTime = customTime || '08:30';
+        title = 'H.I.T.T.E.R. MASTER COURSE • ADVANCED MANAGEMENT';
+        location = 'High Intensive Trauma Training Emergency Response';
+      }
+      const today = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const dStr = prev.scheduledDate || `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+      
+      const updated: CourseStartSchedule = {
+        ...prev,
+        gateMode: mode,
+        scheduledTime: tTime,
+        isoTimestamp: `${dStr}T${tTime}:00`,
+        isGateEnabled: true,
+        isGatePaused: false,
+        pausedRemainingMs: undefined,
+        title,
+        location,
+      };
+      syncCourseStateToFirestore({ courseStartSchedule: updated });
+      return updated;
+    });
+  }, [syncCourseStateToFirestore]);
 
   const setTimeMultiplier = useCallback((multiplier: number) => {
     setTimeMultiplierState(multiplier);
@@ -1630,7 +1744,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const secs = s ? s.durationMinutes * 60 : 1800;
           setTimerSeconds(secs);
           setIsTimerRunning(true);
-          playLongBeep();
+          triggerLongBeepWithAnimation();
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -1643,7 +1757,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const secs = s ? s.durationMinutes * 60 : 2700;
           setTimerSeconds(secs);
           setIsTimerRunning(true);
-          playLongBeep();
+          triggerLongBeepWithAnimation();
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -1869,6 +1983,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         latestAlert,
         sendBroadcastAlert,
         dismissAlert,
+        phaseShiftLogs,
+        recordPhaseShiftLog,
+        clearPhaseShiftLogs,
         simulatorPatients,
         updateSimulatorPatient,
         updateTechChecklist,
@@ -1924,6 +2041,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCourseGateEnabled,
         startCourseImmediately,
         resetCourseScheduleToFuture,
+        setGatePaused,
+        toggleGatePause,
+        setGateMode,
         syncStatus,
         triggerManualSync,
         sendPing,
@@ -1941,6 +2061,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         jumpToTimelinePoint,
         triggerSimulatedClinicalEvent,
         resetAllData,
+        isBeeping,
       }}
     >
       {children}

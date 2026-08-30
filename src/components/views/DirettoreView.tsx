@@ -105,12 +105,14 @@ export const DirettoreView: React.FC = () => {
     resetCourseScheduleToFuture,
     timeMultiplier,
     setIsSimulationModalOpen,
+    phaseShiftLogs,
+    clearPhaseShiftLogs,
   } = useCourse();
 
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics' | 'debug_translations'
+    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics' | 'debug_translations' | 'debriefing_logs'
   >('timeline');
 
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -495,8 +497,122 @@ export const DirettoreView: React.FC = () => {
               </span>
             </div>
           </button>
+
+          {/* Tab 11: Debriefing Logs (Phase Shifts) */}
+          <button
+            id="director-tab-debriefing-logs-btn"
+            onClick={() => setActiveSubTab('debriefing_logs')}
+            className={`min-h-[48px] p-2.5 sm:py-3 sm:px-3 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border ${
+              activeSubTab === 'debriefing_logs'
+                ? 'bg-yellow-500 text-black border-yellow-300 shadow-lg font-black'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
+            }`}
+          >
+            <Clock className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeSubTab === 'debriefing_logs' ? 'text-black' : 'text-yellow-400'}`} />
+            <div className="min-w-0">
+              <span className="font-black text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'DEBRIEFING LOGS' : 'LOG DEBRIEFING FASI'}
+              </span>
+              <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'debriefing_logs' ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
+                {phaseShiftLogs.length} {isEn ? 'Shift Events' : 'Eventi Registrati'}
+              </span>
+            </div>
+          </button>
         </div>
       </nav>
+
+      {/* SUBTAB 11: DEBRIEFING LOGS */}
+      {activeSubTab === 'debriefing_logs' && (
+        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 text-neutral-100 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-800 pb-4">
+            <div>
+              <h2 className="text-xl font-black text-yellow-400 uppercase tracking-wide flex items-center gap-2">
+                <Clock className="w-6 h-6 text-yellow-400" />
+                {isEn ? 'Post-Simulation Debriefing Logs (Phase Shifts)' : 'Log Post-Simulazione per Debriefing (Cambio Fasi)'}
+              </h2>
+              <p className="text-sm text-neutral-400 mt-1">
+                {isEn
+                  ? 'Timestamped event logs recorded automatically by technician view for broadcast alert phase shifts.'
+                  : 'Log cronologici di eventi registrati automaticamente dalla vista tecnici per i cambi di fase e broadcast.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs px-3 py-1 bg-yellow-500/10 text-yellow-400 font-bold border border-yellow-500/30 rounded-full">
+                {phaseShiftLogs.length} {isEn ? 'Events Logged' : 'Eventi Registrati'}
+              </span>
+              {phaseShiftLogs.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(isEn ? 'Clear all phase shift debriefing logs?' : 'Cancellare tutti i log di debriefing fase?')) {
+                      clearPhaseShiftLogs();
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {isEn ? 'Clear Logs' : 'Svuota Log'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {phaseShiftLogs.length === 0 ? (
+            <div className="text-center py-16 bg-neutral-950/50 rounded-xl border border-neutral-800/80 p-8 space-y-3">
+              <div className="w-12 h-12 bg-neutral-800 text-neutral-400 rounded-full flex items-center justify-center mx-auto">
+                <Clock className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-neutral-300">
+                {isEn ? 'No Phase Shift Logs Recorded Yet' : 'Nessun Log di Cambio Fase Registrato'}
+              </h3>
+              <p className="text-xs text-neutral-500 max-w-md mx-auto">
+                {isEn
+                  ? 'When broadcast alerts or phase changes are triggered while technicians are active, timestamps and event details will appear here for director debriefing.'
+                  : 'Quando vengono inviati avvisi broadcast o cambi di fase con la vista tecnici attiva, i timestamp e i dettagli compariranno qui per il debriefing della direzione.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {phaseShiftLogs.map((log, idx) => (
+                <div
+                  key={log.id}
+                  className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 hover:border-yellow-500/50 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs px-2.5 py-0.5 bg-yellow-500 text-black font-black rounded font-mono">
+                        #{phaseShiftLogs.length - idx}
+                      </span>
+                      <span className="text-xs px-2.5 py-0.5 bg-neutral-800 text-neutral-300 font-bold rounded flex items-center gap-1 font-mono">
+                        <Clock className="w-3 h-3 text-yellow-400" />
+                        {log.timestamp} ({log.dateTimeStr})
+                      </span>
+                      <span className="text-xs px-2.5 py-0.5 bg-lime-500/10 text-lime-400 border border-lime-500/30 font-bold rounded">
+                        {log.alertType.toUpperCase()}
+                      </span>
+                    </div>
+                    <h4 className="text-base font-bold text-white flex items-center gap-2">
+                      {log.title}
+                    </h4>
+                    <p className="text-xs text-neutral-300 bg-neutral-900/80 p-3 rounded-lg border border-neutral-800">
+                      {log.message}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 text-right flex-shrink-0 text-xs text-neutral-400">
+                    <div className="flex items-center gap-1">
+                      <span className="text-neutral-500">{isEn ? 'Sender:' : 'Mittente:'}</span>
+                      <span className="text-white font-bold">{log.senderName}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-neutral-500">{isEn ? 'Logged by Tech:' : 'Registrato da Tech:'}</span>
+                      <span className="text-yellow-400 font-bold">{log.recordedByTechName}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* SUBTAB 0: PROGRAMMAZIONE ORARIO & GATE AVVIO */}
       {activeSubTab === 'schedule_gate' && (

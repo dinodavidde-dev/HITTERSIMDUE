@@ -19,6 +19,7 @@ import { NightScenarioView } from './components/views/NightScenarioView';
 import { ProtesiCatalogView } from './components/views/ProtesiCatalogView';
 import { CoursePreStartCountdown } from './components/CoursePreStartCountdown';
 import { ModuleCalloutBanner } from './components/ModuleCalloutBanner';
+import { RotationCountdownBanner } from './components/RotationCountdownBanner';
 import { SimulationQuickFloatingBar } from './components/SimulationQuickFloatingBar';
 import { StartupAccessModal } from './components/StartupAccessModal';
 import { Activity, ShieldCheck, HeartPulse } from 'lucide-react';
@@ -39,8 +40,22 @@ const CourseMainContent: React.FC = () => {
     setSelectedGuestId,
     isCourseStarted,
     setIsSimulationModalOpen,
+    timeRemainingMs,
+    courseStartSchedule,
   } = useCourse();
   const [currentTab, setCurrentTab] = useState<string>('main');
+
+  const totalSeconds = Math.floor(timeRemainingMs / 1000);
+  const isGateActive = courseStartSchedule.isGateEnabled;
+
+  const isCurrentViewUnlocked = () => {
+    if (userRole === 'direttore') return true; // Director always active
+    if (userRole === 'tecnico') {
+      return !isGateActive || isCourseStarted || totalSeconds <= 3600; // Technician active 1 hour before
+    }
+    // Other views active 30 minutes before
+    return !isGateActive || isCourseStarted || totalSeconds <= 1800;
+  };
 
   const [isStartupModalOpen, setIsStartupModalOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
@@ -164,8 +179,7 @@ const CourseMainContent: React.FC = () => {
   ]);
 
   const renderActiveView = () => {
-    // Before official start date/time (gate closed): ALL accesses (including QR scans for participants, faculty, techs) lead to countdown page
-    if (!isCourseStarted && userRole !== 'direttore') {
+    if (!isCurrentViewUnlocked()) {
       return <CoursePreStartCountdown />;
     }
 
@@ -209,6 +223,8 @@ const CourseMainContent: React.FC = () => {
 
       {/* 15-Minute Pre-Module Operator Callout & Team Assembly Countdown Banner */}
       <ModuleCalloutBanner />
+
+      <RotationCountdownBanner />
 
       {/* Main Simulation Navigation & Control Bar */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />

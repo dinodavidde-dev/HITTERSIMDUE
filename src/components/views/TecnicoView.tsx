@@ -57,6 +57,8 @@ export const TecnicoView: React.FC = () => {
     userRole,
     suspensionInfo,
     teams,
+    broadcastAlerts,
+    recordPhaseShiftLog,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -82,6 +84,9 @@ export const TecnicoView: React.FC = () => {
     }
   }, [currentSlot.id]);
 
+  // Hidden logging feature in technician view that records timestamped events for every broadcast alert phase shift
+  const loggedAlertsRef = React.useRef<Set<string>>(new Set());
+
   // Active Technician Profile
   const currentTechnician: Technician =
     technicians.find((t) => t.id === selectedTechnicianId) ||
@@ -94,6 +99,25 @@ export const TecnicoView: React.FC = () => {
       phone: '+39 340 000000',
       badgeCode: 'TEC-01',
     };
+
+  React.useEffect(() => {
+    broadcastAlerts.forEach((alert) => {
+      if (
+        (alert.type === 'phase_change' || alert.title.toLowerCase().includes('phase') || alert.title.toLowerCase().includes('cambio') || alert.title.toLowerCase().includes('rotazione')) &&
+        !loggedAlertsRef.current.has(alert.id)
+      ) {
+        loggedAlertsRef.current.add(alert.id);
+        recordPhaseShiftLog({
+          alertId: alert.id,
+          title: alert.title,
+          message: alert.message,
+          senderName: alert.senderName,
+          alertType: alert.type,
+          recordedByTechName: currentTechnician.name,
+        });
+      }
+    });
+  }, [broadcastAlerts, currentTechnician.name, recordPhaseShiftLog]);
 
   const filteredPatients = simulatorPatients.filter((p) => p.day === activeDay);
 
