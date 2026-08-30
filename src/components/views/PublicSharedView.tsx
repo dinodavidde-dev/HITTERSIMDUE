@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useCourse } from '../../context/CourseContext';
 import { GroupType, ActivityType } from '../../types';
 import {
@@ -12,26 +12,20 @@ import {
   Users,
   Wrench,
 } from 'lucide-react';
-import { LanguageSwitcher } from '../LanguageSwitcher';
-import { translateRoleOrSpecialty } from '../../i18n/medicalTerms';
-import { getTeamCodeName } from '../../utils/teamUtils';
 
 export const PublicSharedView: React.FC = () => {
   const {
     language,
-    t,
     activeDay,
     currentSlot,
     filteredSlots,
     activeSlotIndex,
+    faculty,
     timerSeconds,
     isTimerRunning,
-    discenti,
-    faculty,
   } = useCourse();
 
   const isEn = language === 'en';
-  const [expandedGroup, setExpandedGroup] = useState<GroupType | null>(null);
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -105,60 +99,31 @@ export const PublicSharedView: React.FC = () => {
     <div className="space-y-4 pb-12">
       {/* Live Stage Hero Banner (Visuale Condivisa Plenaria) - Compact & Discreet */}
       <div className="relative overflow-hidden bg-neutral-950 border-2 border-neutral-700 p-3.5 sm:p-4 shadow-xl text-xs">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
-          <div className="space-y-1 max-w-3xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white font-black text-[10px] sm:text-[11px] uppercase tracking-wider shadow-xs">
-                <span className="w-2 h-2 bg-white"></span>
-                {isEn ? 'PARTICIPANTS SHARED SCREEN' : 'VISUALE CONDIVISA PARTECIPANTI'}
-              </span>
-              <span className="px-2 py-0.5 bg-neutral-900 text-neutral-300 border border-neutral-700 text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
-                DAY 0{activeDay} // {isEn ? 'DAYTIME ROTATIONS' : 'CORSO DIURNO'}
-              </span>
-              <span className="px-2 py-0.5 bg-neutral-900 text-neutral-300 border border-neutral-700 text-[10px] sm:text-[11px] font-mono font-bold">
-                {isEn ? '60 LEARNERS • 12 TEAMS' : '60 DISCENTI • 12 SQUADRE'}
-              </span>
+        <div className="flex flex-col gap-2">
+          <div className="space-y-1.5 w-full">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white font-black text-[10px] sm:text-[11px] uppercase tracking-wider shadow-xs">
+                  <span className="w-2 h-2 bg-white"></span>
+                  {isEn ? 'PARTICIPANTS SHARED SCREEN' : 'VISUALE CONDIVISA PARTECIPANTI'}
+                </span>
+                <span className="px-2 py-0.5 bg-neutral-900 text-neutral-300 border border-neutral-700 text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                  DAY 0{activeDay} // {isEn ? 'DAYTIME ROTATIONS' : 'CORSO DIURNO'}
+                </span>
+                <span className="px-2 py-0.5 bg-neutral-900 text-neutral-300 border border-neutral-700 text-[10px] sm:text-[11px] font-mono font-bold">
+                  {isEn ? '60 LEARNERS • 12 TEAMS' : '60 DISCENTI • 12 SQUADRE'}
+                </span>
+              </div>
+
+
             </div>
 
-            <h2 className="text-base sm:text-lg font-black text-white tracking-tight uppercase leading-tight">
+            <h2 className="text-base sm:text-lg font-black text-white tracking-tight uppercase leading-tight mt-1">
               {currentSlot?.title}
             </h2>
             <p className="text-neutral-300 text-xs leading-relaxed font-medium">
               {currentSlot?.description}
             </p>
-          </div>
-
-          {/* Discreet Live Countdown Timer Box & Language Switcher */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <LanguageSwitcher variant="badge" />
-
-            <div className="flex items-center gap-3 bg-neutral-900 p-2.5 sm:p-3 border-2 border-neutral-700 flex-shrink-0">
-              <div className="text-right">
-                <div className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
-                  {isEn ? 'REMAINING TIME' : 'TEMPO RESIDUO'}
-                </div>
-                <div className="text-xs text-orange-400 font-mono font-bold">
-                  {currentSlot?.timeRange} ({currentSlot?.durationMinutes}m)
-                </div>
-                <div className="text-[9px] font-bold text-neutral-300 uppercase">
-                  {isTimerRunning ? (
-                    <span className="text-orange-400 font-black">● LIVE</span>
-                  ) : (
-                    <span className="text-neutral-400">❚❚ {isEn ? 'PAUSED' : 'PAUSA'}</span>
-                  )}
-                </div>
-              </div>
-
-              <div
-                className={`px-3 py-1.5 font-mono text-xl sm:text-2xl font-black tracking-tight border ${
-                  timerSeconds < 180
-                    ? 'bg-red-600 text-white border-white animate-pulse'
-                    : 'bg-neutral-950 text-neutral-100 border-neutral-600'
-                }`}
-              >
-                {formatTimer(timerSeconds)}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -203,17 +168,27 @@ export const PublicSharedView: React.FC = () => {
             if (!activity) return null;
 
             const badge = getActivityBadge(activity.activityType);
-            const isExpanded = expandedGroup === group.id;
-
-            // Get discenti for this group
-            const groupDiscenti = discenti.filter((d) => group.squads.includes(d.teamId));
             const groupFaculty = faculty.filter((f) => group.squads.includes(f.assignedTeamId));
+
+            const isExtra = activity.activityType === 'scenario_extra';
+            const isIntra = activity.activityType === 'scenario_intra';
+            const isIntraActive = isIntra && 
+              !activity.title.toLowerCase().includes('preparazione') && 
+              !activity.title.toLowerCase().includes('prep') && 
+              !activity.subtitle.toLowerCase().includes('attesa') && 
+              !activity.subtitle.toLowerCase().includes('predisposizione');
 
             return (
               <div
                 key={group.id}
                 id={`group-card-${group.id}`}
-                className={`border-4 bg-neutral-950 shadow-2xl overflow-hidden transition-all ${badge.accent} border-neutral-800`}
+                className={`border-4 bg-neutral-950 shadow-2xl overflow-hidden transition-all ${badge.accent} ${
+                  isExtra
+                    ? 'border-red-600 animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] ring-4 ring-red-500/40 shadow-red-950'
+                    : isIntraActive
+                    ? 'border-amber-400 animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] ring-4 ring-amber-400/40 shadow-amber-950'
+                    : 'border-neutral-800'
+                }`}
               >
                 {/* Header */}
                 <div className="p-4 sm:p-5 border-b-2 border-neutral-800 bg-neutral-900 flex items-center justify-between gap-3">
@@ -232,10 +207,30 @@ export const PublicSharedView: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className={`text-[11px] uppercase tracking-wider px-3 py-1 ${badge.color} flex items-center gap-1.5`}>
-                    {badge.icon}
-                    <span className="hidden sm:inline">{badge.label.split('(')[0]}</span>
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {isIntra && (
+                      activity.title.toLowerCase().includes('preparazione') ||
+                      activity.title.toLowerCase().includes('prep') ||
+                      activity.subtitle.toLowerCase().includes('attesa') ||
+                      activity.subtitle.toLowerCase().includes('predisposizione')
+                    ) && (
+                      <div className="flex items-center gap-1.5 bg-neutral-950 px-2.5 py-1 border border-neutral-700 font-mono text-xs shadow-inner">
+                        <Clock className="w-3.5 h-3.5 text-orange-400" />
+                        <span className="text-[10px] text-neutral-400 font-bold hidden md:inline">{isEn ? 'PREP IN:' : 'INIZIO PREP:'}</span>
+                        <span className={`px-1.5 py-0.5 font-black text-xs ${timerSeconds < 180 ? 'bg-red-600 text-white animate-pulse' : 'bg-neutral-950 text-orange-400'}`}>
+                          {formatTimer(timerSeconds)}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 font-bold">
+                          {isTimerRunning ? '●' : '❚❚'}
+                        </span>
+                      </div>
+                    )}
+
+                    <span className={`text-[11px] uppercase tracking-wider px-3 py-1 ${badge.color} flex items-center gap-1.5`}>
+                      {badge.icon}
+                      <span className="hidden sm:inline">{badge.label.split('(')[0]}</span>
+                    </span>
+                  </div>
                 </div>
 
                 {/* Body Content */}
@@ -273,7 +268,7 @@ export const PublicSharedView: React.FC = () => {
                   )}
 
                   {/* Assigned Faculty Tutors */}
-                  <div className="pt-3 border-t-2 border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="pt-3 border-t-2 border-neutral-800 flex items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 text-neutral-400 font-medium flex-wrap">
                       <Users className="w-4 h-4 text-orange-400 flex-shrink-0" />
                       <span className="font-bold uppercase tracking-wider">FACULTY:</span>
@@ -281,47 +276,7 @@ export const PublicSharedView: React.FC = () => {
                         {groupFaculty.map((f) => f.name.split(' ')[1] || f.name).join(', ')}
                       </span>
                     </div>
-
-                    <button
-                      onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
-                      className="min-h-[40px] px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-orange-500 text-neutral-100 hover:text-orange-400 font-black uppercase tracking-wider text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-xs"
-                    >
-                      {isExpanded
-                        ? (isEn ? '[- HIDE TEAMS]' : '[- NASCONDI SQUADRE]')
-                        : (isEn ? '[+ VIEW 15 OPERATORS]' : '[+ DETTAGLIO 15 OPERATORI]')}
-                    </button>
                   </div>
-
-                  {/* Expandable Squad Details */}
-                  {isExpanded && (
-                    <div className="p-4 bg-neutral-900 border-2 border-neutral-800 space-y-3 mt-2">
-                      <span className="text-[11px] uppercase tracking-[0.2em] font-black text-neutral-400">
-                        {isEn ? 'TEAM COMPOSITION & ROLES:' : 'COMPOSIZIONE SQUADRE & RUOLI:'}
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        {group.squads.map((squadId) => {
-                          const squadDiscenti = discenti.filter((d) => d.teamId === squadId);
-                          const squadFaculty = faculty.find((f) => f.assignedTeamId === squadId);
-                          return (
-                            <div key={squadId} className="p-3 bg-neutral-950 border border-neutral-800">
-                              <div className="flex items-center justify-between mb-2 pb-1 border-b border-neutral-800">
-                                <span className="font-black text-xs text-white uppercase">{getTeamCodeName(squadId)}</span>
-                                <span className="text-[10px] text-orange-400 font-bold font-mono">TUTOR: {squadFaculty?.name.split(' ')[1]}</span>
-                              </div>
-                              <ul className="space-y-1">
-                                {squadDiscenti.map((d) => (
-                                  <li key={d.id} className="text-[11px] text-neutral-300 flex items-center justify-between">
-                                    <span className="truncate max-w-[120px] font-medium">{d.name}</span>
-                                    <span className="text-[9px] font-mono text-neutral-400 truncate max-w-[70px] uppercase">{translateRoleOrSpecialty(d.role.split('/')[0], language)}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -331,3 +286,4 @@ export const PublicSharedView: React.FC = () => {
     </div>
   );
 };
+

@@ -51,6 +51,8 @@ import { CourseScheduleGateCard } from '../CourseScheduleGateCard';
 import { TechSessionChecklist } from '../TechSessionChecklist';
 import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
 import { AggregatePerformanceMetrics } from '../director/AggregatePerformanceMetrics';
+import { DirectorQRLoginGenerator } from '../director/DirectorQRLoginGenerator';
+import { SquadRealtimeStatusBoard } from '../director/SquadRealtimeStatusBoard';
 import { ClipboardCheck } from 'lucide-react';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
@@ -108,7 +110,7 @@ export const DirettoreView: React.FC = () => {
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'timeline' | 'schedule_gate' | 'checklists' | 'suspension' | 'messages' | 'anagrafica' | 'qr_badges' | 'scenari' | 'analytics'
+    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_badges' | 'qr_login' | 'scenari' | 'analytics'
   >('timeline');
 
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -381,6 +383,24 @@ export const DirettoreView: React.FC = () => {
             </div>
           </button>
 
+          {/* Tab 3.5: 12 Squads Status */}
+          <button
+            id="director-tab-squads-status-btn"
+            onClick={() => setActiveSubTab('squads_status')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'squads_status'
+                ? 'bg-yellow-500 text-black border-yellow-300 shadow-md font-black'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
+            }`}
+          >
+            <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${activeSubTab === 'squads_status' ? 'text-black' : 'text-blue-400'}`} />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? '12 SQUADS LIVE' : '12 SQUADRE LIVE'}
+              </span>
+            </div>
+          </button>
+
           {/* Tab 4: Messages */}
           <button
             id="director-tab-messages-btn"
@@ -463,6 +483,27 @@ export const DirettoreView: React.FC = () => {
             </div>
           </button>
 
+          {/* Tab 7.5: QR Login Links */}
+          <button
+            id="director-tab-qr-login-btn"
+            onClick={() => setActiveSubTab('qr_login')}
+            className={`min-h-[48px] p-2.5 sm:py-3 sm:px-3 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border ${
+              activeSubTab === 'qr_login'
+                ? 'bg-yellow-500 text-black border-yellow-300 shadow-lg font-black'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
+            }`}
+          >
+            <QrCode className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeSubTab === 'qr_login' ? 'text-black' : 'text-orange-400'}`} />
+            <div className="min-w-0">
+              <span className="font-black text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'QR LOGIN' : 'QR LOGIN'}
+              </span>
+              <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'qr_login' ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
+                {isEn ? 'Direct Role Access' : 'Accesso Rapido Ruoli'}
+              </span>
+            </div>
+          </button>
+
           {/* Tab 8: Scenari & Pazienti */}
           <button
             id="director-tab-scenari-btn"
@@ -515,6 +556,11 @@ export const DirettoreView: React.FC = () => {
       {/* SUBTAB CHECKLIST: CHECKLIST PRESIDI & SCENARI TECNICI */}
       {activeSubTab === 'checklists' && (
         <TechSessionChecklist />
+      )}
+
+      {/* SUBTAB 3.5: 12 SQUADS REALTIME STATUS */}
+      {activeSubTab === 'squads_status' && (
+        <SquadRealtimeStatusBoard />
       )}
 
       {/* SUBTAB 1: TIMELINE & MASTER REGIA */}
@@ -603,6 +649,9 @@ export const DirettoreView: React.FC = () => {
 
       {/* SUBTAB 5: BADGE QR & STAMPA */}
       {activeSubTab === 'qr_badges' && <PersonnelBadgeRegistry />}
+
+      {/* SUBTAB 5.5: QR LOGIN GENERATOR */}
+      {activeSubTab === 'qr_login' && <DirectorQRLoginGenerator />}
 
       {/* SUBTAB 6: SCENARI & PAZIENTI */}
       {activeSubTab === 'scenari' && (

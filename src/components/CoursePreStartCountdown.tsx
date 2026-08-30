@@ -93,15 +93,15 @@ export const CoursePreStartCountdown: React.FC = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-neutral-400 font-mono text-xs uppercase tracking-widest">
             <Activity className="w-4 h-4 text-orange-500" />
-            <span>{isEn ? 'ADVANCED MEDICO-SURGICAL SIMULATION CENTER' : 'CENTRO DI SIMULAZIONE MEDICO-CHIRURGICA AVANZATA'}</span>
+            <span>{isEn ? 'INTUBATI EM' : 'INTUBATI EM'}</span>
           </div>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-none font-sans">
-            TRAUMA SIMULATION <span className="text-orange-500">MASTER</span>
+              <span className="text-orange-500">H.I.T.T.E.R </span>
           </h1>
           <p className="text-neutral-300 text-sm sm:text-base max-w-2xl mx-auto font-medium">
             {isEn
-              ? 'Advanced Major Polytrauma Patient Management • Operational Sessions Day 02 & Day 03'
-              : 'Gestione Avanzata del Paziente Politraumatizzato Maggiore • Sessioni Operative Day 02 & Day 03'}
+              ? 'High Intensive Trauma Trainig Emergency Response • Operational Sessions Day 02 & Day 03'
+              : 'High Intensive Trauma Trainig Emergency Response • Sessioni Operative Day 02 & Day 03'}
           </p>
         </div>
 

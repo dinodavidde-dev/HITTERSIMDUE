@@ -1118,24 +1118,24 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
   },
 ];
 
-// Full Schedule Timetable for Day 2 & Day 3 based on "Programma dei giorni 2 e 3"
+// Full Schedule Timetable for Day 2 & Day 3 based on official roadmap
 export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
   // ================= DAY 2 MATTINA =================
   {
     id: 'd2-m1',
     day: 2,
     period: 'mattina',
-    timeRange: '09:00 - 09:30',
-    startMinutes: 540,
-    durationMinutes: 30,
-    title: 'Fase 1: Pre-Ospedaliero Gruppo A | Prep ED Gruppo B | Workshop Gruppi C & D',
-    description: 'Il Gruppo A affronta la fase Extra-ospedaliera su Pazienti 1, 2, 3. Il Gruppo B prepara il Pronto Soccorso (ED). Gruppi C e D iniziano il Workshop TCCC Military.',
+    timeRange: '08:30 - 09:30',
+    startMinutes: 510,
+    durationMinutes: 60,
+    title: 'Day 2 Mattina: Gate Opening & Avvio Scenari',
+    description: 'Apertura gate e raduno con gruppi e Faculty. Alpha: TCCC Scenario (09:00-09:30). Bravo: Shock Room Prep (09:15) e Scenario (09:30-10:00). Charlie e Delta: Workshop e Skills (09:00-10:20).',
     groupActivities: {
       A: {
         activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 1, 2, 3 su Pazienti 1, 2, 3 (Scenari 6, 1, 11)',
-        location: 'Settore Scenari Alfa (Postazioni 1, 2, 3)',
+        title: 'Gate Opening -> Start TCCC Scenario',
+        subtitle: 'Invito al raduno con gruppo e Faculty (08:30) | Start Scenario Extra (09:00 - 09:30)',
+        location: 'Settore Scenari Alfa',
         scenarioRef: 'Scenari 6, 1, 11',
         patientIds: [1, 2, 3],
         partnerGroup: 'B',
@@ -1143,8 +1143,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       B: {
         activityType: 'scenario_intra',
-        title: 'Preparazione Team & Dipartimento di Emergenza (ED)',
-        subtitle: 'Squadre 4, 5, 6 in Shock Room / Trauma Center in attesa di Handover',
+        title: 'Gate Opening -> Convening Shock Room Teams',
+        subtitle: 'Raduno (08:30) | Shock Room Preparation (09:15) | Start Shock Room (09:30 - 10:00)',
         location: 'Shock Room 1, 2, 3',
         scenarioRef: 'Scenari 6, 1, 11 (Intra)',
         patientIds: [1, 2, 3],
@@ -1153,16 +1153,16 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       C: {
         activityType: 'workshop',
-        title: 'Workshop TCCC Military',
-        subtitle: 'Muoversi per sopravvivere: tecniche di trascinamento, trasporto ed estrazione feriti',
-        location: 'Area Tattica / Workshop Esterno',
+        title: 'Gate Opening -> Workshop & Skills',
+        subtitle: 'Raduno (08:30) | Workshop (09:00 - 09:45) | Break (09:45 - 09:55) | Skills (09:55 - 10:20)',
+        location: 'Area Tattica & Skills Lab 1',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'skills',
-        title: 'Skills Workshop / Workshop Competenze',
-        subtitle: 'Preparazione del paziente per il trasporto & Gestione vie aeree avanzate',
-        location: 'Skills Lab 1 & 2',
+        title: 'Gate Opening -> Workshop & Skills',
+        subtitle: 'Raduno (08:30) | Workshop (09:00 - 09:45) | Break (09:45 - 09:55) | Skills (09:55 - 10:20)',
+        location: 'Area Tattica & Skills Lab 2',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }
@@ -1171,43 +1171,48 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd2-m2',
     day: 2,
     period: 'mattina',
-    timeRange: '09:30 - 10:00',
+    timeRange: '09:30 - 11:00',
     startMinutes: 570,
-    durationMinutes: 30,
-    title: 'Fase 2: Passaggio Consegne (Handover) & Fase Intra-Ospedaliera ED',
-    description: 'Il Gruppo A consegna i pazienti al Gruppo B con metodo SBAR. Il Gruppo B esegue le procedure intraospedaliere (Toracotomia, REBOA, Drenaggi). Gruppi C e D continuano la rotazione Skills.',
+    durationMinutes: 90,
+    title: 'Rotazione Mattina 1: End TCCC, Handover, Debriefing e Break',
+    description: 'Alpha: Fine TCCC, Handover e Debriefing (09:30-10:00), Break (10:00-10:30), Workshop (10:30-11:15). Bravo: End Shock Room, Break & Debrief (10:00-10:30), Skill Workshop (10:30-11:15). Charlie & Delta: Avvio TCCC e Shock Room.',
     groupActivities: {
       A: {
         activityType: 'debriefing',
-        title: 'Handover SBAR -> Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna pazienti 1, 2, 3 al Gruppo B e debriefing con Faculty',
-        location: 'Shock Room 1, 2, 3 -> Aula Debriefing Alfa',
+        title: 'End TCCC Scenario -> Handover & Debriefing -> Break',
+        subtitle: 'Fine TCCC (09:30) | Handover & Debriefing (09:30-10:00) | Break (10:00-10:30) | Workshop (10:30-11:15)',
+        location: 'Aula Debriefing Alfa / Workshop',
         partnerGroup: 'B',
         patientIds: [1, 2, 3],
         facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
       },
       B: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED',
-        subtitle: 'Squadre 4, 5, 6: Procedure critiche intraospedaliere su Pazienti 1, 2, 3',
-        location: 'Shock Room 1, 2, 3',
-        scenarioRef: 'Scenari 6, 1, 11 (Intra)',
-        patientIds: [1, 2, 3],
+        activityType: 'debriefing',
+        title: 'End Shock Room -> Break & Debrief -> Skill Workshop',
+        subtitle: 'Fine Shock Room (10:00) | Break & Debriefing (10:00-10:30) | Skill Workshop (10:30-11:15)',
+        location: 'Shock Room 1, 2, 3 / Skills Lab',
         partnerGroup: 'A',
+        patientIds: [1, 2, 3],
         facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
       },
       C: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Preparazione Paziente per Trasporto',
-        subtitle: 'Squadre 7, 8, 9 ruotano su stazioni di immobilizzazione e vie aeree',
-        location: 'Skills Lab 1',
+        activityType: 'scenario_extra',
+        title: 'Start TCCC Scenario -> End -> Handover & Debriefing',
+        subtitle: 'Start TCCC (10:30) | End TCCC (11:00) | Handover & Debriefing (11:00-11:30)',
+        location: 'Settore Scenari Charlie',
+        scenarioRef: 'Scenari 6, 1, 11',
+        patientIds: [4, 5, 6],
+        partnerGroup: 'D',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC Military',
-        subtitle: 'Squadre 10, 11, 12: Tecniche di estrazione rapida sotto fuoco simulato',
-        location: 'Area Tattica Esterna',
+        activityType: 'scenario_intra',
+        title: 'Break -> Convening Shock Room Teams -> End',
+        subtitle: 'Break (10:20-10:30) | Shock Room Prep (10:45) | Start Shock Room (11:00) | End (11:30)',
+        location: 'Shock Room 4, 5, 6',
+        scenarioRef: 'Scenari 6, 1, 11 (Intra)',
+        patientIds: [4, 5, 6],
+        partnerGroup: 'C',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }
@@ -1216,139 +1221,27 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd2-m3',
     day: 2,
     period: 'mattina',
-    timeRange: '10:00 - 10:30',
-    startMinutes: 600,
-    durationMinutes: 30,
-    title: 'Debriefing ED Gruppo B & Pausa Tecnica per Reset Scenari',
-    description: 'Debriefing clinico per Gruppo B. I tecnici eseguono il reset e moulage per le postazioni 4, 5, 6. Breve pausa idratazione per discenti.',
+    timeRange: '11:00 - 12:00',
+    startMinutes: 660,
+    durationMinutes: 60,
+    title: 'Completamento Mattina Day 2: Break & Chiusura Sessione',
+    description: 'Completamento dei break finali della mattina (11:15-12:00) in attesa della pausa pranzo.',
     groupActivities: {
-      A: {
-        activityType: 'pause',
-        title: 'Pausa & Spostamento verso Area Workshop',
-        subtitle: 'Pausa ristoro e trasferimento in aula didattica',
-        location: 'Foyer / Area Relax'
-      },
-      B: {
-        activityType: 'debriefing',
-        title: 'Debriefing Post Scenario',
-        subtitle: 'Squadre 4, 5, 6 con Faculty 4, 5, 6: Debriefing clinico e analisi manovre invasive',
-        location: 'Shock Room 1, 2, 3',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'pause',
-        title: 'Pausa & Preparazione Scenari',
-        subtitle: 'Squadre 7, 8, 9 briefing con Faculty per ingresso in scenario extra',
-        location: 'Area Briefing'
-      },
-      D: {
-        activityType: 'pause',
-        title: 'Pausa & Preparazione ED Shock Room',
-        subtitle: 'Squadre 10, 11, 12 preparazione materiale shock room',
-        location: 'Area Briefing'
-      }
+      A: { activityType: 'pause', title: 'Break Mattina', subtitle: 'Pausa ristoro e transizione', location: 'Area Relax' },
+      B: { activityType: 'pause', title: 'Break Mattina', subtitle: 'Pausa ristoro e transizione', location: 'Area Relax' },
+      C: { activityType: 'pause', title: 'Break & Handover', subtitle: 'Handover e debriefing finale mattina', location: 'Aula Debriefing Charlie' },
+      D: { activityType: 'pause', title: 'Break & Debriefing', subtitle: 'Break e debriefing finale mattina', location: 'Area Relax' }
     }
   },
   {
     id: 'd2-m4',
     day: 2,
     period: 'mattina',
-    timeRange: '10:30 - 11:15',
-    startMinutes: 630,
-    durationMinutes: 45,
-    title: 'Rotazione Mattina 2: Pre-Osp Gruppo C | Prep ED Gruppo D | Workshop Gruppi A & B',
-    description: 'Inversione totale: Gruppo C entra in Extra (Pazienti 4, 5, 6), Gruppo D in Shock Room. Gruppi A e B partecipano al Workshop TCCC e Skills.',
-    groupActivities: {
-      A: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC Military',
-        subtitle: 'Squadre 1, 2, 3: Muoversi per sopravvivere e trasporto feriti',
-        location: 'Area Tattica Esterna',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Preparazione Paziente per Trasporto',
-        subtitle: 'Squadre 4, 5, 6: Procedure specifiche e presidi di monitoraggio',
-        location: 'Skills Lab 1',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 7, 8, 9 su Pazienti 4, 5, 6 (Scenari 6, 1, 11)',
-        location: 'Settore Scenari Charlie (Postazioni 4, 5, 6)',
-        scenarioRef: 'Scenari 6, 1, 11',
-        patientIds: [4, 5, 6],
-        partnerGroup: 'D',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'scenario_intra',
-        title: 'Preparazione Team & Dipartimento di Emergenza (ED)',
-        subtitle: 'Squadre 10, 11, 12 in Shock Room per presa in carico',
-        location: 'Shock Room 4, 5, 6',
-        scenarioRef: 'Scenari 6, 1, 11 (Intra)',
-        patientIds: [4, 5, 6],
-        partnerGroup: 'C',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd2-m5',
-    day: 2,
-    period: 'mattina',
-    timeRange: '11:15 - 12:00',
-    startMinutes: 675,
-    durationMinutes: 45,
-    title: 'Handover Gruppo C -> D | Debriefing ED | Skills Workshop MacGyver',
-    description: 'Passaggio consegne Gruppo C al Gruppo D. Esecuzione procedure intraospedaliere Gruppo D. Gruppi A e B alternano Workshop Competenze.',
-    groupActivities: {
-      A: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Preparazione Paziente per Trasporto',
-        subtitle: 'Squadre 1, 2, 3 approfondimento presidi',
-        location: 'Skills Lab 1',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC Military: Tecniche di Estrazione',
-        subtitle: 'Squadre 4, 5, 6 estrazione sotto pressione',
-        location: 'Area Tattica Esterna',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR & Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna Pazienti 4, 5, 6 a Gruppo D e debriefing con Faculty',
-        location: 'Aula Debriefing Charlie',
-        partnerGroup: 'D',
-        patientIds: [4, 5, 6],
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED + Debriefing',
-        subtitle: 'Squadre 10, 11, 12 gestione shock room su Pazienti 4, 5, 6 e debriefing',
-        location: 'Shock Room 4, 5, 6',
-        scenarioRef: 'Scenari 6, 1, 11 (Intra)',
-        patientIds: [4, 5, 6],
-        partnerGroup: 'C',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd2-m6',
-    day: 2,
-    period: 'mattina',
     timeRange: '12:00 - 13:00',
     startMinutes: 720,
     durationMinutes: 60,
-    title: 'Pausa Pranzo & Reset Generale Simulatori',
-    description: 'Pausa pranzo per tutti i 60 discenti, faculty e direttori. I tecnici completano il ripristino per gli scenari del pomeriggio (Pazienti 7-12).',
+    title: 'Pausa Pranzo Day 2',
+    description: 'Pausa pranzo per tutti i partecipanti. Gate chiuso in standby per la fase pomeridiana.',
     groupActivities: {
       A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Mensa / Area Ristoro', location: 'Ristorante Centro Simulazione' },
       B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Mensa / Area Ristoro', location: 'Ristorante Centro Simulazione' },
@@ -1362,44 +1255,44 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd2-p1',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:00 - 13:45',
+    timeRange: '13:00 - 14:15',
     startMinutes: 780,
-    durationMinutes: 45,
-    title: 'Pomeriggio Day 2: Pre-Osp Gruppo B (Pazienti 7, 8, 9) | Prep ED Gruppo A | Workshop Gruppi C & D',
-    description: 'Gruppo B in Extra (Scenari 16, 00, 3: Laparotomia DC, Collo sanguinante, TBI/Ustione). Gruppo A in Shock Room. Gruppi C e D: Workshop Triage MCI e Comando.',
+    durationMinutes: 75,
+    title: 'Day 2 Pomeriggio: Gate Opening & Avvio Scenari Pomeridiani',
+    description: 'Apertura gate (13:00). Alpha: TCCC Scenario (13:30-14:00), Handover & Debrief (14:00-14:15). Bravo: Shock Room Prep (13:15), Scenario (13:30-14:00), Break & Debrief (14:00-14:15). Charlie & Delta: Workshop e Skills.',
     groupActivities: {
       A: {
-        activityType: 'scenario_intra',
-        title: 'Preparazione ED / Shock Room',
-        subtitle: 'Squadre 1, 2, 3 predisposizione carrelli laparotomia e toracotomia',
-        location: 'Shock Room 1, 2, 3',
-        scenarioRef: 'Scenari 16, 00, 3 (Intra)',
+        activityType: 'scenario_extra',
+        title: 'Gate Opening -> Start TCCC Scenario -> Handover & Debrief',
+        subtitle: 'Gate (13:00) | TCCC Scenario (13:30 - 14:00) | Handover & Debrief (14:00 - 14:15)',
+        location: 'Settore Scenari Bravo',
+        scenarioRef: 'Scenari 16, 00, 3',
         patientIds: [7, 8, 9],
         partnerGroup: 'B',
         facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
       },
       B: {
-        activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 4, 5, 6 su Pazienti 7, 8, 9 (Scenari 16, 00 collo, 3 TBI/ustione)',
-        location: 'Settore Scenari Bravo (Postazioni 7, 8, 9)',
-        scenarioRef: 'Scenari 16, 00, 3',
+        activityType: 'scenario_intra',
+        title: 'Gate Opening -> Shock Room Prep -> Start -> Break & Debrief',
+        subtitle: 'Gate (13:00) | SR Prep (13:15) | SR Scenario (13:30 - 14:00) | Break & Debrief (14:00 - 14:15)',
+        location: 'Shock Room 1, 2, 3',
+        scenarioRef: 'Scenari 16, 00, 3 (Intra)',
         patientIds: [7, 8, 9],
         partnerGroup: 'A',
         facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
       },
       C: {
         activityType: 'workshop',
-        title: 'Workshop TCCC Military: Triage & Comando Operazioni MCI',
-        subtitle: 'Squadre 7, 8, 9: Triage e gestione incidenti maggiori ad alto impatto',
-        location: 'Aula Tattica MCI',
+        title: 'Gate Opening -> Workshop & Skills',
+        subtitle: 'Gate (13:00) | Workshop (13:00 - 13:45) | Break (13:45 - 13:55) | Skills (13:55 - 14:20)',
+        location: 'Aula Tattica & Skills Lab',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'skills',
-        title: 'Skills Workshop: Tourniquet Conversion & Emostasi Avanzata',
-        subtitle: 'Squadre 10, 11, 12: Tecniche di conversione laccio emostatico e wound packing',
-        location: 'Skills Lab 2',
+        title: 'Gate Opening -> Skills & Workshop',
+        subtitle: 'Gate (13:00) | Skills (13:00 - 13:45) | Break (13:45 - 13:55) | Workshop (13:55 - 14:20)',
+        location: 'Skills Lab & Aula Tattica',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }
@@ -1408,75 +1301,30 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd2-p2',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:45 - 14:30',
-    startMinutes: 825,
-    durationMinutes: 45,
-    title: 'Handover Gruppo B -> A | Fase Intraospedaliera ED Gruppo A | Debriefing',
-    description: 'Il Gruppo B trasferisce i pazienti 7, 8, 9 al Gruppo A. Esecuzione di Laparotomia Damage Control, Toracotomia di rianimazione, Gestione TBI.',
+    timeRange: '14:15 - 16:00',
+    startMinutes: 855,
+    durationMinutes: 105,
+    title: 'Rotazione Pomeriggio 2: Workshop, Skills & Scenari Delta/Charlie',
+    description: 'Alpha & Bravo: Break (14:15-14:30), Skills & Workshop (14:30-16:00). Charlie & Delta: Convening Shock Room (14:45), TCCC Scenario (14:30-15:00), Handover & Debriefing (15:00-15:30), Break.',
     groupActivities: {
       A: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED',
-        subtitle: 'Squadre 1, 2, 3: Laparotomia DC, Resus Thoraco per collo sanguinante, Neuro-rianimazione',
-        location: 'Shock Room 1, 2, 3',
-        scenarioRef: 'Scenari 16, 00, 3 (Intra)',
-        patientIds: [7, 8, 9],
-        partnerGroup: 'B',
+        activityType: 'skills',
+        title: 'Break -> Skills Workshop -> Workshop',
+        subtitle: 'Break (14:15-14:30) | Skills Workshop (14:30 - 15:15) | Break (15:15-15:30) | Workshop (15:30 - 16:00)',
+        location: 'Skills Lab & Aula',
         facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
       },
       B: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR -> Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna e debriefing con Faculty 4, 5, 6',
-        location: 'Aula Debriefing Bravo',
-        partnerGroup: 'A',
-        patientIds: [7, 8, 9],
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Tourniquet Conversion & Emostasi',
-        subtitle: 'Squadre 7, 8, 9 conversione laccio e packing',
-        location: 'Skills Lab 2',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
         activityType: 'workshop',
-        title: 'Workshop TCCC Military: Triage MCI & Comando',
-        subtitle: 'Squadre 10, 11, 12 protocolli START / SALT',
-        location: 'Aula Tattica MCI',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd2-p3',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '14:30 - 15:15',
-    startMinutes: 870,
-    durationMinutes: 45,
-    title: 'Rotazione Pomeriggio 2: Pre-Osp Gruppo D (Pazienti 10, 11, 12) | Prep ED Gruppo C | Workshop Gruppi A & B',
-    description: 'Gruppo D in Extra (Pazienti 10, 11, 12). Gruppo C in Shock Room. Gruppi A e B partecipano ai Workshop Triage e Tourniquet Conversion.',
-    groupActivities: {
-      A: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC Military: Triage & Comando MCI',
-        subtitle: 'Squadre 1, 2, 3 gestione incidente complesso',
-        location: 'Aula Tattica MCI',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Tourniquet Conversion & Emostasi',
-        subtitle: 'Squadre 4, 5, 6 conversioni emostatiche e wound packing',
-        location: 'Skills Lab 2',
+        title: 'Break -> Workshop -> Skills Workshop',
+        subtitle: 'Break (14:15-14:30) | Workshop (14:30 - 15:15) | Break (15:15-15:30) | Skills Workshop (15:30 - 16:00)',
+        location: 'Aula & Skills Lab',
         facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
       },
       C: {
         activityType: 'scenario_intra',
-        title: 'Preparazione ED / Shock Room',
-        subtitle: 'Squadre 7, 8, 9 preparazione carrelli shock room',
+        title: 'Convening Shock Room Teams -> Start -> End -> Break',
+        subtitle: 'Convening SR (14:45) | Start SR (15:00) | End SR (15:30) | Break (15:30 - 16:00)',
         location: 'Shock Room 4, 5, 6',
         scenarioRef: 'Scenari 16, 00, 3 (Intra)',
         patientIds: [10, 11, 12],
@@ -1485,57 +1333,12 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       D: {
         activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 10, 11, 12 su Pazienti 10, 11, 12',
-        location: 'Settore Scenari Delta (Postazioni 10, 11, 12)',
+        title: 'Start TCCC Scenario -> End -> Handover & Debrief -> Break',
+        subtitle: 'Start TCCC (14:30) | End (15:00) | Handover & Debrief (15:00 - 15:30) | Break (15:30 - 16:00)',
+        location: 'Settore Scenari Delta',
         scenarioRef: 'Scenari 16, 00, 3',
         patientIds: [10, 11, 12],
         partnerGroup: 'C',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd2-p4',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '15:15 - 16:00',
-    startMinutes: 915,
-    durationMinutes: 45,
-    title: 'Handover Gruppo D -> C | Debriefing ED | Conclusione Sessione Day 02',
-    description: 'Passaggio consegne Gruppo D al Gruppo C. Gestione ED e debriefing finale. Conclusione delle attività e allineamento per la giornata successiva.',
-    groupActivities: {
-      A: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Tourniquet Conversion & Emostasi',
-        subtitle: 'Squadre 1, 2, 3 approfondimento pratico',
-        location: 'Skills Lab 2',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC Military: Triage MCI & Comando',
-        subtitle: 'Squadre 4, 5, 6 triage e maxiemergenze',
-        location: 'Aula Tattica MCI',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED + Debriefing',
-        subtitle: 'Squadre 7, 8, 9 gestione su Pazienti 10, 11, 12 e debriefing',
-        location: 'Shock Room 4, 5, 6',
-        scenarioRef: 'Scenari 16, 00, 3 (Intra)',
-        patientIds: [10, 11, 12],
-        partnerGroup: 'D',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR & Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna a Gruppo C e debriefing con Faculty 10, 11, 12',
-        location: 'Aula Debriefing Delta',
-        partnerGroup: 'C',
-        patientIds: [10, 11, 12],
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }
@@ -1546,17 +1349,17 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd3-m1',
     day: 3,
     period: 'mattina',
-    timeRange: '09:00 - 09:45',
-    startMinutes: 540,
-    durationMinutes: 45,
-    title: 'Day 3 Mattina: Pre-Osp Gruppo A (Pazienti 13, 14, 15) | Prep ED Gruppo B | Workshop Gruppi C & D',
-    description: 'Gruppo A in Extra (Scenari 18 torace trans-toracico, 5 REBOA/bacino, 15 trauma facciale/crico). Gruppo B in Shock Room. Gruppi C e D Workshop MacGyver Medicine.',
+    timeRange: '08:30 - 11:00',
+    startMinutes: 510,
+    durationMinutes: 150,
+    title: 'Day 3 Mattina: Gate Opening & Scenari TCCC / Shock Room',
+    description: 'Apertura gate (08:30). Alpha: TCCC Scenario (09:00-09:30), Handover & Debrief, Workshop. Bravo: SR Prep (09:15), SR Scenario (09:30-10:00), Break & Debrief, Skill Workshop. Charlie & Delta rotazioni parallele.',
     groupActivities: {
       A: {
         activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 1, 2, 3 su Pazienti 13, 14, 15 (Scenari 18, 5, 15)',
-        location: 'Settore Scenari Alfa (Postazioni 13, 14, 15)',
+        title: 'Gate Opening -> Start TCCC Scenario -> Handover & Debrief -> Workshop',
+        subtitle: 'Gate (08:30) | TCCC (09:00-09:30) | Handover & Debrief (09:30-10:00) | Workshop (10:30-11:15)',
+        location: 'Settore Scenari Alfa',
         scenarioRef: 'Scenari 18, 5, 15',
         patientIds: [13, 14, 15],
         partnerGroup: 'B',
@@ -1564,8 +1367,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       B: {
         activityType: 'scenario_intra',
-        title: 'Preparazione Team & Dipartimento di Emergenza (ED)',
-        subtitle: 'Squadre 4, 5, 6 in Shock Room per Resus Thoraco, Packing PPP e REBOA',
+        title: 'Gate Opening -> Shock Room Prep -> Start -> Break & Debrief -> Skills',
+        subtitle: 'Gate (08:30) | SR Prep (09:15) | SR Scenario (09:30-10:00) | Break & Debrief (10:00-10:30) | Skills (10:30-11:15)',
         location: 'Shock Room 1, 2, 3',
         scenarioRef: 'Scenari 18, 5, 15 (Intra)',
         patientIds: [13, 14, 15],
@@ -1574,16 +1377,16 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       C: {
         activityType: 'workshop',
-        title: 'Workshop: Guidare sotto Pressione (High Performing Trauma Team)',
-        subtitle: 'Squadre 7, 8, 9: Leadership in emergenza e debriefing cognitivo',
-        location: 'Aula Magna / Simulation Center',
+        title: 'Gate Opening -> Workshop & Skills -> TCCC Scenario',
+        subtitle: 'Gate (08:30) | Workshop (09:00-09:45) | Skills (09:55-10:20) | TCCC (10:30-11:00)',
+        location: 'Area Tattica & Skills Lab',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'skills',
-        title: 'Skills Workshop: MacGyver Medicine & Trucchi per il Trauma',
-        subtitle: 'Squadre 10, 11, 12: Improvvisare, adattarsi, trattare con risorse limitate',
-        location: 'Skills Lab MacGyver',
+        title: 'Gate Opening -> Skills & Workshop -> Shock Room',
+        subtitle: 'Gate (08:30) | Skills (09:00-09:45) | Workshop (09:55-10:20) | SR Prep (10:45) | SR (11:00)',
+        location: 'Skills Lab & Shock Room',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }
@@ -1592,151 +1395,15 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd3-m2',
     day: 3,
     period: 'mattina',
-    timeRange: '09:45 - 10:30',
-    startMinutes: 585,
-    durationMinutes: 45,
-    title: 'Handover Gruppo A -> B | Fase Intraospedaliera ED Gruppo B | Debriefing',
-    description: 'Gruppo A consegna Pazienti 13, 14, 15 al Gruppo B. Esecuzione Resus Thoracotomy, Packing Peritoneale PPP e gestione REBOA intraospedaliero.',
+    timeRange: '11:00 - 13:00',
+    startMinutes: 660,
+    durationMinutes: 120,
+    title: 'Completamento Mattina Day 3: Debriefing, Break & Pranzo',
+    description: 'Completamento attività mattutine, handover finali e pausa pranzo (12:00 - 13:00).',
     groupActivities: {
-      A: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR & Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna a Gruppo B e debriefing con Faculty',
-        location: 'Aula Debriefing Alfa',
-        partnerGroup: 'B',
-        patientIds: [13, 14, 15],
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED',
-        subtitle: 'Squadre 4, 5, 6 gestione Resus Thoraco, Packing PPP e REBOA su Pazienti 13, 14, 15',
-        location: 'Shock Room 1, 2, 3',
-        scenarioRef: 'Scenari 18, 5, 15 (Intra)',
-        patientIds: [13, 14, 15],
-        partnerGroup: 'A',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'skills',
-        title: 'Skills Workshop: MacGyver Medicine',
-        subtitle: 'Squadre 7, 8, 9 gestione materiali improvvisati',
-        location: 'Skills Lab MacGyver',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'workshop',
-        title: 'Workshop: Guidare sotto Pressione',
-        subtitle: 'Squadre 10, 11, 12 leadership e decision making',
-        location: 'Aula Magna',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd3-m3',
-    day: 3,
-    period: 'mattina',
-    timeRange: '10:30 - 11:15',
-    startMinutes: 630,
-    durationMinutes: 45,
-    title: 'Rotazione Mattina Day 3: Pre-Osp Gruppo C (Pazienti 16, 17, 18) | Prep ED Gruppo D | Workshop Gruppi A & B',
-    description: 'Gruppo C in Extra (Pazienti 16, 17, 18). Gruppo D in Shock Room. Gruppi A e B ruotano su Leadership sotto pressione e MacGyver Medicine.',
-    groupActivities: {
-      A: {
-        activityType: 'workshop',
-        title: 'Workshop: Guidare sotto Pressione',
-        subtitle: 'Squadre 1, 2, 3 leadership trauma team',
-        location: 'Aula Magna',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'skills',
-        title: 'Skills Workshop: MacGyver Medicine',
-        subtitle: 'Squadre 4, 5, 6 tecniche e trucchi per il trauma',
-        location: 'Skills Lab MacGyver',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 7, 8, 9 su Pazienti 16, 17, 18 (Scenari 18, 5, 15)',
-        location: 'Settore Scenari Charlie (Postazioni 16, 17, 18)',
-        scenarioRef: 'Scenari 18, 5, 15',
-        patientIds: [16, 17, 18],
-        partnerGroup: 'D',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'scenario_intra',
-        title: 'Preparazione Team & Dipartimento di Emergenza (ED)',
-        subtitle: 'Squadre 10, 11, 12 in Shock Room per presa in carico',
-        location: 'Shock Room 4, 5, 6',
-        scenarioRef: 'Scenari 18, 5, 15 (Intra)',
-        patientIds: [16, 17, 18],
-        partnerGroup: 'C',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd3-m4',
-    day: 3,
-    period: 'mattina',
-    timeRange: '11:15 - 12:00',
-    startMinutes: 675,
-    durationMinutes: 45,
-    title: 'Handover Gruppo C -> D | Debriefing ED | Pausa Pranzo Imminente',
-    description: 'Consegna Gruppo C al Gruppo D. Procedure intraospedaliere e debriefing con Faculty.',
-    groupActivities: {
-      A: {
-        activityType: 'skills',
-        title: 'Skills Workshop: MacGyver Medicine',
-        subtitle: 'Squadre 1, 2, 3 tecniche di improvvisazione',
-        location: 'Skills Lab MacGyver',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'workshop',
-        title: 'Workshop: Guidare sotto Pressione',
-        subtitle: 'Squadre 4, 5, 6 debriefing cognitivo',
-        location: 'Aula Magna',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR & Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna a Gruppo D e debriefing con Faculty 7, 8, 9',
-        location: 'Aula Debriefing Charlie',
-        partnerGroup: 'D',
-        patientIds: [16, 17, 18],
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED + Debriefing',
-        subtitle: 'Squadre 10, 11, 12 gestione su Pazienti 16, 17, 18 e debriefing',
-        location: 'Shock Room 4, 5, 6',
-        scenarioRef: 'Scenari 18, 5, 15 (Intra)',
-        patientIds: [16, 17, 18],
-        partnerGroup: 'C',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd3-m5',
-    day: 3,
-    period: 'mattina',
-    timeRange: '12:00 - 13:00',
-    startMinutes: 720,
-    durationMinutes: 60,
-    title: 'Pausa Pranzo Day 3 & Reset Finale Simulatori',
-    description: 'Pausa ristoro discenti e faculty. I tecnici allestiscono gli scenari finali 7, 13, 8 per il pomeriggio.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Mensa / Area Ristoro', location: 'Ristorante Centro Simulazione' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Mensa / Area Ristoro', location: 'Ristorante Centro Simulazione' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Mensa / Area Ristoro', location: 'Ristorante Centro Simulazione' },
+      A: { activityType: 'pause', title: 'Break & Transizione', subtitle: 'Pausa pre-pranzo', location: 'Area Relax' },
+      B: { activityType: 'pause', title: 'Break & Transizione', subtitle: 'Pausa pre-pranzo', location: 'Area Relax' },
+      C: { activityType: 'debriefing', title: 'Handover & Debriefing', subtitle: 'Debriefing finale mattina', location: 'Aula Debriefing' },
       D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Mensa / Area Ristoro', location: 'Ristorante Centro Simulazione' }
     }
   },
@@ -1746,226 +1413,96 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     id: 'd3-p1',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '13:00 - 13:45',
+    timeRange: '13:00 - 16:00',
     startMinutes: 780,
-    durationMinutes: 45,
-    title: 'Day 3 Pomeriggio: Pre-Osp Gruppo B (Pazienti 19, 20, 21) | Prep ED Gruppo A | Workshop Gruppi C & D',
-    description: 'Gruppo B in Extra (Scenari 7 ustioni viso/crico, 13 ustioni/toracostomia, 8 impalamento/REBOA). Gruppo A in Shock Room. Gruppi C e D Workshop Tourniquet Conversion.',
+    durationMinutes: 180,
+    title: 'Day 3 Pomeriggio: Gate Opening, Scenari & Plenaria Chiusura',
+    description: 'Apertura gate pomeridiano (13:00). Alpha & Bravo: Scenari TCCC e Shock Room (Pazienti 19-21) + Workshop & Skills (13:30-16:00). Charlie & Delta: Scenari pomeridiani e sessione plenaria Q&A (15:15-16:00).',
     groupActivities: {
       A: {
-        activityType: 'scenario_intra',
-        title: 'Preparazione ED / Shock Room',
-        subtitle: 'Squadre 1, 2, 3 predisposizione escarotomia e packing peritoneale',
-        location: 'Shock Room 1, 2, 3',
-        scenarioRef: 'Scenari 7, 13, 8 (Intra)',
+        activityType: 'scenario_extra',
+        title: 'Gate Opening -> Start TCCC Scenario -> Skills & Workshop',
+        subtitle: 'Gate (13:00) | TCCC Scenario (13:30-14:00) | Skills & Workshop Pomeridiani (14:30-16:00)',
+        location: 'Settore Scenari Bravo',
+        scenarioRef: 'Scenari 7, 13, 8',
         patientIds: [19, 20, 21],
         partnerGroup: 'B',
         facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
       },
       B: {
-        activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 4, 5, 6 su Pazienti 19, 20, 21 (Scenari 7, 13, 8)',
-        location: 'Settore Scenari Bravo (Postazioni 19, 20, 21)',
-        scenarioRef: 'Scenari 7, 13, 8',
+        activityType: 'scenario_intra',
+        title: 'Gate Opening -> Shock Room Prep -> Start -> Workshop & Skills',
+        subtitle: 'Gate (13:00) | SR Prep (13:15) | SR Scenario (13:30-14:00) | Workshop & Skills (14:30-16:00)',
+        location: 'Shock Room 1, 2, 3',
+        scenarioRef: 'Scenari 7, 13, 8 (Intra)',
         patientIds: [19, 20, 21],
         partnerGroup: 'A',
         facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
       },
       C: {
         activityType: 'workshop',
-        title: 'Workshop TCCC Military: Tourniquet Conversion',
-        subtitle: 'Squadre 7, 8, 9 conversione laccio emostatico e transizione avanzata',
-        location: 'Aula Tattica TQ',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Comando sotto Pressione',
-        subtitle: 'Squadre 10, 11, 12 gestione stress e comunicazione chiusa (Closed Loop)',
-        location: 'Skills Lab 3',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd3-p2',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '13:45 - 14:30',
-    startMinutes: 825,
-    durationMinutes: 45,
-    title: 'Handover Gruppo B -> A | Fase Intraospedaliera ED Gruppo A | Debriefing',
-    description: 'Consegna Gruppo B al Gruppo A. Esecuzione Toracostomia emotorace, PPP e rimozione controllata impalamento.',
-    groupActivities: {
-      A: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA-Ospedaliera ED',
-        subtitle: 'Squadre 1, 2, 3 gestione toracostomia, estrazione impalamento e PPP',
-        location: 'Shock Room 1, 2, 3',
-        scenarioRef: 'Scenari 7, 13, 8 (Intra)',
-        patientIds: [19, 20, 21],
-        partnerGroup: 'B',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR & Debriefing Pre-Ospedaliero',
-        subtitle: 'Consegna a Gruppo A e debriefing con Faculty 4, 5, 6',
-        location: 'Aula Debriefing Bravo',
-        partnerGroup: 'A',
-        patientIds: [19, 20, 21],
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Comando sotto Pressione',
-        subtitle: 'Squadre 7, 8, 9 comunicazione closed-loop',
-        location: 'Skills Lab 3',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC Military: Tourniquet Conversion',
-        subtitle: 'Squadre 10, 11, 12 tecniche conversione laccio',
-        location: 'Aula Tattica TQ',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd3-p3',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '14:30 - 15:15',
-    startMinutes: 870,
-    durationMinutes: 45,
-    title: 'Ultima Rotazione: Pre-Osp Gruppo D (Pazienti 22, 23, 24) | Prep ED Gruppo C | Workshop Gruppi A & B',
-    description: 'Gruppo D in Extra (Pazienti 22, 23, 24). Gruppo C in Shock Room. Gruppi A e B Workshop TQ Conversion e Comando.',
-    groupActivities: {
-      A: {
-        activityType: 'workshop',
-        title: 'Workshop TCCC: Tourniquet Conversion',
-        subtitle: 'Squadre 1, 2, 3 approfondimento emostasi',
-        location: 'Aula Tattica TQ',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'skills',
-        title: 'Skills Workshop: Comando sotto Pressione',
-        subtitle: 'Squadre 4, 5, 6 leadership e team management',
-        location: 'Skills Lab 3',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'scenario_intra',
-        title: 'Preparazione ED / Shock Room',
-        subtitle: 'Squadre 7, 8, 9 preparazione shock room finale',
-        location: 'Shock Room 4, 5, 6',
+        title: 'Gate Opening -> Workshop -> Shock Room Scenario',
+        subtitle: 'Gate (13:00) | Workshop & Skills (13:00-14:30) | SR Scenario (15:00-15:30) | Plenaria (15:15-16:00)',
+        location: 'Aula & Shock Room 4, 5, 6',
         scenarioRef: 'Scenari 7, 13, 8 (Intra)',
         patientIds: [22, 23, 24],
         partnerGroup: 'D',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
-        activityType: 'scenario_extra',
-        title: 'Scenario Pratico: Fase EXTRA-Ospedaliera',
-        subtitle: 'Squadre 10, 11, 12 su Pazienti 22, 23, 24',
-        location: 'Settore Scenari Delta (Postazioni 22, 23, 24)',
+        activityType: 'skills',
+        title: 'Gate Opening -> Skills -> TCCC Scenario & Plenaria',
+        subtitle: 'Gate (13:00) | Skills & Workshop (13:00-14:30) | TCCC Scenario (14:30-15:00) | Plenaria (15:15-16:00)',
+        location: 'Skills Lab & Settore Delta',
         scenarioRef: 'Scenari 7, 13, 8',
         patientIds: [22, 23, 24],
         partnerGroup: 'C',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
-    }
-  },
-  {
-    id: 'd3-p4',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '15:15 - 16:00',
-    startMinutes: 915,
-    durationMinutes: 45,
-    title: 'Handover Gruppo D -> C | Debriefing ED | Sessione Q&A & Chiusura Corso',
-    description: 'Ultimo passaggio di consegne Gruppo D al Gruppo C e debriefing finale. Dalle 15:30: Sessione Plenaria Domande & Risposte e Chiusura Ufficiale Corso.',
-    groupActivities: {
-      A: {
-        activityType: 'plenary',
-        title: 'Sessione Plenaria Q&A e Debriefing Generale',
-        subtitle: 'Tutti i partecipanti in Aula Magna con Direttori e Faculty',
-        location: 'Aula Magna Centrale',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'plenary',
-        title: 'Sessione Plenaria Q&A e Debriefing Generale',
-        subtitle: 'Tutti i partecipanti in Aula Magna con Direttori e Faculty',
-        location: 'Aula Magna Centrale',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'scenario_intra',
-        title: 'Scenario Pratico: Fase INTRA ED -> Plenaria',
-        subtitle: 'Squadre 7, 8, 9 completamento scenario e confluenza in Aula Magna',
-        location: 'Shock Room 4, 5, 6 -> Aula Magna',
-        scenarioRef: 'Scenari 7, 13, 8 (Intra)',
-        patientIds: [22, 23, 24],
-        partnerGroup: 'D',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'debriefing',
-        title: 'Handover SBAR -> Confluenza in Plenaria',
-        subtitle: 'Consegna a Gruppo C e confluenza in Aula Magna per chiusura',
-        location: 'Aula Magna Centrale',
-        partnerGroup: 'C',
-        patientIds: [22, 23, 24],
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }
   },
 
-  // ================= DAY 3 NOTTURNO (21:00) =================
+  // ================= DAY 3 NOTTURNO =================
   {
     id: 'd3-night',
     day: 3,
     period: 'notturno',
-    timeRange: '21:00 - 23:00',
-    startMinutes: 1260,
-    durationMinutes: 120,
-    title: 'NIGHT SCENARIO: Maxiemergenza Notturna (Triage MCI START/SALT)',
-    description: 'Tutte le 12 squadre attive simultaneamente in scenario notturno ad alta intensità con scarsa illuminazione, fumo ed effetti pirotecnici simulati. Triage di massa START/SALT e stabilizzazione immediata.',
+    timeRange: '20:30 - 22:00',
+    startMinutes: 1230,
+    durationMinutes: 90,
+    title: 'NIGHT SCENARIO: Apertura Gate & Maxi-Scenario Notturno',
+    description: 'Apertura Gate Night Scenario (20:30). Raduno gruppi e faculty. 21:00 - 22:00: Maxi-Scenario Notturno ad alta intensità, Triage MCI START/SALT, Airway e gestione traumatologica critica in ambiente tattico notturno.',
     groupActivities: {
       A: {
         activityType: 'night_scenario',
-        title: 'Night Scenario - Settore Alfa',
-        subtitle: 'Squadre 1, 2, 3: Gestione Airway TBI/Facial/Neck con Cricotirotomia d\'urgenza',
-        location: 'Area Tattica Notturna - Settore Rosso (Postazioni Triage 1-3)',
+        title: 'Night Scenario Gate Opening -> Maxi-Scenario Alfa',
+        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Airway & TBI (21:00 - 22:00)',
+        location: 'Area Tattica Notturna - Settore Alfa',
         scenarioRef: 'Night Scenario - Airway & TBI',
         facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
       },
       B: {
         activityType: 'night_scenario',
-        title: 'Night Scenario - Settore Bravo',
-        subtitle: 'Squadre 4, 5, 6: Gestione ferite penetranti, lesioni da ustione estesa ed escarotomia',
-        location: 'Area Tattica Notturna - Settore Giallo (Postazioni Triage 4-6)',
-        scenarioRef: 'Night Scenario - Burns & Penetrating',
+        title: 'Night Scenario Gate Opening -> Maxi-Scenario Bravo',
+        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Emorragia & REBOA (21:00 - 22:00)',
+        location: 'Area Tattica Notturna - Settore Bravo',
+        scenarioRef: 'Night Scenario - Haemorrhage & REBOA',
         facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
       },
       C: {
         activityType: 'night_scenario',
-        title: 'Night Scenario - Settore Charlie',
-        subtitle: 'Squadre 7, 8, 9: Amputazioni traumatiche multiple e shock emorragico da deflagrazione',
-        location: 'Area Tattica Notturna - Settore Verde (Postazioni Triage 7-9)',
-        scenarioRef: 'Night Scenario - Blast & Amputations',
+        title: 'Night Scenario Gate Opening -> Maxi-Scenario Charlie',
+        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Triage MCI (21:00 - 22:00)',
+        location: 'Area Tattica Notturna - Settore Charlie',
+        scenarioRef: 'Night Scenario - MCI Triage',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'night_scenario',
-        title: 'Night Scenario - Settore Delta',
-        subtitle: 'Squadre 10, 11, 12: Impalamento, eviscerazione addominale e coordinamento Posto Medico Avanzato (PMA)',
-        location: 'Area Tattica Notturna - Settore Blu (Postazioni Triage 10-12)',
-        scenarioRef: 'Night Scenario - Impalement & PMA Command',
+        title: 'Night Scenario Gate Opening -> Maxi-Scenario Delta',
+        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Damage Control (21:00 - 22:00)',
+        location: 'Area Tattica Notturna - Settore Delta',
+        scenarioRef: 'Night Scenario - Damage Control',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
     }

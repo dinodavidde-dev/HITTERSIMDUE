@@ -343,14 +343,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     d.setDate(d.getDate() + 2);
     const pad = (n: number) => String(n).padStart(2, '0');
     const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const timeStr = '08:30';
+    const timeStr = '08:00';
     return {
       scheduledDate: dateStr,
       scheduledTime: timeStr,
       isoTimestamp: `${dateStr}T${timeStr}:00`,
       isGateEnabled: true,
-      title: 'TRAUMA SIMULATION MASTER COURSE • ADVANCED TRAUMA MANAGEMENT',
-      location: 'Centro di Simulazione Avanzata & Trauma Center',
+      title: 'H.I.T.T.E.R. MASTER COURSE • ADVANCED  MANAGEMENT',
+      location: 'Hig Intensive Trauma Training Emergency Rsponse',
     };
   };
 

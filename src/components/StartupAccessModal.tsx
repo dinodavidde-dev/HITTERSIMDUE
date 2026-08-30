@@ -81,8 +81,8 @@ export const StartupAccessModal: React.FC<StartupAccessModalProps> = ({
           <div className="space-y-4">
             <p className="text-sm text-neutral-300">
               {isEn
-                ? 'Welcome to the Advanced Trauma Simulation Portal. Please choose your access area below:'
-                : 'Benvenuto nel Portale di Simulazione Avanzata di Trauma. Seleziona l\'area di accesso desiderata:'}
+                ? 'Welcome to the H.I.T.T.E.R. Portal. Please choose your access area below:'
+                : 'Benvenuto nel Portale H.I.T.T.E.R. Seleziona l\'area di accesso desiderata:'}
             </p>
 
             <div className="grid grid-cols-1 gap-4 pt-2">
