@@ -112,6 +112,30 @@ export const DiscenteView: React.FC = () => {
     return type === 'workshop' || type === 'skills';
   };
 
+  // Helper for real-time team status badge ('Active', 'On Break', 'Rotating')
+  const getTeamStatus = (groupId: GroupType) => {
+    const act = currentSlot?.groupActivities?.[groupId];
+    if (!act) return { status: 'active', labelEn: 'Active', labelIt: 'Attiva', bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/50' };
+    const type = act.activityType;
+    if (type === 'pause') {
+      return { status: 'break', labelEn: 'On Break', labelIt: 'In Pausa', bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/50' };
+    }
+    if (type === 'scenario_extra' || type === 'scenario_intra' || type === 'workshop' || type === 'skills' || type === 'night_scenario') {
+      return { status: 'active', labelEn: 'Active', labelIt: 'Attiva', bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/50' };
+    }
+    return { status: 'rotating', labelEn: 'Rotating', labelIt: 'In Rotazione', bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/50' };
+  };
+
+  const renderTeamStatusBadge = (groupId: GroupType) => {
+    const statusInfo = getTeamStatus(groupId);
+    return (
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-black uppercase border ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}>
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-current" />
+        {isEn ? statusInfo.labelEn : statusInfo.labelIt}
+      </span>
+    );
+  };
+
   // Helper to get breakdown of teams in Extra vs Intra for any scenario slot
   const getScenarioTeamsBreakdown = (slot: typeof currentSlot, group: GroupType) => {
     const activity = slot?.groupActivities?.[group];
@@ -984,9 +1008,12 @@ export const DiscenteView: React.FC = () => {
                   {currentTeam.id}
                 </div>
                 <div>
-                  <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
-                    {currentTeam.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
+                      {currentTeam.name}
+                    </h3>
+                    {renderTeamStatusBadge(currentTeam.groupId)}
+                  </div>
                   <p className="text-xs text-neutral-400 font-bold uppercase">
                     {isEn ? `LOGISTICS GROUP ${currentTeam.groupId} • 5 MULTIDISCIPLINARY MEMBERS` : `GRUPPO LOGISTICO ${currentTeam.groupId} • 5 COMPONENTI MULTIDISCIPLINARI`}
                   </p>

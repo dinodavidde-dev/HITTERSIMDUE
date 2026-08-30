@@ -99,3 +99,73 @@ export function playBroadcastSound(type: 'info' | 'warning' | 'emergency' | 'pha
     // Gracefully handle browser auto-play limitations
   }
 }
+
+export function playLongBeep() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now); // A5 (higher pitched)
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.3, now + 0.1);
+    gain.gain.setValueAtTime(0.3, now + 2.7);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 3.0);
+  } catch {
+    // Gracefully handle browser auto-play limitations
+  }
+}
+
+/**
+ * Play an authentic air-raid siren sound effect (Sirena Antiaerea)
+ */
+export function playAirRaidSiren() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+
+    // 3 wail cycles over 4.5 seconds
+    const duration = 4.5;
+    const lowFreq = 280;
+    const highFreq = 880;
+
+    osc.frequency.setValueAtTime(lowFreq, now);
+    
+    // Cycle 1
+    osc.frequency.linearRampToValueAtTime(highFreq, now + 0.75);
+    osc.frequency.linearRampToValueAtTime(lowFreq, now + 1.5);
+
+    // Cycle 2
+    osc.frequency.linearRampToValueAtTime(highFreq, now + 2.25);
+    osc.frequency.linearRampToValueAtTime(lowFreq, now + 3.0);
+
+    // Cycle 3
+    osc.frequency.linearRampToValueAtTime(highFreq, now + 3.75);
+    osc.frequency.linearRampToValueAtTime(lowFreq, now + duration);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.35, now + 0.2);
+    gain.gain.setValueAtTime(0.35, now + 4.0);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration);
+  } catch {
+    // Gracefully handle browser auto-play limitations
+  }
+}

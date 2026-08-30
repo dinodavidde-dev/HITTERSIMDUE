@@ -143,6 +143,22 @@ export const CoursePreStartCountdown: React.FC = () => {
         </div>
 
         {/* Major Countdown Digital Tiles */}
+        <div className="space-y-4">
+        {/* 15-Minute Assembly Notice Banner */}
+        {courseStartSchedule.isGateEnabled && totalSeconds <= 900 && totalSeconds > 0 && (
+          <div className="bg-amber-950/90 border-2 border-amber-500 p-5 text-left shadow-2xl space-y-2">
+            <div className="flex items-center gap-2 text-amber-400 font-mono text-xs font-black uppercase tracking-wider">
+              <Users className="w-5 h-5 text-amber-400 animate-pulse" />
+              <span>{isEn ? '⚠️ 15-MINUTE ASSEMBLY NOTICE' : '⚠️ AVVISO DI RADUNO (-15 MINUTI)'}</span>
+            </div>
+            <p className="text-white text-sm sm:text-base font-bold font-sans">
+              {isEn
+                ? 'The course gate is opening in 15 minutes. All participants are kindly invited to gather with their assigned team and Faculty Tutor.'
+                : 'Mancano 15 minuti all\'apertura del gate. Si invitano tutti i partecipanti a riunirsi alla propria squadra e al proprio Faculty Tutor.'}
+            </p>
+          </div>
+        )}
+
         <div className="bg-neutral-900/90 border-4 border-neutral-800 p-6 sm:p-10 shadow-2xl relative overflow-hidden backdrop-blur-md">
           {/* Ambient Grid Lines Background */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-20 pointer-events-none" />
@@ -219,6 +235,7 @@ export const CoursePreStartCountdown: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Profile Details Card (when accessed via QR) */}

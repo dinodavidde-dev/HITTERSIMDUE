@@ -34,7 +34,7 @@ import {
   INITIAL_TECHNICIANS,
   INITIAL_TIMELINE_SLOTS,
 } from '../data/initialData';
-import { playBroadcastSound } from '../utils/audio';
+import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
 import { cleanUndefined } from '../utils/teamUtils';
 import { Language, translations } from '../i18n/translations';
 import {
@@ -371,6 +371,21 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const targetStartTimeMs = new Date(courseStartSchedule.isoTimestamp).getTime() || 0;
   const timeRemainingMs = Math.max(0, targetStartTimeMs - currentTime);
   const isCourseStarted = !courseStartSchedule.isGateEnabled || targetStartTimeMs <= currentTime;
+
+  const [hasPlayed15MinBeep, setHasPlayed15MinBeep] = useState(false);
+
+  useEffect(() => {
+    if (courseStartSchedule.isGateEnabled && timeRemainingMs > 0) {
+      const totalSecs = Math.floor(timeRemainingMs / 1000);
+      if (totalSecs <= 900 && totalSecs >= 885 && !hasPlayed15MinBeep) {
+        playLongBeep();
+        setHasPlayed15MinBeep(true);
+      }
+      if (totalSecs > 915) {
+        setHasPlayed15MinBeep(false);
+      }
+    }
+  }, [timeRemainingMs, courseStartSchedule.isGateEnabled, hasPlayed15MinBeep]);
 
   // Course Field Messages (Private to Directors and Faculty)
   const [courseMessages, setCourseMessages] = useState<CourseMessage[]>(() =>
@@ -1458,7 +1473,11 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const setCourseGateEnabled = useCallback((enabled: boolean) => {
     setCourseStartSchedule((prev) => {
+      const wasGateEnabled = prev.isGateEnabled;
       const updated = { ...prev, isGateEnabled: enabled };
+      if (wasGateEnabled && !enabled) {
+        playLongBeep();
+      }
       syncCourseStateToFirestore({ courseStartSchedule: updated });
       return updated;
     });
@@ -1478,7 +1497,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     setCourseStartSchedule(updated);
     syncCourseStateToFirestore({ courseStartSchedule: updated });
-    playBroadcastSound('phase_change');
+    playLongBeep();
   }, [courseStartSchedule, syncCourseStateToFirestore]);
 
   const resetCourseScheduleToFuture = useCallback((minutesFromNow: number = 10) => {
@@ -1611,7 +1630,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const secs = s ? s.durationMinutes * 60 : 1800;
           setTimerSeconds(secs);
           setIsTimerRunning(true);
-          playBroadcastSound('phase_change');
+          playLongBeep();
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -1624,7 +1643,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const secs = s ? s.durationMinutes * 60 : 2700;
           setTimerSeconds(secs);
           setIsTimerRunning(true);
-          playBroadcastSound('phase_change');
+          playLongBeep();
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -1637,7 +1656,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const secs = s ? s.durationMinutes * 60 : 3600;
           setTimerSeconds(secs);
           setIsTimerRunning(true);
-          playBroadcastSound('emergency');
+          playAirRaidSiren();
           syncCourseStateToFirestore({ activeDay: 3, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
