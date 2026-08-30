@@ -32,9 +32,14 @@ export const CoursePreStartCountdown: React.FC = () => {
     timeRemainingMs,
     isCourseStarted,
     discenti,
+    faculty,
+    technicians,
+    guests,
     teams,
     selectedDiscenteId,
-    setSelectedDiscenteId,
+    selectedFacultyId,
+    selectedTechnicianId,
+    selectedGuestId,
     facultyAuthSession,
   } = useCourse();
 
@@ -49,9 +54,41 @@ export const CoursePreStartCountdown: React.FC = () => {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  // Active Discente Profile if role is discente
+  // Active Profile determination for QR access
   const currentDiscente = discenti.find((d) => d.id === selectedDiscenteId) || (userRole === 'discente' ? discenti[0] : null);
-  const assignedTeam = currentDiscente ? teams.find((t) => t.id === currentDiscente.teamId) : null;
+  const currentFaculty = faculty.find((f) => f.id === selectedFacultyId) || (userRole === 'faculty' ? faculty[0] : null);
+  const currentTechnician = technicians.find((t) => t.id === selectedTechnicianId) || (userRole === 'tecnico' ? technicians[0] : null);
+  const currentGuest = guests.find((g) => g.id === selectedGuestId) || (userRole === 'ospite' ? guests[0] : null);
+
+  let activeProfileName = '';
+  let activeProfileRole = '';
+  let activeProfileBadge = '';
+  let activeProfileDetails = '';
+  let profileTypeLabel = '';
+
+  if (userRole === 'discente' && currentDiscente) {
+    activeProfileName = currentDiscente.name;
+    activeProfileRole = translateRoleOrSpecialty(currentDiscente.role, language);
+    activeProfileBadge = currentDiscente.badgeCode || `DISC-${currentDiscente.id}`;
+    const assignedTeam = teams.find((t) => t.id === currentDiscente.teamId);
+    activeProfileDetails = assignedTeam ? `${assignedTeam.name} (${isEn ? 'Group' : 'Gruppo'} ${assignedTeam.groupId})` : '';
+    profileTypeLabel = isEn ? 'PARTICIPANT PROFILE ASSOCIATED' : 'PROFILO PARTECIPANTE ASSOCIATO';
+  } else if (userRole === 'faculty' && currentFaculty) {
+    activeProfileName = currentFaculty.name;
+    activeProfileRole = currentFaculty.specialty || currentFaculty.title || 'Faculty Tutor';
+    activeProfileBadge = currentFaculty.badgeCode || `FAC-${currentFaculty.id}`;
+    profileTypeLabel = isEn ? 'FACULTY TUTOR PROFILE ASSOCIATED' : 'PROFILO FACULTY TUTOR ASSOCIATO';
+  } else if (userRole === 'tecnico' && currentTechnician) {
+    activeProfileName = currentTechnician.name;
+    activeProfileRole = currentTechnician.specialty || 'Tecnico / Logistica';
+    activeProfileBadge = currentTechnician.badgeCode || `TECH-${currentTechnician.id}`;
+    profileTypeLabel = isEn ? 'TECHNICIAN PROFILE ASSOCIATED' : 'PROFILO TECNICO ASSOCIATO';
+  } else if (userRole === 'ospite' && currentGuest) {
+    activeProfileName = currentGuest.name;
+    activeProfileRole = currentGuest.title || currentGuest.organization || 'Ospite / Osservatore';
+    activeProfileBadge = currentGuest.badgeCode || `GUEST-${currentGuest.id}`;
+    profileTypeLabel = isEn ? 'GUEST PROFILE ASSOCIATED' : 'PROFILO OSPITE ASSOCIATO';
+  }
 
   // Format Date from isoTimestamp / scheduledDate
   const formatScheduledDate = () => {
@@ -184,26 +221,26 @@ export const CoursePreStartCountdown: React.FC = () => {
           </div>
         </div>
 
-        {/* Participant Profile Details Card (when accessed via QR) */}
-        {userRole === 'discente' && currentDiscente && (
+        {/* Profile Details Card (when accessed via QR) */}
+        {activeProfileName && (
           <div className="bg-neutral-900 border-2 border-emerald-500/60 p-5 text-left shadow-lg space-y-3">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
               <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-black uppercase">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{isEn ? 'PARTICIPANT PROFILE ASSOCIATED' : 'PROFILO PARTECIPANTE ASSOCIATO'}</span>
+                <span>{profileTypeLabel}</span>
               </div>
               <span className="font-mono text-xs font-black text-white bg-neutral-950 px-2.5 py-1 border border-neutral-700">
-                {currentDiscente.badgeCode || `DISC-${currentDiscente.id}`}
+                {activeProfileBadge}
               </span>
             </div>
 
             <div>
-              <h3 className="text-lg font-black text-white uppercase">{currentDiscente.name}</h3>
+              <h3 className="text-lg font-black text-white uppercase">{activeProfileName}</h3>
               <p className="text-xs text-neutral-300 font-mono">
                 {isEn ? 'Assigned Role: ' : 'Ruolo Assegnato: '}
-                <strong className="text-orange-400">{translateRoleOrSpecialty(currentDiscente.role, language)}</strong>
-                {assignedTeam && (
-                  <> • {assignedTeam.name} ({isEn ? 'Group' : 'Gruppo'} {assignedTeam.groupId})</>
+                <strong className="text-orange-400">{activeProfileRole}</strong>
+                {activeProfileDetails && (
+                  <> • {activeProfileDetails}</>
                 )}
               </p>
             </div>

@@ -467,18 +467,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
 
                 {/* Right Side: Active Status & Mode Indicator */}
                 <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto pl-2">
-                  {/* Faculty Jump Fast Return Shortcut (when in Faculty mode but previewing other views) */}
-                  {facultyAuthSession.isAuthorized && userRole !== 'faculty' && (
-                    <button
-                      id="subnav-quick-return-faculty-btn"
-                      onClick={() => handleRoleSelection('faculty')}
-                      className="flex items-center gap-1 px-2 py-0.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-500 text-emerald-300 font-bold text-[9px] uppercase tracking-wider transition-colors cursor-pointer animate-pulse rounded"
-                      title={language === 'en' ? 'Instantly return to your Faculty evaluation form' : 'Torna istantaneamente alla tua scheda di valutazione Faculty'}
-                    >
-                      <GraduationCap className="w-3 h-3 text-emerald-400" />
-                      <span>{language === 'en' ? '⚡ RETURN TO FACULTY' : '⚡ TORNA A FACULTY'}</span>
-                    </button>
-                  )}
 
                   <button
                     id="subnav-sync-indicator-btn"
