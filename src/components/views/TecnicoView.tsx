@@ -67,6 +67,21 @@ export const TecnicoView: React.FC = () => {
   const [isQuickNavOpen, setIsQuickNavOpen] = useState(false);
   const [selectedDayTab, setSelectedDayTab] = useState<number>(activeDay);
 
+  // Track station / rotation changes across slots
+  const [hasStationChanged, setHasStationChanged] = useState(false);
+  const prevSlotIdRef = React.useRef(currentSlot.id);
+
+  React.useEffect(() => {
+    if (prevSlotIdRef.current !== currentSlot.id) {
+      prevSlotIdRef.current = currentSlot.id;
+      setHasStationChanged(true);
+      const timer = setTimeout(() => {
+        setHasStationChanged(false);
+      }, 8000); // Pulse for 8 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [currentSlot.id]);
+
   // Active Technician Profile
   const currentTechnician: Technician =
     technicians.find((t) => t.id === selectedTechnicianId) ||
@@ -102,6 +117,26 @@ export const TecnicoView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-12">
+      {/* STATION ROTATION CHANGE PULSING NOTIFICATION BANNER */}
+      {hasStationChanged && (
+        <div className="bg-orange-500 text-black p-3 font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-2xl animate-bounce border-2 border-white">
+          <div className="flex items-center gap-2.5">
+            <Zap className="w-5 h-5 animate-pulse" />
+            <span>
+              {isEn 
+                ? '⚠️ STATION ROTATION CHANGED! Teams have transitioned to new simulation stations. Check checklists immediately!' 
+                : '⚠️ ROTAZIONE STAZIONI CAMBIATA! Le squadre sono transitate su nuove postazioni. Verifica subito le checklist!'}
+            </span>
+          </div>
+          <button
+            onClick={() => setHasStationChanged(false)}
+            className="px-2 py-1 bg-black text-white hover:bg-neutral-900 text-[10px] cursor-pointer uppercase font-mono"
+          >
+            OK
+          </button>
+        </div>
+      )}
+
       {/* SIMPLIFIED TECHNICIAN HEADER */}
       <div className="bg-neutral-950 border-2 border-orange-500/80 p-3 sm:p-4 shadow-xl space-y-2.5">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -146,7 +181,9 @@ export const TecnicoView: React.FC = () => {
             <button
               id="tech-quick-navigate-btn"
               onClick={() => setIsQuickNavOpen(true)}
-              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-orange-400 hover:text-orange-300 font-black text-xs uppercase tracking-wider border border-orange-600 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className={`px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-orange-400 hover:text-orange-300 font-black text-xs uppercase tracking-wider border border-orange-600 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                hasStationChanged ? 'animate-pulse ring-4 ring-orange-400 bg-orange-600/40 shadow-xl shadow-orange-500/60 scale-105' : ''
+              }`}
               title={isEn ? 'Quick-Navigate Teams & Station Checklists' : 'Navigazione Rapida Squadre e Checklist Stazioni'}
             >
               <Layers className="w-3.5 h-3.5 text-orange-400" />
@@ -247,7 +284,7 @@ export const TecnicoView: React.FC = () => {
               activeSubTab === 'checklist_presidi'
                 ? 'bg-orange-500 text-black border-orange-300 font-black shadow-md'
                 : 'bg-neutral-900 text-orange-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-orange-500/60'
-            }`}
+            } ${hasStationChanged ? 'animate-pulse ring-4 ring-orange-400 bg-orange-600/40 shadow-xl scale-102' : ''}`}
           >
             <ShieldCheck className={`w-3.5 h-3.5 flex-shrink-0 ${activeSubTab === 'checklist_presidi' ? 'text-black' : 'text-orange-400'}`} />
             <div className="truncate text-left sm:text-center">
