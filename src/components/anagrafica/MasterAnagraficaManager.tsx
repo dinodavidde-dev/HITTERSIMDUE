@@ -61,6 +61,7 @@ export const NATIONALITY_PRESETS = [
 
 export const MasterAnagraficaManager: React.FC = () => {
   const {
+    language,
     teams,
     updateTeam,
     discenti,
@@ -84,6 +85,8 @@ export const MasterAnagraficaManager: React.FC = () => {
     addGuest,
     deleteGuest,
   } = useCourse();
+
+  const isEn = language === 'en';
 
   const [activeSection, setActiveSection] = useState<'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'ospiti' | 'squadre' | 'qr_registry'>('discenti');
   const [searchQuery, setSearchQuery] = useState('');
@@ -293,17 +296,19 @@ export const MasterAnagraficaManager: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 bg-orange-950 text-orange-400 border border-orange-700 text-[10px] font-black uppercase tracking-wider">
-                GESTIONE ACCREDITI & RUOLI CORSO
+                {isEn ? 'COURSE ACCREDITATION & ROLES MANAGEMENT' : 'GESTIONE ACCREDITI & RUOLI CORSO'}
               </span>
               <span className="px-2.5 py-0.5 bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold">
-                TOTALE OPERATORI: {totalPersonnel}
+                {isEn ? 'TOTAL PERSONNEL:' : 'TOTALE OPERATORI:'} {totalPersonnel}
               </span>
             </div>
             <h2 className="text-[17px] font-black text-white uppercase tracking-tight mt-1 leading-tight">
-              ANAGRAFICA MASTER DEL PERSONALE & OSPITI
+              {isEn ? 'MASTER PERSONNEL & GUESTS DIRECTORY' : 'ANAGRAFICA MASTER DEL PERSONALE & OSPITI'}
             </h2>
             <p className="text-[10px] text-neutral-400 max-w-3xl mt-1 leading-relaxed">
-              Gestione, compilazione e modifica completa dei dati anagrafici, nazionalità, ruoli operativi, contatti e squadre per Discenti (60), Faculty (12), Staff Tecnico (6), Direzione (2) e Delegazioni Ospiti/VIP (5).
+              {isEn
+                ? 'Comprehensive management and editing of personal records, nationalities, operational roles, contacts and teams for Learners (60), Faculty (12), Technical Staff (6), Direction (2) and Guest/VIP Delegations (5).'
+                : 'Gestione, compilazione e modifica completa dei dati anagrafici, nazionalità, ruoli operativi, contatti e squadre per Discenti (60), Faculty (12), Staff Tecnico (6), Direzione (2) e Delegazioni Ospiti/VIP (5).'}
             </p>
           </div>
 
@@ -311,19 +316,19 @@ export const MasterAnagraficaManager: React.FC = () => {
             <button
               onClick={() => setActiveSection('qr_registry')}
               className="px-4 py-2.5 bg-orange-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-orange-400 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md"
-              title="Visualizza e stampa tutti i tesserini badge con QR Code per ogni figura"
+              title={isEn ? 'View and print all badge QR code cards for each personnel' : 'Visualizza e stampa tutti i tesserini badge con QR Code per ogni figura'}
             >
               <QrCode className="w-4 h-4" />
-              STAMPA BADGE & QR ({discenti.length + faculty.length + technicians.length + directors.length + guests.length})
+              {isEn ? 'PRINT BADGES & QR' : 'STAMPA BADGE & QR'} ({discenti.length + faculty.length + technicians.length + directors.length + guests.length})
             </button>
 
             <button
               onClick={handleExportCSV}
               className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-100 hover:text-black text-white border-2 border-neutral-700 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
-              title="Esporta foglio completo CSV con tutte le anagrafiche e nazionalità"
+              title={isEn ? 'Export complete CSV sheet with all records and nationalities' : 'Esporta foglio completo CSV con tutte le anagrafiche e nazionalità'}
             >
               <Download className="w-4 h-4 text-orange-400" />
-              ESPORTA REGISTRO (CSV)
+              {isEn ? 'EXPORT DIRECTORY (CSV)' : 'ESPORTA REGISTRO (CSV)'}
             </button>
           </div>
         </div>

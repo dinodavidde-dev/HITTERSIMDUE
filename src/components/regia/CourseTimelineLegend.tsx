@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCourse } from '../../context/CourseContext';
 import {
   Activity,
   AlertTriangle,
@@ -49,6 +50,9 @@ export const CourseTimelineLegend: React.FC<CourseTimelineLegendProps> = ({
   className = '',
   defaultExpanded = true,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
+
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [activeTab, setActiveTab] = useState<'status_states' | 'module_types' | 'workflow'>('status_states');
   const [interactiveSelectedState, setInteractiveSelectedState] = useState<TimelineStatusState | null>('active');
@@ -78,75 +82,103 @@ export const CourseTimelineLegend: React.FC<CourseTimelineLegendProps> = ({
   }[] = [
     {
       id: 'active',
-      title: 'Active (In Corso / Live T0)',
-      subtitle: 'Fase Attiva in Tempo Reale',
-      badgeText: '★ LIVE T0 • IN CORSO',
+      title: isEn ? 'Active (Live / T0)' : 'Active (In Corso / Live T0)',
+      subtitle: isEn ? 'Real-Time Active Phase' : 'Fase Attiva in Tempo Reale',
+      badgeText: isEn ? '★ LIVE T0 • ACTIVE' : '★ LIVE T0 • IN CORSO',
       badgeStyle: 'bg-yellow-500 text-black font-black border-yellow-300 animate-pulse',
       containerStyle: 'border-yellow-400 bg-neutral-900/90 ring-1 ring-yellow-400/40',
       icon: <Radio className="w-4 h-4 text-yellow-400 animate-pulse" />,
-      description:
-        'Lo slot o modulo didattico attualmente in svolgimento secondo il cronoprogramma di regia. Il timer di sessione è sincronizzato con tutte le 12 squadre e postazioni.',
-      rules: [
-        'Timer master di regia attivo con countdown sonoro e sincronizzazione WebSocket/client.',
-        'Squadre impegnate direttamente nei simulatori di Shock Room, TCCC extra-ospedaliero o workshop.',
-        'Regia master e tecnici monitorano telecamere a circuito chiuso, parametri fisiologici e presidi.',
-      ],
-      visualIndicator: 'Bordo giallo evidenziato, badge pulsante ★ LIVE T0, sfondo scuro ad alto contrasto.',
-      actionHint: 'Clicca per focalizzare i dettagli dello slot in corso e i 4 gruppi operativi.',
+      description: isEn
+        ? 'The slot or didactic module currently running according to the direction schedule. The session timer is synchronized across all 12 teams and stations.'
+        : 'Lo slot o modulo didattico attualmente in svolgimento secondo il cronoprogramma di regia. Il timer di sessione è sincronizzato con tutte le 12 squadre e postazioni.',
+      rules: isEn
+        ? [
+            'Master direction timer active with sound countdown and WebSocket/client synchronization.',
+            'Teams engaged directly in Shock Room simulators, pre-hospital TCCC, or workshops.',
+            'Master direction and technicians monitor closed-circuit cameras, physiological parameters, and supplies.',
+          ]
+        : [
+            'Timer master di regia attivo con countdown sonoro e sincronizzazione WebSocket/client.',
+            'Squadre impegnate direttamente nei simulatori di Shock Room, TCCC extra-ospedaliero o workshop.',
+            'Regia master e tecnici monitorano telecamere a circuito chiuso, parametri fisiologici e presidi.',
+          ],
+      visualIndicator: isEn ? 'Highlighted yellow border, pulsing ★ LIVE T0 badge, high-contrast dark background.' : 'Bordo giallo evidenziato, badge pulsante ★ LIVE T0, sfondo scuro ad alto contrasto.',
+      actionHint: isEn ? 'Click to focus on current slot details and the 4 operational groups.' : 'Clicca per focalizzare i dettagli dello slot in corso e i 4 gruppi operativi.',
     },
     {
       id: 'upcoming',
-      title: 'Upcoming (In Arrivo / T+1 / Programmato)',
-      subtitle: 'Prossima Rotazione / Pre-Allerta T-30m',
-      badgeText: 'T+1 PROSSIMO / PROGRAMMATO',
+      title: isEn ? 'Upcoming (Scheduled / T+1)' : 'Upcoming (In Arrivo / T+1 / Programmato)',
+      subtitle: isEn ? 'Next Rotation / Pre-Alert T-30m' : 'Prossima Rotazione / Pre-Allerta T-30m',
+      badgeText: isEn ? 'T+1 UPCOMING / SCHEDULED' : 'T+1 PROSSIMO / PROGRAMMATO',
       badgeStyle: 'bg-cyan-950 text-cyan-300 font-bold border border-cyan-500',
       containerStyle: 'border-cyan-500/70 bg-neutral-900/70 hover:border-cyan-400',
       icon: <Clock className="w-4 h-4 text-cyan-400" />,
-      description:
-        'Modulo successivo nel programma didattico (T+1). Include la finestra di pre-allerta T-30 minuti per attori, tecnici, truccatori e preparazione dei simulatori di trauma.',
-      rules: [
-        'Segnale di pre-allerta inviato automaticamente a tecnici e simulatori 30 minuti prima.',
-        'Verifica disponibilità sangue artificiale, protesi anatomiche e presidi REBOA/toracotomia.',
-        'Preparazione al cambio aula e rotazione logistica per i 4 gruppi (A, B, C, D).',
-      ],
-      visualIndicator: 'Bordo ciano luminoso, badge T+1 PROSSIMO, indicatore di durata programmata.',
-      actionHint: 'Clicca per visualizzare la scheda tecnica anticipata e l\'inventario dei presidi.',
+      description: isEn
+        ? 'Next module in the curriculum (T+1). Includes the T-30 minute pre-alert window for actors, technicians, makeup artists, and trauma simulator setup.'
+        : 'Modulo successivo nel programma didattico (T+1). Include la finestra di pre-allerta T-30 minuti per attori, tecnici, truccatori e preparazione dei simulatori di trauma.',
+      rules: isEn
+        ? [
+            'Pre-alert signal automatically sent to technicians and simulators 30 minutes prior.',
+            'Verify availability of artificial blood, anatomical prostheses, and REBOA/thoracotomy supplies.',
+            'Preparation for room change and logistic rotation for the 4 groups (A, B, C, D).',
+          ]
+        : [
+            'Segnale di pre-allerta inviato automaticamente a tecnici e simulatori 30 minuti prima.',
+            'Verifica disponibilità sangue artificiale, protesi anatomiche e presidi REBOA/toracotomia.',
+            'Preparazione al cambio aula e rotazione logistica per i 4 gruppi (A, B, C, D).',
+          ],
+      visualIndicator: isEn ? 'Luminous cyan border, T+1 UPCOMING badge, scheduled duration indicator.' : 'Bordo ciano luminoso, badge T+1 PROSSIMO, indicatore di durata programmata.',
+      actionHint: isEn ? 'Click to view anticipated technical sheet and supply inventory.' : 'Clicca per visualizzare la scheda tecnica anticipata e l\'inventario dei presidi.',
     },
     {
       id: 'pending_feedback',
-      title: 'Pending Feedback (In Attesa di Valutazione)',
-      subtitle: 'Debriefing e Scoring Non Archiviati',
-      badgeText: '⚠️ FEEDBACK PENDING',
+      title: isEn ? 'Pending Feedback (Awaiting Evaluation)' : 'Pending Feedback (In Attesa di Valutazione)',
+      subtitle: isEn ? 'Debriefing & Scoring Not Archived' : 'Debriefing e Scoring Non Archiviati',
+      badgeText: isEn ? '⚠️ FEEDBACK PENDING' : '⚠️ FEEDBACK PENDING',
       badgeStyle: 'bg-amber-500 text-black font-black border-amber-300 animate-pulse',
       containerStyle: 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/40',
       icon: <AlertTriangle className="w-4 h-4 text-amber-400 animate-bounce" />,
-      description:
-        'La squadra ha completato la rotazione dello scenario pratico, ma il tutor responsabile assegnato non ha ancora archiviato la scheda di debriefing e i punteggi della rubrica (1-5).',
-      rules: [
-        'Ogni tutor è responsabile della valutazione della propria squadra solo ed esclusivamente durante gli scenari pratici.',
-        'I moduli teorici, plenari e pause sono esclusi e non generano avvisi di feedback pendente.',
-        'La faculty può convalidare singolarmente oppure utilizzare la convalida rapida / bulk debriefing per la propria squadra.',
-      ],
-      visualIndicator: 'Badge giallo/arancione lampeggiante ⚠️ con conteggio slot pendenti e icona di allerta.',
-      actionHint: 'Clicca per aprire la scheda di debriefing rapido o inviare un sollecito al tutor.',
+      description: isEn
+        ? 'The team has completed the practical scenario rotation, but the assigned tutor has not yet archived the debriefing form and rubric scores (1-5).'
+        : 'La squadra ha completato la rotazione dello scenario pratico, ma il tutor responsabile assegnato non ha ancora archiviato la scheda di debriefing e i punteggi della rubrica (1-5).',
+      rules: isEn
+        ? [
+            'Each tutor is responsible for evaluating their team solely and exclusively during practical scenarios.',
+            'Theoretical modules, plenaries, and breaks are excluded and do not generate pending feedback alerts.',
+            'Faculty can validate individually or use bulk debriefing for their team.',
+          ]
+        : [
+            'Ogni tutor è responsabile della valutazione della propria squadra solo ed esclusivamente durante gli scenari pratici.',
+            'I moduli teorici, plenari e pause sono esclusi e non generano avvisi di feedback pendente.',
+            'La faculty può convalidare singolarmente oppure utilizzare la convalida rapida / bulk debriefing per la propria squadra.',
+          ],
+      visualIndicator: isEn ? 'Flashing yellow/orange badge ⚠️ with pending slot count and alert icon.' : 'Badge giallo/arancione lampeggiante ⚠️ con conteggio slot pendenti e icona di allerta.',
+      actionHint: isEn ? 'Click to open quick debriefing form or send a reminder to the tutor.' : 'Clicca per aprire la scheda di debriefing rapido o inviare un sollecito al tutor.',
     },
     {
       id: 'completed',
-      title: 'Completed (Convalidato / Valutato)',
-      subtitle: 'Debriefing Archiviato con Esito Positivo',
-      badgeText: '✓ VALUTATA / COMPLETATO',
+      title: isEn ? 'Completed (Validated / Rated)' : 'Completed (Convalidato / Valutato)',
+      subtitle: isEn ? 'Debriefing Archived Successfully' : 'Debriefing Archiviato con Esito Positivo',
+      badgeText: isEn ? '✓ EVALUATED / COMPLETED' : '✓ VALUTATA / COMPLETATO',
       badgeStyle: 'bg-emerald-950 text-emerald-300 font-bold border border-emerald-600',
       containerStyle: 'border-emerald-600/70 bg-neutral-950 hover:border-emerald-500',
       icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
-      description:
-        'Valutazione formale salvata con successo. Include i punteggi sui 5 assi (ABCDE, Tecnico, CRM/Leadership, Handover SBAR, Sicurezza/Tempi) e la lista delle manovre validate.',
-      rules: [
-        'Scheda storicizzata e visibile nella matrice di scoring generale e nel profilo della squadra.',
-        'Feedback qualitativo su punti di forza e aree di miglioramento disponibile per i discenti.',
-        'Stato convalidato a livello centrale con marcatura oraria e firma del docente valutatore.',
-      ],
-      visualIndicator: 'Bordo verde smeraldo, icona check ✓ e riassunto punteggio 1-5 registrato.',
-      actionHint: 'Clicca per consultare i punteggi dettagliati e le note qualitative di debriefing.',
+      description: isEn
+        ? 'Formal evaluation saved successfully. Includes scores across 5 axes (ABCDE, Technical, CRM/Leadership, SBAR Handover, Safety/Timing) and list of validated maneuvers.'
+        : 'Valutazione formale salvata con successo. Include i punteggi sui 5 assi (ABCDE, Tecnico, CRM/Leadership, Handover SBAR, Sicurezza/Tempi) e la lista delle manovre validate.',
+      rules: isEn
+        ? [
+            'Archived record visible in general scoring matrix and team profile.',
+            'Qualitative feedback on strengths and areas for improvement available to learners.',
+            'Centrally validated status with timestamp and evaluating instructor signature.',
+          ]
+        : [
+            'Scheda storicizzata e visibile nella matrice di scoring generale e nel profilo della squadra.',
+            'Feedback qualitativo su punti di forza e aree di miglioramento disponibile per i discenti.',
+            'Stato convalidato a livello centrale con marcatura oraria e firma del docente valutatore.',
+          ],
+      visualIndicator: isEn ? 'Emerald green border, check icon ✓, and recorded 1-5 score summary.' : 'Bordo verde smeraldo, icona check ✓ e riassunto punteggio 1-5 registrato.',
+      actionHint: isEn ? 'Click to consult detailed scores and qualitative debriefing notes.' : 'Clicca per consultare i punteggi dettagliati e le note qualitative di debriefing.',
     },
   ];
 
@@ -163,68 +195,80 @@ export const CourseTimelineLegend: React.FC<CourseTimelineLegendProps> = ({
   }[] = [
     {
       type: 'scenario_extra',
-      label: 'SCENARIO EXTRA-OSPEDALIERO (TCCC)',
-      location: 'Area Tattica Esterna / Tunnel Triage',
+      label: isEn ? 'PRE-HOSPITAL SCENARIO (TCCC)' : 'SCENARIO EXTRA-OSPEDALIERO (TCCC)',
+      location: isEn ? 'External Tactical Area / Triage Tunnel' : 'Area Tattica Esterna / Tunnel Triage',
       colorBadge: 'bg-blue-600 text-white font-black',
       borderStyle: 'border-blue-500',
       bgStyle: 'bg-blue-950/30',
       icon: <Flame className="w-4 h-4 text-cyan-400" />,
-      summary: 'Soccorso sotto fuoco (CUF), Tactical Field Care, estrazione Sked e gestione delle vie aeree tattiche.',
+      summary: isEn
+        ? 'Care Under Fire (CUF), Tactical Field Care, Sked extraction, and tactical airway management.'
+        : 'Soccorso sotto fuoco (CUF), Tactical Field Care, estrazione Sked e gestione delle vie aeree tattiche.',
       keyProcedures: ['Tourniquet CAT/SOFTT', 'Cricotirotomia CRIC', 'Needle Decompression 14G', 'Benda Emostatica QuikClot'],
     },
     {
       type: 'scenario_intra',
-      label: 'SCENARIO INTRA-OSPEDALIERO (SHOCK ROOM)',
+      label: isEn ? 'INTRA-HOSPITAL SCENARIO (SHOCK ROOM)' : 'SCENARIO INTRA-OSPEDALIERO (SHOCK ROOM)',
       location: 'Shock Room 1 & 2 / Trauma Center',
       colorBadge: 'bg-emerald-600 text-white font-black',
       borderStyle: 'border-emerald-500',
       bgStyle: 'bg-emerald-950/30',
       icon: <Building className="w-4 h-4 text-emerald-400" />,
-      summary: 'Resuscitation avanzata, Damage Control Surgery, cateterismo endovascolare e stabilizzazione emodinamica.',
+      summary: isEn
+        ? 'Advanced resuscitation, Damage Control Surgery, endovascular catheterization, and hemodynamic stabilization.'
+        : 'Resuscitation avanzata, Damage Control Surgery, cateterismo endovascolare e stabilizzazione emodinamica.',
       keyProcedures: ['Catetere REBOA Zone 1/3', 'Toracotomia Resuscitativa', 'Drenaggio Pleurico Bulau', 'Pelvic Binder'],
     },
     {
       type: 'workshop',
-      label: 'WORKSHOP TCCC MILITARY (MULTI-STATION)',
-      location: 'Aule Addestramento & Simulatori Task-Trainer',
+      label: isEn ? 'MILITARY TCCC WORKSHOP (MULTI-STATION)' : 'WORKSHOP TCCC MILITARY (MULTI-STATION)',
+      location: isEn ? 'Training Rooms & Task-Trainer Simulators' : 'Aule Addestramento & Simulatori Task-Trainer',
       colorBadge: 'bg-purple-600 text-white font-black',
       borderStyle: 'border-purple-500',
       bgStyle: 'bg-purple-950/30',
       icon: <Wrench className="w-4 h-4 text-purple-400" />,
-      summary: 'Addestramento intensivo a stazioni parallele con convalida rapida delle competenze pratiche.',
+      summary: isEn
+        ? 'Intensive multi-station parallel training with rapid validation of practical competencies.'
+        : 'Addestramento intensivo a stazioni parallele con convalida rapida delle competenze pratiche.',
       keyProcedures: ['Trascinamento e Barella Sked', 'Controllo Emorragie Giunzionali', 'Immobilizzazione spinale rapida'],
     },
     {
       type: 'skills',
-      label: 'SKILLS LAB PROCEDURALE',
-      location: 'Laboratorio Manichini Avanzati',
+      label: isEn ? 'PROCEDURAL SKILLS LAB' : 'SKILLS LAB PROCEDURALE',
+      location: isEn ? 'Advanced Manikins Laboratory' : 'Laboratorio Manichini Avanzati',
       colorBadge: 'bg-fuchsia-600 text-white font-black',
       borderStyle: 'border-fuchsia-500',
       bgStyle: 'bg-fuchsia-950/30',
       icon: <Layers className="w-4 h-4 text-fuchsia-400" />,
-      summary: 'Perfezionamento gesti tecnici specifici, accessi vascolari e presidi salva-vita.',
+      summary: isEn
+        ? 'Refinement of specific technical gestures, vascular accesses, and lifesaving devices.'
+        : 'Perfezionamento gesti tecnici specifici, accessi vascolari e presidi salva-vita.',
       keyProcedures: ['Accesso Intraosseo FAST1 / EZ-IO', 'Videolaringoscopia con Bougie', 'Packing PPP'],
     },
     {
       type: 'debriefing',
-      label: 'DEBRIEFING & HANDOVER SBAR',
-      location: 'Aula Plenaria / Postazioni Didattiche',
+      label: isEn ? 'DEBRIEFING & SBAR HANDOVER' : 'DEBRIEFING & HANDOVER SBAR',
+      location: isEn ? 'Plenary Hall / Educational Stations' : 'Aula Plenaria / Postazioni Didattiche',
       colorBadge: 'bg-amber-500 text-black font-black',
       borderStyle: 'border-amber-500',
       bgStyle: 'bg-amber-950/30',
       icon: <GraduationCap className="w-4 h-4 text-amber-400" />,
-      summary: 'Analisi critica ABCDE, Closed-Loop Communication, leadership di squadra e identificazione non-conformità.',
+      summary: isEn
+        ? 'ABCDE critical analysis, Closed-Loop Communication, team leadership, and non-conformity identification.'
+        : 'Analisi critica ABCDE, Closed-Loop Communication, leadership di squadra e identificazione non-conformità.',
       keyProcedures: ['Handover SBAR Strutturato', 'Analisi CRM / Non-Technical Skills', 'Action Plan Correttivo'],
     },
     {
       type: 'night_scenario',
-      label: 'SCENARIO NOTTURNO (MCI MAXIEMERGENZA)',
-      location: 'Setting Notturno con Visori NVG & Luce UV',
+      label: isEn ? 'NIGHT SCENARIO (MCI MASS CASUALTY)' : 'SCENARIO NOTTURNO (MCI MAXIEMERGENZA)',
+      location: isEn ? 'Night Setting with NVG & UV Lighting' : 'Setting Notturno con Visori NVG & Luce UV',
       colorBadge: 'bg-indigo-600 text-white font-black',
       borderStyle: 'border-indigo-500',
       bgStyle: 'bg-indigo-950/30',
       icon: <Moon className="w-4 h-4 text-indigo-400" />,
-      summary: 'Gestione del panico e triage massivo in condizioni di buio e visibilità degradata.',
+      summary: isEn
+        ? 'Panic management and mass casualty triage in dark and degraded visibility conditions.'
+        : 'Gestione del panico e triage massivo in condizioni di buio e visibilità degradata.',
       keyProcedures: ['Triage Tattico Massivo', 'Segnalatori IR/UV', 'Emostasi in Luce Degradata'],
     },
   ];

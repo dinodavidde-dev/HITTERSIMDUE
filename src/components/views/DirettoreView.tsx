@@ -52,7 +52,8 @@ import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
 import { AggregatePerformanceMetrics } from '../director/AggregatePerformanceMetrics';
 import { DirectorQRLoginGenerator } from '../director/DirectorQRLoginGenerator';
 import { SquadRealtimeStatusBoard } from '../director/SquadRealtimeStatusBoard';
-import { ClipboardCheck } from 'lucide-react';
+import { DebugTranslationsView } from '../director/DebugTranslationsView';
+import { ClipboardCheck, Bug } from 'lucide-react';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
 export const DirettoreView: React.FC = () => {
@@ -109,7 +110,7 @@ export const DirettoreView: React.FC = () => {
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics'
+    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics' | 'debug_translations'
   >('timeline');
 
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -509,7 +510,7 @@ export const DirettoreView: React.FC = () => {
           <button
             id="director-tab-analytics-btn"
             onClick={() => setActiveSubTab('analytics')}
-            className={`min-h-[48px] col-span-2 sm:col-span-1 lg:col-span-2 p-2.5 sm:py-3 sm:px-3 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border ${
+            className={`min-h-[48px] p-2.5 sm:py-3 sm:px-3 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border ${
               activeSubTab === 'analytics'
                 ? 'bg-yellow-500 text-black border-yellow-300 shadow-lg font-black'
                 : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
@@ -522,6 +523,27 @@ export const DirettoreView: React.FC = () => {
               </span>
               <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'analytics' ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
                 {isEn ? 'Scoring Matrix & Performance' : 'Matrice Scoring e Performance'}
+              </span>
+            </div>
+          </button>
+
+          {/* Tab 10: Debug Translations */}
+          <button
+            id="director-tab-debug-translations-btn"
+            onClick={() => setActiveSubTab('debug_translations')}
+            className={`min-h-[48px] p-2.5 sm:py-3 sm:px-3 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border ${
+              activeSubTab === 'debug_translations'
+                ? 'bg-yellow-500 text-black border-yellow-300 shadow-lg font-black'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
+            }`}
+          >
+            <Bug className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeSubTab === 'debug_translations' ? 'text-black' : 'text-yellow-400'}`} />
+            <div className="min-w-0">
+              <span className="font-black text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'DEBUG TRANSLATIONS' : 'DEBUG TRADUZIONI'}
+              </span>
+              <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'debug_translations' ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
+                {isEn ? 'Localization Inspector' : 'Ispettore Localizzazione'}
               </span>
             </div>
           </button>
@@ -665,6 +687,11 @@ export const DirettoreView: React.FC = () => {
       {/* SUBTAB 7: VALUTAZIONI & REPORT */}
       {activeSubTab === 'analytics' && (
         <AggregatePerformanceMetrics />
+      )}
+
+      {/* SUBTAB 8: DEBUG TRANSLATIONS */}
+      {activeSubTab === 'debug_translations' && (
+        <DebugTranslationsView />
       )}
 
       {/* Modals */}

@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { useCourse } from '../../context/CourseContext';
 import {
   QrCode,
@@ -21,9 +23,11 @@ import {
   Trash2,
   X,
   UserPlus,
+  Printer,
 } from 'lucide-react';
 import { Discente, Faculty, Technician, Director, Guest, Team } from '../../types';
 import { getTeamCodeName } from '../../utils/teamUtils';
+import { BulkBadgesPrintModal, UnifiedPerson } from '../anagrafica/PersonnelBadgeRegistry';
 
 interface LoginPersonItem {
   id: string;
@@ -77,6 +81,9 @@ export const DirectorQRLoginGenerator: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrlId, setCopiedUrlId] = useState<string | null>(null);
   const [qrCodesCache, setQrCodesCache] = useState<Record<string, string>>({});
+  const [selectedBadgePrintPerson, setSelectedBadgePrintPerson] = useState<LoginPersonItem | null>(null);
+  const [isBulkPrintOpen, setIsBulkPrintOpen] = useState(false);
+  const [bulkPrintLayout, setBulkPrintLayout] = useState<'a4_cards' | 'badge_single' | 'attendance_sheet'>('a4_cards');
 
   // Modal State for Add / Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -479,14 +486,25 @@ export const DirectorQRLoginGenerator: React.FC = () => {
           </p>
         </div>
 
-        {/* Add New Person Button */}
-        <button
-          onClick={openAddModal}
-          className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg transition-all"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>{isEn ? 'Add Personnel / Guest' : 'Aggiungi Persona / Ospite'}</span>
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setIsBulkPrintOpen(true)}
+            className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-yellow-400 font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer border border-yellow-500/50 transition-all shadow-md"
+            title={isEn ? 'Print A4 badges sheet or attendance log with QR' : 'Stampa tesserini A4 o registro firme con QR'}
+          >
+            <Printer className="w-4 h-4" />
+            <span>{isEn ? 'Batch PDF Print Console' : 'Console Stampa PDF Badges'}</span>
+          </button>
+
+          <button
+            onClick={openAddModal}
+            className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>{isEn ? 'Add Personnel / Guest' : 'Aggiungi Persona / Ospite'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Category Filter Pills & Search */}
@@ -672,6 +690,16 @@ export const DirectorQRLoginGenerator: React.FC = () => {
                     >
                       <Download className="w-3.5 h-3.5 text-yellow-400" />
                       <span>{isEn ? 'Download QR' : 'Scarica QR'}</span>
+                    </button>
+
+                    {/* Print Badge Pass */}
+                    <button
+                      onClick={() => setSelectedBadgePrintPerson(p)}
+                      className="w-full py-1.5 px-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-[11px] uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+                      title={isEn ? 'Print personal badge with QR, name and details' : 'Stampa badge personale con QR, nome e dati'}
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'Print Badge' : 'Stampa Badge'}</span>
                     </button>
                   </div>
                 </div>
@@ -859,6 +887,161 @@ export const DirectorQRLoginGenerator: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* BADGE PRINT MODAL */}
+      {selectedBadgePrintPerson && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border-2 border-yellow-500 w-full max-w-md p-6 space-y-6 shadow-2xl relative text-neutral-100">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h4 className="text-lg font-black uppercase text-white flex items-center gap-2">
+                <Printer className="w-5 h-5 text-yellow-400" />
+                <span>{isEn ? 'Official Personal Badge Pass' : 'Badge di Accesso Ufficiale'}</span>
+              </h4>
+              <button
+                onClick={() => setSelectedBadgePrintPerson(null)}
+                className="text-neutral-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Printable Badge Card Preview */}
+            <div
+              id="printable-badge-card"
+              style={{ backgroundColor: '#0a0a0a', color: '#ffffff', borderColor: '#eab308' }}
+              className="border-4 p-6 rounded-lg shadow-2xl space-y-4 text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-2.5" style={{ backgroundColor: selectedBadgePrintPerson.categoryColor }} />
+              
+              <div className="flex items-center justify-between pt-1">
+                <span style={{ color: '#a3a3a3' }} className="text-[10px] font-mono tracking-widest uppercase">
+                  TRAUMA DIRECTO SUMMIT 2026
+                </span>
+                <span
+                  className="px-2.5 py-0.5 text-[9px] font-black uppercase text-black rounded-xs"
+                  style={{ backgroundColor: selectedBadgePrintPerson.categoryColor }}
+                >
+                  {selectedBadgePrintPerson.categoryLabel}
+                </span>
+              </div>
+
+              <div className="py-2 space-y-1.5">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">
+                  {selectedBadgePrintPerson.name}
+                </h3>
+                <p style={{ color: '#facc15' }} className="text-xs font-bold uppercase tracking-wide">
+                  {selectedBadgePrintPerson.role}
+                </p>
+                <p style={{ color: '#d4d4d4' }} className="text-xs font-medium">
+                  {selectedBadgePrintPerson.organization}
+                </p>
+                {selectedBadgePrintPerson.teamName && (
+                  <div style={{ backgroundColor: '#431407', borderColor: '#f97316', color: '#fdba74' }} className="inline-block px-3 py-1 border text-xs font-mono font-bold uppercase mt-1">
+                    {selectedBadgePrintPerson.teamName}
+                  </div>
+                )}
+              </div>
+
+              {/* QR Code */}
+              <div className="flex justify-center py-2">
+                <div style={{ backgroundColor: '#ffffff' }} className="p-3 rounded shadow-inner">
+                  {qrCodesCache[selectedBadgePrintPerson.id] ? (
+                    <img
+                      src={qrCodesCache[selectedBadgePrintPerson.id]}
+                      alt="Badge QR"
+                      className="w-36 h-36 object-contain"
+                    />
+                  ) : (
+                    <div style={{ backgroundColor: '#e5e5e5' }} className="w-36 h-36 animate-pulse flex items-center justify-center">
+                      <QrCode className="w-12 h-12 text-neutral-400" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ borderColor: '#262626', color: '#a3a3a3' }} className="border-t pt-3 flex items-center justify-between text-xs font-mono">
+                <span>BADGE ID: <strong style={{ color: '#ffffff' }}>{selectedBadgePrintPerson.badgeCode}</strong></span>
+                <span style={{ color: '#34d399' }} className="font-bold">● {isEn ? 'VERIFIED ACCESS' : 'ACCESSO VERIFICATO'}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedBadgePrintPerson(null)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase cursor-pointer"
+              >
+                {isEn ? 'Close' : 'Chiudi'}
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const element = document.getElementById('printable-badge-card');
+                    if (!element) return;
+                    try {
+                      const canvas = await html2canvas(element, { scale: 3, backgroundColor: '#0a0a0a' });
+                      const imgData = canvas.toDataURL('image/png');
+                      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                      const imgWidth = 110;
+                      const pageHeight = 295;
+                      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                      const x = (210 - imgWidth) / 2;
+                      const y = 30;
+                      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+                      pdf.save(`badge_${selectedBadgePrintPerson.badgeCode}_${selectedBadgePrintPerson.name.replace(/\s+/g, '_')}.pdf`);
+                    } catch (err) {
+                      console.error('PDF export error:', err);
+                    }
+                  }}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer flex items-center gap-2 shadow-lg"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{isEn ? 'Download PDF' : 'Scarica PDF'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.print();
+                  }}
+                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs uppercase cursor-pointer flex items-center gap-2 border border-neutral-700"
+                  title={isEn ? 'Direct print' : 'Stampa diretta'}
+                >
+                  <Printer className="w-4 h-4 text-yellow-400" />
+                  <span>{isEn ? 'Print' : 'Stampa'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK BATCH PRINT MODAL */}
+      {isBulkPrintOpen && (
+        <BulkBadgesPrintModal
+          persons={filteredPersonnel.map((p) => ({
+            id: p.id,
+            originalId: p.originalId,
+            category: p.category,
+            categoryLabel: p.categoryLabel,
+            categoryColor: p.categoryColor,
+            name: p.name,
+            role: p.role,
+            organization: p.organization,
+            nationality: 'Italiana',
+            phone: '+39 333 0000000',
+            email: `${p.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@trauma.it`,
+            badgeCode: p.badgeCode,
+            teamName: p.teamName,
+            deepLink: p.loginUrl,
+          }))}
+          layout={bulkPrintLayout}
+          setLayout={setBulkPrintLayout}
+          onClose={() => setIsBulkPrintOpen(false)}
+        />
       )}
     </div>
   );

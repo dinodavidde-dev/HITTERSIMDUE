@@ -119,7 +119,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     autoAdvancePhases,
     setAutoAdvancePhases,
     setCourseGateEnabled,
+    language,
   } = useCourse();
+
+  const isEn = language === 'en';
 
   // Real-time station checklists sync for green light monitoring
   const [stationChecklists, setStationChecklists] = useState<StationPreSessionChecklist[]>(() => {
@@ -463,17 +466,19 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 bg-emerald-500 text-black font-black font-mono text-xs uppercase tracking-wider flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
-                FINESTRA PRE-CORSO (08:00 - 08:30) & LUCE VERDE POSTAZIONI
+                {isEn ? 'PRE-COURSE WINDOW (08:00 - 08:30) & WORKSTATION GREEN LIGHT' : 'FINESTRA PRE-CORSO (08:00 - 08:30) & LUCE VERDE POSTAZIONI'}
               </span>
               <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-600 text-emerald-300 font-mono text-xs font-bold">
-                GATE STAFF: 08:00 • POSTI ASSEGNATI ENTRO 08:30
+                {isEn ? 'STAFF GATE: 08:00 • STATIONS ASSIGNED BY 08:30' : 'GATE STAFF: 08:00 • POSTI ASSEGNATI ENTRO 08:30'}
               </span>
             </div>
             <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
-              Gestione Mattina: Apertura Gate Staff alle 08:00 & Controllo Postazioni in Tempo Reale
+              {isEn ? 'Morning Management: Staff Gate Opening at 08:00 & Real-Time Workstation Control' : 'Gestione Mattina: Apertura Gate Staff alle 08:00 & Controllo Postazioni in Tempo Reale'}
             </h3>
             <p className="text-xs text-neutral-300">
-              Alle 08:00 viene aperto il gate per lo staff con promemoria di raggiungere la propria postazione assegnata. Entro le 08:30 tutti i discenti, istruttori e staff devono aver preso posto.
+              {isEn
+                ? 'At 08:00 the staff gate opens with a reminder to reach your assigned workstation. By 08:30 all learners, instructors, and staff must be in place.'
+                : 'Alle 08:00 viene aperto il gate per lo staff con promemoria di raggiungere la propria postazione assegnata. Entro le 08:30 tutti i discenti, istruttori e staff devono aver preso posto.'}
             </p>
           </div>
 

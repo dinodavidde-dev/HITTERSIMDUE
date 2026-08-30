@@ -1161,14 +1161,14 @@ const SingleBadgePrintModal: React.FC<SingleBadgePrintModalProps> = ({
 // ==========================================
 // SUB-COMPONENT: Bulk Badges Print Modal
 // ==========================================
-interface BulkBadgesPrintModalProps {
+export interface BulkBadgesPrintModalProps {
   persons: UnifiedPerson[];
   layout: 'a4_cards' | 'badge_single' | 'attendance_sheet';
   setLayout: (layout: 'a4_cards' | 'badge_single' | 'attendance_sheet') => void;
   onClose: () => void;
 }
 
-const BulkBadgesPrintModal: React.FC<BulkBadgesPrintModalProps> = ({
+export const BulkBadgesPrintModal: React.FC<BulkBadgesPrintModalProps> = ({
   persons,
   layout,
   setLayout,
