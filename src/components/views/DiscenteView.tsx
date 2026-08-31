@@ -260,6 +260,10 @@ export const DiscenteView: React.FC = () => {
   const myCurrentActivity = currentSlot?.groupActivities?.[currentTeam.groupId as GroupType];
   const currentBadge = myCurrentActivity ? getActivityBadge(myCurrentActivity.activityType) : null;
 
+  const is15MinBefore = timerSeconds <= 900 && timerSeconds > 0;
+  const isExtraScenario = myCurrentActivity?.activityType === 'scenario_extra' || myCurrentActivity?.activityType === 'night_scenario';
+  const isIntraScenario = myCurrentActivity?.activityType === 'scenario_intra';
+
   // Filtered discenti for switcher modal
   const filteredDiscentiForSwitcher = useMemo(() => {
     return discenti.filter((d) => {
@@ -309,6 +313,43 @@ export const DiscenteView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-16">
+      {/* 15-Minute Automatic Warning Banner for Teams */}
+      {is15MinBefore && isExtraScenario && (
+        <div className="bg-amber-950 border-2 border-amber-500 p-4 shadow-2xl flex items-center gap-3 animate-pulse">
+          <div className="p-2 bg-amber-500 text-black font-black text-xs uppercase">
+            {isEn ? '15 MIN ALERT' : 'AVVISO 15 MIN'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-black text-amber-300 uppercase tracking-tight">
+              {isEn ? `TEAM ${currentTeam.name.toUpperCase()} • PREPARE FOR TCCC SCENARIO` : `SQUADRA ${currentTeam.name.toUpperCase()} • PREPARARSI ALLO SCENARIO TCCC`}
+            </h4>
+            <p className="text-xs text-neutral-200">
+              {isEn
+                ? 'Automatic announcement: 15 minutes remaining. Prepare equipment and personnel for the extra-hospital TCCC scenario.'
+                : 'Annuncio automatico: mancano 15 minuti all\'avvio. Preparare attrezzature e personale per lo scenario TCCC extra-ospedaliero.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {is15MinBefore && isIntraScenario && (
+        <div className="bg-blue-950 border-2 border-blue-500 p-4 shadow-2xl flex items-center gap-3 animate-pulse">
+          <div className="p-2 bg-blue-500 text-black font-black text-xs uppercase">
+            {isEn ? '15 MIN ALERT' : 'AVVISO 15 MIN'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-black text-blue-300 uppercase tracking-tight">
+              {isEn ? `TEAM ${currentTeam.name.toUpperCase()} • PROCEED TO SHOCK ROOM` : `SQUADRA ${currentTeam.name.toUpperCase()} • RAGGIUNGERE LA SHOCK ROOM`}
+            </h4>
+            <p className="text-xs text-neutral-200">
+              {isEn
+                ? 'Automatic announcement: 15 minutes remaining. Proceed immediately to the Shock Room for the intra-hospital scenario.'
+                : 'Annuncio automatico: mancano 15 minuti all\'avvio. Raggiungere tempestivamente la Shock Room per lo scenario intra-ospedaliero.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* TOP BAR / IDENTITY PROFILE HEADER */}
       <div className="bg-neutral-950 border-2 border-neutral-700 p-3 sm:p-4 shadow-xl relative overflow-hidden">
         {/* Ambient background decoration */}
