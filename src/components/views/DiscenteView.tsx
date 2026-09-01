@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import {
   Activity,
   AlertCircle,
+  AlertTriangle,
   Award,
   Bell,
   CheckCircle,
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   Clock,
   ExternalLink,
+  FileText,
   Flame,
   GraduationCap,
   HeartPulse,
@@ -30,6 +32,7 @@ import {
   Sparkles,
   Star,
   Stethoscope,
+  Smartphone,
   TrendingUp,
   User,
   UserCheck,
@@ -72,8 +75,28 @@ export const DiscenteView: React.FC = () => {
   // Active Submenu tab for mobile
   const [activeSubTab, setActiveSubTab] = useState<DiscenteSubTab>('agenda');
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const [isBriefModalOpen, setIsBriefModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [teamFilter, setTeamFilter] = useState<number | 'ALL'>('ALL');
+
+  // Forced Landscape Warning State for Mobile Discente screens
+  const [dismissLandscapeWarning, setDismissLandscapeWarning] = useState(false);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+      setIsPortraitMobile(isMobile && isPortrait);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
   
   // Custom message to faculty/director state
   const [sosMessage, setSosMessage] = useState('');
@@ -139,13 +162,24 @@ export const DiscenteView: React.FC = () => {
   );
   const lastNotifiedRef = useRef<{ slotId?: string; seconds?: number }>({});
 
+  const showSafeNotification = (title: string, options?: NotificationOptions) => {
+    if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      if (typeof window.Notification === 'function') {
+        new (window.Notification as any)(title, options);
+      }
+    } catch (err) {
+      console.warn('Browser notifications restricted or illegal constructor in this environment:', err);
+    }
+  };
+
   const requestNotificationPermission = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     try {
       const perm = await Notification.requestPermission();
       setNotificationPermission(perm);
       if (perm === 'granted') {
-        new Notification(isEn ? 'TraumaSim Direct' : 'TraumaSim Direct', {
+        showSafeNotification(isEn ? 'TraumaSim Direct' : 'TraumaSim Direct', {
           body: isEn ? 'Browser notifications enabled successfully!' : 'Notifiche browser abilitate con successo!',
         });
       }
@@ -167,13 +201,13 @@ export const DiscenteView: React.FC = () => {
     if (timerSeconds === 900 && lastNotifiedRef.current.slotId !== `${currentSlot.id}-900`) {
       lastNotifiedRef.current = { slotId: `${currentSlot.id}-900`, seconds: 900 };
       if (isUserTeamExtra) {
-        new Notification(isEn ? '15 Min Warning - TCCC' : 'Avviso 15 Min - TCCC', {
+        showSafeNotification(isEn ? '15 Min Warning - TCCC' : 'Avviso 15 Min - TCCC', {
           body: isEn
             ? `Team ${currentTeam.name}: Prepare equipment and personnel for extra-hospital TCCC scenario.`
             : `Squadra ${currentTeam.name}: Preparare attrezzature e personale per lo scenario TCCC extra-ospedaliero.`,
         });
       } else if (isUserTeamIntra) {
-        new Notification(isEn ? '15 Min Warning - Shock Room' : 'Avviso 15 Min - Shock Room', {
+        showSafeNotification(isEn ? '15 Min Warning - Shock Room' : 'Avviso 15 Min - Shock Room', {
           body: isEn
             ? `Team ${currentTeam.name}: Proceed immediately to the Shock Room.`
             : `Squadra ${currentTeam.name}: Raggiungere tempestivamente la Shock Room.`,
@@ -183,7 +217,7 @@ export const DiscenteView: React.FC = () => {
 
     if (timerSeconds === 0 && lastNotifiedRef.current.slotId !== `${currentSlot.id}-0`) {
       lastNotifiedRef.current = { slotId: `${currentSlot.id}-0`, seconds: 0 };
-      new Notification(isEn ? 'Scenario Starting!' : 'Inizio Scenario in Corso!', {
+      showSafeNotification(isEn ? 'Scenario Starting!' : 'Inizio Scenario in Corso!', {
         body: isEn
           ? `Team ${currentTeam.name}: Your scenario "${currentSlot.title}" is starting now!`
           : `Squadra ${currentTeam.name}: Il vostro scenario "${currentSlot.title}" è iniziato ora!`,
@@ -440,6 +474,108 @@ export const DiscenteView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-16">
+      {/* Forced Landscape Mode Constraint Overlay for Mobile Discentes */}
+      {isPortraitMobile && !dismissLandscapeWarning && (
+        <div className="fixed inset-0 z-[9999] bg-neutral-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-neutral-100">
+          <div className="max-w-md w-full bg-neutral-900 border-4 border-orange-500 p-8 shadow-2xl space-y-6 relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl" />
+            
+            <div className="w-16 h-16 mx-auto bg-orange-500/20 border-2 border-orange-500 flex items-center justify-center text-orange-400 animate-bounce rounded-xl shadow-lg">
+              <Smartphone className="w-8 h-8 animate-pulse" style={{ transform: 'rotate(90deg)' }} />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-orange-400 bg-orange-950 px-2 py-1 border border-orange-800">
+                {isEn ? 'LANDSCAPE ORIENTATION REQUIRED' : 'ORIENTAMENTO ORIZZONTALE CONSIGLIATO'}
+              </span>
+              <h2 className="text-xl font-black uppercase text-white tracking-tight">
+                {isEn ? 'Rotate Your Device' : 'Ruota il Dispositivo'}
+              </h2>
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                {isEn
+                  ? 'For the best simulation interface experience, live timers, and interactive controls during Discente rotation, please rotate your phone or tablet to landscape (horizontal) mode.'
+                  : 'Per garantire un\'esperienza ottimale della simulazione, dei timer live e dei controlli interattivi durante la rotazione dei discenti, si prega di ruotare il dispositivo in modalità orizzontale (landscape).'}
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2.5">
+              <button
+                onClick={() => setDismissLandscapeWarning(true)}
+                className="w-full py-3 bg-orange-500 hover:bg-orange-400 text-black font-black uppercase text-xs tracking-wider rounded transition-all cursor-pointer shadow-md"
+              >
+                {isEn ? 'CONTINUE IN PORTRAIT ANYWAY' : 'CONTINUA IN VERTICALE'}
+              </button>
+              <p className="text-[10px] text-neutral-500">
+                {isEn ? 'You can dismiss this warning at any time.' : 'Puoi chiudere questo avviso in qualsiasi momento.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Morning Pre-Opening States (08:00 - 08:45) */}
+      {(() => {
+        const isMorningSlot0 = (activeDay === 2 || activeDay === 3) && activeSlotIndex === 0; // 08:00 - 08:30
+        const isMorningSlot1Pre0845 = (activeDay === 2 || activeDay === 3) && activeSlotIndex === 1 && timerSeconds > 900; // 08:30 - 08:45
+
+        if (isMorningSlot0) {
+          return (
+            <div className="bg-neutral-950 border-4 border-emerald-500 p-6 sm:p-8 shadow-2xl text-center space-y-4">
+              <span className="px-3 py-1 bg-emerald-500 text-black font-black font-mono text-xs uppercase tracking-wider">
+                {isEn ? '08:00 - 08:30 • GATE OPENING FACULTY & TECNICI' : '08:00 - 08:30 • APERTURA GATE FACULTY & TECNICI'}
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                {isEn ? 'Pre-Course Countdown & Station Preparation' : 'Countdown Pre-Corso & Preparazione Postazioni'}
+              </h3>
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-neutral-900 border-2 border-emerald-500/60 font-mono text-4xl font-black text-emerald-400 shadow-xl">
+                <Clock className="w-10 h-10 animate-pulse text-emerald-400" />
+                {Math.floor(timerSeconds / 60).toString().padStart(2, '0')}:{(timerSeconds % 60).toString().padStart(2, '0')}
+              </div>
+              <p className="text-xs sm:text-sm text-neutral-300 max-w-lg mx-auto">
+                {isEn
+                  ? 'Staff and instructors are preparing simulation stations. Learners arrival scheduled at 08:30.'
+                  : 'Lo staff e gli istruttori stanno allestendo le postazioni di simulazione. Arrivo discenti previsto alle ore 08:30.'}
+              </p>
+            </div>
+          );
+        }
+
+        if (isMorningSlot1Pre0845) {
+          return (
+            <div className="bg-neutral-950 border-4 border-amber-500 p-6 sm:p-8 shadow-2xl space-y-5 text-center">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-1 bg-amber-500 text-black font-black font-mono text-xs uppercase">
+                  {isEn ? '08:30 - 08:45 • IMMINENT OPENING' : '08:30 - 08:45 • APERTURA IMMINENTE'}
+                </span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-neutral-900 border border-amber-500/50 font-mono text-base font-bold text-amber-300">
+                  <Clock className="w-5 h-5 text-amber-400 animate-spin" />
+                  {Math.floor(timerSeconds / 60).toString().padStart(2, '0')}:{(timerSeconds % 60).toString().padStart(2, '0')}
+                </div>
+              </div>
+              
+              <div className="max-w-xl mx-auto bg-amber-950/70 border-2 border-amber-500 p-6 sm:p-8 shadow-2xl space-y-4">
+                <div className="w-14 h-14 mx-auto bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-amber-400 rounded-xl animate-bounce">
+                  <AlertTriangle className="w-7 h-7" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                  APERTURA CORSO IMMINENTE
+                </h2>
+                <p className="text-base sm:text-lg font-black text-amber-300 uppercase tracking-wide">
+                  Raggiungere il proprio faculty
+                </p>
+                <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed">
+                  {isEn
+                    ? 'All participants please proceed to your assigned simulation workstations and meet your assigned Faculty tutor. Personalized discente interface will unlock automatically at 08:45.'
+                    : 'Tutti i partecipanti sono invitati a raggiungere le rispettive postazioni di simulazione e incontrare il proprio Faculty tutor. La visuale personalizzata discenti si sbloccherà automaticamente alle ore 08:45.'}
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        return null;
+      })()}
+
       {/* 15-Minute Automatic Warning Banner for Teams */}
       {is15MinBefore && isExtraScenario && (
         <div className="bg-amber-950 border-2 border-amber-500 p-4 shadow-2xl flex items-center gap-3 animate-pulse">
@@ -1876,6 +2012,127 @@ export const DiscenteView: React.FC = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* CONTEXT-AWARE FLOATING ACTION BUTTON (FAB) FOR SCENARIO BRIEFING */}
+      {/* ========================================================================= */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setIsBriefModalOpen(true)}
+          className="group relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-black font-black uppercase text-xs tracking-wider rounded-full shadow-[0_0_25px_rgba(249,115,22,0.5)] border-2 border-orange-300 transition-all transform hover:scale-105 cursor-pointer animate-bounce"
+          title={isEn ? 'View Current Scenario Brief' : 'Visualizza Briefing Scenario Attuale'}
+        >
+          <span className="w-6 h-6 rounded-full bg-black text-orange-400 flex items-center justify-center flex-shrink-0 shadow">
+            <FileText className="w-3.5 h-3.5" />
+          </span>
+          <div className="text-left hidden sm:block">
+            <div className="text-[9px] font-mono font-bold text-black/80">{isEn ? 'QUICK BRIEF' : 'BRIEFING RAPIDO'}</div>
+            <div className="text-xs font-black truncate max-w-[140px]">{myCurrentActivity ? myCurrentActivity.title : (currentSlot?.title || 'Scenario')}</div>
+          </div>
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-black rounded-full animate-ping" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-black rounded-full" />
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* CONTEXT-AWARE SCENARIO BRIEF MODAL */}
+      {/* ========================================================================= */}
+      {isBriefModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xs">
+          <div className="bg-neutral-950 border-4 border-orange-500 p-5 sm:p-7 max-w-xl w-full text-neutral-100 space-y-4 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-center justify-between pb-3 border-b-2 border-neutral-800">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 bg-orange-500/20 border border-orange-500 text-orange-400">
+                  <Activity className="w-5 h-5 animate-pulse" />
+                </span>
+                <div>
+                  <span className="text-[10px] font-mono text-orange-400 font-black uppercase tracking-wider block">
+                    {isEn ? `TEAM ${currentTeam.name} — ACTIVE BRIEFING` : `SQUADRA ${currentTeam.name} — BRIEFING ATTIVO`}
+                  </span>
+                  <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
+                    {myCurrentActivity ? myCurrentActivity.title : (currentSlot?.title || 'Scenario Brief')}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBriefModalOpen(false)}
+                className="text-neutral-400 hover:text-white p-1 text-sm font-black cursor-pointer bg-neutral-900 border border-neutral-800 px-2 py-1"
+              >
+                {isEn ? '✕ CLOSE' : '✕ CHIUDI'}
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 bg-neutral-900 border border-neutral-800">
+                  <span className="text-[10px] font-mono text-neutral-400 block">{isEn ? 'TIME SLOT / ORARIO' : 'ORARIO SLOT'}</span>
+                  <span className="font-bold font-mono text-white text-sm">{currentSlot?.timeRange || '08:30 - 10:00'}</span>
+                </div>
+                <div className="p-2.5 bg-neutral-900 border border-neutral-800">
+                  <span className="text-[10px] font-mono text-neutral-400 block">{isEn ? 'ROOM / STATION / STANZA' : 'POSTAZIONE / STANZA'}</span>
+                  <span className="font-bold text-orange-400 text-sm">
+                    {myCurrentActivity?.location || (isExtraScenario ? 'Extra TCCC Field' : 'Shock Room Alfa')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-neutral-900/90 border border-orange-500/40 space-y-2">
+                <h4 className="font-black text-orange-300 uppercase tracking-wide flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-orange-400" />
+                  {isEn ? 'Clinical & Tactical Objective' : 'Obiettivo Clinico e Tattico'}
+                </h4>
+                <p className="text-neutral-200 leading-relaxed">
+                  {myCurrentActivity?.subtitle || (isEn
+                    ? `Execute trauma resuscitation protocol for ${currentTeam.name} with rigorous Closed-Loop communication and immediate life-saving interventions.`
+                    : `Eseguire il protocollo di rianimazione trauma per la ${currentTeam.name} con rigorosa comunicazione a circuito chiuso e interventi salvavita immediati.`)}
+                </p>
+              </div>
+
+              <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-1.5">
+                <span className="text-[10px] font-mono uppercase text-neutral-400 block font-bold">
+                  {isEn ? 'Assigned Mentor / Tutor' : 'Tutor di Riferimento'}
+                </span>
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                  <span>{assignedFaculty.name}</span>
+                  <span className="text-xs font-normal text-neutral-400">({assignedFaculty.specialty})</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-1.5">
+                <span className="text-[10px] font-mono uppercase text-neutral-400 block font-bold">
+                  {isEn ? 'Your Team Members (5 Operators)' : 'I tuoi compagni di squadra (5 Operatori)'}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {teammates.map((mate) => (
+                    <span
+                      key={mate.id}
+                      className={`px-2 py-1 text-[11px] font-bold border ${
+                        mate.id === currentDiscente.id
+                          ? 'bg-orange-500 text-black border-orange-400 font-black'
+                          : 'bg-neutral-950 text-neutral-300 border-neutral-800'
+                      }`}
+                    >
+                      {mate.name} ({mate.role})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-neutral-800 flex justify-end">
+              <button
+                onClick={() => setIsBriefModalOpen(false)}
+                className="w-full py-2.5 bg-orange-500 hover:bg-orange-400 text-black font-black uppercase text-xs tracking-wider cursor-pointer shadow"
+              >
+                {isEn ? 'UNDERSTOOD — RETURN TO LIVE VIEW' : 'HO COMPRESO — TORNA ALLA SCHERMATA LIVE'}
+              </button>
             </div>
           </div>
         </div>

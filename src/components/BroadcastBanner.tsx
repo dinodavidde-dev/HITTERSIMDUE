@@ -51,7 +51,7 @@ export const BroadcastBanner: React.FC = () => {
   return (
     <div
       id="broadcast-banner"
-      className={`sticky top-0 z-50 px-4 py-3.5 transition-all duration-300 ${style.bg}`}
+      className={`sticky top-0 z-50 px-4 py-3.5 transition-all duration-300 animate-[pulse_3s_ease-in-out_infinite] ring-2 ring-white/40 shadow-[0_0_25px_rgba(255,255,255,0.3)] ${style.bg}`}
       role="alert"
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">

@@ -32,7 +32,7 @@ import { BulkBadgesPrintModal, UnifiedPerson } from '../anagrafica/PersonnelBadg
 interface LoginPersonItem {
   id: string;
   originalId: string;
-  category: 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite';
+  category: 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite' | 'regia';
   categoryLabel: string;
   categoryColor: string;
   name: string;
@@ -51,6 +51,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
     faculty,
     technicians,
     directors,
+    regiaStaff,
     guests,
     teams,
     setUserRole,
@@ -58,6 +59,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
     setSelectedFacultyId,
     setSelectedTechnicianId,
     setSelectedDirectorId,
+    setSelectedRegiaId,
     setSelectedGuestId,
     addDiscente,
     updateDiscente,
@@ -78,7 +80,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
 
   const isEn = language === 'en';
 
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite' | 'regia'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrlId, setCopiedUrlId] = useState<string | null>(null);
   const [qrCodesCache, setQrCodesCache] = useState<Record<string, { url: string; loginUrl: string }>>({});
@@ -194,8 +196,24 @@ export const DirectorQRLoginGenerator: React.FC = () => {
       });
     });
 
+    // 6. Regia Staff
+    regiaStaff.forEach((r) => {
+      list.push({
+        id: `regia_${r.id}`,
+        originalId: r.id,
+        category: 'regia',
+        categoryLabel: isEn ? 'REGIA' : 'REGIA & CONTROL ROOM',
+        categoryColor: '#ec4899', // Pink
+        name: r.name,
+        role: r.title || r.role || 'Regia Master',
+        organization: r.organization || 'Control Room',
+        badgeCode: r.badgeCode || `REGIA-${r.id}`,
+        loginUrl: `${origin}${pathname}?regia=${r.id}&badge=${r.badgeCode || r.id}`,
+      });
+    });
+
     return list;
-  }, [discenti, faculty, technicians, directors, guests, teams, origin, pathname, isEn]);
+  }, [discenti, faculty, technicians, directors, guests, regiaStaff, teams, origin, pathname, isEn]);
 
   // Filtered list
   const filteredPersonnel = useMemo(() => {
@@ -269,6 +287,9 @@ export const DirectorQRLoginGenerator: React.FC = () => {
     } else if (p.category === 'direttore') {
       setSelectedDirectorId(p.originalId);
       setUserRole('direttore');
+    } else if (p.category === 'regia') {
+      setSelectedRegiaId(p.originalId);
+      setUserRole('regia');
     } else if (p.category === 'ospite') {
       setSelectedGuestId(p.originalId);
       setUserRole('ospite');
@@ -571,6 +592,16 @@ export const DirectorQRLoginGenerator: React.FC = () => {
             }`}
           >
             {isEn ? 'Guests / VIP' : 'Ospiti / VIP'} ({guests.length})
+          </button>
+          <button
+            onClick={() => setSelectedCategory('regia')}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer border ${
+              selectedCategory === 'regia'
+                ? 'bg-fuchsia-500 text-black border-fuchsia-300'
+                : 'bg-neutral-900 text-fuchsia-400 border-neutral-700 hover:bg-neutral-800'
+            }`}
+          >
+            Regia ({regiaStaff.length})
           </button>
         </div>
 

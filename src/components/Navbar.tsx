@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Clock,
   Eye,
+  ExternalLink,
   Globe,
   GraduationCap,
   KeyRound,
@@ -17,6 +18,7 @@ import {
   Lock,
   LogOut,
   MessageSquare,
+  Monitor,
   Moon,
   Package,
   Pause,
@@ -222,64 +224,66 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 <LanguageSwitcher variant="badge" />
               </div>
 
-              {/* BLOCK 2: Day Selector (Day 2 vs Day 3) */}
-              <div className="flex items-center bg-slate-900 border border-slate-700 p-0.5 rounded shadow-inner flex-shrink-0">
-                <button
-                  id="day2-tab-btn"
-                  onClick={() => setActiveDay(2)}
-                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
-                    activeDay === 2
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                  title={language === 'en' ? 'Select Day 2 Schedule' : 'Seleziona Programma Giorno 2'}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${activeDay === 2 ? 'bg-white' : 'bg-slate-600'}`} />
-                  <span>{language === 'en' ? 'DAY 2' : 'GIORNO 2'}</span>
-                </button>
 
-                <button
-                  id="day3-tab-btn"
-                  onClick={() => setActiveDay(3)}
-                  className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-[11px] font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
-                    activeDay === 3
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                  title={language === 'en' ? 'Select Day 3 Schedule' : 'Seleziona Programma Giorno 3'}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${activeDay === 3 ? 'bg-white' : 'bg-slate-600'}`} />
-                  <span>{language === 'en' ? 'DAY 3' : 'GIORNO 3'}</span>
-                </button>
+
+              {/* BLOCK 2.2: Public View Toggle / Staff Area Button & Projector New Tab */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {userRole !== 'public' ? (
+                  <button
+                    type="button"
+                    id="switch-to-public-mode-btn"
+                    onClick={() => handleRoleSelection('public')}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-slate-700 hover:border-cyan-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
+                    title={language === 'en' ? 'Switch to Public Shared Screen View' : 'Passa alla Modalità Pubblica / Vista Condivisa'}
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span>{language === 'en' ? 'PUBLIC' : 'PUBBLICA'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    id="public-staff-access-btn"
+                    onClick={() => {
+                      setPendingRole('direttore');
+                      setIsFacultyAuthModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider rounded border border-red-400 transition-all cursor-pointer shadow-md flex-shrink-0"
+                    title={language === 'en' ? 'Staff & Professionals Area Access' : 'Accesso Area Addetti ai Lavori'}
+                  >
+                    <Lock className="w-3 h-3 text-red-200" />
+                    <span>{language === 'en' ? 'STAFF AREA' : 'ADDETTI AI LAVORI'}</span>
+                  </button>
+                )}
+
+                {userRole !== 'regia' && (
+                  <button
+                    type="button"
+                    id="switch-to-regia-mode-btn"
+                    onClick={() => handleRoleSelection('regia')}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-pink-950/80 hover:bg-pink-900 text-pink-300 font-bold text-[11px] uppercase tracking-wider rounded border border-pink-700 hover:border-pink-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
+                    title={language === 'en' ? 'Switch to Regia & Mission Control View' : 'Passa alla Visuale Regia & Mission Control'}
+                  >
+                    <Radio className="w-3 h-3 text-pink-400" />
+                    <span>REGIA</span>
+                  </button>
+                )}
+
+                {userRole === 'direttore' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targetUrl = `${window.location.origin}${window.location.pathname}?role=public`;
+                      window.open(targetUrl, '_blank');
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-cyan-700 transition-all cursor-pointer shadow-xs flex-shrink-0"
+                    title={language === 'en' ? 'Open Public View in New Tab for Central Monitor Projection' : 'Apri Vista Pubblica in Nuova Pagina per Proiezione su Monitor Centrale'}
+                  >
+                    <Monitor className="w-3 h-3 text-cyan-400" />
+                    <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />
+                    <span className="hidden md:inline">{language === 'en' ? 'PROJECTOR' : 'PROIETTORE'}</span>
+                  </button>
+                )}
               </div>
-
-              {/* BLOCK 2.2: Public View Toggle / Staff Area Button */}
-              {userRole !== 'public' ? (
-                <button
-                  type="button"
-                  id="switch-to-public-mode-btn"
-                  onClick={() => handleRoleSelection('public')}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-slate-700 hover:border-cyan-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                  title={language === 'en' ? 'Switch to Public Shared Screen View' : 'Passa alla Modalità Pubblica / Vista Condivisa'}
-                >
-                  <Eye className="w-3 h-3" />
-                  <span>{language === 'en' ? 'PUBLIC' : 'PUBBLICA'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  id="public-staff-access-btn"
-                  onClick={() => {
-                    setPendingRole('direttore');
-                    setIsFacultyAuthModalOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider rounded border border-red-400 transition-all cursor-pointer shadow-md flex-shrink-0"
-                  title={language === 'en' ? 'Staff & Professionals Area Access' : 'Accesso Area Addetti ai Lavori'}
-                >
-                  <Lock className="w-3 h-3 text-red-200" />
-                  <span>{language === 'en' ? 'STAFF AREA' : 'ADDETTI AI LAVORI'}</span>
-                </button>
-              )}
 
               {/* Conditional Controls for Staff / Directors / Tech / Faculty (Hidden for Public & Discente) */}
               {userRole !== 'public' && userRole !== 'discente' && (
@@ -417,6 +421,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     {currentRoleObj.icon}
                     <span>{language === 'en' ? `${currentRoleObj.shortLabel.toUpperCase()} DASHBOARD` : `PANNELLO ${currentRoleObj.shortLabel.toUpperCase()}`}</span>
                   </button>
+
+                  {userRole !== 'public' && userRole !== 'discente' && (
+                    <button
+                      id="subnav-sync-countdown-btn"
+                      onClick={() => setCurrentTab('schedule_gate')}
+                      className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                        currentTab === 'schedule_gate'
+                          ? 'bg-orange-500 text-black border-orange-400 shadow-xs font-black'
+                          : 'text-orange-400 hover:text-white bg-slate-950 border-orange-500/60 hover:border-orange-500'
+                      }`}
+                      title={language === 'en' ? 'Sync & Start Countdown Management' : 'Sincronizzazione Start & Countdown'}
+                    >
+                      <Clock className="w-3 h-3 text-orange-400" />
+                      <span>{language === 'en' ? 'SYNC & COUNTDOWN' : 'SINCRONIZZAZIONE START & COUNTDOWN'}</span>
+                    </button>
+                  )}
 
                   {userRole === 'tecnico' && (
                     <>

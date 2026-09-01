@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500;700;800&family=Oswald:wght@500;600;700&display=swap');
+@import "tailwindcss";
 
 @layer base {
   body {
@@ -19,6 +19,34 @@
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
+}
+
+@keyframes airportFlip {
+  0% {
+    transform: rotateX(0deg) scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  49% {
+    transform: rotateX(-90deg) scale(0.98);
+    opacity: 0.3;
+    filter: brightness(0.6);
+  }
+  51% {
+    transform: rotateX(90deg) scale(0.98);
+    opacity: 0.3;
+    filter: brightness(0.6);
+  }
+  100% {
+    transform: rotateX(0deg) scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+.animate-airport-flip {
+  animation: airportFlip 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
 }
 
 /* Custom scrollbars for industrial bold theme */
@@ -41,19 +69,61 @@
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+
   body {
     background-color: #ffffff !important;
-    color: #000000 !important;
+    color: #111111 !important;
+    font-size: 11pt;
+    line-height: 1.4;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  nav, header, footer, .no-print {
+  /* Hide navigation, headers, floating bars, interactive buttons, and non-printable elements */
+  nav, header, footer, button, .no-print, [role="dialog"], iframe, .fixed {
     display: none !important;
   }
 
   .print-only {
     display: block !important;
+  }
+
+  /* Optimize layout containers for physical book / PDF export */
+  main, .max-w-7xl, .container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Cards and timeline modules styling for print */
+  div, section, article {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-color: #d1d5db !important;
+  }
+
+  .bg-neutral-900, .bg-neutral-950, .bg-zinc-900, .bg-zinc-950, .bg-neutral-800 {
+    background-color: #f9fafb !important;
+    color: #111111 !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  text, span, p, h1, h2, h3, h4, h5, h6 {
+    color: #111111 !important;
+  }
+
+  .text-amber-400, .text-amber-300, .text-yellow-400, .text-orange-400 {
+    color: #b45309 !important; /* Professional dark amber for print headers */
+    font-weight: bold !important;
+  }
+
+  .border-amber-500, .border-amber-500\/50, .border-neutral-700 {
+    border-color: #9ca3af !important;
   }
 
   .page-break-after {
@@ -64,5 +134,15 @@
   .page-break-inside-avoid {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  /* Timeline and schedule cards clean print formatting */
+  .grid {
+    display: block !important;
+  }
+
+  .grid > * {
+    margin-bottom: 1rem !important;
+    page-break-inside: avoid;
   }
 }

@@ -30,12 +30,27 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
   targetRolePending,
   onSuccess,
 }) => {
-  const { language, faculty, authorizeFaculty, facultyAuthSession, deauthorizeFaculty } = useCourse();
+  const {
+    language,
+    faculty,
+    technicians,
+    authorizeFaculty,
+    facultyAuthSession,
+    deauthorizeFaculty,
+    selectedTechnicianId,
+    setSelectedTechnicianId,
+  } = useCourse();
   const isEn = language === 'en';
 
+  const [authCategory, setAuthCategory] = useState<'faculty' | 'tecnico'>(
+    targetRolePending === 'tecnico' ? 'tecnico' : 'faculty'
+  );
   const [pin, setPin] = useState<string>('');
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>(
     faculty[0]?.id || 'fac-1'
+  );
+  const [selectedTechId, setSelectedTechId] = useState<string>(
+    selectedTechnicianId || technicians[0]?.id || 'tech-1'
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -59,11 +74,6 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
     setErrorMsg(null);
   };
 
-  const handleQuickPin = (presetPin: string) => {
-    setPin(presetPin);
-    setErrorMsg(null);
-  };
-
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!pin.trim()) {
@@ -71,30 +81,71 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
       return;
     }
 
-    const ok = authorizeFaculty(pin.trim(), selectedFacultyId);
-    if (ok) {
-      setErrorMsg(null);
-      const selectedDoc = faculty.find((f) => f.id === selectedFacultyId);
-      setSuccessMsg(
-        isEn
-          ? `Access authorized for ${selectedDoc ? selectedDoc.name : 'Faculty'}`
-          : `Accesso autorizzato per ${selectedDoc ? selectedDoc.name : 'Faculty'}`
-      );
-      
-      setTimeout(() => {
-        setSuccessMsg(null);
-        setPin('');
-        if (onSuccess) {
-          onSuccess(targetRolePending || 'faculty');
-        }
-        onClose();
-      }, 500);
+    if (authCategory === 'faculty') {
+      const ok = authorizeFaculty(pin.trim(), selectedFacultyId);
+      if (ok) {
+        setErrorMsg(null);
+        const selectedDoc = faculty.find((f) => f.id === selectedFacultyId);
+        setSuccessMsg(
+          isEn
+            ? `Access authorized for ${selectedDoc ? selectedDoc.name : 'Faculty'}`
+            : `Accesso autorizzato per ${selectedDoc ? selectedDoc.name : 'Faculty'}`
+        );
+        
+        setTimeout(() => {
+          setSuccessMsg(null);
+          setPin('');
+          if (onSuccess) {
+            onSuccess(targetRolePending || 'faculty');
+          }
+          onClose();
+        }, 500);
+      } else {
+        setErrorMsg(
+          isEn
+            ? 'Incorrect PIN. Please enter a valid PIN or badge code.'
+            : 'PIN errato. Inserire un PIN o codice badge valido.'
+        );
+      }
     } else {
-      setErrorMsg(
-        isEn
-          ? 'Incorrect PIN. Use quick service code: 118, 2026 or badge code.'
-          : 'PIN errato. Usa il codice di servizio rapido: 118, 2026 o il badge code.'
-      );
+      // Technician authentication
+      const cleanPin = pin.trim();
+      const validPins = ['118', '2026', '112', '9999'];
+      const matchedTech = technicians.find(
+        (t) => t.id === selectedTechId || t.badgeCode?.toLowerCase() === cleanPin.toLowerCase()
+      ) || technicians[0];
+
+      const isValid =
+        validPins.includes(cleanPin) ||
+        (matchedTech && matchedTech.badgeCode?.toLowerCase() === cleanPin.toLowerCase()) ||
+        cleanPin.toUpperCase().startsWith('TEC');
+
+      if (isValid) {
+        setErrorMsg(null);
+        if (matchedTech) {
+          setSelectedTechnicianId(matchedTech.id);
+        }
+        setSuccessMsg(
+          isEn
+            ? `Access authorized for Technician ${matchedTech ? matchedTech.name : ''}`
+            : `Accesso autorizzato per Tecnico ${matchedTech ? matchedTech.name : ''}`
+        );
+
+        setTimeout(() => {
+          setSuccessMsg(null);
+          setPin('');
+          if (onSuccess) {
+            onSuccess('tecnico');
+          }
+          onClose();
+        }, 500);
+      } else {
+        setErrorMsg(
+          isEn
+            ? 'Incorrect PIN for technician. Please enter a valid PIN or badge code.'
+            : 'PIN errato per tecnico. Inserire un PIN o codice badge valido.'
+        );
+      }
     }
   };
 
@@ -104,6 +155,7 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
   };
 
   const selectedFacultyObj = faculty.find((f) => f.id === selectedFacultyId);
+  const selectedTechObj = technicians.find((t) => t.id === selectedTechId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xs">
@@ -189,29 +241,82 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
             /* PIN Keypad Form */
             <form onSubmit={handleSubmit} className="space-y-3.5">
               
-              {/* Faculty Profile Selection */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-300 flex items-center justify-between">
-                  <span>{isEn ? 'Select Instructor / Faculty Profile' : 'Seleziona Profilo Docente / Faculty'}</span>
-                  <span className="text-orange-400 font-mono text-[10px]">{isEn ? 'REQUIRED' : 'OBBLIGATORIO'}</span>
-                </label>
-                <select
-                  value={selectedFacultyId}
-                  onChange={(e) => setSelectedFacultyId(e.target.value)}
-                  className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 p-2 text-xs font-bold focus:border-orange-500 focus:outline-hidden"
+              {/* Category Tabs: Faculty vs Tecnico */}
+              <div className="grid grid-cols-2 gap-1 p-1 bg-neutral-900 border border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setAuthCategory('faculty')}
+                  className={`py-1.5 px-2 font-bold uppercase text-[11px] tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    authCategory === 'faculty'
+                      ? 'bg-orange-500 text-black font-black shadow-xs'
+                      : 'text-neutral-400 hover:text-white bg-neutral-950'
+                  }`}
                 >
-                  {faculty.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name} — {f.title} ({f.badgeCode || 'FAC'})
-                    </option>
-                  ))}
-                </select>
-                {selectedFacultyObj && (
-                  <p className="text-[10px] text-neutral-400 font-mono">
-                    {isEn ? 'Specialty: ' : 'Specialità: '}{translateRoleOrSpecialty(selectedFacultyObj.specialty, language)} • {isEn ? 'Team ' : 'Squadra '}{selectedFacultyObj.assignedTeamId}
-                  </p>
-                )}
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>{isEn ? 'Faculty / Instructor' : 'Faculty / Istruttore'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthCategory('tecnico')}
+                  className={`py-1.5 px-2 font-bold uppercase text-[11px] tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    authCategory === 'tecnico'
+                      ? 'bg-orange-500 text-black font-black shadow-xs'
+                      : 'text-neutral-400 hover:text-white bg-neutral-950'
+                  }`}
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>{isEn ? 'Technician / Tech' : 'Tecnico / Lab'}</span>
+                </button>
               </div>
+
+              {/* Profile Selection based on authCategory */}
+              {authCategory === 'faculty' ? (
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-300 flex items-center justify-between">
+                    <span>{isEn ? 'Select Instructor / Faculty Profile' : 'Seleziona Profilo Docente / Faculty'}</span>
+                    <span className="text-orange-400 font-mono text-[10px]">{isEn ? 'REQUIRED' : 'OBBLIGATORIO'}</span>
+                  </label>
+                  <select
+                    value={selectedFacultyId}
+                    onChange={(e) => setSelectedFacultyId(e.target.value)}
+                    className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 p-2 text-xs font-bold focus:border-orange-500 focus:outline-hidden"
+                  >
+                    {faculty.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} — {f.title} ({f.badgeCode || 'FAC'})
+                      </option>
+                    ))}
+                  </select>
+                  {selectedFacultyObj && (
+                    <p className="text-[10px] text-neutral-400 font-mono">
+                      {isEn ? 'Specialty: ' : 'Specialità: '}{translateRoleOrSpecialty(selectedFacultyObj.specialty, language)} • {isEn ? 'Team ' : 'Squadra '}{selectedFacultyObj.assignedTeamId}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-300 flex items-center justify-between">
+                    <span>{isEn ? 'Select Technician Profile' : 'Seleziona Profilo Tecnico'}</span>
+                    <span className="text-orange-400 font-mono text-[10px]">{isEn ? 'REQUIRED' : 'OBBLIGATORIO'}</span>
+                  </label>
+                  <select
+                    value={selectedTechId}
+                    onChange={(e) => setSelectedTechId(e.target.value)}
+                    className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 p-2 text-xs font-bold focus:border-orange-500 focus:outline-hidden"
+                  >
+                    {technicians.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} — {t.specialty || 'Tecnico'} ({t.badgeCode || 'TEC'})
+                      </option>
+                    ))}
+                  </select>
+                  {selectedTechObj && (
+                    <p className="text-[10px] text-neutral-400 font-mono">
+                      {isEn ? 'Phone: ' : 'Tel: '}{selectedTechObj.phone} • {isEn ? 'Code: ' : 'Codice: '}{selectedTechObj.badgeCode}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* PIN Display Input */}
               <div className="space-y-1.5">
@@ -227,7 +332,7 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
                       setPin(e.target.value);
                       setErrorMsg(null);
                     }}
-                    placeholder={isEn ? 'Enter PIN (e.g. 118 or 2026)' : 'Inserisci PIN (es. 118 o 2026)'}
+                    placeholder={isEn ? 'Enter PIN or badge code' : 'Inserisci PIN o codice badge'}
                     className="w-full bg-neutral-900 border-2 border-neutral-700 text-center tracking-[0.4em] text-lg font-mono font-black text-white p-2.5 focus:border-orange-500 focus:outline-hidden placeholder:tracking-normal placeholder:text-xs placeholder:text-neutral-600"
                   />
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -284,27 +389,6 @@ export const FacultyAuthModal: React.FC<FacultyAuthModalProps> = ({
                 >
                   ⌫
                 </button>
-              </div>
-
-              {/* Quick Presets for Demo / Floor Operations */}
-              <div className="flex items-center justify-between gap-1.5 pt-1 text-[10px] text-neutral-400 font-mono">
-                <span>{isEn ? 'Quick emergency codes:' : 'Codici rapidi di emergenza:'}</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPin('118')}
-                    className="px-2 py-0.5 bg-neutral-900 hover:bg-orange-500 hover:text-black text-orange-400 font-bold border border-neutral-700 cursor-pointer"
-                  >
-                    PIN 118
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPin('2026')}
-                    className="px-2 py-0.5 bg-neutral-900 hover:bg-orange-500 hover:text-black text-orange-400 font-bold border border-neutral-700 cursor-pointer"
-                  >
-                    PIN 2026
-                  </button>
-                </div>
               </div>
 
               {/* Submit Button */}

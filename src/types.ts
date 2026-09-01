@@ -1,4 +1,4 @@
-export type UserRole = 'public' | 'discente' | 'tecnico' | 'faculty' | 'direttore' | 'ospite';
+export type UserRole = 'public' | 'discente' | 'tecnico' | 'faculty' | 'direttore' | 'ospite' | 'regia';
 
 export type CourseDay = 2 | 3;
 export type SessionPeriod = 'mattina' | 'pomeriggio' | 'notturno';
@@ -58,6 +58,20 @@ export interface Technician {
 }
 
 export interface Director {
+  id: string;
+  name: string;
+  title: string;
+  role?: string;
+  nationality: string;
+  phone: string;
+  email?: string;
+  organization?: string;
+  badgeCode?: string;
+  isMaster?: boolean;
+  notes?: string;
+}
+
+export interface RegiaStaff {
   id: string;
   name: string;
   title: string;

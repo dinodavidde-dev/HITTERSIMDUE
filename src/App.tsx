@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CourseProvider, useCourse } from './context/CourseContext';
 import { Navbar } from './components/Navbar';
 import { BroadcastBanner } from './components/BroadcastBanner';
@@ -13,16 +13,17 @@ import { DiscenteView } from './components/views/DiscenteView';
 import { TecnicoView } from './components/views/TecnicoView';
 import { FacultyView } from './components/views/FacultyView';
 import { DirettoreView } from './components/views/DirettoreView';
+import { RegiaView } from './components/views/RegiaView';
 import { OspiteView } from './components/views/OspiteView';
 import { ScenariCatalogView } from './components/views/ScenariCatalogView';
 import { NightScenarioView } from './components/views/NightScenarioView';
 import { ProtesiCatalogView } from './components/views/ProtesiCatalogView';
+import { CourseScheduleGateCard } from './components/CourseScheduleGateCard';
 import { CoursePreStartCountdown } from './components/CoursePreStartCountdown';
 import { ModuleCalloutBanner } from './components/ModuleCalloutBanner';
-import { RotationCountdownBanner } from './components/RotationCountdownBanner';
 import { SimulationQuickFloatingBar } from './components/SimulationQuickFloatingBar';
 import { StartupAccessModal } from './components/StartupAccessModal';
-import { Activity, ShieldCheck, HeartPulse } from 'lucide-react';
+import { Activity, ShieldCheck, HeartPulse, Clock } from 'lucide-react';
 
 const CourseMainContent: React.FC = () => {
   const {
@@ -32,16 +33,19 @@ const CourseMainContent: React.FC = () => {
     faculty,
     technicians,
     directors,
+    regiaStaff,
     guests,
     setSelectedDiscenteId,
     setSelectedFacultyId,
     setSelectedTechnicianId,
     setSelectedDirectorId,
+    setSelectedRegiaId,
     setSelectedGuestId,
     isCourseStarted,
     setIsSimulationModalOpen,
     timeRemainingMs,
     courseStartSchedule,
+    language,
   } = useCourse();
   const [currentTab, setCurrentTab] = useState<string>('main');
 
@@ -49,7 +53,7 @@ const CourseMainContent: React.FC = () => {
   const isGateActive = courseStartSchedule.isGateEnabled;
 
   const isCurrentViewUnlocked = () => {
-    if (userRole === 'direttore') return true; // Director always active
+    if (userRole === 'direttore' || userRole === 'regia') return true; // Director & Regia always active
     if (userRole === 'tecnico') {
       return !isGateActive || isCourseStarted || totalSeconds <= 3600; // Technician active 1 hour before
     }
@@ -60,6 +64,10 @@ const CourseMainContent: React.FC = () => {
   const [isStartupModalOpen, setIsStartupModalOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     const params = new URLSearchParams(window.location.search);
+    const badge = params.get('badge') || params.get('qr') || '';
+    const isRegia = params.has('regia') || params.get('role') === 'regia' || badge.toUpperCase().includes('REGIA');
+    if (isRegia) return true;
+
     const hasQrParams =
       params.has('discente') ||
       params.has('faculty') ||
@@ -76,6 +84,13 @@ const CourseMainContent: React.FC = () => {
     return !hasQrParams;
   });
 
+  const isRegiaQrStartup = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    const badge = params.get('badge') || params.get('qr') || '';
+    return params.has('regia') || params.get('role') === 'regia' || badge.toUpperCase().includes('REGIA');
+  }, []);
+
   // Check URL parameters for instant unique QR Code direct navigation (?discente=... , ?faculty=... , ?tecnico=... , ?direttore=... , ?ospite=...)
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -84,6 +99,7 @@ const CourseMainContent: React.FC = () => {
       const facultyParam = params.get('faculty');
       const tecnicoParam = params.get('tecnico') || params.get('technician');
       const direttoreParam = params.get('direttore') || params.get('director');
+      const regiaParam = params.get('regia');
       const ospiteParam = params.get('ospite') || params.get('guest');
       const idParam = params.get('id');
       const badgeParam = params.get('badge') || params.get('qr');
@@ -125,6 +141,15 @@ const CourseMainContent: React.FC = () => {
           setSelectedDirectorId(found.id);
           setUserRole('direttore');
         }
+      } else if (regiaParam || (roleParam === 'regia' && idParam)) {
+        const targetId = regiaParam || idParam;
+        const found = regiaStaff.find(
+          (r) => r.id === targetId || r.badgeCode?.toLowerCase() === targetId?.toLowerCase()
+        );
+        if (found) {
+          setSelectedRegiaId(found.id);
+          setUserRole('regia');
+        }
       } else if (ospiteParam || (roleParam === 'ospite' && idParam)) {
         const targetId = ospiteParam || idParam;
         const found = guests.find(
@@ -140,6 +165,7 @@ const CourseMainContent: React.FC = () => {
         const foundFac = faculty.find((f) => f.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
         const foundTech = technicians.find((t) => t.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
         const foundDir = directors.find((d) => d.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
+        const foundRegia = regiaStaff.find((r) => r.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
         const foundGuest = guests.find((g) => g.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
 
         if (foundDisc) {
@@ -154,12 +180,15 @@ const CourseMainContent: React.FC = () => {
         } else if (foundDir) {
           setSelectedDirectorId(foundDir.id);
           setUserRole('direttore');
+        } else if (foundRegia) {
+          setSelectedRegiaId(foundRegia.id);
+          setUserRole('regia');
         } else if (foundGuest) {
           setSelectedGuestId(foundGuest.id);
           setUserRole('ospite');
         }
       } else if (roleParam) {
-        if (['discente', 'faculty', 'tecnico', 'direttore', 'ospite', 'public'].includes(roleParam)) {
+        if (['discente', 'faculty', 'tecnico', 'direttore', 'regia', 'ospite', 'public'].includes(roleParam)) {
           setUserRole(roleParam as any);
         }
       }
@@ -169,16 +198,40 @@ const CourseMainContent: React.FC = () => {
     faculty,
     technicians,
     directors,
+    regiaStaff,
     guests,
     setSelectedDiscenteId,
     setSelectedFacultyId,
     setSelectedTechnicianId,
     setSelectedDirectorId,
+    setSelectedRegiaId,
     setSelectedGuestId,
     setUserRole,
   ]);
 
   const renderActiveView = () => {
+    if (currentTab === 'schedule_gate') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-neutral-900 border border-neutral-800 p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-400" />
+              <h2 className="text-lg font-black text-white uppercase">
+                {language === 'en' ? 'Sync & Start Countdown Control' : 'Sincronizzazione Start & Countdown'}
+              </h2>
+            </div>
+            <button
+              onClick={() => setCurrentTab('main')}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-mono uppercase rounded cursor-pointer"
+            >
+              {language === 'en' ? '← Back to Dashboard' : '← Torna alla Dashboard'}
+            </button>
+          </div>
+          <CourseScheduleGateCard />
+        </div>
+      );
+    }
+
     if (!isCurrentViewUnlocked()) {
       return <CoursePreStartCountdown />;
     }
@@ -205,6 +258,8 @@ const CourseMainContent: React.FC = () => {
         return <FacultyView />;
       case 'direttore':
         return <DirettoreView />;
+      case 'regia':
+        return <RegiaView />;
       case 'ospite':
         return <OspiteView />;
       case 'public':
@@ -223,8 +278,6 @@ const CourseMainContent: React.FC = () => {
 
       {/* 15-Minute Pre-Module Operator Callout & Team Assembly Countdown Banner */}
       <ModuleCalloutBanner />
-
-      <RotationCountdownBanner />
 
       {/* Main Simulation Navigation & Control Bar */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
@@ -266,6 +319,8 @@ const CourseMainContent: React.FC = () => {
       <StartupAccessModal
         isOpen={isStartupModalOpen}
         directors={directors}
+        regiaStaff={regiaStaff}
+        initialMode={isRegiaQrStartup ? 'master_or_regia_select' : 'choice'}
         onSelectPublic={() => {
           setUserRole('public');
           setIsStartupModalOpen(false);
@@ -283,6 +338,15 @@ const CourseMainContent: React.FC = () => {
             setSelectedDirectorId(masterDir.id);
           }
           setUserRole('direttore');
+          setIsStartupModalOpen(false);
+        }}
+        onSelectRegia={(regiaId) => {
+          if (regiaId) {
+            setSelectedRegiaId(regiaId);
+          } else if (regiaStaff[0]) {
+            setSelectedRegiaId(regiaStaff[0].id);
+          }
+          setUserRole('regia');
           setIsStartupModalOpen(false);
         }}
       />

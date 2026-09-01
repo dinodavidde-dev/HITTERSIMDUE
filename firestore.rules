@@ -216,6 +216,28 @@ service cloud.firestore {
       allow delete: if isValidId(directorId);
     }
 
+    // --- Regia Staff ---
+    function isValidRegiaStaff(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 150)) &&
+        (!('role' in data) || (data.role is string && data.role.size() <= 150)) &&
+        (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 200)) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100)) &&
+        (!('isMaster' in data) || data.isMaster is bool) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    match /regiaStaff/{staffId} {
+      allow get: if isValidId(staffId);
+      allow list: if true;
+      allow create, update: if isValidId(staffId) && isValidRegiaStaff(incoming());
+      allow delete: if isValidId(staffId);
+    }
+
     // --- Guests ---
     function isValidGuest(data) {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&

@@ -17,6 +17,13 @@ import {
 import { playBroadcastSound } from '../utils/audio';
 import { GroupType, GroupActivitySlot } from '../types';
 
+export interface GroupCalloutInfo {
+  groupId: GroupType;
+  groupName: string;
+  activityTitle: string;
+  location: string;
+}
+
 export interface NextModuleAlertInfo {
   moduleName: string;
   stationName?: string;
@@ -34,6 +41,7 @@ export interface NextModuleAlertInfo {
   ongoingActivityTitle?: string;
   upcomingPhaseTitle?: string;
   roleInstruction?: string;
+  groupCallouts: GroupCalloutInfo[];
 }
 
 export const ModuleCalloutBanner: React.FC = () => {
@@ -59,89 +67,59 @@ export const ModuleCalloutBanner: React.FC = () => {
   const [dismissedKey, setDismissedKey] = useState<string | null>(null);
   const [hasPlayedChime, setHasPlayedChime] = useState<string | null>(null);
 
-  // Compute upcoming module and team callout for the logged operator
+  // Compute upcoming module and multi-group callouts
   const nextAlert = useMemo<NextModuleAlertInfo | null>(() => {
     if (!isCourseStarted) return null;
 
-    // Determine current operator identity & team
-    let operatorTeamId: number | null = null;
-    let operatorRoleName = 'Operatore';
-
+    let operatorRoleName = 'Operatore Plenario';
     if (userRole === 'discente') {
       const disc = discenti.find((d) => d.id === selectedDiscenteId) || discenti[0];
-      if (disc) {
-        operatorTeamId = disc.teamId;
-        operatorRoleName = `Discente: ${disc.name} (${disc.role})`;
-      }
+      if (disc) operatorRoleName = `Discente: ${disc.name} (${disc.role})`;
     } else if (userRole === 'faculty') {
       const fac = faculty.find((f) => f.id === selectedFacultyId) || faculty[0];
-      if (fac) {
-        operatorRoleName = `Faculty: ${fac.name} (${fac.title})`;
-        operatorTeamId = fac.assignedTeamId || 1;
-      }
+      if (fac) operatorRoleName = `Faculty: ${fac.name} (${fac.title})`;
     } else if (userRole === 'tecnico') {
       const tec = technicians.find((t) => t.id === selectedTechnicianId) || technicians[0];
-      if (tec) {
-        operatorRoleName = `Tecnico: ${tec.name} (${tec.specialty})`;
-        operatorTeamId = 1;
-      }
-    } else if (userRole === 'ospite' || userRole === 'public') {
-      operatorTeamId = 1;
-      operatorRoleName = 'Visualizzazione Operativa Plenaria';
+      if (tec) operatorRoleName = `Tecnico: ${tec.name} (${tec.specialty})`;
     }
 
-    if (!operatorTeamId) return null;
-
-    const team = teams.find((t) => t.id === operatorTeamId) || teams[0];
-    if (!team) return null;
-
-    const userGroupId = team.groupId as GroupType;
-
     if (timerSeconds <= 900 && timerSeconds > 0) {
-      const nextSlot = filteredSlots[activeSlotIndex + 1];
-      const nextActivity: GroupActivitySlot | undefined = nextSlot?.groupActivities?.[userGroupId];
-      const currentActivity: GroupActivitySlot | undefined = currentSlot?.groupActivities?.[userGroupId];
+      const nextSlot = filteredSlots[activeSlotIndex + 1] || currentSlot;
+      const groupTypes: GroupType[] = ['A', 'B', 'C', 'D'];
+      const groupNames: Record<GroupType, string> = {
+        A: isEn ? 'Group A (Alpha)' : 'Gruppo A (Alfa)',
+        B: isEn ? 'Group B (Bravo)' : 'Gruppo Bravo',
+        C: isEn ? 'Group C (Charlie)' : 'Gruppo Charlie',
+        D: isEn ? 'Group D (Delta)' : 'Gruppo Delta',
+      };
 
-      const moduleTitle = nextActivity ? nextActivity.title : currentActivity ? currentActivity.title : currentSlot.title;
-      const location = nextActivity ? nextActivity.location : currentActivity ? currentActivity.location : 'Stazione Assegnata';
+      const groupCallouts: GroupCalloutInfo[] = groupTypes.map((gId) => {
+        const act = nextSlot?.groupActivities?.[gId] || currentSlot?.groupActivities?.[gId];
+        return {
+          groupId: gId,
+          groupName: groupNames[gId],
+          activityTitle: act ? act.title : (isEn ? 'Assembly & Briefing' : 'Raduno e Briefing'),
+          location: act ? act.location : 'Postazione Assegnata',
+        };
+      });
 
-      // Role specific instruction
-      let roleInst = '';
-      if (userRole === 'faculty') {
-        roleInst = isEn
-          ? 'Faculty: Prepare evaluation rubrics, scoring sheet, and team briefing.'
-          : 'Faculty: Preparare griglie di valutazione, checklist e briefing della squadra.';
-      } else if (userRole === 'discente') {
-        roleInst = isEn
-          ? 'Learner/Team: Gather with your assigned team and Faculty Tutor at the station.'
-          : 'Discente/Squadra: Riunirsi con il proprio Faculty Tutor alla postazione assegnata.';
-      } else if (userRole === 'tecnico') {
-        roleInst = isEn
-          ? 'Technician: Inspect mannequin status, equipment readiness, and setup.'
-          : 'Tecnico: Verificare stato manichini, set-up apparecchiature e postazione.';
-      } else {
-        roleInst = isEn
-          ? 'Plenary: Assemble teams for upcoming rotation block.'
-          : 'Plenaria: Riunire le squadre per il prossimo blocco di rotazione.';
-      }
+      const roleInst = isEn
+        ? '15 min call: All teams please gather with your assigned Faculty tutor at your respective stations.'
+        : 'Chiamata 15 min: Tutte le squadre sono invitate al raduno con il proprio Faculty tutor presso le rispettive postazioni.';
 
       return {
         moduleName: nextSlot ? `Prossima Fase: ${nextSlot.title}` : `Conclusione ${currentSlot.title}`,
-        stationName: location,
-        room: location,
-        teamName: team.name,
-        teamId: team.id,
-        groupId: team.groupId,
+        teamName: 'Tutte le Squadre (Gruppi A, B, C, D)',
+        teamId: 1,
+        groupId: 'A',
         minutesRemaining: Math.floor(timerSeconds / 60),
         secondsRemaining: timerSeconds % 60,
         totalRemainingSeconds: timerSeconds,
         roleDescription: operatorRoleName,
-        activityTitle: moduleTitle,
-        location: location,
         ongoingPhaseTitle: currentSlot.title,
-        ongoingActivityTitle: currentActivity?.title || (isEn ? 'Ongoing Activity' : 'Attività in Corso'),
         upcomingPhaseTitle: nextSlot ? nextSlot.title : currentSlot.title,
         roleInstruction: roleInst,
+        groupCallouts,
       };
     }
 
@@ -153,12 +131,11 @@ export const ModuleCalloutBanner: React.FC = () => {
     filteredSlots,
     activeSlotIndex,
     discenti,
-    teams,
+    faculty,
+    technicians,
     selectedDiscenteId,
     selectedFacultyId,
-    faculty,
     selectedTechnicianId,
-    technicians,
     timerSeconds,
     isEn,
   ]);
@@ -230,20 +207,28 @@ export const ModuleCalloutBanner: React.FC = () => {
             </div>
 
             <h4 className="text-sm sm:text-base font-black uppercase tracking-tight text-white flex items-center gap-2 flex-wrap">
-              <span>{isEn ? 'Team Assignment:' : 'Assegnazione Squadra:'}</span>
-              <span className="text-amber-400 bg-black/60 px-2 py-0.5 border border-amber-500/60 font-mono">
-                {nextAlert.teamName} (Gruppo {nextAlert.groupId})
-              </span>
+              <span>{isEn ? '15-Min Gathering Call by Group:' : 'Chiamata al Raduno 15 min per Gruppi:'}</span>
             </h4>
 
-            <p className="text-xs text-amber-200 font-bold flex items-center gap-2 flex-wrap">
-              <span>{nextAlert.roleInstruction}</span>
-              {nextAlert.location && (
-                <span className="inline-flex items-center gap-1 text-amber-300">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {nextAlert.location}
-                </span>
-              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-2">
+              {nextAlert.groupCallouts.map((gc) => (
+                <div key={gc.groupId} className="bg-black/60 border border-amber-500/40 p-2 text-xs">
+                  <div className="flex items-center justify-between font-black text-amber-300">
+                    <span>{gc.groupName}</span>
+                    <span className="text-[10px] text-neutral-400 font-mono flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-orange-400" />
+                      {gc.location}
+                    </span>
+                  </div>
+                  <div className="text-white font-bold truncate mt-0.5" title={gc.activityTitle}>
+                    {gc.activityTitle}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-amber-200 font-bold mt-1">
+              {nextAlert.roleInstruction}
             </p>
           </div>
         </div>

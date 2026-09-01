@@ -2,6 +2,7 @@ import {
   CourseDay,
   Discente,
   Director,
+  RegiaStaff,
   Faculty,
   GroupType,
   Guest,
@@ -35,6 +36,35 @@ export const INITIAL_DIRECTORS: Director[] = [
     email: 'e.moretti@traumacourse.org',
     badgeCode: 'DIR-02',
     notes: 'Responsabile scenari chirurgici e coordinamento faculty',
+  },
+];
+
+export const INITIAL_REGIA_STAFF: RegiaStaff[] = [
+  {
+    id: 'regia-1',
+    name: 'Col. Prof. Franco Neri',
+    title: 'Capo Centrale Regia & Master Control',
+    role: 'Coordinamento Tecnico-Operativo & Regia',
+    nationality: 'Italiana',
+    organization: 'Comando Operazioni Speciali & Simulazione',
+    phone: '+39 335 9900111',
+    email: 'f.neri@regiasim.org',
+    badgeCode: 'REGIA-01',
+    isMaster: true,
+    notes: 'Controllo centrale, supervisione flussi e regia master',
+  },
+  {
+    id: 'regia-2',
+    name: 'Ing. Laura Verdi',
+    title: 'Tecnico Senior Regia Audio/Video & Sincronizzazione',
+    role: 'Regista Live Stream & Network Admin',
+    nationality: 'Italiana',
+    organization: 'SimCenter Media Lab',
+    phone: '+39 338 8877665',
+    email: 'l.verdi@regiasim.org',
+    badgeCode: 'REGIA-02',
+    isMaster: false,
+    notes: 'Gestione flussi video multischermo e sincronizzazione temporale',
   },
 ];
 
@@ -1119,23 +1149,79 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
   },
 ];
 
-// Full Schedule Timetable for Day 2 & Day 3 based on official roadmap
+// Full Schedule Timetable for Day 2 & Day 3 based on official roadmap (Subdivided into distinct operational phases)
 export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
   // ================= DAY 2 MATTINA =================
   {
-    id: 'd2-m1',
+    id: 'd2-m0-faculty',
     day: 2,
     period: 'mattina',
-    timeRange: '08:30 - 09:30',
+    timeRange: '08:00 - 08:30',
+    startMinutes: 480,
+    durationMinutes: 30,
+    title: 'Day 2: Gate Opening Faculty & Tecnici (08:00)',
+    description: 'Apertura anticipata dei gate alle ore 08:00 per Faculty e Tecnici (preparazione postazioni, allestimento e briefing interno).',
+    groupActivities: {
+      A: { activityType: 'scenario_extra', title: 'Gate Opening Faculty & Tecnici Alfa', subtitle: 'Preparazione e Setup (08:00 - 08:30)', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
+      B: { activityType: 'scenario_intra', title: 'Gate Opening Faculty & Tecnici Bravo', subtitle: 'Preparazione Shock Room (08:00 - 08:30)', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
+      C: { activityType: 'workshop', title: 'Gate Opening Faculty & Tecnici Charlie', subtitle: 'Setup Area Tattica (08:00 - 08:30)', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
+      D: { activityType: 'skills', title: 'Gate Opening Faculty & Tecnici Delta', subtitle: 'Setup Skills Lab (08:00 - 08:30)', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+    }
+  },
+  {
+    id: 'd2-m1-gate',
+    day: 2,
+    period: 'mattina',
+    timeRange: '08:30 - 09:00',
     startMinutes: 510,
-    durationMinutes: 60,
-    title: 'Day 2 Mattina: Gate Opening & Avvio Scenari',
-    description: 'Apertura gate e raduno con gruppi e Faculty. Alpha: TCCC Scenario (09:00-09:30). Bravo: Shock Room Prep (09:15) e Scenario (09:30-10:00). Charlie e Delta: Workshop e Skills (09:00-10:20).',
+    durationMinutes: 30,
+    title: 'Day 2 Mattina: Gate Opening Discenti & Invito in Posizione (08:30)',
+    description: 'Apertura gate per i discenti alle ore 08:30. Invito per tutti a prendere posizione secondo il proprio planning personale.',
     groupActivities: {
       A: {
         activityType: 'scenario_extra',
-        title: 'Gate Opening -> Start TCCC Scenario',
-        subtitle: 'Invito al raduno con gruppo e Faculty (08:30) | Start Scenario Extra (09:00 - 09:30)',
+        title: 'Arrivo Discenti & Presa Posizione Alfa',
+        subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)',
+        location: 'Settore Scenari Alfa - Area Raduno',
+        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
+      },
+      B: {
+        activityType: 'scenario_intra',
+        title: 'Arrivo Discenti & Presa Posizione Bravo',
+        subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)',
+        location: 'Shock Room 1, 2, 3 - Briefing Room',
+        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
+      },
+      C: {
+        activityType: 'workshop',
+        title: 'Arrivo Discenti & Presa Posizione Charlie',
+        subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)',
+        location: 'Area Tattica - Aula Briefing',
+        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
+      },
+      D: {
+        activityType: 'skills',
+        title: 'Arrivo Discenti & Presa Posizione Delta',
+        subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)',
+        location: 'Skills Lab 2 - Briefing',
+        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
+      }
+    }
+  },
+  {
+    id: 'd2-m1-scenario',
+    day: 2,
+    period: 'mattina',
+    timeRange: '09:00 - 09:30',
+    startMinutes: 540,
+    durationMinutes: 30,
+    title: 'Day 2 Mattina: Avvio Scenari & Attività',
+    description: 'Alpha: Start TCCC Scenario. Bravo: Shock Room Preparation & Start. Charlie & Delta: Workshop e Skills.',
+    groupActivities: {
+      A: {
+        activityType: 'scenario_extra',
+        title: 'Start TCCC Scenario',
+        subtitle: 'Esecuzione Scenario TCCC Extra (09:00 - 09:30)',
         location: 'Settore Scenari Alfa',
         scenarioRef: 'Scenari 6, 1, 11',
         patientIds: [1, 2, 3],
@@ -1144,8 +1230,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       B: {
         activityType: 'scenario_intra',
-        title: 'Gate Opening -> Convening Shock Room Teams',
-        subtitle: 'Raduno (08:30) | Shock Room Preparation (09:15) | Start Shock Room (09:30 - 10:00)',
+        title: 'Shock Room Preparation & Start',
+        subtitle: 'Preparazione e Avvio Shock Room (09:15 - 09:30)',
         location: 'Shock Room 1, 2, 3',
         scenarioRef: 'Scenari 6, 1, 11 (Intra)',
         patientIds: [1, 2, 3],
@@ -1154,15 +1240,15 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       C: {
         activityType: 'workshop',
-        title: 'Gate Opening -> Workshop & Skills',
-        subtitle: 'Raduno (08:30) | Workshop (09:00 - 09:45) | Break (09:45 - 09:55) | Skills (09:55 - 10:20)',
+        title: 'Workshop & Skills Session 1',
+        subtitle: 'Svolgimento Workshop Tecnico (09:00 - 09:45)',
         location: 'Area Tattica & Skills Lab 1',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'skills',
-        title: 'Gate Opening -> Workshop & Skills',
-        subtitle: 'Raduno (08:30) | Workshop (09:00 - 09:45) | Break (09:45 - 09:55) | Skills (09:55 - 10:20)',
+        title: 'Skills Lab Session 1',
+        subtitle: 'Svolgimento Skills Pratiche (09:00 - 09:45)',
         location: 'Area Tattica & Skills Lab 2',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
@@ -1253,19 +1339,59 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
 
   // ================= DAY 2 POMERIGGIO =================
   {
-    id: 'd2-p1',
+    id: 'd2-p1-gate',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:00 - 14:15',
+    timeRange: '13:00 - 13:30',
     startMinutes: 780,
-    durationMinutes: 75,
-    title: 'Day 2 Pomeriggio: Gate Opening & Avvio Scenari Pomeridiani',
-    description: 'Apertura gate (13:00). Alpha: TCCC Scenario (13:30-14:00), Handover & Debrief (14:00-14:15). Bravo: Shock Room Prep (13:15), Scenario (13:30-14:00), Break & Debrief (14:00-14:15). Charlie & Delta: Workshop e Skills.',
+    durationMinutes: 30,
+    title: 'Day 2 Pomeriggio: Gate Opening & Briefing',
+    description: 'Riapertura gate pomeridiano e briefing operativo per le attività del pomeriggio.',
     groupActivities: {
       A: {
         activityType: 'scenario_extra',
-        title: 'Gate Opening -> Start TCCC Scenario -> Handover & Debrief',
-        subtitle: 'Gate (13:00) | TCCC Scenario (13:30 - 14:00) | Handover & Debrief (14:00 - 14:15)',
+        title: 'Gate Opening Pomeridiano Alfa',
+        subtitle: 'Riapertura Gate & Briefing (13:00 - 13:30)',
+        location: 'Settore Scenari Bravo',
+        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
+      },
+      B: {
+        activityType: 'scenario_intra',
+        title: 'Gate Opening Pomeridiano Bravo',
+        subtitle: 'Riapertura Gate & Briefing Shock Room (13:00 - 13:30)',
+        location: 'Shock Room 1, 2, 3',
+        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
+      },
+      C: {
+        activityType: 'workshop',
+        title: 'Gate Opening Pomeridiano Charlie',
+        subtitle: 'Riapertura Gate & Briefing Workshop (13:00 - 13:30)',
+        location: 'Aula Tattica',
+        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
+      },
+      D: {
+        activityType: 'skills',
+        title: 'Gate Opening Pomeridiano Delta',
+        subtitle: 'Riapertura Gate & Briefing Skills (13:00 - 13:30)',
+        location: 'Skills Lab',
+        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
+      }
+    }
+  },
+  {
+    id: 'd2-p1-scenario',
+    day: 2,
+    period: 'pomeriggio',
+    timeRange: '13:30 - 14:15',
+    startMinutes: 810,
+    durationMinutes: 45,
+    title: 'Day 2 Pomeriggio: Avvio Scenari & Workshop',
+    description: 'Alpha: TCCC Scenario. Bravo: Shock Room Prep & Start. Charlie & Delta: Workshop e Skills pomeridiane.',
+    groupActivities: {
+      A: {
+        activityType: 'scenario_extra',
+        title: 'Start TCCC Scenario Pomeridiano',
+        subtitle: 'TCCC Scenario (13:30 - 14:00) | Handover & Debrief (14:00 - 14:15)',
         location: 'Settore Scenari Bravo',
         scenarioRef: 'Scenari 16, 00, 3',
         patientIds: [7, 8, 9],
@@ -1274,8 +1400,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       B: {
         activityType: 'scenario_intra',
-        title: 'Gate Opening -> Shock Room Prep -> Start -> Break & Debrief',
-        subtitle: 'Gate (13:00) | SR Prep (13:15) | SR Scenario (13:30 - 14:00) | Break & Debrief (14:00 - 14:15)',
+        title: 'Shock Room Prep & Start Pomeridiano',
+        subtitle: 'SR Prep (13:15) | SR Scenario (13:30 - 14:00) | Break & Debrief (14:00 - 14:15)',
         location: 'Shock Room 1, 2, 3',
         scenarioRef: 'Scenari 16, 00, 3 (Intra)',
         patientIds: [7, 8, 9],
@@ -1284,15 +1410,15 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       C: {
         activityType: 'workshop',
-        title: 'Gate Opening -> Workshop & Skills',
-        subtitle: 'Gate (13:00) | Workshop (13:00 - 13:45) | Break (13:45 - 13:55) | Skills (13:55 - 14:20)',
+        title: 'Workshop Pomeridiano',
+        subtitle: 'Workshop (13:00 - 13:45) | Break (13:45 - 13:55) | Skills (13:55 - 14:20)',
         location: 'Aula Tattica & Skills Lab',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'skills',
-        title: 'Gate Opening -> Skills & Workshop',
-        subtitle: 'Gate (13:00) | Skills (13:00 - 13:45) | Break (13:45 - 13:55) | Workshop (13:55 - 14:20)',
+        title: 'Skills Lab Pomeridiano',
+        subtitle: 'Skills (13:00 - 13:45) | Break (13:45 - 13:55) | Workshop (13:55 - 14:20)',
         location: 'Skills Lab & Aula Tattica',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
@@ -1347,19 +1473,51 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
 
   // ================= DAY 3 MATTINA =================
   {
-    id: 'd3-m1',
+    id: 'd3-m0-faculty',
     day: 3,
     period: 'mattina',
-    timeRange: '08:30 - 11:00',
+    timeRange: '08:00 - 08:30',
+    startMinutes: 480,
+    durationMinutes: 30,
+    title: 'Day 3: Gate Opening Faculty & Tecnici (08:00)',
+    description: 'Apertura anticipata dei gate alle ore 08:00 per Faculty e Tecnici (allestimento postazioni e briefing interno).',
+    groupActivities: {
+      A: { activityType: 'scenario_extra', title: 'Gate Opening Faculty & Tecnici Day 3 Alfa', subtitle: 'Preparazione e Setup (08:00 - 08:30)', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
+      B: { activityType: 'scenario_intra', title: 'Gate Opening Faculty & Tecnici Day 3 Bravo', subtitle: 'Preparazione Shock Room (08:00 - 08:30)', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
+      C: { activityType: 'workshop', title: 'Gate Opening Faculty & Tecnici Day 3 Charlie', subtitle: 'Setup Area Tattica (08:00 - 08:30)', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
+      D: { activityType: 'skills', title: 'Gate Opening Faculty & Tecnici Day 3 Delta', subtitle: 'Setup Skills Lab (08:00 - 08:30)', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+    }
+  },
+  {
+    id: 'd3-m1-gate',
+    day: 3,
+    period: 'mattina',
+    timeRange: '08:30 - 09:00',
     startMinutes: 510,
-    durationMinutes: 150,
-    title: 'Day 3 Mattina: Gate Opening & Scenari TCCC / Shock Room',
-    description: 'Apertura gate (08:30). Alpha: TCCC Scenario (09:00-09:30), Handover & Debrief, Workshop. Bravo: SR Prep (09:15), SR Scenario (09:30-10:00), Break & Debrief, Skill Workshop. Charlie & Delta rotazioni parallele.',
+    durationMinutes: 30,
+    title: 'Day 3 Mattina: Gate Opening Discenti & Invito in Posizione (08:30)',
+    description: 'Apertura gate per i discenti alle ore 08:30. Invito per tutti a prendere posizione secondo il proprio planning personale.',
+    groupActivities: {
+      A: { activityType: 'scenario_extra', title: 'Arrivo Discenti & Presa Posizione Day 3 Alfa', subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
+      B: { activityType: 'scenario_intra', title: 'Arrivo Discenti & Presa Posizione Day 3 Bravo', subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
+      C: { activityType: 'workshop', title: 'Arrivo Discenti & Presa Posizione Day 3 Charlie', subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
+      D: { activityType: 'skills', title: 'Arrivo Discenti & Presa Posizione Day 3 Delta', subtitle: 'Invito a prendere posizione secondo il planning personale (08:30 - 09:00)', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+    }
+  },
+  {
+    id: 'd3-m1-scenario',
+    day: 3,
+    period: 'mattina',
+    timeRange: '09:00 - 11:00',
+    startMinutes: 540,
+    durationMinutes: 120,
+    title: 'Day 3 Mattina: Scenari TCCC / Shock Room & Rotazioni',
+    description: 'Alpha: TCCC Scenario (09:00-09:30), Handover & Debrief, Workshop. Bravo: SR Prep (09:15), SR Scenario (09:30-10:00), Break & Debrief, Skill Workshop. Charlie & Delta rotazioni parallele.',
     groupActivities: {
       A: {
         activityType: 'scenario_extra',
-        title: 'Gate Opening -> Start TCCC Scenario -> Handover & Debrief -> Workshop',
-        subtitle: 'Gate (08:30) | TCCC (09:00-09:30) | Handover & Debrief (09:30-10:00) | Workshop (10:30-11:15)',
+        title: 'Start TCCC Scenario & Handover',
+        subtitle: 'TCCC (09:00-09:30) | Handover & Debrief (09:30-10:00) | Workshop (10:30-11:15)',
         location: 'Settore Scenari Alfa',
         scenarioRef: 'Scenari 18, 5, 15',
         patientIds: [13, 14, 15],
@@ -1368,8 +1526,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       B: {
         activityType: 'scenario_intra',
-        title: 'Gate Opening -> Shock Room Prep -> Start -> Break & Debrief -> Skills',
-        subtitle: 'Gate (08:30) | SR Prep (09:15) | SR Scenario (09:30-10:00) | Break & Debrief (10:00-10:30) | Skills (10:30-11:15)',
+        title: 'Shock Room Prep & Scenario',
+        subtitle: 'SR Prep (09:15) | SR Scenario (09:30-10:00) | Break & Debrief (10:00-10:30) | Skills (10:30-11:15)',
         location: 'Shock Room 1, 2, 3',
         scenarioRef: 'Scenari 18, 5, 15 (Intra)',
         patientIds: [13, 14, 15],
@@ -1378,15 +1536,15 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       C: {
         activityType: 'workshop',
-        title: 'Gate Opening -> Workshop & Skills -> TCCC Scenario',
-        subtitle: 'Gate (08:30) | Workshop (09:00-09:45) | Skills (09:55-10:20) | TCCC (10:30-11:00)',
+        title: 'Workshop & Skills -> TCCC Scenario',
+        subtitle: 'Workshop (09:00-09:45) | Skills (09:55-10:20) | TCCC (10:30-11:00)',
         location: 'Area Tattica & Skills Lab',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'skills',
-        title: 'Gate Opening -> Skills & Workshop -> Shock Room',
-        subtitle: 'Gate (08:30) | Skills (09:00-09:45) | Workshop (09:55-10:20) | SR Prep (10:45) | SR (11:00)',
+        title: 'Skills & Workshop -> Shock Room',
+        subtitle: 'Skills (09:00-09:45) | Workshop (09:55-10:20) | SR Prep (10:45) | SR (11:00)',
         location: 'Skills Lab & Shock Room',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
       }
@@ -1411,19 +1569,35 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
 
   // ================= DAY 3 POMERIGGIO =================
   {
-    id: 'd3-p1',
+    id: 'd3-p1-gate',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '13:00 - 16:00',
+    timeRange: '13:00 - 13:30',
     startMinutes: 780,
-    durationMinutes: 180,
-    title: 'Day 3 Pomeriggio: Gate Opening, Scenari & Plenaria Chiusura',
-    description: 'Apertura gate pomeridiano (13:00). Alpha & Bravo: Scenari TCCC e Shock Room (Pazienti 19-21) + Workshop & Skills (13:30-16:00). Charlie & Delta: Scenari pomeridiani e sessione plenaria Q&A (15:15-16:00).',
+    durationMinutes: 30,
+    title: 'Day 3 Pomeriggio: Gate Opening & Briefing',
+    description: 'Apertura gate pomeridiano Day 3 e briefing finale per le squadre.',
+    groupActivities: {
+      A: { activityType: 'scenario_extra', title: 'Gate Opening Pomeridiano Day 3 Alfa', subtitle: 'Briefing (13:00 - 13:30)', location: 'Settore Scenari Bravo', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
+      B: { activityType: 'scenario_intra', title: 'Gate Opening Pomeridiano Day 3 Bravo', subtitle: 'Briefing (13:00 - 13:30)', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
+      C: { activityType: 'workshop', title: 'Gate Opening Pomeridiano Day 3 Charlie', subtitle: 'Briefing (13:00 - 13:30)', location: 'Aula', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
+      D: { activityType: 'skills', title: 'Gate Opening Pomeridiano Day 3 Delta', subtitle: 'Briefing (13:00 - 13:30)', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+    }
+  },
+  {
+    id: 'd3-p1-scenario',
+    day: 3,
+    period: 'pomeriggio',
+    timeRange: '13:30 - 16:00',
+    startMinutes: 810,
+    durationMinutes: 150,
+    title: 'Day 3 Pomeriggio: Scenari Finali, Workshop & Plenaria Q&A',
+    description: 'Alpha & Bravo: Scenari TCCC e Shock Room (Pazienti 19-21) + Workshop & Skills (13:30-16:00). Charlie & Delta: Scenari pomeridiani e sessione plenaria Q&A (15:15-16:00).',
     groupActivities: {
       A: {
         activityType: 'scenario_extra',
-        title: 'Gate Opening -> Start TCCC Scenario -> Skills & Workshop',
-        subtitle: 'Gate (13:00) | TCCC Scenario (13:30-14:00) | Skills & Workshop Pomeridiani (14:30-16:00)',
+        title: 'Start TCCC Scenario & Workshop',
+        subtitle: 'TCCC Scenario (13:30-14:00) | Skills & Workshop Pomeridiani (14:30-16:00)',
         location: 'Settore Scenari Bravo',
         scenarioRef: 'Scenari 7, 13, 8',
         patientIds: [19, 20, 21],
@@ -1432,8 +1606,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       B: {
         activityType: 'scenario_intra',
-        title: 'Gate Opening -> Shock Room Prep -> Start -> Workshop & Skills',
-        subtitle: 'Gate (13:00) | SR Prep (13:15) | SR Scenario (13:30-14:00) | Workshop & Skills (14:30-16:00)',
+        title: 'Shock Room Prep, Start & Workshop',
+        subtitle: 'SR Prep (13:15) | SR Scenario (13:30-14:00) | Workshop & Skills (14:30-16:00)',
         location: 'Shock Room 1, 2, 3',
         scenarioRef: 'Scenari 7, 13, 8 (Intra)',
         patientIds: [19, 20, 21],
@@ -1442,8 +1616,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       C: {
         activityType: 'workshop',
-        title: 'Gate Opening -> Workshop -> Shock Room Scenario',
-        subtitle: 'Gate (13:00) | Workshop & Skills (13:00-14:30) | SR Scenario (15:00-15:30) | Plenaria (15:15-16:00)',
+        title: 'Workshop -> Shock Room & Plenaria',
+        subtitle: 'Workshop & Skills (13:00-14:30) | SR Scenario (15:00-15:30) | Plenaria (15:15-16:00)',
         location: 'Aula & Shock Room 4, 5, 6',
         scenarioRef: 'Scenari 7, 13, 8 (Intra)',
         patientIds: [22, 23, 24],
@@ -1452,8 +1626,8 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
       },
       D: {
         activityType: 'skills',
-        title: 'Gate Opening -> Skills -> TCCC Scenario & Plenaria',
-        subtitle: 'Gate (13:00) | Skills & Workshop (13:00-14:30) | TCCC Scenario (14:30-15:00) | Plenaria (15:15-16:00)',
+        title: 'Skills -> TCCC Scenario & Plenaria',
+        subtitle: 'Skills & Workshop (13:00-14:30) | TCCC Scenario (14:30-15:00) | Plenaria (15:15-16:00)',
         location: 'Skills Lab & Settore Delta',
         scenarioRef: 'Scenari 7, 13, 8',
         patientIds: [22, 23, 24],
@@ -1465,43 +1639,75 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
 
   // ================= DAY 3 NOTTURNO =================
   {
-    id: 'd3-night',
+    id: 'd3-night-gate-faculty',
     day: 3,
     period: 'notturno',
-    timeRange: '20:30 - 22:00',
+    timeRange: '20:00 - 20:30',
+    startMinutes: 1200,
+    durationMinutes: 30,
+    title: 'NIGHT: Gate Opening Faculty & Tecnici (20:00)',
+    description: 'Apertura anticipata dei gate alle ore 20:00 per Faculty e Tecnici (allestimento postazioni notturne e briefing tattico).',
+    groupActivities: {
+      A: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Alfa', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
+      B: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Bravo', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Bravo', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
+      C: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Charlie', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Charlie', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
+      D: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Delta', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Delta', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+    }
+  },
+  {
+    id: 'd3-night-gate-discenti',
+    day: 3,
+    period: 'notturno',
+    timeRange: '20:30 - 21:00',
     startMinutes: 1230,
-    durationMinutes: 90,
-    title: 'NIGHT SCENARIO: Apertura Gate & Maxi-Scenario Notturno',
-    description: 'Apertura Gate Night Scenario (20:30). Raduno gruppi e faculty. 21:00 - 22:00: Maxi-Scenario Notturno ad alta intensità, Triage MCI START/SALT, Airway e gestione traumatologica critica in ambiente tattico notturno.',
+    durationMinutes: 30,
+    title: 'NIGHT: Gate Opening Discenti & Briefing Tattico (20:30)',
+    description: 'Apertura gate per i discenti alle ore 20:30. Invito per tutti a prendere posizione per il Maxi-Scenario Notturno.',
+    groupActivities: {
+      A: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Alfa', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
+      B: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Bravo', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Bravo', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
+      C: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Charlie', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Charlie', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
+      D: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Delta', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Delta', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+    }
+  },
+  {
+    id: 'd3-night-scenario',
+    day: 3,
+    period: 'notturno',
+    timeRange: '21:00 - 22:00',
+    startMinutes: 1260,
+    durationMinutes: 60,
+    title: 'NIGHT SCENARIO: Esecuzione Maxi-Scenario Notturno (21:00)',
+    description: 'Maxi-Scenario Notturno ad alta intensità, Triage MCI START/SALT, Airway e gestione traumatologica critica in ambiente tattico notturno.',
     groupActivities: {
       A: {
         activityType: 'night_scenario',
-        title: 'Night Scenario Gate Opening -> Maxi-Scenario Alfa',
-        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Airway & TBI (21:00 - 22:00)',
+        title: 'Maxi-Scenario Notturno Alfa (Airway & TBI)',
+        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
         location: 'Area Tattica Notturna - Settore Alfa',
         scenarioRef: 'Night Scenario - Airway & TBI',
         facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
       },
       B: {
         activityType: 'night_scenario',
-        title: 'Night Scenario Gate Opening -> Maxi-Scenario Bravo',
-        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Emorragia & REBOA (21:00 - 22:00)',
+        title: 'Maxi-Scenario Notturno Bravo (Emorragia & REBOA)',
+        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
         location: 'Area Tattica Notturna - Settore Bravo',
         scenarioRef: 'Night Scenario - Haemorrhage & REBOA',
         facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
       },
       C: {
         activityType: 'night_scenario',
-        title: 'Night Scenario Gate Opening -> Maxi-Scenario Charlie',
-        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Triage MCI (21:00 - 22:00)',
+        title: 'Maxi-Scenario Notturno Charlie (MCI Triage)',
+        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
         location: 'Area Tattica Notturna - Settore Charlie',
         scenarioRef: 'Night Scenario - MCI Triage',
         facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
       },
       D: {
         activityType: 'night_scenario',
-        title: 'Night Scenario Gate Opening -> Maxi-Scenario Delta',
-        subtitle: 'Gate Opening (20:30) | Maxi-Scenario Notturno Damage Control (21:00 - 22:00)',
+        title: 'Maxi-Scenario Notturno Delta (Damage Control)',
+        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
         location: 'Area Tattica Notturna - Settore Delta',
         scenarioRef: 'Night Scenario - Damage Control',
         facultyInvolved: ['fac-10', 'fac-11', 'fac-12']

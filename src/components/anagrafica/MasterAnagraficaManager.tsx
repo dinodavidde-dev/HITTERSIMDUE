@@ -14,6 +14,7 @@ import {
   Plus,
   Printer,
   QrCode,
+  Radio,
   Search,
   ShieldCheck,
   Trash2,
@@ -23,7 +24,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { Director, Discente, Faculty, Guest, Team, Technician } from '../../types';
+import { Director, Discente, Faculty, Guest, RegiaStaff, Team, Technician } from '../../types';
 import { QRCodeDisplay } from '../QRCodeDisplay';
 import { PersonnelBadgeRegistry } from './PersonnelBadgeRegistry';
 import { TeamAssignmentDragDropBoard } from './TeamAssignmentDragDropBoard';
@@ -80,6 +81,10 @@ export const MasterAnagraficaManager: React.FC = () => {
     updateDirector,
     addDirector,
     deleteDirector,
+    regiaStaff,
+    updateRegiaStaff,
+    addRegiaStaff,
+    deleteRegiaStaff,
     guests,
     updateGuest,
     addGuest,
@@ -88,7 +93,7 @@ export const MasterAnagraficaManager: React.FC = () => {
 
   const isEn = language === 'en';
 
-  const [activeSection, setActiveSection] = useState<'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'ospiti' | 'squadre' | 'qr_registry'>('discenti');
+  const [activeSection, setActiveSection] = useState<'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti' | 'squadre' | 'qr_registry'>('discenti');
   const [searchQuery, setSearchQuery] = useState('');
   const [nationalityFilter, setNationalityFilter] = useState('ALL');
   const [groupFilter, setGroupFilter] = useState('ALL');
@@ -99,6 +104,7 @@ export const MasterAnagraficaManager: React.FC = () => {
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
   const [editingTech, setEditingTech] = useState<Technician | null>(null);
   const [editingDir, setEditingDir] = useState<Director | null>(null);
+  const [editingRegia, setEditingRegia] = useState<RegiaStaff | null>(null);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
 
@@ -107,6 +113,7 @@ export const MasterAnagraficaManager: React.FC = () => {
   const [isAddingFaculty, setIsAddingFaculty] = useState(false);
   const [isAddingTech, setIsAddingTech] = useState(false);
   const [isAddingDir, setIsAddingDir] = useState(false);
+  const [isAddingRegia, setIsAddingRegia] = useState(false);
   const [isAddingGuest, setIsAddingGuest] = useState(false);
 
   // Form states for new entities
@@ -157,6 +164,20 @@ export const MasterAnagraficaManager: React.FC = () => {
     organization: 'Trauma Academy',
     badgeCode: `DIR-0${directors.length + 1}`,
     notes: '',
+    isMaster: false,
+  });
+
+  const [newRegia, setNewRegia] = useState<Omit<RegiaStaff, 'id'>>({
+    name: '',
+    role: 'Regia Master Control',
+    title: 'Capo Centrale Regia & Mission Control',
+    nationality: 'Italiana',
+    phone: '+39 335 9900111',
+    email: '',
+    organization: 'Central Control Room / Trauma Academy',
+    badgeCode: `REGIA-${regiaStaff.length + 1}`,
+    notes: 'Accesso Master totale e coordinamento sala',
+    isMaster: false,
   });
 
   const [newGuest, setNewGuest] = useState<Omit<Guest, 'id'>>({
@@ -173,7 +194,7 @@ export const MasterAnagraficaManager: React.FC = () => {
   });
 
   // Calculate statistics
-  const totalPersonnel = discenti.length + faculty.length + technicians.length + directors.length + guests.length;
+  const totalPersonnel = discenti.length + faculty.length + technicians.length + directors.length + regiaStaff.length + guests.length;
 
   const nationalityBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -182,6 +203,7 @@ export const MasterAnagraficaManager: React.FC = () => {
       ...faculty.map((f) => f.nationality || 'Italiana'),
       ...technicians.map((t) => t.nationality || 'Italiana'),
       ...directors.map((d) => d.nationality || 'Italiana'),
+      ...regiaStaff.map((r) => r.nationality || 'Italiana'),
       ...guests.map((g) => g.nationality || 'Italiana'),
     ];
     all.forEach((n) => {
@@ -189,7 +211,7 @@ export const MasterAnagraficaManager: React.FC = () => {
       counts[clean] = (counts[clean] || 0) + 1;
     });
     return counts;
-  }, [discenti, faculty, technicians, directors, guests]);
+  }, [discenti, faculty, technicians, directors, regiaStaff, guests]);
 
   const uniqueNationalities = Object.keys(nationalityBreakdown).sort();
 
@@ -244,6 +266,19 @@ export const MasterAnagraficaManager: React.FC = () => {
     });
   }, [directors, searchQuery, nationalityFilter]);
 
+  const filteredRegiaStaff = useMemo(() => {
+    return regiaStaff.filter((r) => {
+      const matchQ =
+        !searchQuery ||
+        r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.organization && r.organization.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchNat = nationalityFilter === 'ALL' || r.nationality === nationalityFilter;
+      return matchQ && matchNat;
+    });
+  }, [regiaStaff, searchQuery, nationalityFilter]);
+
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
       const matchQ =
@@ -264,6 +299,9 @@ export const MasterAnagraficaManager: React.FC = () => {
 
     directors.forEach((d) => {
       rows.push(['DIREZIONE', d.id, d.badgeCode || '', d.name, d.nationality || 'Italiana', d.title, 'Comando Corso', d.organization || '', d.phone || '', d.email || '', d.notes || '']);
+    });
+    regiaStaff.forEach((r) => {
+      rows.push(['REGIA', r.id, r.badgeCode || '', r.name, r.nationality || 'Italiana', `${r.title} - ${r.role}`, 'Central Control Room', r.organization || '', r.phone || '', r.email || '', r.notes || '']);
     });
     faculty.forEach((f) => {
       rows.push(['FACULTY', f.id, f.badgeCode || '', f.name, f.nationality || 'Italiana', f.title, getTeamCodeName(f.assignedTeamId), f.organization || '', f.phone || '', f.email || '', f.notes || '']);
@@ -422,6 +460,18 @@ export const MasterAnagraficaManager: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveSection('regia')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+            activeSection === 'regia'
+              ? 'bg-neutral-100 text-black border-neutral-100'
+              : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+          }`}
+        >
+          <Radio className="w-4 h-4 text-pink-400" />
+          REGIA & MISSION CONTROL ({regiaStaff.length})
+        </button>
+
+        <button
           onClick={() => setActiveSection('ospiti')}
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
             activeSection === 'ospiti'
@@ -536,6 +586,15 @@ export const MasterAnagraficaManager: React.FC = () => {
             >
               <Plus className="w-4 h-4" />
               NUOVO MEMBRO DIREZIONE
+            </button>
+          )}
+          {activeSection === 'regia' && (
+            <button
+              onClick={() => setIsAddingRegia(true)}
+              className="px-4 py-2 bg-pink-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-pink-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
+            >
+              <Plus className="w-4 h-4" />
+              NUOVO MEMBRO REGIA
             </button>
           )}
           {activeSection === 'ospiti' && (
@@ -860,6 +919,91 @@ export const MasterAnagraficaManager: React.FC = () => {
                   <div className="pt-1 text-[11px] text-neutral-400 border-t border-neutral-800">
                     <span className="font-bold text-neutral-300">Note: </span>
                     {d.notes}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* SECTION REGIA & MISSION CONTROL */}
+      {activeSection === 'regia' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredRegiaStaff.map((r) => (
+            <div key={r.id} className={`bg-neutral-900 border-2 ${r.isMaster ? 'border-pink-500 shadow-lg shadow-pink-500/10' : 'border-neutral-800'} p-5 space-y-3`}>
+              <div className="flex items-start justify-between gap-2 border-b border-neutral-800 pb-2">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 text-[10px] font-black uppercase">
+                      REGIA & MISSION CONTROL
+                    </span>
+                    {r.isMaster ? (
+                      <span className="px-2 py-0.5 bg-pink-500 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                        <span>★ REGIA MASTER (ACCESSO TOTALE)</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => updateRegiaStaff(r.id, { isMaster: true })}
+                        className="px-2 py-0.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-pink-500/40 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                        title="Designa come Regia Master con accesso totale"
+                      >
+                        Designa Master
+                      </button>
+                    )}
+                    <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
+                      <span>{getCountryFlag(r.nationality)}</span>
+                      <span>{r.nationality || 'Italiana'}</span>
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-black text-white uppercase mt-1">{r.name}</h4>
+                  <p className="text-xs text-pink-400 font-bold">{r.title} — {r.role}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditingRegia(r)}
+                    className="p-1.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-neutral-700 transition-colors cursor-pointer"
+                    title="Modifica dati regia"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Eliminare ${r.name} dalla regia?`)) {
+                        deleteRegiaStaff(r.id);
+                      }
+                    }}
+                    className="p-1.5 bg-neutral-800 hover:bg-red-500 hover:text-white text-neutral-400 border border-neutral-700 transition-colors cursor-pointer"
+                    title="Elimina"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Ente / Struttura:</span>
+                  <span className="text-white font-medium">{r.organization || 'Control Room / Trauma Academy'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Badge ID:</span>
+                  <span className="font-mono font-bold text-pink-400">{r.badgeCode || 'REGIA-01'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Telefono / Radio:</span>
+                  <span className="font-mono font-bold text-white">{r.phone}</span>
+                </div>
+                {r.email && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Email:</span>
+                    <span className="font-mono text-neutral-300">{r.email}</span>
+                  </div>
+                )}
+                {r.notes && (
+                  <div className="pt-1 text-[11px] text-neutral-400 border-t border-neutral-800">
+                    <span className="font-bold text-neutral-300">Note: </span>
+                    {r.notes}
                   </div>
                 )}
               </div>
@@ -1667,6 +1811,23 @@ export const MasterAnagraficaManager: React.FC = () => {
                 </div>
               </div>
 
+              <div className="flex items-center gap-3 p-3 bg-neutral-900 border border-neutral-700">
+                <input
+                  type="checkbox"
+                  id="isMasterDirectorCheckbox"
+                  checked={editingDir ? !!editingDir.isMaster : !!newDir.isMaster}
+                  onChange={(e) =>
+                    editingDir
+                      ? setEditingDir({ ...editingDir, isMaster: e.target.checked })
+                      : setNewDir({ ...newDir, isMaster: e.target.checked })
+                  }
+                  className="w-4 h-4 accent-amber-500 cursor-pointer"
+                />
+                <label htmlFor="isMasterDirectorCheckbox" className="text-xs uppercase font-bold text-amber-400 cursor-pointer">
+                  Concedi Accesso Totale Direttore Master (isMaster)
+                </label>
+              </div>
+
               <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
                 <button
                   type="button"
@@ -1683,6 +1844,189 @@ export const MasterAnagraficaManager: React.FC = () => {
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-purple-500 hover:bg-neutral-100 text-black border-2 border-purple-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
                   {editingDir ? 'SALVA DIREZIONE' : 'REGISTRA MEMBRO'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REGIA EDIT / ADD MODAL */}
+      {(editingRegia || isAddingRegia) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
+              <h3 className="font-black text-lg text-white uppercase tracking-tight">
+                {editingRegia ? `MODIFICA REGIA: ${editingRegia.name}` : 'COMPILA NUOVO MEMBRO REGIA & MISSION CONTROL'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingRegia(null);
+                  setIsAddingRegia(false);
+                }}
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editingRegia) {
+                  updateRegiaStaff(editingRegia.id, editingRegia);
+                  setEditingRegia(null);
+                } else {
+                  addRegiaStaff(newRegia);
+                  setIsAddingRegia(false);
+                }
+              }}
+              className="space-y-3 text-xs font-bold"
+            >
+              <div>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Cognome *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingRegia ? editingRegia.name : newRegia.name}
+                  onChange={(e) =>
+                    editingRegia
+                      ? setEditingRegia({ ...editingRegia, name: e.target.value })
+                      : setNewRegia({ ...newRegia, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-pink-500"
+                  placeholder="Es. Ing. Marco Regia"
+                />
+              </div>
+
+              {/* NAZIONALITA */}
+              <div>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
+                  <span>Nazionalità *</span>
+                  <span className="text-pink-400 font-mono">
+                    {getCountryFlag(editingRegia ? editingRegia.nationality : newRegia.nationality)}
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingRegia ? editingRegia.nationality : newRegia.nationality}
+                  onChange={(e) =>
+                    editingRegia
+                      ? setEditingRegia({ ...editingRegia, nationality: e.target.value })
+                      : setNewRegia({ ...newRegia, nationality: e.target.value })
+                  }
+                  className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-pink-500 mb-1.5"
+                />
+                <div className="flex flex-wrap gap-1">
+                  {NATIONALITY_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() =>
+                        editingRegia
+                          ? setEditingRegia({ ...editingRegia, nationality: preset })
+                          : setNewRegia({ ...newRegia, nationality: preset })
+                      }
+                      className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 text-[10px] text-neutral-300 border border-neutral-700 cursor-pointer"
+                    >
+                      {getCountryFlag(preset)} {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ruolo / Funzione *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingRegia ? editingRegia.role : newRegia.role}
+                    onChange={(e) =>
+                      editingRegia
+                        ? setEditingRegia({ ...editingRegia, role: e.target.value })
+                        : setNewRegia({ ...newRegia, role: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-pink-500"
+                  />
+                </div>
+                <div>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Titolo / Qualifica</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingRegia ? editingRegia.title : newRegia.title}
+                    onChange={(e) =>
+                      editingRegia
+                        ? setEditingRegia({ ...editingRegia, title: e.target.value })
+                        : setNewRegia({ ...newRegia, title: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-pink-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Telefono / Radio</label>
+                  <input
+                    type="text"
+                    value={editingRegia ? editingRegia.phone : newRegia.phone}
+                    onChange={(e) =>
+                      editingRegia
+                        ? setEditingRegia({ ...editingRegia, phone: e.target.value })
+                        : setNewRegia({ ...newRegia, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-mono font-bold text-white focus:outline-hidden focus:border-pink-500"
+                  />
+                </div>
+                <div>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Badge ID</label>
+                  <input
+                    type="text"
+                    value={editingRegia ? editingRegia.badgeCode || '' : newRegia.badgeCode || ''}
+                    onChange={(e) =>
+                      editingRegia
+                        ? setEditingRegia({ ...editingRegia, badgeCode: e.target.value })
+                        : setNewRegia({ ...newRegia, badgeCode: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-mono font-bold text-white focus:outline-hidden focus:border-pink-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ente / Ospedale</label>
+                <input
+                  type="text"
+                  value={editingRegia ? editingRegia.organization || '' : newRegia.organization || ''}
+                  onChange={(e) =>
+                    editingRegia
+                      ? setEditingRegia({ ...editingRegia, organization: e.target.value })
+                      : setNewRegia({ ...newRegia, organization: e.target.value })
+                  }
+                  className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-pink-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingRegia(null);
+                    setIsAddingRegia(false);
+                  }}
+                  className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-pink-500 hover:bg-neutral-100 text-black border-2 border-pink-500 hover:border-neutral-100 cursor-pointer font-bold"
+                >
+                  {editingRegia ? 'SALVA REGIA' : 'REGISTRA MEMBRO'}
                 </button>
               </div>
             </form>

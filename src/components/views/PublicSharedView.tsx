@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCourse } from '../../context/CourseContext';
 import { GroupType, ActivityType } from '../../types';
 import {
@@ -11,6 +11,8 @@ import {
   Stethoscope,
   Users,
   Wrench,
+  Globe,
+  RefreshCw,
 } from 'lucide-react';
 
 export const PublicSharedView: React.FC = () => {
@@ -23,9 +25,45 @@ export const PublicSharedView: React.FC = () => {
     faculty,
     timerSeconds,
     isTimerRunning,
+    publicLayoutMode,
   } = useCourse();
 
-  const isEn = language === 'en';
+  const [displayLang, setDisplayLang] = useState<'it' | 'en'>('it');
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
+  // 30s interval timer to alternate between Italian and English with airport flip effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsFlipping(true);
+      setTimeout(() => {
+        setDisplayLang((prev) => (prev === 'it' ? 'en' : 'it'));
+        setIsFlipping(false);
+        setCountdown(30);
+      }, 350); // halfway through flip animation
+    }, 30000);
+
+    const countdownTimer = setInterval(() => {
+      setCountdown((prev) => (prev > 1 ? prev - 1 : 30));
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(countdownTimer);
+    };
+  }, []);
+
+  const handleManualFlip = () => {
+    if (isFlipping) return;
+    setIsFlipping(true);
+    setTimeout(() => {
+      setDisplayLang((prev) => (prev === 'it' ? 'en' : 'it'));
+      setIsFlipping(false);
+      setCountdown(30);
+    }, 350);
+  };
+
+  const isEn = displayLang === 'en';
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -97,6 +135,104 @@ export const PublicSharedView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-12">
+      {/* Airport Flip Board Language Alternation Header Banner */}
+      <div className="flex flex-wrap items-center justify-between bg-neutral-900 border-2 border-amber-500/50 px-4 py-2 text-xs font-mono shadow-md gap-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+          <span className="font-black text-amber-300 uppercase tracking-wider">
+            {isEn ? 'AIRPORT FLAP BOARD (AUTO-ALTERNATING 30s)' : 'TABELLONE AEROPORTUALE (ALTERNANZA 30s)'}
+          </span>
+          <span className="px-2 py-0.5 bg-neutral-800 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+            {publicLayoutMode === 'multi' ? (isEn ? 'MULTI-MONITOR SETUP 🖥️🖥️' : 'MULTISCHERMO ATTIVO 🖥️🖥️') : (isEn ? 'SINGLE-MONITOR SETUP 🖥️' : 'MONITOR SINGOLO 🖥️')}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-neutral-300 font-bold">
+            {isEn ? 'ACTIVE LANG:' : 'LINGUA ATTIVA:'}{' '}
+            <strong className="text-white bg-neutral-800 px-2 py-0.5 border border-neutral-700">
+              {displayLang.toUpperCase()} ({isEn ? 'ENGLISH 🇬🇧' : 'ITALIANO 🇮🇹'})
+            </strong>
+          </span>
+          <span className="text-neutral-400">
+            {isEn ? `Next flip in ${countdown}s` : `Prossimo cambio tra ${countdown}s`}
+          </span>
+          <button
+            onClick={handleManualFlip}
+            className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-wider rounded text-[10px] flex items-center gap-1 cursor-pointer shadow transition-all"
+            title={isEn ? 'Flip immediately to other language' : 'Cambia subito lingua (Flip)'}
+          >
+            <RefreshCw className={`w-3 h-3 ${isFlipping ? 'animate-spin' : ''}`} />
+            FLIP NOW
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content with Airport Flip Transition */}
+      <div className={`space-y-4 transition-all duration-300 ${isFlipping ? 'animate-airport-flip opacity-25 scale-[0.99]' : 'opacity-100 scale-100'}`}>
+      
+      {/* Morning Pre-Opening States for Public View (08:00 - 09:00) */}
+      {(() => {
+        const isMorningSlot0 = (activeDay === 2 || activeDay === 3) && activeSlotIndex === 0; // 08:00 - 08:30
+        const isMorningSlot1 = (activeDay === 2 || activeDay === 3) && activeSlotIndex === 1; // 08:30 - 09:00
+
+        if (isMorningSlot0) {
+          return (
+            <div className="bg-neutral-950 border-4 border-emerald-500 p-8 shadow-2xl text-center space-y-5 my-6">
+              <span className="px-3 py-1 bg-emerald-500 text-black font-black font-mono text-xs uppercase tracking-wider">
+                {isEn ? '08:00 - 08:30 • GATE OPENING FACULTY & TECNICI' : '08:00 - 08:30 • APERTURA GATE FACULTY & TECNICI'}
+              </span>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight">
+                {isEn ? 'Pre-Course Countdown in Foreground' : 'Countdown Pre-Corso in Primo Piano'}
+              </h2>
+              <div className="inline-flex items-center gap-3 px-8 py-4 bg-neutral-900 border-2 border-emerald-500/60 font-mono text-5xl font-black text-emerald-400 shadow-2xl">
+                <Clock className="w-12 h-12 animate-pulse text-emerald-400" />
+                {formatTimer(timerSeconds)}
+              </div>
+              <p className="text-sm text-neutral-300 max-w-xl mx-auto">
+                {isEn
+                  ? 'Staff and instructors preparation phase. Public shared view scenarios will start at 09:00.'
+                  : 'Fase di accoglienza e preparazione dello staff. La visuale pubblica condivisa si aprirà alle ore 09:00 in concomitanza con il primo scenario.'}
+              </p>
+            </div>
+          );
+        }
+
+        if (isMorningSlot1) {
+          return (
+            <div className="bg-neutral-950 border-4 border-amber-500 p-8 shadow-2xl space-y-6 my-6 text-center">
+              <div className="flex items-center justify-between max-w-3xl mx-auto">
+                <span className="px-3 py-1 bg-amber-500 text-black font-black font-mono text-xs uppercase">
+                  {isEn ? '08:30 - 09:00 • IMMINENT OPENING' : '08:30 - 09:00 • APERTURA IMMINENTE'}
+                </span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-neutral-900 border border-amber-500/50 font-mono text-sm font-bold text-amber-300">
+                  <Clock className="w-4 h-4 text-amber-400 animate-spin" />
+                  {formatTimer(timerSeconds)}
+                </div>
+              </div>
+              
+              <div className="max-w-2xl mx-auto bg-amber-950/70 border-2 border-amber-500 p-8 shadow-2xl space-y-4">
+                <div className="w-16 h-16 mx-auto bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-amber-400 rounded-2xl animate-bounce">
+                  <Info className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                  APERTURA CORSO IMMINENTE
+                </h2>
+                <p className="text-lg sm:text-xl font-black text-amber-300 uppercase tracking-wide">
+                  Raggiungere il proprio faculty
+                </p>
+                <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed max-w-lg mx-auto">
+                  {isEn
+                    ? 'All participants please proceed to your assigned simulation workstations and meet your assigned Faculty tutor. Full public shared view will open automatically at 09:00.'
+                    : 'Tutti i partecipanti sono invitati a raggiungere le rispettive postazioni di simulazione e incontrare il proprio Faculty tutor. La visuale pubblica condivisa si aprirà automaticamente alle ore 09:00.'}
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        return null;
+      })()}
+
       {/* Live Stage Hero Banner (Visuale Condivisa Plenaria) - Compact & Discreet */}
       <div className="relative overflow-hidden bg-neutral-950 border-2 border-neutral-700 p-3.5 sm:p-4 shadow-xl text-xs">
         <div className="flex flex-col gap-2">
@@ -282,6 +418,7 @@ export const PublicSharedView: React.FC = () => {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );

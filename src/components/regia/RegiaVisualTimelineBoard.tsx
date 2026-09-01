@@ -9,6 +9,7 @@ import {
   Award,
   BarChart3,
   Building,
+  Calendar,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -18,6 +19,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Clock,
+  Timer,
   ExternalLink,
   Eye,
   FastForward,
@@ -56,6 +58,9 @@ import {
   Users,
   Wrench,
   Zap,
+  Sliders,
+  Flag,
+  Moon,
 } from 'lucide-react';
 import {
   ActivityType,
@@ -86,11 +91,13 @@ const GROUP_THEMES: Record<GroupType, { label: string; name: string; border: str
 interface RegiaVisualTimelineBoardProps {
   onOpenMessenger?: () => void;
   onOpenBroadcast?: () => void;
+  isMaster?: boolean;
 }
 
 export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> = ({
   onOpenMessenger,
   onOpenBroadcast,
+  isMaster = true,
 }) => {
   const {
     activeDay,
@@ -114,15 +121,47 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     evaluations,
     saveEvaluation,
     timeMultiplier,
+    setTimeMultiplier,
+    jumpToTimelinePoint,
     sendCourseMessage,
     sendBroadcastAlert,
     autoAdvancePhases,
     setAutoAdvancePhases,
     setCourseGateEnabled,
+    isCourseStarted,
+    timeRemainingMs,
+    courseStartSchedule,
+    updateCourseStartSchedule,
+    startCourseImmediately,
+    resetCourseScheduleToFuture,
     language,
   } = useCourse();
 
   const isEn = language === 'en';
+
+  // Format remaining time for gate countdown
+  const totalSecsGate = Math.floor(timeRemainingMs / 1000);
+  const gateDays = Math.floor(totalSecsGate / (3600 * 24));
+  const gateHours = Math.floor((totalSecsGate % (3600 * 24)) / 3600);
+  const gateMins = Math.floor((totalSecsGate % 3600) / 60);
+  const gateSecs = totalSecsGate % 60;
+
+  const [regiaDateInput, setRegiaDateInput] = useState(courseStartSchedule.scheduledDate || '');
+  const [regiaTimeInput, setRegiaTimeInput] = useState(courseStartSchedule.scheduledTime || '08:30');
+  const [isRegiaSavedRecently, setIsRegiaSavedRecently] = useState(false);
+
+  const handleRegiaApplySchedule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regiaDateInput || !regiaTimeInput) return;
+    updateCourseStartSchedule({
+      scheduledDate: regiaDateInput,
+      scheduledTime: regiaTimeInput,
+      isoTimestamp: `${regiaDateInput}T${regiaTimeInput}:00`,
+      isGateEnabled: true,
+    });
+    setIsRegiaSavedRecently(true);
+    setTimeout(() => setIsRegiaSavedRecently(false), 2500);
+  };
 
   // Real-time station checklists sync for green light monitoring
   const [stationChecklists, setStationChecklists] = useState<StationPreSessionChecklist[]>(() => {
@@ -154,6 +193,16 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
   // Scroll ref for horizontal timeline strip
   const timelineScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll timeline strip to keep active milestone/slot centered in viewport
+  useEffect(() => {
+    if (timelineScrollRef.current) {
+      const activeElement = timelineScrollRef.current.children[activeSlotIndex] as HTMLElement;
+      if (activeElement) {
+        activeElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [activeSlotIndex]);
 
   // Active Modals State
   const [selectedModuleDetail, setSelectedModuleDetail] = useState<{
@@ -458,7 +507,150 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     filterGroup === 'ALL' ? ['A', 'B', 'C', 'D'] : [filterGroup];
 
   return (
-    <div className="space-y-3 animate-fadeIn">
+    <div className="space-y-4 animate-fadeIn">
+      {/* SYNCHRONIZED START GATE & COUNTDOWN REGIA PANEL */}
+      <div className="bg-neutral-900 border-4 border-orange-500 p-4 sm:p-5 shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-0.5 bg-orange-500 text-black text-xs font-black uppercase tracking-wider flex items-center gap-1 font-mono">
+                <Clock className="w-3.5 h-3.5" />
+                {isEn ? 'START GATE & COUNTDOWN SYNCHRONIZATION' : 'SINCRONIZZAZIONE START GATE & COUNTDOWN'}
+              </span>
+              {!isCourseStarted ? (
+                <span className="px-2 py-0.5 bg-red-950 border border-red-600 text-red-300 text-xs font-mono font-bold animate-pulse flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-red-400" />
+                  {isEn ? 'PARTICIPANTS LOCKED (COUNTDOWN ACTIVE)' : 'DISCENTI BLOCCATI (COUNTDOWN ATTIVO)'}
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-600 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  {isEn ? 'COURSE STARTED • UNLOCKED' : 'CORSO AVVIATO • ACCESSO LIBERO'}
+                </span>
+              )}
+            </div>
+            <h3 className="text-lg font-black text-white uppercase tracking-tight">
+              {isEn ? 'Master Regia Start Gate Control' : 'Controllo Master Regia Start Gate'}
+            </h3>
+          </div>
+
+          {/* Live Remaining Time Box */}
+          <div className="bg-neutral-950 border-2 border-neutral-700 px-3 py-2 flex flex-col items-center justify-center min-w-[150px] flex-shrink-0">
+            <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold">
+              {!isCourseStarted ? (isEn ? 'OPENS IN:' : 'APERTURA TRA:') : (isEn ? 'STATUS:' : 'STATO:')}
+            </span>
+            {!isCourseStarted ? (
+              <div className="text-base sm:text-lg font-mono font-black text-orange-400">
+                {gateDays > 0 && `${gateDays}${isEn ? 'd ' : 'g '}`}{String(gateHours).padStart(2, '0')}:{String(gateMins).padStart(2, '0')}:{String(gateSecs).padStart(2, '0')}
+              </div>
+            ) : (
+              <div className="text-xs font-mono font-black text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                {isEn ? 'UNLOCKED' : 'SBLOCCATO'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Date & Time Form */}
+          <form onSubmit={handleRegiaApplySchedule} className="md:col-span-6 bg-neutral-950 border border-neutral-800 p-3 space-y-3">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
+              <span className="text-[11px] font-mono font-bold text-neutral-300 uppercase flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-orange-400" />
+                {isEn ? 'SET START SCHEDULE' : 'IMPOSTA PROGRAMMAZIONE AVVIO'}
+              </span>
+              {isRegiaSavedRecently && (
+                <span className="text-[10px] font-mono text-emerald-400 font-bold animate-pulse">
+                  {isEn ? '✓ Updated!' : '✓ Aggiornato!'}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-mono text-neutral-400 uppercase mb-0.5">
+                  {isEn ? 'Date' : 'Data'}
+                </label>
+                <input
+                  type="date"
+                  value={regiaDateInput}
+                  onChange={(e) => setRegiaDateInput(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-xs px-2 py-1.5 outline-none font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-mono text-neutral-400 uppercase mb-0.5">
+                  {isEn ? 'Time (HH:MM)' : 'Ora (HH:MM)'}
+                </label>
+                <input
+                  type="time"
+                  value={regiaTimeInput}
+                  onChange={(e) => setRegiaTimeInput(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-xs px-2 py-1.5 outline-none font-bold"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-2 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {isEn ? 'APPLY & ENABLE GATE' : 'APPLICA & ABILITA GATE'}
+            </button>
+          </form>
+
+          {/* Quick Actions */}
+          <div className="md:col-span-6 bg-neutral-950 border border-neutral-800 p-3 space-y-3 flex flex-col justify-between">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
+              <span className="text-[11px] font-mono font-bold text-yellow-400 uppercase flex items-center gap-1">
+                <Zap className="w-3.5 h-3.5" />
+                {isEn ? 'QUICK LAUNCH & TEST PRESETS' : 'AVVIO RAPIDO & PRESET TEST'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={startCourseImmediately}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>{isEn ? 'START COURSE NOW (UNLOCK ALL)' : 'AVVIA CORSO ORA (SBLOCCA TUTTI)'}</span>
+            </button>
+
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => resetCourseScheduleToFuture(1)}
+                className="py-1.5 px-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
+              >
+                <Timer className="w-3 h-3 text-orange-400" />
+                <span>+1 min</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => resetCourseScheduleToFuture(15)}
+                className="py-1.5 px-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
+              >
+                <Clock className="w-3 h-3 text-orange-400" />
+                <span>+15 min</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => resetCourseScheduleToFuture(60)}
+                className="py-1.5 px-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
+              >
+                <Clock className="w-3 h-3 text-yellow-400" />
+                <span>+1 ora</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 0. PRE-COURSE WINDOW (08:00 - 08:30) & REAL-TIME WORKSTATION GREEN LIGHT STATUS */}
       <div className="bg-neutral-900 border-2 border-emerald-500/80 p-4 shadow-xl space-y-4">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
@@ -520,6 +712,33 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               <AlertTriangle className="w-4 h-4" />
               Invia Promemoria Postazioni (08:30)
             </button>
+          </div>
+        </div>
+
+        {/* Note alla Regia Operative Dettagliate */}
+        <div className="bg-neutral-950 border border-neutral-800 p-3 space-y-2 text-xs text-neutral-300">
+          <div className="flex items-center gap-2 font-black uppercase text-orange-400 tracking-wider">
+            <span>📋 NOTE ALLA REGIA OPERATIVE (PROTOCOLLO TIMELINE & VISUALI)</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
+            <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1">
+              <div className="font-black text-white uppercase">🌅 Flusso Mattina (Giorno 2 & Giorno 3):</div>
+              <ul className="list-disc list-inside space-y-1 text-neutral-300">
+                <li><strong className="text-emerald-400">08:00 - 08:30:</strong> Accoglienza staff, Faculty & Tecnici, setup postazioni (Countdown in primo piano).</li>
+                <li><strong className="text-amber-400">08:30 - 08:45:</strong> Riduzione dimensioni countdown e visualizzazione schermata: <span className="text-white italic">"APERTURA CORSO IMMINENTE, raggiungere il proprio faculty"</span>.</li>
+                <li><strong className="text-orange-400">08:45:</strong> Apertura automatica della visuale personalizzata discenti (<code className="text-neutral-200">DiscenteView</code>).</li>
+                <li><strong className="text-red-400">09:00:</strong> Apertura visuale pubblica e avvio ufficiale del primo scenario.</li>
+              </ul>
+            </div>
+            <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1">
+              <div className="font-black text-white uppercase">🌙 Flusso Notturno (Esclusivo Giorno 3):</div>
+              <ul className="list-disc list-inside space-y-1 text-neutral-300">
+                <li>Lo scenario notturno è presente <strong className="text-amber-400">unicamente nel Giorno 3</strong>.</li>
+                <li><strong className="text-emerald-400">20:00 - 20:30:</strong> Apertura Gate Faculty & Tecnici Notturni.</li>
+                <li><strong className="text-amber-400">20:30 - 21:00:</strong> Apertura Gate Discenti & Briefing Tattico.</li>
+                <li><strong className="text-red-400">21:00 - 22:00:</strong> Esecuzione del Maxi-Scenario Notturno in ambiente tattico.</li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -700,6 +919,130 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           </div>
         </div>
 
+        {/* DIRECTOR COURSE AUTOMATION & TIMELINE CONTROL PANEL */}
+        {isMaster && (
+          <div className="bg-neutral-950 border-2 border-yellow-500/60 p-3.5 space-y-3 shadow-xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-neutral-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-yellow-500 text-black font-black text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 shadow">
+                  <Sliders className="w-3 h-3" />
+                  {isEn ? 'DIRECTOR COURSE AUTOMATION & TIMELINE CONTROL' : 'AUTOMAZIONE CORSO & CONTROLLO TIMELINE DIREZIONE'}
+                </span>
+                <span className="text-[10px] font-mono text-neutral-300">
+                  {isEn ? 'Master Phase Management' : 'Gestione Avanzata Fasi'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-mono text-neutral-400 font-bold">{isEn ? 'Speed:' : 'Velocità:'}</span>
+                {[1, 2, 5, 10, 30].map((multiplier) => (
+                  <button
+                    key={multiplier}
+                    type="button"
+                    onClick={() => setTimeMultiplier(multiplier)}
+                    className={`px-2 py-0.5 text-[10px] font-mono font-bold border cursor-pointer transition-all ${
+                      timeMultiplier === multiplier
+                        ? 'bg-yellow-500 text-black border-yellow-300 shadow'
+                        : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:bg-neutral-800'
+                    }`}
+                  >
+                    {multiplier}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 items-center">
+              {/* 1. Step Backward / Revert / Play-Pause / Step Forward */}
+              <div className="flex items-center gap-1.5 justify-center sm:justify-start flex-wrap">
+                <button
+                  type="button"
+                  onClick={prevSlot}
+                  disabled={activeSlotIndex === 0}
+                  className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                  title={isEn ? 'Previous Phase / Slot' : 'Fase Precedente'}
+                >
+                  <ChevronLeft className="w-4 h-4 text-yellow-400" />
+                  <span>{isEn ? 'Prev' : 'Indietro'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={prevSlot}
+                  disabled={activeSlotIndex === 0}
+                  className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 disabled:opacity-40 font-bold text-xs uppercase border border-amber-700/60 flex items-center gap-1 cursor-pointer"
+                  title={isEn ? 'Revert last course phase / milestone' : 'Annulla ultima fase e torna indietro'}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isEn ? 'Revert Phase' : 'Revert Fasi'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleTimer}
+                  className={`px-3 py-1.5 font-black text-xs uppercase flex items-center gap-1.5 cursor-pointer transition-all shadow ${
+                    isTimerRunning
+                      ? 'bg-amber-500 hover:bg-amber-400 text-black'
+                      : 'bg-yellow-500 hover:bg-yellow-400 text-black'
+                  }`}
+                  title={isTimerRunning ? 'Pausa Timer Corso' : 'Avvia Timer Corso'}
+                >
+                  {isTimerRunning ? (
+                    <>
+                      <Pause className="w-4 h-4" />
+                      <span>{isEn ? 'Pause' : 'Pausa'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>{isEn ? 'Play' : 'Avvia'}</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={nextSlot}
+                  disabled={activeSlotIndex === filteredSlots.length - 1}
+                  className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                  title={isEn ? 'Next Phase / Slot' : 'Fase Successiva'}
+                >
+                  <span>{isEn ? 'Next' : 'Avanti'}</span>
+                  <ChevronRight className="w-4 h-4 text-yellow-400" />
+                </button>
+              </div>
+
+              {/* 2. Direct Phase Jump Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="jump-to-phase-select" className="text-[10px] font-mono text-neutral-400 whitespace-nowrap font-bold">
+                  {isEn ? 'Jump Phase:' : 'Vai a Fase:'}
+                </label>
+                <select
+                  id="jump-to-phase-select"
+                  aria-label={isEn ? 'Jump to phase' : 'Vai a fase'}
+                  value={activeSlotIndex}
+                  onChange={(e) => setActiveSlotIndex(Number(e.target.value))}
+                  className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 font-mono text-xs px-2 py-1.5 focus:outline-none focus:border-yellow-500 truncate"
+                >
+                  {filteredSlots.map((s, idx) => (
+                    <option key={s.id} value={idx}>
+                      Fase {idx + 1} ({s.timeRange}): {s.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Quick Status info */}
+              <div className="flex items-center justify-end gap-2 text-xs font-mono text-neutral-300">
+                <span className="inline-flex items-center gap-1 text-[11px] text-yellow-400 font-bold">
+                  <span className={`w-2 h-2 rounded-full ${isTimerRunning ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                  {isTimerRunning ? (isEn ? 'AUTOMATION ACTIVE' : 'AUTOMAZIONE ATTIVA') : (isEn ? 'PAUSED' : 'IN PAUSA')}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* HORIZONTAL COURSE TIMELINE SCROLLER (INTERACTIVE SCHEDULE STRIP) */}
         <div className="bg-neutral-950 border border-neutral-800 p-2 space-y-1.5">
           <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
@@ -707,25 +1050,27 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               <Clock className="w-3.5 h-3.5 text-yellow-400" />
               <span>TIMELINE SCROLLER GIORNO {activeDay} ({filteredSlots.length} FASI TOTALI)</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[9px] text-neutral-500 hidden sm:inline">Scorri per navigare tra gli slot:</span>
-              <button
-                type="button"
-                onClick={() => scrollTimeline('left')}
-                className="p-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 cursor-pointer"
-                title="Scorri indietro nella timeline"
-              >
-                <ChevronLeft className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTimeline('right')}
-                className="p-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 cursor-pointer"
-                title="Scorri avanti nella timeline"
-              >
-                <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
+            {isMaster && (
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] text-neutral-500 hidden sm:inline">Scorri per navigare tra gli slot:</span>
+                <button
+                  type="button"
+                  onClick={() => scrollTimeline('left')}
+                  className="p-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 cursor-pointer"
+                  title="Scorri indietro nella timeline"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollTimeline('right')}
+                  className="p-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 cursor-pointer"
+                  title="Scorri avanti nella timeline"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div
@@ -740,17 +1085,17 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               return (
                 <div
                   key={slot.id}
-                  onClick={() => setActiveSlotIndex(sIdx)}
-                  className={`min-w-[190px] max-w-[220px] p-2 border flex flex-col justify-between cursor-pointer transition-all flex-shrink-0 text-left relative ${
+                  onClick={isMaster ? () => setActiveSlotIndex(sIdx) : undefined}
+                  className={`min-w-[190px] max-w-[220px] p-2 border flex flex-col justify-between ${isMaster ? 'cursor-pointer transition-all' : 'cursor-default'} flex-shrink-0 text-left relative ${
                     isCurrent
                       ? 'bg-neutral-900 border-yellow-400 ring-2 ring-yellow-400/40 shadow-lg'
                       : isNext
-                      ? 'bg-neutral-900/90 border-cyan-500/70 hover:border-cyan-400'
+                      ? 'bg-neutral-900/90 border-cyan-500/70 ' + (isMaster ? 'hover:border-cyan-400' : '')
                       : isPast
-                      ? 'bg-neutral-950/60 border-neutral-800 opacity-70 hover:opacity-100 hover:border-neutral-700'
-                      : 'bg-neutral-950 border-neutral-800 hover:border-neutral-600'
+                      ? 'bg-neutral-950/60 border-neutral-800 opacity-70 ' + (isMaster ? 'hover:opacity-100 hover:border-neutral-700' : '')
+                      : 'bg-neutral-950 border-neutral-800 ' + (isMaster ? 'hover:border-neutral-600' : '')
                   }`}
-                  title={`Clicca per passare a ${slot.title} (${slot.timeRange})`}
+                  title={isMaster ? `Clicca per passare a ${slot.title} (${slot.timeRange})` : `${slot.title} (${slot.timeRange})`}
                 >
                   {/* Status Banner */}
                   <div className="flex items-center justify-between text-[9px] font-mono mb-1">

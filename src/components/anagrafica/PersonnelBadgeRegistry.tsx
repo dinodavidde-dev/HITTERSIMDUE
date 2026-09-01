@@ -34,11 +34,11 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { Director, Discente, Faculty, Guest, Team, Technician } from '../../types';
+import { Director, Discente, Faculty, Guest, RegiaStaff, Team, Technician } from '../../types';
 import { getCountryFlag } from './MasterAnagraficaManager';
 import { getTeamCodeName } from '../../utils/teamUtils';
 
-export type PersonCategory = 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite';
+export type PersonCategory = 'discente' | 'faculty' | 'tecnico' | 'direttore' | 'ospite' | 'regia';
 
 export interface UnifiedPerson {
   id: string;
@@ -78,6 +78,7 @@ export const PersonnelBadgeRegistry: React.FC<PersonnelBadgeRegistryProps> = ({
     faculty,
     technicians,
     directors,
+    regiaStaff,
     guests,
     activeDay,
   } = useCourse();
@@ -219,8 +220,28 @@ export const PersonnelBadgeRegistry: React.FC<PersonnelBadgeRegistryProps> = ({
       });
     });
 
+    // 6. Regia Staff
+    regiaStaff.forEach((r) => {
+      list.push({
+        id: `regia_${r.id}`,
+        originalId: r.id,
+        category: 'regia',
+        categoryLabel: 'REGIA & CONTROL ROOM',
+        categoryColor: '#ec4899', // Pink
+        name: r.name,
+        role: r.title || r.role || 'Regia Master',
+        organization: r.organization || 'Central Control Room',
+        nationality: r.nationality || 'Italiana',
+        phone: r.phone || 'Non indicato',
+        email: r.email || `${r.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@regiasim.org`,
+        badgeCode: r.badgeCode || `REGIA-${r.id}`,
+        notes: r.notes || 'Regia master e controllo sala',
+        deepLink: `${origin}${path}?regia=${r.id}&badge=${r.badgeCode || r.id}`,
+      });
+    });
+
     return list;
-  }, [discenti, faculty, technicians, directors, guests, teams]);
+  }, [discenti, faculty, technicians, directors, regiaStaff, guests, teams]);
 
   // Unique nationalities
   const nationalities = useMemo(() => {

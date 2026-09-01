@@ -6,6 +6,7 @@ import {
   CourseSuspensionInfo,
   Discente,
   Director,
+  RegiaStaff,
   Faculty,
   Guest,
   NightScenarioCase,
@@ -26,6 +27,7 @@ import {
   INITIAL_BROADCAST_ALERTS,
   INITIAL_COURSE_MESSAGES,
   INITIAL_DIRECTORS,
+  INITIAL_REGIA_STAFF,
   INITIAL_DISCENTI,
   INITIAL_FACULTY,
   INITIAL_GUESTS,
@@ -126,6 +128,11 @@ interface CourseContextType {
   addDirector: (newDirector: Omit<Director, 'id'>) => void;
   deleteDirector: (id: string) => void;
 
+  regiaStaff: RegiaStaff[];
+  updateRegiaStaff: (id: string, updates: Partial<RegiaStaff>) => void;
+  addRegiaStaff: (newRegia: Omit<RegiaStaff, 'id'>) => void;
+  deleteRegiaStaff: (id: string) => void;
+
   guests: Guest[];
   updateGuest: (id: string, updates: Partial<Guest>) => void;
   addGuest: (newGuest: Omit<Guest, 'id'>) => void;
@@ -151,6 +158,8 @@ interface CourseContextType {
   setSelectedTechnicianId: (id: string) => void;
   selectedDirectorId: string;
   setSelectedDirectorId: (id: string) => void;
+  selectedRegiaId: string;
+  setSelectedRegiaId: (id: string) => void;
   selectedGuestId: string;
   setSelectedGuestId: (id: string) => void;
 
@@ -203,6 +212,9 @@ interface CourseContextType {
   triggerSimulatedClinicalEvent: () => void;
 
   resetAllData: () => void;
+
+  publicLayoutMode: 'single' | 'multi';
+  setPublicLayoutMode: (mode: 'single' | 'multi') => void;
 
   isBeeping: boolean;
 }
@@ -315,6 +327,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [faculty, setFaculty] = useState<Faculty[]>(() => getStoredOrDefault('faculty', INITIAL_FACULTY));
   const [technicians, setTechnicians] = useState<Technician[]>(() => getStoredOrDefault('technicians', INITIAL_TECHNICIANS));
   const [directors, setDirectors] = useState<Director[]>(() => getStoredOrDefault('directors', INITIAL_DIRECTORS));
+  const [regiaStaff, setRegiaStaff] = useState<RegiaStaff[]>(() => getStoredOrDefault('regiaStaff', INITIAL_REGIA_STAFF));
   const [guests, setGuests] = useState<Guest[]>(() => getStoredOrDefault('guests', INITIAL_GUESTS));
   const [nightScenarios, setNightScenarios] = useState<NightScenarioCase[]>(() =>
     getStoredOrDefault('nightScenarios', INITIAL_NIGHT_SCENARIOS)
@@ -337,6 +350,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
   const [selectedDirectorId, setSelectedDirectorId] = useState<string>(() =>
     getStoredOrDefault('selectedDirectorId', 'dir-1')
+  );
+  const [selectedRegiaId, setSelectedRegiaId] = useState<string>(() =>
+    getStoredOrDefault('selectedRegiaId', 'regia-1')
   );
   const [selectedGuestId, setSelectedGuestId] = useState<string>(() =>
     getStoredOrDefault('selectedGuestId', 'guest-1')
@@ -433,6 +449,17 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [timeMultiplier, setTimeMultiplierState] = useState<number>(() => getStoredOrDefault('timeMultiplier', 1));
   const [autoAdvancePhases, setAutoAdvancePhasesState] = useState<boolean>(() => getStoredOrDefault('autoAdvancePhases', true));
   const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+
+  // Public View Layout Mode (Single vs Multi-Monitor)
+  const [publicLayoutMode, setPublicLayoutModeState] = useState<'single' | 'multi'>(() => getStoredOrDefault('publicLayoutMode', 'single'));
+  const setPublicLayoutMode = useCallback((mode: 'single' | 'multi') => {
+    setPublicLayoutModeState(mode);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'publicLayoutMode', JSON.stringify(mode));
+    } catch (e) {
+      console.warn('Failed to save publicLayoutMode', e);
+    }
+  }, []);
 
   // Real-Time Mesh Synchronization State
   const [clientId] = useState<string>(() => {
@@ -708,6 +735,28 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       unsubscribers.push(unsubDirs);
     } catch (err) {
       console.warn('Failed to listen to directors:', err);
+    }
+
+    // 10b. Listen to Regia Staff
+    const regiaPath = 'regiaStaff';
+    try {
+      const unsubRegia = onSnapshot(
+        collection(db, regiaPath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: RegiaStaff[] = [];
+            snapshot.forEach((d) => list.push(d.data() as RegiaStaff));
+            setRegiaStaff(list);
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, regiaPath);
+        }
+      );
+      unsubscribers.push(unsubRegia);
+    } catch (err) {
+      console.warn('Failed to listen to regiaStaff:', err);
     }
 
     // 11. Listen to Guests
@@ -1473,6 +1522,47 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  // Regia Staff CRUD
+  const updateRegiaStaff = useCallback((id: string, updates: Partial<RegiaStaff>) => {
+    if (updates.isMaster) {
+      setRegiaStaff((prev) =>
+        prev.map((r) => ({
+          ...r,
+          isMaster: r.id === id,
+        }))
+      );
+      regiaStaff.forEach((r) => {
+        const shouldBeMaster = r.id === id;
+        if (r.isMaster !== shouldBeMaster) {
+          setDoc(doc(db, 'regiaStaff', r.id), { isMaster: shouldBeMaster }, { merge: true }).catch((err) => {
+            handleFirestoreError(err, OperationType.UPDATE, `regiaStaff/${r.id}`);
+          });
+        }
+      });
+    } else {
+      setRegiaStaff((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+      setDoc(doc(db, 'regiaStaff', id), updates, { merge: true }).catch((err) => {
+        handleFirestoreError(err, OperationType.UPDATE, `regiaStaff/${id}`);
+      });
+    }
+  }, [regiaStaff]);
+
+  const addRegiaStaff = useCallback((newRegia: Omit<RegiaStaff, 'id'>) => {
+    const id = `regia-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const fullRegia: RegiaStaff = { ...newRegia, id };
+    setRegiaStaff((prev) => [...prev, fullRegia]);
+    setDoc(doc(db, 'regiaStaff', id), fullRegia).catch((err) => {
+      handleFirestoreError(err, OperationType.CREATE, `regiaStaff/${id}`);
+    });
+  }, []);
+
+  const deleteRegiaStaff = useCallback((id: string) => {
+    setRegiaStaff((prev) => prev.filter((r) => r.id !== id));
+    deleteDoc(doc(db, 'regiaStaff', id)).catch((err) => {
+      handleFirestoreError(err, OperationType.DELETE, `regiaStaff/${id}`);
+    });
+  }, []);
+
   // Guests CRUD
   const updateGuest = useCallback((id: string, updates: Partial<Guest>) => {
     setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, ...updates } : g)));
@@ -2007,6 +2097,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateDirector,
         addDirector,
         deleteDirector,
+        regiaStaff,
+        updateRegiaStaff,
+        addRegiaStaff,
+        deleteRegiaStaff,
         guests,
         updateGuest,
         addGuest,
@@ -2029,6 +2123,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setSelectedTechnicianId,
         selectedDirectorId,
         setSelectedDirectorId,
+        selectedRegiaId,
+        setSelectedRegiaId,
         selectedGuestId,
         setSelectedGuestId,
         facultyAuthSession,
@@ -2061,6 +2157,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         jumpToTimelinePoint,
         triggerSimulatedClinicalEvent,
         resetAllData,
+        publicLayoutMode,
+        setPublicLayoutMode,
         isBeeping,
       }}
     >
