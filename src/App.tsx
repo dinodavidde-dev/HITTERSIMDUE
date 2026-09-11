@@ -6,8 +6,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { CourseProvider, useCourse } from './context/CourseContext';
 import { Navbar } from './components/Navbar';
-import { BroadcastBanner } from './components/BroadcastBanner';
-import { CourseSuspensionBanner } from './components/CourseSuspensionBanner';
 import { PublicSharedView } from './components/views/PublicSharedView';
 import { DiscenteView } from './components/views/DiscenteView';
 import { TecnicoView } from './components/views/TecnicoView';
@@ -20,8 +18,6 @@ import { NightScenarioView } from './components/views/NightScenarioView';
 import { ProtesiCatalogView } from './components/views/ProtesiCatalogView';
 import { CourseScheduleGateCard } from './components/CourseScheduleGateCard';
 import { CoursePreStartCountdown } from './components/CoursePreStartCountdown';
-import { ModuleCalloutBanner } from './components/ModuleCalloutBanner';
-import { SimulationQuickFloatingBar } from './components/SimulationQuickFloatingBar';
 import { StartupAccessModal } from './components/StartupAccessModal';
 import { Activity, ShieldCheck, HeartPulse, Clock } from 'lucide-react';
 
@@ -270,15 +266,6 @@ const CourseMainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
-      {/* Real-time Suspension Emergency Banner (Highest Priority) */}
-      <CourseSuspensionBanner />
-
-      {/* Real-time Broadcast Audio & Visual Banner */}
-      <BroadcastBanner />
-
-      {/* 15-Minute Pre-Module Operator Callout & Team Assembly Countdown Banner */}
-      <ModuleCalloutBanner />
-
       {/* Main Simulation Navigation & Control Bar */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
@@ -286,9 +273,6 @@ const CourseMainContent: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-6 pb-12 transition-all">
         {renderActiveView()}
       </main>
-
-      {/* Floating Simulation Quick Bar when acceleration is active */}
-      <SimulationQuickFloatingBar onOpenFullModal={() => setIsSimulationModalOpen(true)} />
 
       {/* Trauma Center Footer - Responsive on all screen sizes */}
       <footer className="border-t-4 border-neutral-900 bg-neutral-950 py-5 sm:py-6 text-xs text-neutral-500 mt-auto">

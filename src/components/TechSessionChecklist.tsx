@@ -34,8 +34,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { CourseMessengerModal } from './messaging/CourseMessengerModal';
-import { ReadyWithCriticalityModal } from './messaging/ReadyWithCriticalityModal';
+
 
 interface TechSessionChecklistProps {
   initialStationId?: string;
@@ -102,8 +101,6 @@ export const TechSessionChecklist: React.FC<TechSessionChecklistProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Modals
-  const [isMessengerOpen, setIsMessengerOpen] = useState<boolean>(false);
-  const [isCriticalityModalOpen, setIsCriticalityModalOpen] = useState<boolean>(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
   const [bannerFeedback, setBannerFeedback] = useState<string | null>(null);
 
@@ -200,109 +197,7 @@ export const TechSessionChecklist: React.FC<TechSessionChecklistProps> = ({
     }
   };
 
-  // 1. TASTO PRONTO (LUCE VERDE 🟢) -> Invia segnale alla regia di Luce Verde al 100%
-  const handleSendGreenLightSignal = (stationId: string) => {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    // Mark station as green light and all items as READY
-    setStationChecklists((prev) =>
-      prev.map((station) => {
-        if (station.stationId !== stationId) return station;
-        const allReadyItems = station.items.map((it) => ({
-          ...it,
-          status: 'READY' as ChecklistItemStatus,
-        }));
-        return {
-          ...station,
-          items: allReadyItems,
-          readinessScore: 100,
-          isFullyCertified: true,
-          certifiedBy: currentTech.name,
-          certifiedAt: timeStr,
-          signalStatus: 'GREEN_LIGHT',
-          signalSentAt: timeStr,
-          signalNotes: 'Postazione verificata e conforme al 100%. Via libera allo scenario.',
-        };
-      })
-    );
-
-    // Sync with patient techChecklist in CourseContext
-    if (activeStation.patientId) {
-      updateTechChecklist(
-        activeStation.patientId,
-        'preDone',
-        true,
-        `🟢 LUCE VERDE confermata da ${currentTech.name} alle ${timeStr}`
-      );
-    }
-
-    // Send course message to Regia / Direction feed
-    sendCourseMessage({
-      senderId: currentTech.id,
-      senderRole: 'tecnico',
-      senderName: currentTech.name,
-      senderStation: activeStation.stationName,
-      type: 'info',
-      subject: `🟢 LUCE VERDE: ${activeStation.stationName} - PRONTO AL 100%`,
-      content: `La postazione ${activeStation.stationName} è stata verificata e convalidata con successo da ${currentTech.name} alle ${timeStr}. Tutti i presidi, manichini, circuiti di sangue e trucco sono pronti. Via libera per lo scenario.`,
-    });
-
-    setBannerFeedback(`🟢 Segnale LUCE VERDE inviato alla Regia alle ore ${timeStr}!`);
-    setTimeout(() => setBannerFeedback(null), 6000);
-  };
-
-  // 2. TASTO PRONTO CON CRITICITÀ (LUCE GIALLA ⚠️) -> Confermato tramite modal
-  const handleConfirmCriticalitySignal = (
-    notes: string,
-    severity: 'MODERATA' | 'ATTENZIONE',
-    selectedTags: string[]
-  ) => {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    // Update station state with yellow warning
-    setStationChecklists((prev) =>
-      prev.map((station) => {
-        if (station.stationId !== activeStation.stationId) return station;
-        return {
-          ...station,
-          isFullyCertified: true,
-          certifiedBy: `${currentTech.name} (con riserva)`,
-          certifiedAt: timeStr,
-          signalStatus: 'YELLOW_WARNING',
-          signalSentAt: timeStr,
-          signalNotes: notes,
-        };
-      })
-    );
-
-    // Sync with patient techChecklist in CourseContext
-    if (activeStation.patientId) {
-      updateTechChecklist(
-        activeStation.patientId,
-        'preDone',
-        true,
-        `⚠️ OK CON CRITICITÀ (${timeStr}): ${notes}`
-      );
-    }
-
-    // Send warning message to Regia & Direction
-    sendCourseMessage({
-      senderId: currentTech.id,
-      senderRole: 'tecnico',
-      senderName: currentTech.name,
-      senderStation: activeStation.stationName,
-      type: 'warning',
-      subject: `⚠️ LUCE GIALLA: ${activeStation.stationName} - PRONTO CON CRITICITÀ`,
-      content: `La postazione ${activeStation.stationName} è stata validata con SEGNALE DI OK CON CRITICITÀ [Livello: ${severity}] da ${currentTech.name} alle ${timeStr}.\n\nCriticità segnalate:\n${notes}\n\nLo scenario può procedere con le dovute riserve comunicate ai docenti/tutor.`,
-    });
-
-    setBannerFeedback(
-      `⚠️ Segnale OK CON CRITICITÀ (Luce Gialla) trasmesso alla Regia alle ore ${timeStr}.`
-    );
-    setTimeout(() => setBannerFeedback(null), 7000);
-  };
 
   // Add custom equipment item
   const handleAddNewItem = () => {
@@ -479,74 +374,7 @@ export const TechSessionChecklist: React.FC<TechSessionChecklistProps> = ({
               <span>{activeStation.scenarioRef}</span>
             </p>
           </div>
-
-          {/* TWO PRIMARY LIGHT BUTTONS (🟢 PRONTO / ⚠️ PRONTO CON CRITICITÀ) */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-            {/* 1. BUTTON PRONTO (LUCE VERDE) */}
-            <button
-              id="btn-station-green-light"
-              onClick={() => handleSendGreenLightSignal(activeStation.stationId)}
-              className="flex-1 sm:flex-initial min-h-[46px] px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider border-2 border-emerald-300 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-900/50 group"
-              title={isEn ? 'Send Green Light signal to Command: station 100% ready' : 'Invia segnale di Luce Verde alla Regia: postazione 100% pronta'}
-            >
-              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
-              <ShieldCheck className="w-4 h-4 text-white" />
-              <span>{isEn ? 'READY (GREEN LIGHT 🟢)' : 'PRONTO (LUCE VERDE 🟢)'}</span>
-            </button>
-
-            {/* 2. BUTTON PRONTO CON CRITICITÀ (LUCE GIALLA) */}
-            <button
-              id="btn-station-yellow-light"
-              onClick={() => setIsCriticalityModalOpen(true)}
-              className="flex-1 sm:flex-initial min-h-[46px] px-4 py-2.5 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black font-black text-xs uppercase tracking-wider border-2 border-amber-300 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-900/50"
-              title={isEn ? 'Open dialog to send Ready with Warnings signal to Command' : 'Apre finestra per inviare segnale di OK con criticità alla Regia'}
-            >
-              <AlertTriangle className="w-4 h-4 text-black" />
-              <span>{isEn ? 'READY WITH WARNINGS ⚠️' : 'PRONTO CON CRITICITÀ ⚠️'}</span>
-            </button>
-          </div>
         </div>
-
-        {/* ACTIVE SIGNAL STATUS CALLOUT (If already sent) */}
-        {activeStation.signalStatus && (
-          <div
-            className={`p-3 border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 ${
-              activeStation.signalStatus === 'GREEN_LIGHT'
-                ? 'bg-emerald-950/70 border-emerald-500 text-emerald-200'
-                : 'bg-amber-950/70 border-amber-500 text-amber-200'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <div
-                className={`p-1.5 font-black text-black ${
-                  activeStation.signalStatus === 'GREEN_LIGHT' ? 'bg-emerald-400' : 'bg-amber-400'
-                }`}
-              >
-                {activeStation.signalStatus === 'GREEN_LIGHT' ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4" />
-                )}
-              </div>
-              <div>
-                <span className="font-black text-xs uppercase tracking-wider block">
-                  {activeStation.signalStatus === 'GREEN_LIGHT'
-                    ? (isEn ? 'SIGNAL SENT: 🟢 GREEN LIGHT (STATION 100% CONFIRMED)' : 'SEGNALE INVIATO: 🟢 LUCE VERDE (POSTAZIONE CONFERMATA AL 100%)')
-                    : (isEn ? 'SIGNAL SENT: ⚠️ OK WITH WARNINGS (COMMAND NOTIFIED)' : 'SEGNALE INVIATO: ⚠️ OK CON CRITICITÀ (REGIA NOTIFICATA)')}
-                </span>
-                <p className="text-[11px] text-neutral-300 font-mono">
-                  {isEn ? 'Transmitted at' : 'Trasmesso alle ore'} {activeStation.signalSentAt || activeStation.certifiedAt} • {activeStation.signalNotes || (isEn ? 'No additional notes' : 'Nessuna nota aggiuntiva')}
-                </p>
-              </div>
-            </div>
-
-            <span className="text-[10px] font-mono uppercase bg-black/50 px-2 py-1 border border-neutral-700">
-              {isEn ? 'Logged at Command' : 'Registrato in Regia'}
-            </span>
-          </div>
-        )}
-
-        {/* QUICK HARDWARE & PREP METRICS (Lean) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-neutral-950 p-3 border border-neutral-800 text-xs">
           <div className="flex items-center gap-2">
             <BatteryCharging className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -796,15 +624,7 @@ export const TechSessionChecklist: React.FC<TechSessionChecklistProps> = ({
             <span>{isEn ? 'Reset checklist status' : 'Reimposta stato checklist'}</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSendGreenLightSignal(activeStation.stationId)}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase cursor-pointer flex items-center gap-1.5 shadow-md"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>{isEn ? 'CONFIRM GREEN LIGHT 🟢' : 'CONFERMA LUCE VERDE 🟢'}</span>
-            </button>
-          </div>
+
         </div>
       </div>
 
@@ -911,23 +731,6 @@ export const TechSessionChecklist: React.FC<TechSessionChecklistProps> = ({
         </div>
       )}
 
-      {/* Modal: Ready With Criticality (Luce Gialla ⚠️) */}
-      <ReadyWithCriticalityModal
-        isOpen={isCriticalityModalOpen}
-        onClose={() => setIsCriticalityModalOpen(false)}
-        stationName={activeStation.stationName}
-        scenarioRef={activeStation.scenarioRef}
-        techName={currentTech.name}
-        onConfirm={handleConfirmCriticalitySignal}
-      />
-
-      {/* Course Messenger Modal for General Communication */}
-      <CourseMessengerModal
-        isOpen={isMessengerOpen}
-        onClose={() => setIsMessengerOpen(false)}
-        defaultSubject="Segnalazione Tecnica / Allestimento"
-        defaultStation={activeStation.stationName}
-      />
     </div>
   );
 };

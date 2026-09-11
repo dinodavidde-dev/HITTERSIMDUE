@@ -84,7 +84,8 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
     faculty[0];
 
   // Assigned squad
-  const myAssignedTeam = teams.find((t) => t.id === currentFaculty.assignedTeamId) || teams[0];
+  const defaultTeam = { id: 1, name: 'Squadra 1', groupId: 'ALPHA' as const, color: '#f97316' };
+  const myAssignedTeam = teams.find((t) => t.id === currentFaculty?.assignedTeamId) || teams[0] || defaultTeam;
   const [selectedTeamId, setSelectedTeamId] = useState<number>(myAssignedTeam.id);
 
   const team = teams.find((t) => t.id === selectedTeamId) || myAssignedTeam;

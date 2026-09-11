@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy dependency definitions
 COPY package.json ./
 
-# Install dependencies (supporting bun.lock or package-lock if present)
-RUN if [ -f bun.lock ]; then npm install -g bun && bun install; else npm install; fi
+# Install dependencies using npm
+RUN npm install
 
 # Copy source code
 COPY . .

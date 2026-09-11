@@ -43,13 +43,10 @@ import {
 import { CourseDay, CourseMessage, GroupType, SessionPeriod, TeamEvaluation, TeamEvaluationScores } from '../../types';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { QRCodeDisplay } from '../QRCodeDisplay';
-import { CourseMessagesPanel } from '../messaging/CourseMessagesPanel';
-import { CourseMessengerModal } from '../messaging/CourseMessengerModal';
-import { BroadcastModal } from '../BroadcastModal';
 import { FacultyLiveFeedbackForm } from '../faculty/FacultyLiveFeedbackForm';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
-type FacultySubTab = 'field' | 'my_roster' | 'evaluation' | 'messages';
+type FacultySubTab = 'field' | 'my_roster' | 'evaluation';
 
 const GROUP_THEMES: Record<
   GroupType,
@@ -135,8 +132,6 @@ export const FacultyView: React.FC = () => {
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<FacultySubTab>('field');
-  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
-  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
   const [isSideDrawerOpen, setIsSideDrawerOpen] = useState(false);
   const [isLiveFeedbackModalOpen, setIsLiveFeedbackModalOpen] = useState(false);
   const [evalSubMode, setEvalSubMode] = useState<'live_form' | 'detailed_board'>('live_form');
@@ -149,8 +144,9 @@ export const FacultyView: React.FC = () => {
     faculty[0];
 
   // Assigned team for current tutor
-  const myAssignedTeam = teams.find((t) => t.id === currentFaculty.assignedTeamId) || teams[0];
-  const [selectedTeamId, setSelectedTeamId] = useState<number>(currentFaculty.assignedTeamId || myAssignedTeam.id);
+  const defaultTeam = { id: 1, name: 'Squadra 1', groupId: 'ALPHA' as const, color: '#f97316' };
+  const myAssignedTeam = teams.find((t) => t.id === currentFaculty?.assignedTeamId) || teams[0] || defaultTeam;
+  const [selectedTeamId, setSelectedTeamId] = useState<number>(currentFaculty?.assignedTeamId || myAssignedTeam.id);
   const [isQuickNavOpen, setIsQuickNavOpen] = useState(false);
   const selectedTeam = teams.find((t) => t.id === selectedTeamId) || myAssignedTeam;
   const assignedFaculty = currentFaculty;
@@ -660,27 +656,7 @@ export const FacultyView: React.FC = () => {
               <span>{isEn ? 'LIVE FEEDBACK' : 'FEEDBACK LIVE'}</span>
             </button>
 
-            <button
-              id="faculty-send-message-btn"
-              onClick={() => setIsMessengerOpen(true)}
-              className="flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider border border-black transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
-            >
-              <Send className="w-3 h-3" />
-              <span className="hidden xs:inline sm:inline">{isEn ? 'REPORT / ALERT' : 'SEGNALAZIONE'}</span>
-              <span className="xs:hidden sm:hidden">{isEn ? 'COMMAND' : 'REGIA'}</span>
-            </button>
 
-            {userRole === 'direttore' && (
-              <button
-                id="faculty-broadcast-btn"
-                onClick={() => setIsBroadcastOpen(true)}
-                className="flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider border border-white transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
-                title={isEn ? 'Send broadcast alert' : 'Invia allerta broadcast generale (Riservato Direzione)'}
-              >
-                <Radio className="w-3 h-3 animate-pulse" />
-                <span>BROADCAST</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -824,40 +800,7 @@ export const FacultyView: React.FC = () => {
             </div>
           </button>
 
-          {/* Tab 4: Messaggi dal Campo */}
-          <button
-            id="faculty-tab-messages-btn"
-            onClick={() => setActiveSubTab('messages')}
-            className={`min-h-[48px] p-2.5 sm:py-3 sm:px-4 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-2 sm:gap-1 cursor-pointer border relative ${
-              activeSubTab === 'messages'
-                ? 'bg-orange-500 text-black border-orange-300 shadow-lg'
-                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-neutral-700'
-            }`}
-          >
-            <div className="relative flex-shrink-0">
-              <MessageSquare className={`w-4 h-4 sm:w-5 sm:h-5 ${activeSubTab === 'messages' ? 'text-black' : 'text-orange-400'}`} />
-              {pendingMessagesCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[9px] font-mono font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
-                  {pendingMessagesCount}
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 flex-1 sm:flex-initial">
-              <div className="flex items-center justify-between sm:justify-center gap-1">
-                <span className="font-black text-xs uppercase tracking-wider block truncate">
-                  {isEn ? 'MESSAGES' : 'MESSAGGI'}
-                </span>
-                {pendingMessagesCount > 0 && activeSubTab !== 'messages' && (
-                  <span className="sm:hidden bg-red-600 text-white text-[9px] font-mono font-black px-1.5 py-0.2">
-                    {pendingMessagesCount}
-                  </span>
-                )}
-              </div>
-              <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'messages' ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
-                {isEn ? 'Command & Station Channel' : 'Canale Regia / Postazioni'}
-              </span>
-            </div>
-          </button>
+
         </div>
       </nav>
 
@@ -1395,13 +1338,7 @@ export const FacultyView: React.FC = () => {
         </div>
       )}
 
-      {/* SUBTAB 4: MESSAGGI DAL CAMPO (RISERVATO REGIA & FACULTY) */}
-      {activeSubTab === 'messages' && (
-        <CourseMessagesPanel
-          onOpenBroadcast={userRole === 'direttore' ? () => setIsBroadcastOpen(true) : undefined}
-          onOpenMessenger={() => setIsMessengerOpen(true)}
-        />
-      )}
+
 
       {/* Real-time Live Feedback Modal Overlay */}
       {isLiveFeedbackModalOpen && (
@@ -1439,21 +1376,7 @@ export const FacultyView: React.FC = () => {
         </div>
       )}
 
-      {/* Messenger Modal */}
-      <CourseMessengerModal
-        isOpen={isMessengerOpen}
-        onClose={() => setIsMessengerOpen(false)}
-        defaultStation={assignedFaculty.assignedStation || `Tutor Sq. ${myAssignedTeam.id}`}
-        defaultSubject="Nota Faculty per Regia"
-      />
 
-      {/* Broadcast Modal */}
-      <BroadcastModal
-        isOpen={isBroadcastOpen}
-        onClose={() => setIsBroadcastOpen(false)}
-        activeDay={activeDay}
-        currentSlot={currentSlot}
-      />
 
       {/* Floating Notification Toast */}
       {bulkNotification && (
@@ -1745,37 +1668,7 @@ export const FacultyView: React.FC = () => {
                 </div>
               )}
 
-              {/* Quick Action Triggers */}
-              <div className="space-y-2 pt-2 border-t border-neutral-800">
-                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 block px-1">
-                  AZIONI RAPIDE DIRETTE
-                </span>
-                <div className={userRole === 'direttore' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2'}>
-                  <button
-                    onClick={() => {
-                      setIsMessengerOpen(true);
-                      setIsSideDrawerOpen(false);
-                    }}
-                    className="p-3 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-black cursor-pointer shadow-md transition-colors w-full"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>INVIA SEGNALAZIONE ALLA REGIA</span>
-                  </button>
-                  {userRole === 'direttore' && (
-                    <button
-                      onClick={() => {
-                        setIsBroadcastOpen(true);
-                        setIsSideDrawerOpen(false);
-                      }}
-                      className="p-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-white cursor-pointer shadow-md transition-colors w-full"
-                      title="Invia allerta broadcast generale (Riservato Direzione)"
-                    >
-                      <Radio className="w-4 h-4 animate-pulse" />
-                      <span>BROADCAST ALL</span>
-                    </button>
-                  )}
-                </div>
-              </div>
+
             </div>
           </div>
         </div>

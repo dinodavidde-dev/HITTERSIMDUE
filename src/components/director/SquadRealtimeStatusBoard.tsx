@@ -113,7 +113,7 @@ export const SquadRealtimeStatusBoard: React.FC<SquadRealtimeStatusBoardProps> =
 
       {/* 12 Teams Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {teams.map((team) => {
+        {teams.map((team, index) => {
           const status = teamStatuses[team.id] || 'ready';
           const theme = groupThemes[team.groupId] || groupThemes.A;
           const currentGroupActivity = currentSlot?.groupActivities?.[team.groupId];
@@ -130,7 +130,7 @@ export const SquadRealtimeStatusBoard: React.FC<SquadRealtimeStatusBoardProps> =
 
           return (
             <div
-              key={team.id}
+              key={`team-${team.id ?? index}-${index}`}
               className={`bg-neutral-900 border-2 ${theme.border} p-4 space-y-3 shadow-lg flex flex-col justify-between transition-all hover:border-yellow-500`}
             >
               {/* Top Row: Group & Team Code */}

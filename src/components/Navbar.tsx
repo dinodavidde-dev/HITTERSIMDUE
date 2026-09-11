@@ -33,16 +33,15 @@ import {
   Unlock,
   User,
   UserCheck,
+  Users,
   Wifi,
   WifiOff,
   Wrench,
   Zap,
 } from 'lucide-react';
-import { BroadcastModal } from './BroadcastModal';
 import { QRScannerModal } from './QRScannerModal';
 import { SyncStatusModal } from './SyncStatusModal';
 import { FacultyAuthModal } from './FacultyAuthModal';
-import { CourseMessengerModal } from './messaging/CourseMessengerModal';
 import { SimulationEngineModal } from './SimulationEngineModal';
 import { EmailAccessModal } from './EmailAccessModal';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -81,11 +80,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     setIsSimulationModalOpen,
   } = useCourse();
 
-  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isFacultyAuthModalOpen, setIsFacultyAuthModalOpen] = useState(false);
-  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
   const [isEmailAccessModalOpen, setIsEmailAccessModalOpen] = useState(false);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
 
@@ -224,6 +221,45 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 <LanguageSwitcher variant="badge" />
               </div>
 
+              {/* Role & View Switcher Dropdown (Accessible from any view, especially Director) */}
+              <div className="relative group flex-shrink-0">
+                <button
+                  type="button"
+                  id="navbar-role-switcher-btn"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xs uppercase tracking-wider rounded border border-yellow-400 transition-all cursor-pointer shadow-md"
+                  title={language === 'en' ? 'Switch Role / View instantly' : 'Cambia Vista / Ruolo istantaneamente'}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{language === 'en' ? `VIEW: ${userRole.toUpperCase()}` : `VISTA: ${userRole.toUpperCase()}`}</span>
+                </button>
+                <div className="absolute right-0 mt-1 w-48 bg-neutral-950 border border-neutral-700 shadow-2xl rounded py-1 hidden group-hover:block z-50">
+                  <div className="px-3 py-1.5 text-[10px] font-mono text-neutral-400 border-b border-neutral-800 uppercase">
+                    {language === 'en' ? 'Switch View & Role' : 'Cambia Vista & Ruolo'}
+                  </div>
+                  {roleOptions.map((opt) => (
+                    <button
+                      key={opt.role}
+                      onClick={() => handleRoleSelection(opt.role)}
+                      className={`w-full text-left px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer ${
+                        userRole === opt.role ? 'bg-yellow-500/20 text-yellow-400' : 'text-neutral-200'
+                      }`}
+                    >
+                      {opt.icon}
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handleRoleSelection('regia')}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer border-t border-neutral-800 ${
+                      userRole === 'regia' ? 'bg-pink-500/20 text-pink-400' : 'text-pink-300'
+                    }`}
+                  >
+                    <Radio className="w-3.5 h-3.5 text-pink-400" />
+                    <span>REGIA & CONTROL</span>
+                  </button>
+                </div>
+              </div>
+
 
 
               {/* BLOCK 2.2: Public View Toggle / Staff Area Button & Projector New Tab */}
@@ -337,16 +373,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 )}
               </div>
 
-              {/* BLOCK 4B: Quick Messenger Button */}
-              <button
-                id="open-messenger-btn"
-                onClick={() => setIsMessengerOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-red-600 hover:text-white text-red-400 font-bold text-[11px] uppercase tracking-wider rounded border border-red-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                title={language === 'en' ? 'Send alert/message to Faculty & Directors' : 'Invia una segnalazione o richiesta alla Direzione e Faculty'}
-              >
-                <Send className="w-3 h-3" />
-                <span>{language === 'en' ? 'REPORT' : 'SEGNALA'}</span>
-              </button>
+
 
               {/* BLOCK 6: Real-Time Connectivity & Client Sync Indicator */}
               <button
@@ -522,9 +549,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
         )}
       </header>
 
-      {/* Broadcast Creator Modal */}
-      <BroadcastModal isOpen={isBroadcastOpen} onClose={() => setIsBroadcastOpen(false)} />
-
       {/* QR Code Scanner / Access Modal */}
       <QRScannerModal isOpen={isQRScannerOpen} onClose={() => setIsQRScannerOpen(false)} />
 
@@ -540,12 +564,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
         }}
         targetRolePending={pendingRole}
         onSuccess={handleFacultyAuthSuccess}
-      />
-
-      {/* Course Private Messenger Modal */}
-      <CourseMessengerModal
-        isOpen={isMessengerOpen}
-        onClose={() => setIsMessengerOpen(false)}
       />
 
       {/* Simulation Engine & Time Acceleration Modal */}

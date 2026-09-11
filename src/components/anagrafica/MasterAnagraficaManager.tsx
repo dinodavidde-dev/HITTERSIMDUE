@@ -279,6 +279,15 @@ export const MasterAnagraficaManager: React.FC = () => {
     });
   }, [regiaStaff, searchQuery, nationalityFilter]);
 
+  const handleAutoAssignTeams = () => {
+    discenti.forEach((disc, idx) => {
+      const assignedTeamId = Math.floor(idx / 5) + 1; // Teams 1 to 12
+      if (disc.teamId !== assignedTeamId) {
+        updateDiscente(disc.id, { teamId: assignedTeamId });
+      }
+    });
+  };
+
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
       const matchQ =
@@ -612,9 +621,17 @@ export const MasterAnagraficaManager: React.FC = () => {
       {/* SECTION 1: DISCENTI LIST */}
       {activeSection === 'discenti' && (
         <div className="bg-neutral-900 border-2 border-neutral-800 overflow-hidden">
-          <div className="p-3 bg-neutral-950 border-b border-neutral-800 flex justify-between items-center text-xs font-bold text-neutral-400">
+          <div className="p-3 bg-neutral-950 border-b border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs font-bold text-neutral-400">
             <span>Visualizzati {filteredDiscenti.length} discenti su {discenti.length} registrati</span>
-            <span className="text-orange-400 font-mono">5 Operatori per Squadra (12 Squadre)</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-orange-400 font-mono">5 Operatori per Squadra (12 Squadre)</span>
+              <button
+                onClick={handleAutoAssignTeams}
+                className="px-3 py-1 bg-orange-500 hover:bg-orange-400 text-black font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
+              >
+                ⚡ Assegna Squadre Automaticamente (1-12)
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">

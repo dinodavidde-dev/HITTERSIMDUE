@@ -21,7 +21,6 @@ import {
   Users,
 } from 'lucide-react';
 import { QRCodeDisplay } from '../QRCodeDisplay';
-import { CourseMessengerModal } from '../messaging/CourseMessengerModal';
 
 type OspiteSubTab = 'field' | 'my_pass' | 'programma';
 
@@ -45,7 +44,6 @@ export const OspiteView: React.FC = () => {
 
   const isEn = language === 'en';
   const [activeSubTab, setActiveSubTab] = useState<OspiteSubTab>('field');
-  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
 
   const currentGuest = guests.find((g) => g.id === selectedGuestId) || guests[0] || {
     id: 'guest-1',
@@ -89,17 +87,7 @@ export const OspiteView: React.FC = () => {
           </p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            id="guest-send-message-btn"
-            onClick={() => setIsMessengerOpen(true)}
-            className="px-3 py-1.5 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider border border-black transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <Send className="w-3 h-3" />
-            <span>{isEn ? 'SEND NOTE TO CONTROL' : 'INVIA NOTA A REGIA'}</span>
-          </button>
-        </div>
+
       </div>
 
       {/* Navigation Sub-Tabs Bar */}
@@ -355,13 +343,6 @@ export const OspiteView: React.FC = () => {
         </div>
       )}
 
-      {/* Messenger Modal */}
-      <CourseMessengerModal
-        isOpen={isMessengerOpen}
-        onClose={() => setIsMessengerOpen(false)}
-        defaultSubject={isEn ? 'Guest Note / Feedback' : 'Nota Ospite / Feedback'}
-        defaultStation={currentGuest.organization || (isEn ? 'Guest Delegation' : 'Delegazione Ospiti')}
-      />
     </div>
   );
 };

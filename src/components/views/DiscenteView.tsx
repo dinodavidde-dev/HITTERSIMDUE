@@ -46,7 +46,7 @@ import { translateRoleOrSpecialty } from '../../i18n/medicalTerms';
 import { CourseTimelineLegend } from '../regia/CourseTimelineLegend';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
-type DiscenteSubTab = 'team' | 'agenda' | 'feedback' | 'broadcast' | 'qrpass';
+type DiscenteSubTab = 'team' | 'agenda' | 'feedback' | 'qrpass';
 
 export const DiscenteView: React.FC = () => {
   const {
@@ -152,8 +152,9 @@ export const DiscenteView: React.FC = () => {
   };
 
   // Associated Team & Faculty
-  const currentTeam = teams.find((t) => t.id === currentDiscente.teamId) || teams[0];
-  const assignedFaculty = faculty.find((f) => f.assignedTeamId === currentTeam.id) || faculty[0];
+  const defaultTeam = { id: 1, name: 'Squadra 1', groupId: 'ALPHA' as GroupType, color: '#f97316' };
+  const currentTeam = teams.find((t) => t.id === currentDiscente.teamId) || teams[0] || defaultTeam;
+  const assignedFaculty = faculty.find((f) => f.assignedTeamId === currentTeam.id) || faculty[0] || { id: 'fac-1', name: 'Tutor 1', specialty: 'Anestesia e Rianimazione', nationality: 'Italiana', phone: '', organization: 'AOU Trauma Center' };
   const teammates = discenti.filter((d) => d.teamId === currentTeam.id);
 
   // Browser Notifications support
@@ -285,13 +286,6 @@ export const DiscenteView: React.FC = () => {
   // Team Evaluations for this team
   const teamEvaluations = evaluations.filter((e) => e.teamId === currentTeam.id);
   const latestEvaluation = teamEvaluations[teamEvaluations.length - 1];
-
-  // Filtered broadcast alerts for this discente's group or ALL
-  const myBroadcastAlerts = broadcastAlerts.filter(
-    (a) =>
-      a.targetGroups.includes('ALL') ||
-      a.targetGroups.includes(currentTeam.groupId as GroupType)
-  );
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -613,79 +607,138 @@ export const DiscenteView: React.FC = () => {
         </div>
       )}
 
-      {/* TOP BAR / IDENTITY PROFILE HEADER */}
-      <div className="bg-neutral-950 border-2 border-neutral-700 p-3 sm:p-4 shadow-xl relative overflow-hidden">
+      {/* TOP BAR / 3-COLUMN IDENTITY PROFILE HEADER: DATI DISCENTE, SQUADRA ASSEGNATA, FACULTY ASSEGNATO */}
+      <div className="bg-neutral-950 border-4 border-neutral-700 p-4 shadow-2xl relative overflow-hidden space-y-4">
         {/* Ambient background decoration */}
         <div
           className="absolute -right-12 -top-12 w-36 h-36 rounded-full blur-3xl opacity-15 pointer-events-none"
           style={{ backgroundColor: currentTeam.color || '#f97316' }}
         />
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 relative z-10">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            {/* Avatar / Badge */}
-            <div
-              className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center font-black text-sm sm:text-base border border-neutral-100 flex-shrink-0 text-black shadow-md"
-              style={{ backgroundColor: currentTeam.color || '#f97316' }}
-            >
-              {currentDiscente.name
-                .split(' ')
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join('')}
-            </div>
+        <div className="flex items-center justify-between pb-3 border-b-2 border-neutral-800">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 bg-orange-500 text-black font-black font-mono text-xs uppercase">
+              {isEn ? 'LEARNER PORTAL // DAY 02 & DAY 03' : 'PORTALE DISCENTE // DAY 02 & DAY 03'}
+            </span>
+            <span className="text-xs font-mono text-neutral-400">
+              {isEn ? 'SIMULATION SIMULATOR & AGENDA' : 'SIMULAZIONE CLINICA & AGENDA'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-xs font-bold text-emerald-400 uppercase">
+              {isEn ? 'LIVE SESSION ACTIVE' : 'SESSIONE LIVE ATTIVA'}
+            </span>
+          </div>
+        </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-orange-500 text-black">
-                  {isEn ? 'LEARNER' : 'DISCENTE'}
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-neutral-900 border border-neutral-700 text-neutral-300">
-                  {currentDiscente.badgeCode || `DISC-${currentDiscente.teamId}`}
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">
-                  🌍 {currentDiscente.nationality}
-                </span>
-              </div>
-              <h2 className="font-black text-base sm:text-lg text-white tracking-tight truncate uppercase mt-0.5 leading-tight">
-                {currentDiscente.name}
-              </h2>
-              {/* Prominent Team Display in Header */}
-              <div 
-                className="mt-1.5 mb-1 inline-flex items-center gap-2 px-3 py-1 border-2 shadow-md rounded-sm"
-                style={{ backgroundColor: `${currentTeam.color || '#f97316'}20`, borderColor: currentTeam.color || '#f97316' }}
+        {/* 3 Clear Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
+          
+          {/* Card 1: DATI DISCENTE */}
+          <div className="bg-neutral-900 border-2 border-orange-500/80 p-4 space-y-2 shadow-lg relative">
+            <div className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-orange-500 text-black">
+              {isEn ? 'LEARNER' : 'DISCENTE'}
+            </div>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 flex items-center justify-center font-black text-sm text-black border-2 border-neutral-100 flex-shrink-0 shadow-md"
+                style={{ backgroundColor: currentTeam.color || '#f97316' }}
               >
-                <span className="w-3 h-3 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: currentTeam.color || '#f97316' }} />
-                <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                  {currentTeam.name}
-                </span>
-                <span className="px-1.5 py-0.5 bg-black text-orange-400 text-[10px] font-mono border border-orange-500/40">
-                  {isEn ? 'TEAM' : 'SQUADRA'} #{currentTeam.id} • {isEn ? 'GRP' : 'GRUPPO'} {currentTeam.groupId}
-                </span>
+                {currentDiscente.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join('')}
               </div>
-
-              <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 flex-wrap">
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono text-neutral-400 block">
+                  {currentDiscente.badgeCode || `DISC-${currentDiscente.teamId}`} • 🌍 {currentDiscente.nationality}
+                </span>
+                <h3 className="font-black text-sm sm:text-base text-white uppercase tracking-tight truncate">
+                  {currentDiscente.name}
+                </h3>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-neutral-800 space-y-1 text-xs">
+              <div className="flex items-center justify-between text-neutral-300">
+                <span className="text-neutral-500 uppercase text-[10px]">{isEn ? 'Role:' : 'Ruolo:'}</span>
                 <span className="font-bold text-orange-400">{currentDiscente.role}</span>
-                {currentDiscente.organization && (
-                  <>
-                    <span>•</span>
-                    <span className="text-neutral-500 truncate max-w-[200px]">
-                      {currentDiscente.organization}
-                    </span>
-                  </>
-                )}
+              </div>
+              <div className="flex items-center justify-between text-neutral-300">
+                <span className="text-neutral-500 uppercase text-[10px]">{isEn ? 'Org:' : 'Ente:'}</span>
+                <span className="font-medium text-neutral-200 truncate max-w-[160px]">{currentDiscente.organization || 'Azienda Ospedaliera'}</span>
               </div>
             </div>
           </div>
 
-          {/* Team Pill & Action */}
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-2 md:pt-0 border-neutral-800">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border-2 border-orange-500/70 text-xs font-mono shadow-md">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: currentTeam.color || '#f97316' }} />
-              <span className="font-black text-white">{isEn ? 'TEAM' : 'SQUADRA'} #{currentTeam.id}</span>
-              <span className="text-orange-400 font-bold text-xs">({isEn ? 'GRP' : 'GR'} {currentTeam.groupId})</span>
+          {/* Card 2: SQUADRA ASSEGNATA */}
+          <div className="bg-neutral-900 border-2 border-neutral-700 p-4 space-y-2 shadow-lg relative">
+            <div className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-neutral-800 text-neutral-200 border border-neutral-700">
+              {isEn ? 'TEAM' : 'SQUADRA'}
+            </div>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 flex items-center justify-center font-black text-sm text-black border-2 border-neutral-100 flex-shrink-0 shadow-md"
+                style={{ backgroundColor: currentTeam.color || '#f97316' }}
+              >
+                #{currentTeam.id}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono text-neutral-400 block">
+                  {isEn ? 'OPERATIONAL GROUP' : 'GRUPPO OPERATIVO'} {currentTeam.groupId} • 5 {isEn ? 'Members' : 'Componenti'}
+                </span>
+                <h3 className="font-black text-sm sm:text-base text-white uppercase tracking-tight truncate">
+                  {currentTeam.name}
+                </h3>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-neutral-800 space-y-1 text-xs">
+              <div className="flex items-center justify-between text-neutral-300">
+                <span className="text-neutral-500 uppercase text-[10px]">{isEn ? 'Team Status:' : 'Stato Squadra:'}</span>
+                {renderTeamStatusBadge(currentTeam.groupId as GroupType)}
+              </div>
+              <div className="flex items-center justify-between text-neutral-300">
+                <span className="text-neutral-500 uppercase text-[10px]">{isEn ? 'Roster:' : 'Componenti:'}</span>
+                <span className="font-mono text-neutral-200">{teammates.length} {isEn ? 'operators' : 'operatori'}</span>
+              </div>
             </div>
           </div>
+
+          {/* Card 3: FACULTY ASSEGNATO */}
+          <div className="bg-neutral-900 border-2 border-emerald-500/80 p-4 space-y-2 shadow-lg relative">
+            <div className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-emerald-500 text-black">
+              {isEn ? 'TUTOR' : 'FACULTY'}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500 text-black flex items-center justify-center font-black border-2 border-neutral-100 flex-shrink-0 shadow-md">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono text-neutral-400 block">
+                  {isEn ? 'CLINICAL TUTOR' : 'TUTOR CLINICO'} • 🌍 {assignedFaculty.nationality}
+                </span>
+                <h3 className="font-black text-sm sm:text-base text-white uppercase tracking-tight truncate">
+                  {assignedFaculty.name}
+                </h3>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-neutral-800 space-y-1 text-xs">
+              <div className="flex items-center justify-between text-neutral-300">
+                <span className="text-neutral-500 uppercase text-[10px]">{isEn ? 'Specialty:' : 'Specializzazione:'}</span>
+                <span className="font-bold text-emerald-400 truncate max-w-[150px]">{assignedFaculty.specialty}</span>
+              </div>
+              {assignedFaculty.phone && (
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-500 uppercase text-[10px]">{isEn ? 'Direct Contact:' : 'Contatto Diretto:'}</span>
+                  <a href={`tel:${assignedFaculty.phone}`} className="text-xs font-mono font-bold text-emerald-400 hover:underline">
+                    📞 {assignedFaculty.phone}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -717,7 +770,7 @@ export const DiscenteView: React.FC = () => {
 
       {/* MOBILE-FIRST INTUITIVE & ACCESSIBLE SUBMENU TABS */}
       <div className="sticky top-14 z-30 bg-neutral-950/95 backdrop-blur-md border-y border-neutral-800 py-1 -mx-4 sm:mx-0 px-4 sm:px-0 shadow-md">
-        <nav aria-label={isEn ? 'Learner Menu' : 'Menu Discente'} className="grid grid-cols-5 gap-1 sm:gap-1.5">
+        <nav aria-label={isEn ? 'Learner Menu' : 'Menu Discente'} className="grid grid-cols-4 gap-1 sm:gap-1.5">
           <button
             onClick={() => setActiveSubTab('agenda')}
             className={`min-h-[40px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 text-center border transition-all cursor-pointer ${
@@ -761,23 +814,6 @@ export const DiscenteView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('broadcast')}
-            className={`min-h-[40px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 text-center border transition-all cursor-pointer relative ${
-              activeSubTab === 'broadcast'
-                ? 'bg-neutral-100 text-black border-neutral-100 font-black shadow-md'
-                : 'bg-neutral-900 text-neutral-400 hover:text-white border-neutral-800 hover:border-neutral-700 font-bold'
-            }`}
-          >
-            <Radio className={`w-3.5 h-3.5 ${activeSubTab === 'broadcast' ? 'text-black' : 'text-red-400'}`} />
-            <span className="text-[10px] sm:text-[11px] uppercase tracking-tight sm:tracking-wider leading-tight">
-              {isEn ? 'ALERTS' : 'AVVISI'}
-            </span>
-            {myBroadcastAlerts.some((a) => a.active) && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
-            )}
-          </button>
-
-          <button
             onClick={() => setActiveSubTab('qrpass')}
             className={`min-h-[40px] flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 text-center border transition-all cursor-pointer ${
               activeSubTab === 'qrpass'
@@ -799,6 +835,7 @@ export const DiscenteView: React.FC = () => {
       {activeSubTab === 'agenda' && (
         <div className="space-y-6">
           {/* LIVE NOW CARD - WHAT MY TEAM SHOULD DO RIGHT NOW */}
+          {activeSlotIndex >= 2 && (
           <motion.div
             key={`${activeSlotIndex}-${currentTeam.id}`}
             initial={{ opacity: 0, scale: 0.98, y: 12 }}
@@ -1105,49 +1142,124 @@ export const DiscenteView: React.FC = () => {
               </div>
             )}
           </motion.div>
+          )}
 
           {/* TWO-DAY FULL TIMELINE ACCORDION FOR MY TEAM */}
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b-2 border-neutral-800">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-3 border-b-2 border-neutral-800">
               <div>
                 <h3 className="font-black text-base text-white uppercase tracking-tight">
-                  {isEn ? `2-DAY FULL SCHEDULE // SQUAD ${currentTeam.id} TIMELINE` : `PROGRAMMA COMPLETO DEI 2 GIORNI // IL PERCORSO DELLA SQUADRA ${currentTeam.id}`}
+                  {isEn ? `DAY 0{activeDay} SCHEDULE // SQUAD ${currentTeam.id} TIMELINE` : `PROGRAMMA GIORNALIERO DAY 0{activeDay} // PERCORSO SQUADRA ${currentTeam.id}`}
                 </h3>
                 <p className="text-xs text-neutral-400">
-                  {isEn ? `All 8 phases for Day 02 & Day 03 customized for Group ${currentTeam.groupId}` : `Tutte le 8 fasi del Day 02 e Day 03 personalizzate per il Gruppo ${currentTeam.groupId}`}
+                  {isEn ? `All phases customized for Group ${currentTeam.groupId} • Click any slot for details` : `Tutte le fasi personalizzate per il Gruppo ${currentTeam.groupId} • Semplificato e facile da consultare`}
                 </p>
               </div>
 
-              {/* Day filter selector */}
-              <div className="flex items-center gap-1 bg-neutral-900 p-1 border border-neutral-700 self-stretch sm:self-auto justify-center">
-                <button
-                  onClick={() => {
-                    setAgendaDay(2);
-                    setActiveDay(2);
-                  }}
-                  className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                    activeDay === 2 ? 'bg-orange-500 text-black' : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  DAY 02
-                </button>
-                <button
-                  onClick={() => {
-                    setAgendaDay(3);
-                    setActiveDay(3);
-                  }}
-                  className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                    activeDay === 3 ? 'bg-orange-500 text-black' : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  DAY 03
-                </button>
+              {/* Day & Period Filter Controls */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Day selector */}
+                <div className="flex items-center gap-1 bg-neutral-900 p-1 border border-neutral-700">
+                  <button
+                    onClick={() => {
+                      setAgendaDay(2);
+                      setActiveDay(2);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      activeDay === 2 ? 'bg-orange-500 text-black' : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    DAY 02
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAgendaDay(3);
+                      setActiveDay(3);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      activeDay === 3 ? 'bg-orange-500 text-black' : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    DAY 03
+                  </button>
+                </div>
+
+                {/* Period filter */}
+                <div className="flex items-center gap-1 bg-neutral-900 p-1 border border-neutral-700">
+                  <button
+                    onClick={() => setAgendaPeriod('ALL')}
+                    className={`px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      agendaPeriod === 'ALL' ? 'bg-neutral-100 text-black' : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    {isEn ? 'ALL' : 'TUTTI'}
+                  </button>
+                  <button
+                    onClick={() => setAgendaPeriod('MORNING')}
+                    className={`px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      agendaPeriod === 'MORNING' ? 'bg-neutral-100 text-black' : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    {isEn ? 'MORNING' : 'MATTINA'}
+                  </button>
+                  <button
+                    onClick={() => setAgendaPeriod('AFTERNOON')}
+                    className={`px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      agendaPeriod === 'AFTERNOON' ? 'bg-neutral-100 text-black' : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    {isEn ? 'AFTERNOON' : 'POMERIGGIO'}
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* List of slots for the selected day */}
-            <div className="space-y-3">
-              {filteredSlots.map((slot, idx) => {
+            {/* List of slots or Pre-08:30 Course Start Countdown */}
+            {activeSlotIndex < 2 ? (
+              <div className="bg-neutral-950 border-4 border-orange-500/80 p-8 text-center space-y-6 shadow-2xl relative overflow-hidden my-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-orange-500/10 animate-pulse pointer-events-none" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500 text-black font-black text-xs uppercase tracking-widest">
+                  <Clock className="w-4 h-4 animate-spin" />
+                  <span>{isEn ? 'PRE-COURSE BRIEFING // WAITING FOR 08:30 START' : 'ATTESA INIZIO CORSO // START ORE 08:30'}</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                    {isEn ? 'COURSE START COUNTDOWN' : 'CONTO ALLA ROVESCIA INIZIO CORSO'}
+                  </h3>
+                  <p className="text-sm text-neutral-400 max-w-md mx-auto">
+                    {isEn 
+                      ? 'The daily schedule and team agenda will unlock automatically at 08:30 when Day proceedings officially begin.' 
+                      : 'Il programma giornaliero e l\'agenda della squadra saranno consultabili automaticamente alle ore 08:30 all\'avvio ufficiale delle attività.'}
+                  </p>
+                </div>
+
+                {/* Big Countdown Clock */}
+                <div className="inline-flex items-center justify-center gap-3 px-6 py-4 bg-neutral-900 border-2 border-orange-500/60 shadow-inner font-mono text-3xl sm:text-5xl font-black text-orange-400">
+                  <span>
+                    {Math.floor((activeSlotIndex === 0 ? timerSeconds + 900 : timerSeconds) / 60).toString().padStart(2, '0')}
+                  </span>
+                  <span className="animate-pulse">:</span>
+                  <span>
+                    {((activeSlotIndex === 0 ? timerSeconds + 900 : timerSeconds) % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+
+                <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
+                  {isEn ? `Current Status: Phase #${activeSlotIndex + 1} (${currentSlot.timeRange})` : `Stato Attuale: Fase #${activeSlotIndex + 1} (${currentSlot.timeRange})`}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
+              {filteredSlots
+                .filter((slot) => {
+                  if (agendaPeriod === 'ALL') return true;
+                  const hour = parseInt(slot.timeRange.split(':')[0] || '0', 10);
+                  if (agendaPeriod === 'MORNING') return hour < 13;
+                  if (agendaPeriod === 'AFTERNOON') return hour >= 13;
+                  return true;
+                })
+                .map((slot, idx) => {
                 const activity = slot.groupActivities?.[currentTeam.groupId as GroupType];
                 const isCurrentActiveSlot = activeDay === slot.day && currentSlot.id === slot.id;
                 const isScenario = activity && isScenarioActivity(activity.activityType);
@@ -1306,6 +1418,7 @@ export const DiscenteView: React.FC = () => {
                 );
               })}
             </div>
+            )}
 
             {/* Interactive Timeline Legend */}
             <div className="pt-3">
@@ -1664,146 +1777,7 @@ export const DiscenteView: React.FC = () => {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* SUBTAB 4: BROADCAST ALERTS & SOS MESSAGES */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'broadcast' && (
-        <div className="space-y-6">
-          {/* SEND MESSAGE / SOS TO FACULTY & DIRECTOR */}
-          <div className="bg-neutral-950 border-4 border-red-600 p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b-2 border-neutral-800">
-              <Radio className="w-5 h-5 text-red-500" />
-              <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
-                {isEn ? `DIRECT CONTROL ROOM COMM // SOS SQUAD ${currentTeam.id}` : `COMUNICAZIONE DIRETTA ALLA REGIA // SOS SQUADRA ${currentTeam.id}`}
-              </h3>
-            </div>
-            <p className="text-xs text-neutral-300">
-              {isEn
-                ? 'Send an urgent request for supplies, technical assistance, or clinical clarification directly to the Course Direction and Faculty.'
-                : 'Invia una richiesta urgente di materiali, supporto tecnico o chiarimento clinico direttamente alla Direzione e alla Faculty.'}
-            </p>
 
-            <form onSubmit={handleSendSos} className="space-y-3">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-neutral-400 mb-1">
-                  {isEn ? 'REQUEST PRIORITY LEVEL:' : 'LIVELLO PRIORITÀ RICHIESTA:'}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'info', label: isEn ? 'INFO / LOGISTICS' : 'INFO / LOGISTICA', color: 'border-sky-500 text-sky-400' },
-                    { id: 'warning', label: isEn ? 'MEDIUM URGENCY' : 'URGENZA MEDIA', color: 'border-orange-500 text-orange-400' },
-                    { id: 'emergency', label: isEn ? 'EMERGENCY / SOS' : 'EMERGENZA / SOS', color: 'border-red-600 text-red-400' },
-                  ].map((lvl) => (
-                    <button
-                      key={lvl.id}
-                      type="button"
-                      onClick={() => setSosType(lvl.id as any)}
-                      className={`p-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer ${
-                        sosType === lvl.id
-                          ? 'bg-neutral-100 text-black border-neutral-100 font-black'
-                          : `bg-neutral-900 ${lvl.color} border-neutral-800`
-                      }`}
-                    >
-                      {lvl.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-neutral-400 mb-1">
-                  {isEn ? 'OPERATIONAL MESSAGE:' : 'MESSAGGIO OPERATIVO:'}
-                </label>
-                <textarea
-                  rows={2}
-                  value={sosMessage}
-                  onChange={(e) => setSosMessage(e.target.value)}
-                  placeholder={isEn ? "E.g. Missing REBOA catheter in Shock Room 2; sterile glove replenishment required..." : "Es. Mancanza catetere REBOA in Shock Room 2; richiesta sostituzione guanti sterili..."}
-                  className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-xs font-medium text-white focus:outline-hidden focus:border-orange-500"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                {sosSentSuccess ? (
-                  <span className="text-xs font-black text-emerald-400 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" /> {isEn ? 'MESSAGE TRANSMITTED SUCCESSFULLY!' : 'MESSAGGIO INVIATO CON SUCCESSO!'}
-                  </span>
-                ) : (
-                  <span className="text-[11px] text-neutral-500 font-mono">
-                    {isEn ? 'Sender:' : 'Mittente:'} {currentDiscente.name} ({translateRoleOrSpecialty(currentDiscente.role, language)})
-                  </span>
-                )}
-
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-red-600 hover:bg-neutral-100 hover:text-black text-white text-xs font-black uppercase tracking-wider border-2 border-neutral-100 transition-all cursor-pointer shadow-lg flex items-center gap-1.5"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isEn ? 'TRANSMIT NOW' : 'TRASMETTI ORA'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* LIST OF BROADCAST MESSAGES FOR ME */}
-          <div className="bg-neutral-950 border-4 border-neutral-100 p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b-2 border-neutral-800">
-              <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
-                {isEn ? `RECEIVED ALERTS HISTORY (${myBroadcastAlerts.length})` : `STORICO AVVISI RICEVUTI (${myBroadcastAlerts.length})`}
-              </h3>
-              <span className="text-xs font-mono text-neutral-400">{isEn ? `Filter: Group ${currentTeam.groupId} & ALL` : `Filtro: Gruppo ${currentTeam.groupId} & ALL`}</span>
-            </div>
-
-            <div className="space-y-3">
-              {myBroadcastAlerts.length > 0 ? (
-                myBroadcastAlerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={`p-4 border-2 space-y-2 ${
-                      alert.priority === 'critical'
-                        ? 'bg-red-950/30 border-red-600 text-white'
-                        : alert.priority === 'high'
-                        ? 'bg-orange-950/20 border-orange-500 text-white'
-                        : 'bg-neutral-900 border-neutral-800 text-neutral-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-black text-neutral-400">{alert.timestamp}</span>
-                        <span
-                          className={`text-[10px] font-black uppercase px-2 py-0.5 ${
-                            alert.priority === 'critical'
-                              ? 'bg-red-600 text-white'
-                              : alert.priority === 'high'
-                              ? 'bg-orange-500 text-black'
-                              : 'bg-neutral-800 text-neutral-300'
-                          }`}
-                        >
-                          {alert.priority}
-                        </span>
-                        <span className="text-[11px] font-bold text-neutral-400">
-                          {isEn ? 'From:' : 'Da:'} {alert.senderName}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-neutral-400">
-                        {isEn ? 'Target:' : 'Dest:'} {alert.targetGroups.join(', ')}
-                      </span>
-                    </div>
-
-                    <h4 className="font-black text-sm uppercase text-white">{alert.title}</h4>
-                    <p className="text-xs text-neutral-300 font-medium leading-relaxed">{alert.message}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-6 text-neutral-400 text-xs font-bold">
-                  {isEn ? 'No broadcast alerts received for your group.' : 'Nessun messaggio broadcast ricevuto per il tuo gruppo.'}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* SUBTAB 5: QR PASS & DIGITAL BADGE */}

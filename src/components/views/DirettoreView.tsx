@@ -45,11 +45,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import { Director, Discente, Faculty, SimulatorPatient, Team, Technician } from '../../types';
-import { BroadcastModal } from '../BroadcastModal';
 import { MasterAnagraficaManager } from '../anagrafica/MasterAnagraficaManager';
-import { CourseSuspensionModal } from '../CourseSuspensionModal';
-import { CourseMessagesPanel } from '../messaging/CourseMessagesPanel';
-import { CourseMessengerModal } from '../messaging/CourseMessengerModal';
 import { QRCodeDisplay } from '../QRCodeDisplay';
 import { CourseScheduleGateCard } from '../CourseScheduleGateCard';
 
@@ -182,12 +178,8 @@ export const DirettoreView: React.FC<DirettoreViewProps> = ({ isRegiaView = fals
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<
-    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'suspension' | 'messages' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics' | 'debug_translations' | 'debriefing_logs'
+    'timeline' | 'schedule_gate' | 'checklists' | 'squads_status' | 'anagrafica' | 'qr_login' | 'scenari' | 'analytics' | 'debug_translations' | 'debriefing_logs'
   >('timeline');
-
-  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
-  const [isSuspensionModalOpen, setIsSuspensionModalOpen] = useState(false);
-  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
 
   // Scenario edit modal state
   const [editingPatient, setEditingPatient] = useState<SimulatorPatient | null>(null);
@@ -377,15 +369,7 @@ export const DirettoreView: React.FC<DirettoreViewProps> = ({ isRegiaView = fals
               <span>{publicLayoutMode === 'multi' ? (isEn ? 'Multi-Monitor 🖥️🖥️' : 'Multi-Schermo 🖥️🖥️') : (isEn ? 'Single-Monitor 🖥️' : 'Monitor Singolo 🖥️')}</span>
             </button>
 
-            {/* BROADCAST BUTTON */}
-            <button
-              id="director-broadcast-trigger-btn"
-              onClick={() => setIsBroadcastOpen(true)}
-              className="flex-1 sm:flex-initial px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-yellow-400 font-black text-xs uppercase tracking-wider border border-yellow-500 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
-            >
-              <Radio className="w-3 h-3" />
-              <span>BROADCAST</span>
-            </button>
+
 
             {/* SWITCH TO REGIA VIEW BUTTON */}
             <button
@@ -496,48 +480,7 @@ export const DirettoreView: React.FC<DirettoreViewProps> = ({ isRegiaView = fals
             </div>
           </button>
 
-          {/* Tab 4: Messages */}
-          <button
-            id="director-tab-messages-btn"
-            onClick={() => setActiveSubTab('messages')}
-            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border relative ${
-              activeSubTab === 'messages'
-                ? 'bg-orange-500 text-black border-orange-300 shadow-md font-black'
-                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-orange-500/50'
-            }`}
-          >
-            <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${activeSubTab === 'messages' ? 'text-black' : 'text-orange-400'}`} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1 justify-start sm:justify-center">
-                <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider truncate">
-                  {isEn ? 'FIELD MESSAGES' : 'MESSAGGI CAMPO'}
-                </span>
-                {pendingMessagesCount > 0 && (
-                  <span className="bg-red-600 text-white text-[9px] font-mono font-black px-1.5 py-0.1 animate-pulse flex-shrink-0">
-                    {pendingMessagesCount}
-                  </span>
-                )}
-              </div>
-            </div>
-          </button>
 
-          {/* Tab 5: Sospensione */}
-          <button
-            id="director-tab-suspension-btn"
-            onClick={() => setActiveSubTab('suspension')}
-            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
-              activeSubTab === 'suspension'
-                ? 'bg-red-600 text-white border-red-400 shadow-md font-black'
-                : 'bg-neutral-900 text-red-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-red-500/50'
-            }`}
-          >
-            <AlertOctagon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${activeSubTab === 'suspension' ? 'text-white' : 'text-red-400'}`} />
-            <div className="min-w-0">
-              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                {isEn ? 'PAUSE & SAFETY' : 'STOP & PAUSA'}
-              </span>
-            </div>
-          </button>
 
           {/* Tab 6: Anagrafica Generale */}
           <button
@@ -794,81 +737,11 @@ export const DirettoreView: React.FC<DirettoreViewProps> = ({ isRegiaView = fals
           {/* Visuale Regia in Tempo Reale con Timeline Sincronizzata */}
           <RegiaVisualTimelineBoard
             isMaster={isMasterDirector}
-            onOpenMessenger={() => setIsMessengerOpen(true)}
-            onOpenBroadcast={() => setIsBroadcastOpen(true)}
           />
         </div>
       )}
 
-      {/* SUBTAB 2: SOSPENSIONE / STOP CORSO */}
-      {activeSubTab === 'suspension' && (
-        <div className="bg-neutral-900 border-2 border-neutral-800 p-6 shadow-xl space-y-5">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-            <div>
-              <span className="text-[10px] font-black text-red-500 uppercase tracking-widest font-mono">
-                {isEn ? 'COURSE LOCK & RESUME SYSTEM' : 'SISTEMA DI BLOCCO E RIPARTENZA'}
-              </span>
-              <h3 className="text-2xl font-black text-white uppercase flex items-center gap-2">
-                <AlertOctagon className="w-6 h-6 text-red-600" />
-                <span>{isEn ? 'MANAGE COURSE SUSPENSION & GLOBAL EMERGENCY SIGNAL' : 'GESTIONE SOSPENSIONE CORSO & SEGNALE A TUTTE LE FIGURE'}</span>
-              </h3>
-            </div>
 
-            <button
-              onClick={() => setIsSuspensionModalOpen(true)}
-              className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider border-2 border-white shadow-xl transition-all cursor-pointer"
-            >
-              {isEn ? 'OPEN CONTROL MODAL' : 'APRI MODALE DI CONTROLLO'}
-            </button>
-          </div>
-
-          {/* Current State Card */}
-          <div className="p-5 bg-neutral-950 border-2 border-neutral-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-neutral-400 uppercase">{isEn ? 'CURRENT COURSE STATUS:' : 'STATO ATTUALE CORSO:'}</span>
-              <span
-                className={`text-xs font-black uppercase px-3 py-1 ${
-                  suspensionInfo.isSuspended
-                    ? 'bg-red-600 text-white animate-pulse'
-                    : 'bg-emerald-600 text-white'
-                }`}
-              >
-                {suspensionInfo.isSuspended
-                  ? (isEn ? '🔴 COURSE SUSPENDED' : '🔴 CORSO SOSPESO')
-                  : (isEn ? '🟢 COURSE RUNNING NORMALLY' : '🟢 CORSO IN ESECUZIONE REGOLARE')}
-              </span>
-            </div>
-
-            {suspensionInfo.isSuspended && (
-              <div className="p-3 bg-red-950/70 border border-red-600 text-red-200 text-xs space-y-1">
-                <p>
-                  <strong>{isEn ? 'Suspension Reason: ' : 'Motivo Sospensione: '}</strong>
-                  {suspensionInfo.reason}
-                </p>
-                <div className="font-mono text-[11px] text-neutral-300">
-                  {isEn
-                    ? `Suspended at ${suspensionInfo.suspendedAt} by ${suspensionInfo.suspendedBy}`
-                    : `Sospeso alle ${suspensionInfo.suspendedAt} da ${suspensionInfo.suspendedBy}`}
-                </div>
-              </div>
-            )}
-
-            <p className="text-xs text-neutral-300 leading-relaxed font-medium">
-              {isEn
-                ? 'When the course is suspended, an urgent broadcast stop signal with audible alert is instantly dispatched to all participants (Learners, Faculty, Techs, Guests, and Public Displays). When the Director resumes the course, everyone receives a resume signal.'
-                : 'Quando il corso viene sospeso, un segnale broadcast urgente di stop con suono viene recapitato istantaneamente a tutti i partecipanti (Discenti, Faculty, Tecnici, Ospiti e Schermo Pubblico). Quando il Direttore fa ripartire il corso, tutte le figure ricevono il segnale di ripartenza.'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* SUBTAB 3: MESSAGGI DAL CAMPO */}
-      {activeSubTab === 'messages' && (
-        <CourseMessagesPanel
-          onOpenBroadcast={() => setIsBroadcastOpen(true)}
-          onOpenMessenger={() => setIsMessengerOpen(true)}
-        />
-      )}
 
       {/* SUBTAB 4: ANAGRAFICA GENERALE */}
       {activeSubTab === 'anagrafica' && <MasterAnagraficaManager />}
@@ -918,23 +791,6 @@ export const DirettoreView: React.FC<DirettoreViewProps> = ({ isRegiaView = fals
         <DebugTranslationsView />
       )}
 
-      {/* Modals */}
-      <CourseSuspensionModal
-        isOpen={isSuspensionModalOpen}
-        onClose={() => setIsSuspensionModalOpen(false)}
-      />
-
-      <BroadcastModal
-        isOpen={isBroadcastOpen}
-        onClose={() => setIsBroadcastOpen(false)}
-      />
-
-      <CourseMessengerModal
-        isOpen={isMessengerOpen}
-        onClose={() => setIsMessengerOpen(false)}
-        defaultSubject={isEn ? 'Communication from Course Direction' : 'Comunicazione dalla Direzione'}
-        defaultStation={isEn ? 'Mission Control / Direction' : 'Regia / Direzione Corso'}
-      />
     </div>
   );
 };

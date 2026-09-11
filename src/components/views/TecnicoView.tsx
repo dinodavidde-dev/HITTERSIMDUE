@@ -24,15 +24,13 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { BroadcastModal } from '../BroadcastModal';
-import { CourseMessengerModal } from '../messaging/CourseMessengerModal';
 import { QRCodeDisplay } from '../QRCodeDisplay';
 import { TechSessionChecklist } from '../TechSessionChecklist';
 import { GroupActivitySlot, GroupType, Technician, TimelineSlot } from '../../types';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
-type TecnicoSubTab = 'checklist_presidi' | 'schedule_prep' | 'my_roster' | 'my_messages';
+type TecnicoSubTab = 'checklist_presidi' | 'schedule_prep' | 'my_roster';
 
 function formatMinutesToHHMM(mins: number): string {
   const h = Math.floor(mins / 60) % 24;
@@ -64,8 +62,6 @@ export const TecnicoView: React.FC = () => {
   const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<TecnicoSubTab>('checklist_presidi');
-  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
-  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
   const [isQuickNavOpen, setIsQuickNavOpen] = useState(false);
   const [selectedDayTab, setSelectedDayTab] = useState<number>(activeDay);
 
@@ -230,26 +226,7 @@ export const TecnicoView: React.FC = () => {
               </select>
             )}
 
-            <button
-              id="tech-send-msg-btn"
-              onClick={() => setIsMessengerOpen(true)}
-              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-orange-400 hover:text-orange-300 font-black text-xs uppercase tracking-wider border border-orange-500 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title={isEn ? 'Send report to Director & Faculty' : 'Invia comunicazione diretta alla Regia e Direzione'}
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{isEn ? 'REPORT TO DIRECTOR' : 'SEGNALA ALLA REGIA'}</span>
-            </button>
 
-            {userRole === 'direttore' && (
-              <button
-                id="tech-broadcast-btn"
-                onClick={() => setIsBroadcastModalOpen(true)}
-                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border border-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              >
-                <Radio className="w-3.5 h-3.5 animate-pulse" />
-                <span>BROADCAST</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -354,26 +331,7 @@ export const TecnicoView: React.FC = () => {
             </div>
           </button>
 
-          {/* Tab 4: Segnalazioni Trasmessa alla Regia */}
-          <button
-            id="tech-tab-messages-btn"
-            onClick={() => setActiveSubTab('my_messages')}
-            className={`min-h-[44px] p-2.5 text-center transition-all flex items-center justify-center gap-2 cursor-pointer border ${
-              activeSubTab === 'my_messages'
-                ? 'bg-orange-500 text-black border-orange-300 font-black shadow-lg'
-                : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-neutral-700'
-            }`}
-          >
-            <MessageSquare className={`w-4 h-4 flex-shrink-0 ${activeSubTab === 'my_messages' ? 'text-black' : 'text-amber-400'}`} />
-            <div className="truncate text-left sm:text-center">
-              <span className="font-black text-xs uppercase tracking-wider block truncate">
-                {isEn ? 'DIRECTOR LOG' : 'MESSAGGI REGIA'}
-              </span>
-              <span className={`text-[10px] hidden sm:block truncate ${activeSubTab === 'my_messages' ? 'text-neutral-950 font-bold' : 'text-neutral-500'}`}>
-                {myMessages.length} {isEn ? 'Sent Logs' : 'Notifiche Trasmessi'}
-              </span>
-            </div>
-          </button>
+
         </div>
       </nav>
 
@@ -581,89 +539,7 @@ export const TecnicoView: React.FC = () => {
         </div>
       )}
 
-      {/* SUBTAB 4: LOG SEGNALAZIONI REGIA */}
-      {activeSubTab === 'my_messages' && (
-        <div className="bg-neutral-900 border-2 border-neutral-800 p-4 sm:p-6 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
-            <div>
-              <h3 className="font-black text-lg text-white uppercase flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-orange-400" />
-                <span>{isEn ? 'DIRECTOR LOGS & ACKNOWLEDGMENTS' : 'SEGNALAZIONI & RISCONTRI DELLA REGIA'}</span>
-              </h3>
-              <p className="text-xs text-neutral-300">
-                {isEn 
-                  ? 'Complete history of Green Light, Yellow Light, and supply requests sent to Course Command.'
-                  : 'Log completo dei segnali di Luce Verde, Luce Gialla e richieste di materiale trasmesse alla Direzione.'}
-              </p>
-            </div>
 
-            <button
-              onClick={() => setIsMessengerOpen(true)}
-              className="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-md flex-shrink-0"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{isEn ? 'NEW REPORT' : 'NUOVA SEGNALAZIONE'}</span>
-            </button>
-          </div>
-
-          <div className="space-y-3 pt-1">
-            {myMessages.length === 0 ? (
-              <div className="p-8 text-center bg-neutral-950 border border-neutral-800 space-y-2">
-                <MessageSquare className="w-8 h-8 text-neutral-600 mx-auto" />
-                <p className="text-xs font-bold text-neutral-400 uppercase">
-                  {isEn ? 'No reports logged at this time' : 'Nessuna segnalazione registrata al momento'}
-                </p>
-              </div>
-            ) : (
-              myMessages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`p-3.5 border space-y-1.5 ${
-                    m.type === 'warning'
-                      ? 'bg-amber-950/20 border-amber-500/50'
-                      : m.type === 'emergency'
-                      ? 'bg-red-950/30 border-red-500'
-                      : 'bg-neutral-950 border-neutral-800'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-neutral-400 font-bold">{m.timestamp}</span>
-                      <span className="font-bold text-xs text-white uppercase">{m.subject}</span>
-                    </div>
-                    <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 ${
-                        m.status === 'acknowledged'
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                          : 'bg-orange-950 text-orange-300 border border-orange-800'
-                      }`}
-                    >
-                      {m.status === 'acknowledged' 
-                        ? (isEn ? `ACKNOWLEDGED BY: ${m.acknowledgedBy}` : `PRESO IN CARICO DA: ${m.acknowledgedBy}`)
-                        : (isEn ? 'SENT TO COMMAND' : 'INVIATO IN REGIA')}
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-300 font-medium whitespace-pre-line">{m.content}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Messenger Modal */}
-      <CourseMessengerModal
-        isOpen={isMessengerOpen}
-        onClose={() => setIsMessengerOpen(false)}
-        defaultSubject={isEn ? 'Technical Request / Moulage Consumables' : 'Richiesta Tecnica / Materiali Moulage'}
-        defaultStation={currentTechnician.assignedStations?.[0] || (isEn ? 'Tech Lab' : 'Lab Tecnico')}
-      />
-
-      {/* Broadcast Modal (Reserved for Director) */}
-      <BroadcastModal
-        isOpen={isBroadcastModalOpen}
-        onClose={() => setIsBroadcastModalOpen(false)}
-      />
 
       {/* QUICK-NAVIGATE TEAMS & STATIONS DRAWER / MODAL */}
       {isQuickNavOpen && (

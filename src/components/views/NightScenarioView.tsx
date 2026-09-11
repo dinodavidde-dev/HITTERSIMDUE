@@ -21,7 +21,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { TriageCategory } from '../../types';
-import { BroadcastModal } from '../BroadcastModal';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { translateRoleOrSpecialty } from '../../i18n/medicalTerms';
 
@@ -39,7 +38,6 @@ export const NightScenarioView: React.FC = () => {
 
   const isEn = language === 'en';
   const [selectedTeamId, setSelectedTeamId] = useState<number>(1);
-  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
 
   const selectedScenario = nightScenarios.find((s) => s.teamId === selectedTeamId) || nightScenarios[0];
   const assignedTeam = teams.find((t) => t.id === selectedScenario.teamId);
@@ -92,17 +90,6 @@ export const NightScenarioView: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             <LanguageSwitcher variant="badge" />
-
-            {userRole === 'direttore' && (
-              <button
-                onClick={() => setIsBroadcastOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-neutral-100 hover:text-black text-white font-black text-xs uppercase tracking-wider border border-neutral-100 transition-all cursor-pointer shadow-md"
-                title={isEn ? 'Send general broadcast alert' : 'Invia allerta broadcast generale (Riservato Direzione)'}
-              >
-                <Radio className="w-3.5 h-3.5" />
-                <span>{isEn ? 'BROADCAST ALERT' : 'ALLERTA BROADCAST'}</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -313,8 +300,6 @@ export const NightScenarioView: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <BroadcastModal isOpen={isBroadcastOpen} onClose={() => setIsBroadcastOpen(false)} />
     </div>
   );
 };

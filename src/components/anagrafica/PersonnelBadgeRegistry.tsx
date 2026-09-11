@@ -81,7 +81,36 @@ export const PersonnelBadgeRegistry: React.FC<PersonnelBadgeRegistryProps> = ({
     regiaStaff,
     guests,
     activeDay,
+    setUserRole,
+    setSelectedDiscenteId,
+    setSelectedFacultyId,
+    setSelectedTechnicianId,
+    setSelectedDirectorId,
+    setSelectedRegiaId,
+    setSelectedGuestId,
   } = useCourse();
+
+  const handleOpenPersonView = (p: UnifiedPerson) => {
+    if (p.category === 'discente') {
+      setUserRole('discente');
+      setSelectedDiscenteId(p.originalId);
+    } else if (p.category === 'faculty') {
+      setUserRole('faculty');
+      setSelectedFacultyId(p.originalId);
+    } else if (p.category === 'tecnico') {
+      setUserRole('tecnico');
+      setSelectedTechnicianId(p.originalId);
+    } else if (p.category === 'direttore') {
+      setUserRole('direttore');
+      setSelectedDirectorId(p.originalId);
+    } else if (p.category === 'regia') {
+      setUserRole('regia');
+      setSelectedRegiaId(p.originalId);
+    } else if (p.category === 'ospite') {
+      setUserRole('ospite');
+      setSelectedGuestId(p.originalId);
+    }
+  };
 
   // View state
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -631,6 +660,7 @@ export const PersonnelBadgeRegistry: React.FC<PersonnelBadgeRegistryProps> = ({
                 onToggleSelect={() => handleToggleSelectPerson(person.id)}
                 onPrint={() => setSinglePrintPerson(person)}
                 onCopyLink={() => handleCopyLink(person)}
+                onOpenView={() => handleOpenPersonView(person)}
                 isCopied={copiedId === person.id}
               />
             );
@@ -748,6 +778,15 @@ export const PersonnelBadgeRegistry: React.FC<PersonnelBadgeRegistryProps> = ({
                     <td className="p-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
+                          onClick={() => handleOpenPersonView(person)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 text-xs font-bold uppercase transition-colors cursor-pointer"
+                          title="Apri Vista Live di questo Partecipante"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>VISTA</span>
+                        </button>
+
+                        <button
                           onClick={() => setSinglePrintPerson(person)}
                           className="flex items-center gap-1 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-100 hover:text-black text-neutral-200 border border-neutral-700 text-xs font-black uppercase transition-colors cursor-pointer"
                           title="Visualizza e Stampa Badge Singolo"
@@ -811,6 +850,7 @@ interface PersonBadgeCardProps {
   onToggleSelect: () => void;
   onPrint: () => void;
   onCopyLink: () => void;
+  onOpenView: () => void;
   isCopied: boolean;
 }
 
@@ -820,6 +860,7 @@ const PersonBadgeCard: React.FC<PersonBadgeCardProps> = ({
   onToggleSelect,
   onPrint,
   onCopyLink,
+  onOpenView,
   isCopied,
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
@@ -968,12 +1009,21 @@ const PersonBadgeCard: React.FC<PersonBadgeCardProps> = ({
         {/* Bottom Actions Bar */}
         <div className="pt-2 border-t border-neutral-800 flex items-center justify-between gap-2">
           <button
+            onClick={onOpenView}
+            className="flex items-center justify-center gap-1 py-2 px-2.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-cyan-700 shadow-xs"
+            title="Apri Vista Live di questo Partecipante"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>VISTA</span>
+          </button>
+
+          <button
             onClick={onPrint}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-100 hover:bg-orange-500 hover:text-black text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 bg-neutral-100 hover:bg-orange-500 hover:text-black text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md"
             title="Apri finestra di stampa badge per questo operatore"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>STAMPA BADGE</span>
+            <span>STAMPA</span>
           </button>
 
           <button
