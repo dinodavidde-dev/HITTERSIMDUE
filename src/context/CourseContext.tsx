@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   CourseDay,
   CourseMessage,
@@ -36,6 +36,7 @@ import {
 import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
 import { cleanUndefined } from '../utils/teamUtils';
 import { Language, translations } from '../i18n/translations';
+import { translateSlot, translatePatient } from '../utils/courseTranslation';
 import {
   db,
   auth,
@@ -335,9 +336,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return item[language] || item['en'] || defaultText || key;
   }, [language]);
 
-  const [timelineSlots] = useState<TimelineSlot[]>(INITIAL_TIMELINE_SLOTS);
-  const filteredSlots = timelineSlots.filter((s) => s.day === activeDay);
-  const currentSlot = timelineSlots[activeSlotIndex] || timelineSlots[0];
+  const localizedTimelineSlots = useMemo(() => {
+    return INITIAL_TIMELINE_SLOTS.map((slot) => translateSlot(slot, language));
+  }, [language]);
+  const filteredSlots = useMemo(() => {
+    return localizedTimelineSlots.filter((s) => s.day === activeDay);
+  }, [localizedTimelineSlots, activeDay]);
+  const currentSlot = localizedTimelineSlots[activeSlotIndex] || localizedTimelineSlots[0];
 
   const getSlotDurationSeconds = (slot: TimelineSlot) => {
     if (slot.id === 'd2-setup-1' || slot.id === 'd2-setup-2') return 1800; // 30 mins (08:00 - 08:30)
@@ -368,6 +373,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return INITIAL_SIMULATOR_PATIENTS;
     }
   });
+
+  const localizedSimulatorPatients = useMemo(() => {
+    return simulatorPatients.map((p) => translatePatient(p, language));
+  }, [simulatorPatients, language]);
 
   const [teams, setTeams] = useState<Team[]>(() => getStoredOrDefault('teams', INITIAL_TEAMS));
   const [discenti, setDiscenti] = useState<Discente[]>(() => {
@@ -1998,7 +2007,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         phaseShiftLogs,
         recordPhaseShiftLog,
         clearPhaseShiftLogs,
-        simulatorPatients,
+        simulatorPatients: localizedSimulatorPatients,
         updateSimulatorPatient,
         updateTechChecklist,
         teams,

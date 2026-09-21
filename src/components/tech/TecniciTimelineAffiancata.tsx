@@ -41,6 +41,8 @@ import {
   Team,
 } from '../../types';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
+import { useCourse } from '../../context/CourseContext';
+import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 
 interface TecniciTimelineAffiancataProps {
   currentTech: Technician;
@@ -71,6 +73,9 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   onSendRadioMessage,
   onSwitchToRegistro,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
+
   // Visual layout mode: 'parallel' (affiancata 2 colonne), 'tech_only' (focus mansioni), 'public_only' (focus corso)
   const [layoutMode, setLayoutMode] = useState<'parallel' | 'tech_only' | 'public_only'>('parallel');
   const [showCompletedArchive, setShowCompletedArchive] = useState(false);
@@ -88,10 +93,11 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   );
 
   // Master timeline data
-  const dayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
-  const masterCurrentSlot =
-    INITIAL_TIMELINE_SLOTS[activeSlotIndex] || dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
-  const slotIdxInDay = dayMasterSlots.findIndex((s) => s.id === masterCurrentSlot?.id);
+  const rawDayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
+  const dayMasterSlots = rawDayMasterSlots.map((s) => translateSlot(s, language));
+  const rawMasterCurrentSlot =
+    INITIAL_TIMELINE_SLOTS[activeSlotIndex] || rawDayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+  const slotIdxInDay = rawDayMasterSlots.findIndex((s) => s.id === rawMasterCurrentSlot?.id);
   const effectiveCurrentIdx = slotIdxInDay >= 0 ? slotIdxInDay : 0;
   const currentSlot = dayMasterSlots[effectiveCurrentIdx] || dayMasterSlots[0];
 
@@ -622,7 +628,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       {/* ========================================================================= */}
       {/* 1. BARRA DI CONTROLLO & CRONOPROGRAMMA MASTER DELLA GIORNATA (STEPPER) */}
       {/* ========================================================================= */}
-      <div className="bg-neutral-950 border-2 border-neutral-800 p-4 rounded-lg shadow-xl space-y-3">
+      <div className="bg-neutral-950 border-2 border-neutral-800 p-3 sm:p-4 rounded-lg shadow-xl space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -634,72 +640,75 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <Globe className="w-4 h-4 text-orange-400" />
-              Timeline Pubblica del Corso & Mansioni Tecniche in Parallelo
+              <Globe className="w-4 h-4 text-orange-400 shrink-0" />
+              {isEn ? 'Public Timeline & Technical Duties' : 'Timeline Pubblica & Mansioni Tecniche'}
             </h2>
             <p className="text-xs text-neutral-300 font-mono">
-              Visualizza la progressione generale dei 4 Macro-Gruppi (ALPHA, BRAVO, CHARLIE, DELTA) affiancata ai tuoi compiti operativi
+              {isEn
+                ? 'Progression of the 4 Macro-Groups (ALPHA, BRAVO, CHARLIE, DELTA) alongside operational tasks'
+                : 'Progressione dei 4 Macro-Gruppi (ALPHA, BRAVO, CHARLIE, DELTA) affiancata ai compiti operativi'}
             </p>
           </div>
 
           {/* Layout Mode Selector Toggle */}
-          <div className="flex items-center bg-neutral-900 border border-neutral-700 p-1 rounded self-start md:self-center shrink-0">
+          <div className="flex items-center bg-neutral-900 border border-neutral-700 p-1 rounded self-stretch sm:self-start md:self-center shrink-0 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setLayoutMode('parallel')}
-              className={`px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 rounded ${
+              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 rounded whitespace-nowrap ${
                 layoutMode === 'parallel'
                   ? 'bg-gradient-to-r from-orange-600 to-pink-600 text-white shadow-md'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Visualizza entrambe le timeline affiancate in 2 colonne"
+              title={isEn ? 'View both timelines side by side in 2 columns' : 'Visualizza entrambe le timeline affiancate in 2 colonne'}
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span>Affiancata (2 Colonne)</span>
+              <span className="hidden sm:inline">{isEn ? 'Side-by-Side (2 Columns)' : 'Affiancata (2 Colonne)'}</span>
+              <span className="sm:hidden">{isEn ? '2 Columns' : '2 Colonne'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setLayoutMode('tech_only')}
-              className={`px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 rounded ${
+              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 rounded whitespace-nowrap ${
                 layoutMode === 'tech_only'
                   ? 'bg-pink-600 text-white shadow-md'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Visualizza solo i compiti tecnici con focus operativo"
+              title={isEn ? 'View technical tasks only with operational focus' : 'Visualizza solo i compiti tecnici con focus operativo'}
             >
               <Wrench className="w-3.5 h-3.5" />
-              <span>Solo Mansioni</span>
+              <span>{isEn ? 'Tasks' : 'Mansioni'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setLayoutMode('public_only')}
-              className={`px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 rounded ${
+              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 rounded whitespace-nowrap ${
                 layoutMode === 'public_only'
                   ? 'bg-orange-600 text-black shadow-md font-black'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Visualizza la timeline del corso pubblica estesa"
+              title={isEn ? 'View extended public course timeline' : 'Visualizza la timeline del corso pubblica estesa'}
             >
               <Globe className="w-3.5 h-3.5" />
-              <span>Solo Corso</span>
+              <span>{isEn ? 'Course' : 'Corso'}</span>
             </button>
           </div>
         </div>
 
         {/* Quadro Sinottico Cronoprogramma Macro-Blocchi (Scrubber Rapido del Corso) */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[11px] font-mono">
+          <div className="flex items-center justify-between text-[11px] font-mono flex-wrap gap-1">
             <span className="text-neutral-400 font-bold uppercase flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-orange-400" /> Progressione Macro-Blocchi della Giornata:
+              <Clock className="w-3.5 h-3.5 text-orange-400" /> {isEn ? 'Macro-Blocks Progression:' : 'Progressione Macro-Blocchi:'}
             </span>
             <span className="text-orange-400 font-bold">
-              Fase Attiva Regia: {effectiveCurrentIdx + 1}/{dayMasterSlots.length} ({currentSlot?.timeRange})
+              {isEn ? 'Phase:' : 'Fase:'} {effectiveCurrentIdx + 1}/{dayMasterSlots.length} ({currentSlot?.timeRange})
             </span>
           </div>
 
-          <div className="grid grid-cols-4 lg:grid-cols-8 gap-1.5 font-mono text-[10px]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 font-mono text-[10px]">
             {COURSE_BLOCKS.map((block) => {
               const isBlockActive = block.slotIds.includes(currentSlot?.id);
               return (

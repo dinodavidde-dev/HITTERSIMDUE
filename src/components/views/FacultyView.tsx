@@ -13,6 +13,7 @@ import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { FacultyScenariValutazioniModal } from '../faculty/FacultyScenariValutazioniModal';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
+import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 
 export const FacultyView: React.FC = () => {
   const {
@@ -28,7 +29,10 @@ export const FacultyView: React.FC = () => {
     simulatorPatients,
     evaluations,
     canSelectOperator,
+    language,
   } = useCourse();
+
+  const isEn = language === 'en';
 
   // Modal state
   const [showScenariValutazioniModal, setShowScenariValutazioniModal] = useState(false);
@@ -50,7 +54,8 @@ export const FacultyView: React.FC = () => {
   const facultyGroup: GroupType = assignedTeam ? assignedTeam.groupId : (currentFaculty.assignedTeamId <= 3 ? 'A' : currentFaculty.assignedTeamId <= 6 ? 'B' : currentFaculty.assignedTeamId <= 9 ? 'C' : 'D');
   const assignedTeamDiscenti = discenti.filter((d) => d.teamId === currentFaculty.assignedTeamId);
 
-  const dayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
+  const rawDayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
+  const dayMasterSlots = rawDayMasterSlots.map((s) => translateSlot(s, language));
 
   // Personalized Individual Faculty Timeline based on facultyInvolved or assigned group
   const personalizedTimeline = dayMasterSlots.map((slot) => {
@@ -90,21 +95,21 @@ export const FacultyView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 max-w-5xl mx-auto px-4 font-mono">
+    <div className="space-y-4 sm:space-y-6 pb-12 max-w-5xl mx-auto px-2 sm:px-4 font-mono">
       {/* Header Banner - Faculty View & Selector */}
-      <div className="bg-neutral-900 border-2 border-amber-500/60 p-4 shadow-lg flex flex-col lg:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="px-3 py-1 bg-amber-600 text-black font-black text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
-            <Award className="w-4 h-4" /> VISUALE FACULTY PERSONALIZZATA
+      <div className="bg-neutral-900 border-2 border-amber-500/60 p-3 sm:p-4 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <span className="px-2.5 sm:px-3 py-1 bg-amber-600 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
+            <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'FACULTY VIEW' : 'VISUALE FACULTY'}
           </span>
 
           <DaySelectorToggle variant="public" />
 
-          <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-xs border border-neutral-800 flex items-center gap-1.5">
+          <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-[11px] sm:text-xs border border-neutral-800 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> DAY 0{activeDay}
           </span>
-          <span className="px-2 py-0.5 bg-neutral-950 text-amber-400 border border-neutral-800 font-mono text-xs flex items-center gap-1.5">
-            <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-amber-400 animate-spin' : 'text-neutral-400'}`} /> T-Fase: {formatTimer(timerSeconds)}
+          <span className="px-2 py-0.5 bg-neutral-950 text-amber-400 border border-neutral-800 font-mono text-[11px] sm:text-xs flex items-center gap-1.5">
+            <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-amber-400 animate-spin' : 'text-neutral-400'}`} /> {isEn ? 'T-Phase:' : 'T-Fase:'} {formatTimer(timerSeconds)}
           </span>
         </div>
 
@@ -117,27 +122,27 @@ export const FacultyView: React.FC = () => {
             <select
               value={selectedFacultyId}
               onChange={(e) => setSelectedFacultyId(e.target.value)}
-              className="bg-neutral-950 text-amber-300 font-mono text-xs border border-amber-700/60 px-3 py-1.5 rounded focus:outline-none focus:border-amber-400 max-w-xs cursor-pointer font-bold"
+              className="bg-neutral-950 text-amber-300 font-mono text-xs border border-amber-700/60 px-2.5 py-1.5 rounded focus:outline-none focus:border-amber-400 max-w-full sm:max-w-xs cursor-pointer font-bold"
             >
               {faculty.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {f.badgeCode || 'FAC'} • {f.name} (Sq. {f.assignedTeamId})
+                  {f.badgeCode || 'FAC'} • {f.name} ({isEn ? 'Team' : 'Sq.'} {f.assignedTeamId})
                 </option>
               ))}
             </select>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-1 bg-neutral-950 text-amber-300 font-mono text-xs border border-amber-800/80 rounded flex items-center gap-1.5 shadow-inner">
               <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] uppercase tracking-wider text-amber-400/80">Tutor Assegnato:</span>
-              <strong className="text-white">{currentFaculty.badgeCode || 'FAC'} • {currentFaculty.name}</strong>
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-amber-400/80">Tutor:</span>
+              <strong className="text-white text-xs">{currentFaculty.badgeCode || 'FAC'} • {currentFaculty.name}</strong>
             </span>
             <button
               type="button"
               onClick={() => setShowUnlockModal(true)}
-              title="Sblocca Selettore (Regia / Direzione)"
-              className="p-1 text-neutral-500 hover:text-amber-400 transition-colors cursor-pointer"
+              title={isEn ? 'Unlock Selector (Control / Direction)' : 'Sblocca Selettore (Regia / Direzione)'}
+              className="p-1.5 text-neutral-500 hover:text-amber-400 transition-colors cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
             </button>
@@ -148,20 +153,20 @@ export const FacultyView: React.FC = () => {
       {/* PERSONALIZED FACULTY CARDS (Intestazione & Squadra) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Box 1: Intestazione Personale Faculty & Scenari Button */}
-        <div className="bg-neutral-950 border-2 border-amber-500/80 p-5 rounded shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 bg-amber-600 text-black font-mono font-black text-xs px-3 py-1 rounded-bl">
+        <div className="bg-neutral-950 border-2 border-amber-500/80 p-3.5 sm:p-5 rounded shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 bg-amber-600 text-black font-mono font-black text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl">
             {currentFaculty.badgeCode || 'FAC-01'}
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             <div className="flex items-center gap-2 text-amber-400 text-xs font-mono uppercase tracking-widest">
-              <User className="w-4 h-4" /> Profilo Faculty / Tutor
+              <User className="w-4 h-4" /> {isEn ? 'Faculty / Tutor Profile' : 'Profilo Faculty / Tutor'}
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight break-words">
+              <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight break-words">
                 {currentFaculty.name}
               </h2>
               <p className="text-amber-300 font-medium text-xs sm:text-sm pt-0.5 break-words">
-                {currentFaculty.title || 'Docente / Tutor Clinico'}
+                {currentFaculty.title || (isEn ? 'Lecturer / Clinical Tutor' : 'Docente / Tutor Clinico')}
               </p>
             </div>
           </div>
@@ -169,12 +174,12 @@ export const FacultyView: React.FC = () => {
           <div className="pt-3 mt-3 border-t border-neutral-800 space-y-3">
             <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
               <div>
-                <span className="block text-[10px] text-neutral-400 uppercase">Nazionalità:</span>
-                <strong className="text-white truncate block">{currentFaculty.nationality || 'Italiana'}</strong>
+                <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                <strong className="text-white truncate block">{currentFaculty.nationality || (isEn ? 'Italian' : 'Italiana')}</strong>
               </div>
               <div className="truncate">
-                <span className="block text-[10px] text-neutral-400 uppercase">Affiliazione:</span>
-                <strong className="text-white truncate block" title={currentFaculty.organization || currentFaculty.affiliation}>{currentFaculty.organization || currentFaculty.affiliation || 'Ospedale'}</strong>
+                <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Affiliation:' : 'Affiliazione:'}</span>
+                <strong className="text-white truncate block" title={currentFaculty.organization || currentFaculty.affiliation}>{currentFaculty.organization || currentFaculty.affiliation || (isEn ? 'Hospital' : 'Ospedale')}</strong>
               </div>
             </div>
 
@@ -182,45 +187,47 @@ export const FacultyView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowScenariValutazioniModal(true)}
-              className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full min-h-[42px] py-2 px-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <Activity className="w-4 h-4 text-black animate-pulse" /> 📋 Scenari & Valutazioni
+              <Activity className="w-4 h-4 text-black animate-pulse" /> 📋 {isEn ? 'Scenarios & Evaluations' : 'Scenari & Valutazioni'}
             </button>
           </div>
         </div>
 
         {/* Box 2: Assegnazione Squadra & Anagrafica */}
-        <div className="bg-neutral-950 border-2 border-orange-500/80 p-5 rounded shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 bg-orange-600 text-black font-mono font-black text-xs px-3 py-1 rounded-bl">
-            GRUPPO {facultyGroup} • SQ. {currentFaculty.assignedTeamId}
+        <div className="bg-neutral-950 border-2 border-orange-500/80 p-3.5 sm:p-5 rounded shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 bg-orange-600 text-black font-mono font-black text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl">
+            {isEn ? `GROUP ${facultyGroup} • TEAM ${currentFaculty.assignedTeamId}` : `GRUPPO ${facultyGroup} • SQ. ${currentFaculty.assignedTeamId}`}
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             <div className="flex items-center gap-2 text-orange-400 text-xs font-mono uppercase tracking-widest">
-              <Compass className="w-4 h-4" /> Specifiche Gruppo & Squadra Assegnata
+              <Compass className="w-4 h-4" /> {isEn ? 'Group & Assigned Team Details' : 'Specifiche Gruppo & Squadra Assegnata'}
             </div>
-            <div className="bg-neutral-900 p-3 border border-neutral-800 grid grid-cols-2 gap-2 text-xs font-mono">
+            <div className="bg-neutral-900 p-2.5 sm:p-3 border border-neutral-800 grid grid-cols-2 gap-2 text-xs font-mono">
               <div>
-                <span className="text-neutral-400 block text-[10px] uppercase">Macro-Gruppo:</span>
-                <strong className="text-white text-xs sm:text-sm">GRUPPO {facultyGroup}</strong>
+                <span className="text-neutral-400 block text-[10px] uppercase">{isEn ? 'Macro-Group:' : 'Macro-Gruppo:'}</span>
+                <strong className="text-white text-xs sm:text-sm">{isEn ? `GROUP ${facultyGroup}` : `GRUPPO ${facultyGroup}`}</strong>
               </div>
               <div>
-                <span className="text-neutral-400 block text-[10px] uppercase">Squadra Specifica:</span>
-                <strong className="text-amber-400 text-xs sm:text-sm">Squadra {currentFaculty.assignedTeamId}</strong>
+                <span className="text-neutral-400 block text-[10px] uppercase">{isEn ? 'Specific Team:' : 'Squadra Specifica:'}</span>
+                <strong className="text-amber-400 text-xs sm:text-sm">{isEn ? `Team ${currentFaculty.assignedTeamId}` : `Squadra ${currentFaculty.assignedTeamId}`}</strong>
               </div>
             </div>
           </div>
           <div className="pt-3 mt-2 border-t border-neutral-800">
-            <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block mb-1">Anagrafica Discenti Squadra {currentFaculty.assignedTeamId} (1:1):</span>
-            <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+            <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block mb-1">
+              {isEn ? `Learners Directory Team ${currentFaculty.assignedTeamId} (1:1):` : `Anagrafica Discenti Squadra ${currentFaculty.assignedTeamId} (1:1):`}
+            </span>
+            <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
               {assignedTeamDiscenti.length > 0 ? (
                 assignedTeamDiscenti.map((d, idx) => (
                   <div key={d.id} className="flex items-center justify-between text-[11px] font-mono bg-neutral-900 px-2 py-1 border border-neutral-800 gap-2">
                     <span className="text-white font-bold truncate">{d.badgeCode || `DISC-0${idx+1}`} • {d.name}</span>
-                    <span className="text-orange-300 font-semibold flex-shrink-0">{d.role || (idx === 0 ? 'Team Leader' : 'Operatore')}</span>
+                    <span className="text-orange-300 font-semibold flex-shrink-0 text-[10px] sm:text-[11px]">{d.role || (idx === 0 ? 'Team Leader' : (isEn ? 'Operator' : 'Operatore'))}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-neutral-500 font-mono">Nessun discente associato alla squadra.</p>
+                <p className="text-xs text-neutral-500 font-mono">{isEn ? 'No learners associated with this team.' : 'Nessun discente associato alla squadra.'}</p>
               )}
             </div>
           </div>
@@ -228,22 +235,22 @@ export const FacultyView: React.FC = () => {
       </div>
 
       {/* TIMELINE INDIVIDUALE FACULTY */}
-      <div className="bg-neutral-900 border-2 border-amber-500/80 p-6 sm:p-8 shadow-2xl space-y-6">
-        <div className="border-b border-neutral-800 pb-4 flex items-center justify-between">
+      <div className="bg-neutral-900 border-2 border-amber-500/80 p-3 sm:p-6 shadow-2xl space-y-4 sm:space-y-6">
+        <div className="border-b border-neutral-800 pb-3 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest block mb-1">
-              TIMELINE INDIVIDUALE FACULTY • {currentFaculty.badgeCode} ({currentFaculty.name}) • DAY 0{activeDay}
+            <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-400 uppercase tracking-widest block mb-0.5">
+              {isEn ? 'INDIVIDUAL FACULTY TIMELINE' : 'TIMELINE INDIVIDUALE FACULTY'} • {currentFaculty.badgeCode} ({currentFaculty.name}) • DAY 0{activeDay}
             </span>
-            <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <Activity className="w-6 h-6 text-amber-400" /> Programma Operativo Giornaliero Tutor & Squadra {currentFaculty.assignedTeamId}
+            <h3 className="text-base sm:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+              <Activity className="w-5 h-5 text-amber-400 shrink-0" /> {isEn ? `Operational Schedule Tutor & Team ${currentFaculty.assignedTeamId}` : `Programma Operativo Tutor & Squadra ${currentFaculty.assignedTeamId}`}
             </h3>
           </div>
-          <span className="px-3 py-1 bg-amber-950 border border-amber-600 text-xs font-mono text-amber-300">
-            {filteredTimeline.length} Attività Rimanenti
+          <span className="px-2.5 py-1 bg-amber-950 border border-amber-600 text-xs font-mono text-amber-300 self-start sm:self-auto">
+            {filteredTimeline.length} {isEn ? 'Remaining Activities' : 'Attività Rimanenti'}
           </span>
         </div>
 
-        <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2">
+        <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
           {filteredTimeline.map(({ slot, activity, group }) => {
             const isCurrentSlot = slot.id === dayMasterSlots[activeSlotIndex]?.id;
             const actType = activity.activityType || '';
@@ -254,7 +261,7 @@ export const FacultyView: React.FC = () => {
             return (
               <div
                 key={slot.id}
-                className={`p-4 border rounded font-mono text-xs transition-all ${
+                className={`p-3 sm:p-4 border rounded font-mono text-xs transition-all ${
                   isCurrentSlot
                     ? 'bg-amber-950/90 border-amber-400 ring-2 ring-amber-400/60 shadow-xl'
                     : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
@@ -275,30 +282,30 @@ export const FacultyView: React.FC = () => {
                     </span>
                   </div>
                   {isCurrentSlot && (
-                    <span className="bg-amber-500 text-black px-2 py-0.5 rounded text-[10px] font-black animate-pulse uppercase">
-                      ⚡ FASE ATTIVA IN CORSO
+                    <span className="bg-amber-500 text-black px-2 py-0.5 rounded text-[10px] font-black animate-pulse uppercase self-start sm:self-auto">
+                      ⚡ {isEn ? 'ACTIVE PHASE IN PROGRESS' : 'FASE ATTIVA IN CORSO'}
                     </span>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 items-start sm:items-center">
                   <div>
-                    <span className="text-neutral-400 text-[10px] uppercase block">Attività / Modulo:</span>
-                    <strong className="text-white text-sm block">{activity.title}</strong>
+                    <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Activity / Module:' : 'Attività / Modulo:'}</span>
+                    <strong className="text-white text-sm block leading-snug">{activity.title}</strong>
                     <span className="text-neutral-300 text-xs block">{activity.subtitle}</span>
                   </div>
                   <div>
-                    <span className="text-neutral-400 text-[10px] uppercase block">Ubicazione / Postazione:</span>
+                    <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Location / Station:' : 'Ubicazione / Postazione:'}</span>
                     <strong className="text-amber-400 text-sm flex items-center gap-1">
-                      📍 {activity.location}
+                      📍 {activity.location ? translateLocation(activity.location, language) : ''}
                     </strong>
                     {activity.patientIds && activity.patientIds.length > 0 && (
-                      <span className="text-cyan-300 text-[11px] block pt-0.5">Pazienti ID: #{activity.patientIds.join(', #')}</span>
+                      <span className="text-cyan-300 text-[11px] block pt-0.5">{isEn ? 'Patient IDs:' : 'Pazienti ID:'} #{activity.patientIds.join(', #')}</span>
                     )}
                   </div>
-                  <div className="text-right sm:text-left">
-                    <span className="text-neutral-400 text-[10px] uppercase block">Coinvolgimento 1:1:</span>
-                    <span className="text-orange-300 font-bold block">Gruppo {group} (Sq. {currentFaculty.assignedTeamId})</span>
+                  <div className="text-left md:text-right">
+                    <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? '1:1 Engagement:' : 'Coinvolgimento 1:1:'}</span>
+                    <span className="text-orange-300 font-bold block">{isEn ? `Group ${group} (Team ${currentFaculty.assignedTeamId})` : `Gruppo ${group} (Sq. ${currentFaculty.assignedTeamId})`}</span>
                     <span className="text-neutral-400 text-[11px] block">{currentFaculty.badgeCode} • {currentFaculty.name}</span>
                   </div>
                 </div>

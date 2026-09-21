@@ -60,15 +60,15 @@ export const DirettoriView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 pb-12">
+    <div className="space-y-4 pb-12 px-2 sm:px-4 max-w-7xl mx-auto font-mono">
       {/* Director Top Header with Anagrafica & Controls */}
-      <div className="bg-neutral-950 border-2 border-yellow-500/80 p-4 sm:p-5 shadow-xl space-y-3">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1.5 min-w-0">
+      <div className="bg-neutral-950 border-2 border-yellow-500/80 p-3 sm:p-5 shadow-xl space-y-3">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+          <div className="space-y-1.5 min-w-0 w-full md:w-auto">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 bg-yellow-500 text-black text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+              <span className="px-2.5 py-1 bg-yellow-500 text-black text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs rounded">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                {isEn ? 'DIRECTORS VIEW' : 'VISUALE DIRETTORI'}
+                {isEn ? 'DIRECTORS' : 'DIRETTORI'}
               </span>
 
               <span className="text-[11px] text-neutral-300 font-mono font-bold px-2.5 py-1 bg-neutral-900 border border-neutral-700">
@@ -76,7 +76,7 @@ export const DirettoriView: React.FC = () => {
               </span>
               {suspensionInfo.isSuspended ? (
                 <span className="bg-red-600 text-white font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1">
-                  {isEn ? 'COURSE SUSPENDED' : 'CORSO SOSPESO'}
+                  {isEn ? 'SUSPENDED' : 'SOSPESO'}
                 </span>
               ) : (
                 <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px] font-black px-2.5 py-1">
@@ -85,28 +85,28 @@ export const DirettoriView: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap pt-1">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap pt-1">
               <span className="px-2.5 py-0.5 bg-yellow-950 text-yellow-300 border border-yellow-700/80 text-xs font-mono font-black">
                 {currentDirector.badgeCode || 'DIR-01'}
               </span>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2 flex-wrap truncate">
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2 flex-wrap break-words">
                 <span>{currentDirector.name}</span>
                 {Boolean(currentDirector.isMaster) && (
-                  <span className="px-2 py-0.5 bg-amber-500 text-black font-black text-xs uppercase tracking-wider shadow-sm">
-                    ★ MASTER DIREZIONE
+                  <span className="px-2 py-0.5 bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-wider shadow-sm">
+                    ★ MASTER
                   </span>
                 )}
               </h2>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1 text-xs font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 pt-1 text-xs font-mono">
               <span className="text-yellow-200/90 font-medium">
-                Ruolo: <strong className="text-white">{currentDirector.role || currentDirector.title}</strong>
+                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentDirector.role || currentDirector.title}</strong>
               </span>
               {currentDirector.organization && (
                 <>
                   <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-300">Ente: <strong className="text-white">{currentDirector.organization}</strong></span>
+                  <span className="text-neutral-300">{isEn ? 'Organization:' : 'Ente:'} <strong className="text-white">{currentDirector.organization}</strong></span>
                 </>
               )}
               {currentDirector.email && (
@@ -116,16 +116,16 @@ export const DirettoriView: React.FC = () => {
                 </>
               )}
               <span className="text-neutral-600 hidden sm:inline">•</span>
-              <span className="text-neutral-300">Tel: <span className="text-yellow-400 font-bold">{currentDirector.phone}</span></span>
+              <span className="text-neutral-300">{isEn ? 'Phone:' : 'Tel:'} <span className="text-yellow-400 font-bold">{currentDirector.phone}</span></span>
             </div>
 
             {canSelectOperator && directors.length > 0 ? (
-              <div className="flex items-center gap-2 pt-2">
-                <span className="text-[11px] font-mono text-yellow-400 uppercase font-bold">Seleziona Direttore:</span>
+              <div className="flex items-center gap-2 pt-2 flex-wrap">
+                <span className="text-[11px] font-mono text-yellow-400 uppercase font-bold">{isEn ? 'Director:' : 'Direttore:'}</span>
                 <select
                   value={currentDirector.id}
                   onChange={(e) => setSelectedDirectorId(e.target.value)}
-                  className="bg-neutral-950 text-white text-xs font-mono font-bold px-3 py-1 border border-yellow-600/60 outline-none cursor-pointer rounded"
+                  className="bg-neutral-950 text-white text-xs font-mono font-bold px-2.5 py-1.5 border border-yellow-600/60 outline-none cursor-pointer rounded max-w-full sm:max-w-xs"
                 >
                   {directors.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -135,17 +135,17 @@ export const DirettoriView: React.FC = () => {
                 </select>
               </div>
             ) : (
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-2 flex-wrap">
                 <span className="px-2.5 py-1 bg-neutral-950 text-yellow-300 font-mono text-xs border border-yellow-800/80 rounded flex items-center gap-1.5 shadow-inner">
                   <Lock className="w-3.5 h-3.5 text-yellow-400" />
-                  <span className="text-[11px] uppercase tracking-wider text-yellow-400/80">Direttore Assegnato:</span>
-                  <strong className="text-white">{currentDirector.badgeCode ? `[${currentDirector.badgeCode}] ` : ''}{currentDirector.name}</strong>
+                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-yellow-400/80">{isEn ? 'Director:' : 'Direttore:'}</span>
+                  <strong className="text-white text-xs">{currentDirector.badgeCode ? `[${currentDirector.badgeCode}] ` : ''}{currentDirector.name}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowUnlockModal(true)}
-                  title="Sblocca Selettore (Regia / Direzione)"
-                  className="p-1 text-neutral-500 hover:text-yellow-400 transition-colors cursor-pointer"
+                  title={isEn ? 'Unlock Selector (Control / Direction)' : 'Sblocca Selettore (Regia / Direzione)'}
+                  className="p-1.5 text-neutral-500 hover:text-yellow-400 transition-colors cursor-pointer"
                 >
                   <Lock className="w-3.5 h-3.5" />
                 </button>
@@ -153,31 +153,31 @@ export const DirettoriView: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
             <button
               onClick={() => {
                 setUserRole('regia');
                 setCurrentTab('regia');
               }}
-              className="px-3 py-1.5 bg-pink-950 hover:bg-pink-900 text-pink-300 font-black text-xs uppercase tracking-wider border border-pink-600 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+              className="flex-1 md:flex-initial min-h-[40px] px-3 py-1.5 bg-pink-950 hover:bg-pink-900 text-pink-300 font-black text-xs uppercase tracking-wider border border-pink-600 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
             >
-              <Radio className="w-3 h-3 text-pink-400" />
-              <span>REGIA</span>
+              <Radio className="w-3.5 h-3.5 text-pink-400" />
+              <span>{isEn ? 'CONTROL ROOM' : 'REGIA'}</span>
             </button>
 
             <button
               onClick={copyPublicUrl}
-              className="px-3 py-1.5 bg-orange-950 hover:bg-orange-900 text-orange-300 font-bold text-xs uppercase border border-orange-600 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+              className="flex-1 md:flex-initial min-h-[40px] px-3 py-1.5 bg-orange-950 hover:bg-orange-900 text-orange-300 font-bold text-xs uppercase border border-orange-600 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
             >
               {copiedPublicLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Globe className="w-3.5 h-3.5 text-orange-400" />}
-              <span>{copiedPublicLink ? 'Link Copiato!' : 'Link Pubblico'}</span>
+              <span>{copiedPublicLink ? (isEn ? 'Copied!' : 'Copiato!') : (isEn ? 'Public Link' : 'Link Pubblico')}</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Directors Navigation Menu */}
-      <nav aria-label="Menu Direttori" className="bg-neutral-950 border border-neutral-800 p-1 sm:p-1.5 shadow-xl">
+      <nav aria-label={isEn ? 'Directors Menu' : 'Menu Direttori'} className="bg-neutral-950 border border-neutral-800 p-1 sm:p-1.5 shadow-xl">
         <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
           <button
             onClick={() => setActiveSubTab('timeline')}
@@ -206,7 +206,7 @@ export const DirettoriView: React.FC = () => {
             <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                SCENARI MASTER
+                {isEn ? 'MASTER SCENARIOS' : 'SCENARI MASTER'}
               </span>
             </div>
           </button>
@@ -222,7 +222,7 @@ export const DirettoriView: React.FC = () => {
             <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-yellow-400" />
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                ANAGRAFICA DIRETTORI
+                {isEn ? 'DIRECTORS DIRECTORY' : 'ANAGRAFICA DIRETTORI'}
               </span>
             </div>
           </button>
@@ -247,7 +247,7 @@ export const DirettoriView: React.FC = () => {
       <OperatorUnlockModal
         isOpen={showUnlockModal}
         onClose={() => setShowUnlockModal(false)}
-        roleLabel="Direttore"
+        roleLabel={isEn ? 'Director' : 'Direttore'}
       />
     </div>
   );

@@ -67,52 +67,52 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-12 px-2 sm:px-4 max-w-7xl mx-auto font-mono">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-neutral-900 via-slate-900 to-neutral-900 border-2 border-orange-500/40 p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-neutral-900 via-slate-900 to-neutral-900 border-2 border-orange-500/40 p-3 sm:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-xs uppercase tracking-widest">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest">
                 {isEn ? 'MASTER CATALOG' : 'CATALOGO UFFICIALE'}
               </span>
-              <span className="text-neutral-400 font-mono text-xs">24 SCENARI • 4 MACRO-GRUPPI • TCCC & SHOCK ROOM</span>
+              <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">24 SCENARI • 4 MACRO-GRUPPI • TCCC & SHOCK ROOM</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-3">
-              <BookOpen className="w-8 h-8 text-orange-500" />
-              {isEn ? 'Trauma Simulation Scenario Catalog' : 'Catalogo Scenari e Pazienti Simulatori (24)'}
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 sm:gap-3">
+              <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 shrink-0" />
+              <span>{isEn ? 'Trauma Scenario Catalog' : 'Catalogo Scenari e Pazienti'}</span>
             </h1>
-            <p className="text-neutral-300 text-sm mt-1 max-w-3xl">
+            <p className="text-neutral-300 text-xs sm:text-sm mt-1 max-w-3xl">
               {isEn
                 ? 'Complete catalog of 24 clinical-tactical scenarios with detailed lesions, surgical/medical procedures, moulage/prosthetics, simulator equipment, and technical checklists.'
                 : 'Catalogo tassativo di tutti i 24 scenari clinico-tattici con lesioni, procedure chirurgiche TCCC e Shock Room, protesi moulage, simulatori e checklist di prontezza tecnica.'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             {onOpenProtesi && (
               <button
                 onClick={onOpenProtesi}
-                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all cursor-pointer"
+                className="flex-1 sm:flex-initial min-h-[40px] px-3.5 sm:px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-orange-400" />
-                {isEn ? 'View Moulage Catalog' : 'Catalogo Protesi & Moulage'}
+                <span>{isEn ? 'Moulage' : 'Protesi & Moulage'}</span>
               </button>
             )}
             <button
               onClick={exportCatalogJSON}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
+              className="flex-1 sm:flex-initial min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
             >
               <Download className="w-4 h-4" />
-              {isEn ? 'Export Scenarios JSON' : 'Esporta Scenari JSON'}
+              <span>{isEn ? 'Export JSON' : 'Esporta JSON'}</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-neutral-900 border border-neutral-800 p-4 shadow-lg space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="bg-neutral-900 border border-neutral-800 p-3 sm:p-4 shadow-lg space-y-2.5 sm:space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />

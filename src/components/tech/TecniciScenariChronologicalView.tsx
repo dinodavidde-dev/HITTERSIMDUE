@@ -1,4 +1,5 @@
 import React from 'react';
+import { useCourse } from '../../context/CourseContext';
 import {
   Activity,
   ArrowRight,
@@ -184,6 +185,9 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
   onOpenModal,
   onOpenChecklist,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
+
   const visibleBlocks = COURSE_TIMELINE_BLOCKS.filter((block) => {
     if (filterDay === '2' && block.day !== 2) return false;
     if (filterDay === '3' && block.day !== 3) return false;
@@ -196,22 +200,24 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
       <div className="bg-neutral-900 border border-neutral-800 p-3.5 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
         <div>
           <span className="text-xs text-neutral-200 font-black uppercase tracking-wider flex items-center gap-2">
-            <Activity className="w-4 h-4 text-cyan-400" /> Registro Scenari Clinici • Allineamento Cronologico Timeline del Corso
+            <Activity className="w-4 h-4 text-cyan-400" /> {isEn ? 'Clinical Scenarios Registry • Chronological Course Timeline Alignment' : 'Registro Scenari Clinici • Allineamento Cronologico Timeline del Corso'}
           </span>
           <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-            Gli scenari TCCC (Extra-Ospedaliero) e Shock Room (Intra-Ospedaliero) sono ordinati cronologicamente blocco per blocco e allineati l'uno dopo l'altro con l'Handover barellato 1:1 SBAR al minuto :30.
+            {isEn
+              ? 'TCCC (Pre-Hospital) and Shock Room (In-Hospital) scenarios are ordered chronologically block by block and aligned with the 1:1 litter SBAR Handover at minute :30.'
+              : 'Gli scenari TCCC (Extra-Ospedaliero) e Shock Room (Intra-Ospedaliero) sono ordinati cronologicamente blocco per blocco e allineati l\'uno dopo l\'altro con l\'Handover barellato 1:1 SBAR al minuto :30.'}
           </p>
         </div>
         <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
           <span className="px-2.5 py-1 bg-neutral-950 text-neutral-300 border border-neutral-800 rounded font-bold">
-            Totale Mostrati: <strong className="text-cyan-400">{filteredPatients.length}</strong> Pazienti
+            {isEn ? 'Total Displayed:' : 'Totale Mostrati:'} <strong className="text-cyan-400">{filteredPatients.length}</strong> {isEn ? 'Patients' : 'Pazienti'}
           </span>
           <span className="px-2.5 py-1 bg-emerald-950/80 text-emerald-300 border border-emerald-800 rounded font-bold flex items-center gap-1">
-            🌲 TCCC sul Campo (00–30')
+            {isEn ? '🌲 TCCC Field (00–30\')' : '🌲 TCCC sul Campo (00–30\')'}
           </span>
           <ArrowRight className="w-3.5 h-3.5 text-amber-400 hidden sm:inline" />
           <span className="px-2.5 py-1 bg-indigo-950/80 text-indigo-300 border border-indigo-800 rounded font-bold flex items-center gap-1">
-            🏥 Shock Room (35–65')
+            {isEn ? '🏥 Shock Room (35–65\')' : '🏥 Shock Room (35–65\')'}
           </span>
         </div>
       </div>
@@ -235,10 +241,10 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="px-2.5 py-1 bg-cyan-500 text-black font-black font-mono text-xs rounded uppercase tracking-wider">
-                    DAY 0{block.day} • {block.period.toUpperCase()}
+                    DAY 0{block.day} • {isEn ? (block.period === 'mattina' ? 'MORNING' : 'AFTERNOON') : block.period.toUpperCase()}
                   </span>
                   <span className="px-2.5 py-1 bg-neutral-800 text-neutral-200 font-black text-xs rounded uppercase tracking-wider">
-                    BLOCCO {block.blockNumber}
+                    {isEn ? 'BLOCK' : 'BLOCCO'} {block.blockNumber}
                   </span>
                   <span className="text-white font-black text-sm uppercase tracking-wide">
                     {block.title}
@@ -248,7 +254,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                 <div className="flex items-center gap-2 text-xs font-mono">
                   <span className="px-2.5 py-1 bg-neutral-950 text-cyan-400 border border-neutral-800 rounded font-bold flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                    Finestra Oraria: <strong className="text-white">{block.timeRangeTotal}</strong>
+                    {isEn ? 'Time Window:' : 'Finestra Oraria:'} <strong className="text-white">{block.timeRangeTotal}</strong>
                   </span>
                 </div>
               </div>
@@ -262,10 +268,10 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                   </span>
                   <div className="min-w-0">
                     <div className="text-[10px] text-emerald-400 font-bold uppercase">
-                      Fase TCCC Extra-Osp ({block.timeTCCC})
+                      {isEn ? 'TCCC Pre-Hosp Phase' : 'Fase TCCC Extra-Osp'} ({block.timeTCCC})
                     </div>
                     <div className="text-xs text-emerald-200 font-semibold truncate">
-                      Amb. Tattici 1-3 • Grp {block.groupExtra}
+                      {isEn ? 'Tactical Env.' : 'Amb. Tattici'} 1-3 • Grp {block.groupExtra}
                     </div>
                   </div>
                 </div>
@@ -280,7 +286,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                       Handover 1:1 SBAR ({block.timeHandover})
                     </div>
                     <div className="text-xs text-amber-200 font-semibold truncate">
-                      Tassativo :30 • Consegna 5 min
+                      {isEn ? 'Mandatory :30 • Handover 5 min' : 'Tassativo :30 • Consegna 5 min'}
                     </div>
                   </div>
                 </div>
@@ -292,7 +298,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                   </span>
                   <div className="min-w-0">
                     <div className="text-[10px] text-indigo-400 font-bold uppercase">
-                      Fase Shock Room ({block.timeShockRoom})
+                      {isEn ? 'Shock Room Phase' : 'Fase Shock Room'} ({block.timeShockRoom})
                     </div>
                     <div className="text-xs text-indigo-200 font-semibold truncate">
                       Box 1-3 • Grp {block.groupIntra}
@@ -307,10 +313,10 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                   </span>
                   <div className="min-w-0">
                     <div className="text-[10px] text-neutral-400 font-bold uppercase">
-                      Reset Tecnico ({block.timeReset})
+                      {isEn ? 'Technical Reset' : 'Reset Tecnico'} ({block.timeReset})
                     </div>
                     <div className="text-xs text-neutral-300 font-semibold truncate">
-                      Turnaround 15 min per 3 Box
+                      {isEn ? 'Turnaround 15 min for 3 Boxes' : 'Turnaround 15 min per 3 Box'}
                     </div>
                   </div>
                 </div>
@@ -319,10 +325,10 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
               {/* Rotazione didattica del blocco */}
               <div className="text-[11px] text-neutral-400 font-mono bg-neutral-950 px-3 py-1.5 rounded border border-neutral-800 flex items-center justify-between flex-wrap gap-2">
                 <span>
-                  <strong className="text-neutral-300 uppercase">Rotazione Gruppi:</strong> {block.partnerHandoverNote}
+                  <strong className="text-neutral-300 uppercase">{isEn ? 'Group Rotation:' : 'Rotazione Gruppi:'}</strong> {block.partnerHandoverNote}
                 </span>
                 <span className="text-cyan-400 font-bold">
-                  {blockPatients.length} Scenari attivi in questo Blocco
+                  {blockPatients.length} {isEn ? 'active Scenarios in this Block' : 'Scenari attivi in questo Blocco'}
                 </span>
               </div>
             </div>
@@ -348,17 +354,17 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="px-2.5 py-1 bg-cyan-600 text-white font-black font-mono text-xs rounded uppercase">
-                            POSTAZIONE {postazioneNum}
+                            {isEn ? 'STATION' : 'POSTAZIONE'} {postazioneNum}
                           </span>
                           <span className="px-2 py-0.5 bg-neutral-800 text-neutral-200 font-black font-mono text-xs rounded">
-                            PZ #{patient.id}
+                            {isEn ? 'PT' : 'PZ'} #{patient.id}
                           </span>
                           <span className="font-black text-white text-sm uppercase">
                             {patient.scenarioCode}
                           </span>
                           {isAssignedToCurrentTech && (
                             <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 font-black text-[10px] uppercase rounded">
-                              ★ Assegnato a Te (TECH-0{techNum})
+                              {isEn ? `★ Assigned to You (TECH-0${techNum})` : `★ Assegnato a Te (TECH-0${techNum})`}
                             </span>
                           )}
                         </div>
@@ -386,7 +392,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                             {readiness === 'ready' && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
                             {readiness === 'preparing' && <Clock className="w-3 h-3 text-yellow-400" />}
                             {readiness === 'critical' && <AlertTriangle className="w-3 h-3 text-red-400" />}
-                            <span>{readiness.toUpperCase()}</span>
+                            <span>{readiness === 'ready' ? (isEn ? 'READY' : 'PRONTO') : readiness === 'critical' ? (isEn ? 'CRITICAL' : 'CRITICO') : (isEn ? 'PREPARING' : 'IN CORSO')}</span>
                           </button>
 
                           {onOpenChecklist && (
@@ -395,7 +401,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                               onClick={() => onOpenChecklist(patient)}
                               className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-[11px] font-bold rounded transition-colors cursor-pointer flex items-center gap-1"
                             >
-                              <Wrench className="w-3 h-3 text-cyan-400" /> Reset Box
+                              <Wrench className="w-3 h-3 text-cyan-400" /> {isEn ? 'Reset Box' : 'Reset Box'}
                             </button>
                           )}
 
@@ -405,7 +411,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                               onClick={() => onOpenModal(patient)}
                               className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 text-[11px] font-bold rounded transition-colors cursor-pointer flex items-center gap-1"
                             >
-                              <ClipboardList className="w-3 h-3" /> Scheda
+                              <ClipboardList className="w-3 h-3" /> {isEn ? 'File' : 'Scheda'}
                             </button>
                           )}
                         </div>
@@ -415,28 +421,28 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs font-mono">
                         <div className="bg-neutral-900 p-2 border border-neutral-800 rounded">
                           <span className="text-[10px] text-cyan-400 uppercase font-bold flex items-center gap-1">
-                            <HardHat className="w-3 h-3" /> Simulatore / Manichino:
+                            <HardHat className="w-3 h-3" /> {isEn ? 'Simulator / Mannequin:' : 'Simulatore / Manichino:'}
                           </span>
                           <p className="text-neutral-300 truncate mt-0.5">
-                            {patient.simulatori || 'Manichino traumatologico avanzato ad alta fedeltà'}
+                            {patient.simulatori || (isEn ? 'Advanced high-fidelity trauma mannequin' : 'Manichino traumatologico avanzato ad alta fedeltà')}
                           </p>
                         </div>
 
                         <div className="bg-neutral-900 p-2 border border-neutral-800 rounded">
                           <span className="text-[10px] text-pink-400 uppercase font-bold flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" /> Moulage & Protesi:
+                            <Sparkles className="w-3 h-3" /> {isEn ? 'Moulage & Prosthetics:' : 'Moulage & Protesi:'}
                           </span>
                           <p className="text-neutral-300 truncate mt-0.5">
-                            {patient.moulageProtesi || 'Protesi traumatologica in silicone'}
+                            {patient.moulageProtesi || (isEn ? 'Silicone trauma prosthetic' : 'Protesi traumatologica in silicone')}
                           </p>
                         </div>
 
                         <div className="bg-neutral-900 p-2 border border-neutral-800 rounded">
                           <span className="text-[10px] text-amber-400 uppercase font-bold flex items-center gap-1">
-                            <Users className="w-3 h-3" /> Attori Ruolo:
+                            <Users className="w-3 h-3" /> {isEn ? 'Role Actors:' : 'Attori Ruolo:'}
                           </span>
                           <p className="text-neutral-300 truncate mt-0.5">
-                            {patient.attoriCount} attore ({patient.attoreDettagli || 'Attore simulato ferito'})
+                            {patient.attoriCount} {isEn ? (patient.attoriCount > 1 ? 'actors' : 'actor') : (patient.attoriCount > 1 ? 'attori' : 'attore')} ({patient.attoreDettagli || (isEn ? 'Injured role player actor' : 'Attore simulato ferito')})
                           </p>
                         </div>
                       </div>
@@ -455,7 +461,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                                     <Shield className="w-3.5 h-3.5" />
                                   </span>
                                   <span className="font-black text-emerald-300 text-xs uppercase tracking-wider">
-                                    1. FASE TCCC (EXTRA-OSPEDALIERO)
+                                    {isEn ? '1. TCCC PHASE (PRE-HOSPITAL)' : '1. FASE TCCC (EXTRA-OSPEDALIERO)'}
                                   </span>
                                 </div>
                                 <span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-[10px] font-mono font-bold flex items-center gap-1">
@@ -466,17 +472,17 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                               {/* Setting e Squadra TCCC */}
                               <div className="bg-neutral-950/80 p-2 border border-emerald-900/40 rounded flex items-center justify-between text-xs font-mono">
                                 <span className="text-neutral-400 flex items-center gap-1">
-                                  <MapPin className="w-3.5 h-3.5 text-emerald-400" /> Ambiente Tattico {postazioneNum}:
+                                  <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {isEn ? 'Tactical Env.' : 'Ambiente Tattico'} {postazioneNum}:
                                 </span>
                                 <span className="text-emerald-300 font-black">
-                                  Squadra {patient.teamExtraAssigned || ((patient.id - 1) % 12) + 1} (Gruppo {patient.groupExtraAssigned || block.groupExtra})
+                                  {isEn ? 'Team' : 'Squadra'} {patient.teamExtraAssigned || ((patient.id - 1) % 12) + 1} ({isEn ? 'Group' : 'Gruppo'} {patient.groupExtraAssigned || block.groupExtra})
                                 </span>
                               </div>
 
                               {/* Lesioni Extra */}
                               <div className="space-y-1">
                                 <span className="text-[10px] text-emerald-400 font-bold uppercase block">
-                                  Lesioni Primarie da Campo (Stop the Bleed):
+                                  {isEn ? 'Primary Field Injuries (Stop the Bleed):' : 'Lesioni Primarie da Campo (Stop the Bleed):'}
                                 </span>
                                 <div className="flex flex-wrap gap-1">
                                   {patient.lesioni.map((lesione, idx) => (
@@ -493,7 +499,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                               {/* Dinamica se presente */}
                               {patient.dinamicaDelleLesioni && (
                                 <div className="bg-neutral-950/80 p-2 border border-emerald-900/40 rounded text-[11px] font-mono text-neutral-300">
-                                  <strong className="text-emerald-400 block text-[10px] uppercase">Dinamica Evento Tattico:</strong>
+                                  <strong className="text-emerald-400 block text-[10px] uppercase">{isEn ? 'Tactical Incident Dynamics:' : 'Dinamica Evento Tattico:'}</strong>
                                   {patient.dinamicaDelleLesioni}
                                 </div>
                               )}
@@ -501,20 +507,22 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                               {/* Procedure TCCC */}
                               <div className="bg-emerald-950/40 p-2.5 border border-emerald-900/80 rounded space-y-1">
                                 <span className="text-[10px] text-emerald-400 font-bold uppercase block flex items-center gap-1">
-                                  <Activity className="w-3 h-3" /> Procedure TCCC Attese:
+                                  <Activity className="w-3 h-3" /> {isEn ? 'Expected TCCC Procedures:' : 'Procedure TCCC Attese:'}
                                 </span>
                                 <p className="text-xs text-emerald-200 font-mono leading-relaxed">
                                   {patient.procedureExtra && patient.procedureExtra.length > 0
                                     ? patient.procedureExtra.join(' • ')
-                                    : 'Applicazione Tourniquet TQ arti, Wound Packing con garze emostatiche (caolino/chitosano), Cricotiroidotomia d\'urgenza, decompressione con ago 14G, barellamento ed estrazione rapida.'}
+                                    : (isEn ? 'Limb TQ application, wound packing with hemostatic gauze, emergency cricothyroidotomy, 14G needle decompression, litter packaging and rapid extraction.' : 'Applicazione Tourniquet TQ arti, Wound Packing con garze emostatiche (caolino/chitosano), Cricotiroidotomia d\'urgenza, decompressione con ago 14G, barellamento ed estrazione rapida.')}
                                 </p>
                               </div>
                             </div>
 
                             {/* Dotazione Consumabili TCCC */}
                             <div className="text-[11px] font-mono text-neutral-400 bg-neutral-950/90 p-2 border border-neutral-800 rounded">
-                              <strong className="text-emerald-400 uppercase block text-[10px]">Dotazione Campo Tattico:</strong>
-                              Lacci TQ, garze emostatiche per zaffaggio, set cricotiroidotomia, barella cucchiaio/telo, sacche sangue 2000ml, fumo/effetti scenici.
+                              <strong className="text-emerald-400 uppercase block text-[10px]">{isEn ? 'Tactical Field Equipment:' : 'Dotazione Campo Tattico:'}</strong>
+                              {isEn
+                                ? 'TQ tourniquets, packing hemostatic gauze, cricothyroidotomy kit, scoop/fabric litter, 2000ml blood bags, smoke/atmospheric effects.'
+                                : 'Lacci TQ, garze emostatiche per zaffaggio, set cricotiroidotomia, barella cucchiaio/telo, sacche sangue 2000ml, fumo/effetti scenici.'}
                             </div>
                           </div>
                         )}
@@ -529,7 +537,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                                     <HeartPulse className="w-3.5 h-3.5" />
                                   </span>
                                   <span className="font-black text-indigo-300 text-xs uppercase tracking-wider">
-                                    2. FASE SHOCK ROOM (INTRA-OSPEDALIERO)
+                                    {isEn ? '2. SHOCK ROOM PHASE (IN-HOSPITAL)' : '2. FASE SHOCK ROOM (INTRA-OSPEDALIERO)'}
                                   </span>
                                 </div>
                                 <span className="px-2 py-0.5 bg-indigo-950 text-indigo-400 border border-indigo-800 rounded text-[10px] font-mono font-bold flex items-center gap-1">
@@ -543,35 +551,37 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                                   <MapPin className="w-3.5 h-3.5 text-indigo-400" /> Box Shock Room {postazioneNum}:
                                 </span>
                                 <span className="text-indigo-300 font-black">
-                                  Squadra {patient.teamIntraAssigned || ((patient.id + 2) % 12) + 1} (Gruppo {patient.groupIntraAssigned || block.groupIntra})
+                                  {isEn ? 'Team' : 'Squadra'} {patient.teamIntraAssigned || ((patient.id + 2) % 12) + 1} ({isEn ? 'Group' : 'Gruppo'} {patient.groupIntraAssigned || block.groupIntra})
                                 </span>
                               </div>
 
                               {/* Procedure Shock Room */}
                               <div className="bg-indigo-950/40 p-2.5 border border-indigo-900/80 rounded space-y-1">
                                 <span className="text-[10px] text-indigo-400 font-bold uppercase block flex items-center gap-1">
-                                  <Activity className="w-3 h-3" /> Procedure Intra-Ospedaliere (Shock Room):
+                                  <Activity className="w-3 h-3" /> {isEn ? 'In-Hospital Procedures (Shock Room):' : 'Procedure Intra-Ospedaliere (Shock Room):'}
                                 </span>
                                 <p className="text-xs text-indigo-200 font-mono leading-relaxed">
                                   {patient.procedureIntra && patient.procedureIntra.length > 0
                                     ? patient.procedureIntra.join(' • ')
-                                    : 'Approccio ABCDE sistematico, ecografia e-FAST clinica, drenaggio toracico definitivo con tubo 28Fr, posizionamento REBOA, toracotomia o laparotomia di rianimazione Damage Control.'}
+                                    : (isEn ? 'Systematic ABCDE approach, clinical e-FAST ultrasound, definitive chest tube 28Fr, REBOA placement, resuscitative thoracotomy or damage control laparotomy.' : 'Approccio ABCDE sistematico, ecografia e-FAST clinica, drenaggio toracico definitivo con tubo 28Fr, posizionamento REBOA, toracotomia o laparotomia di rianimazione Damage Control.')}
                                 </p>
                               </div>
 
                               {/* Dotazione Presidio Elettromedicale Box */}
                               <div className="text-[11px] font-mono text-neutral-400 bg-neutral-950/90 p-2 border border-neutral-800 rounded">
-                                <strong className="text-indigo-400 uppercase block text-[10px]">Dotazione Elettromedicale & Box:</strong>
-                                Monitor multiparametrico, ventilatore polmonare, ecografo con sonda convex, carrello toracotomia sterile, set REBOA 7Fr, riscaldatore fluidi.
+                                <strong className="text-indigo-400 uppercase block text-[10px]">{isEn ? 'Electromedical & Box Equipment:' : 'Dotazione Elettromedicale & Box:'}</strong>
+                                {isEn
+                                  ? 'Multiparameter monitor, mechanical ventilator, ultrasound with convex probe, sterile thoracotomy cart, 7Fr REBOA set, rapid fluid warmer.'
+                                  : 'Monitor multiparametrico, ventilatore polmonare, ecografo con sonda convex, carrello toracotomia sterile, set REBOA 7Fr, riscaldatore fluidi.'}
                               </div>
                             </div>
 
                             {/* Note Reset Box Tecnico (15 min) */}
                             <div className="bg-neutral-950/90 p-2 border border-neutral-800 rounded text-[11px] font-mono text-neutral-300">
                               <strong className="text-amber-400 block text-[10px] uppercase">
-                                Note Reset Box ({block.timeReset} • 15 min):
+                                {isEn ? `Box Reset Notes (${block.timeReset} • 15 min):` : `Note Reset Box (${block.timeReset} • 15 min):`}
                               </strong>
-                              {patient.techNotes || 'Sanificazione superfici, verifica tenuta circuito ventilatore, reset manichino/biomodello e reintegro consumabili sterili.'}
+                              {patient.techNotes || (isEn ? 'Surface sanitization, ventilator circuit check, mannequin/biomodel reset, and restocking sterile consumables.' : 'Sanificazione superfici, verifica tenuta circuito ventilatore, reset manichino/biomodello e reintegro consumabili sterili.')}
                             </div>
                           </div>
                         )}
@@ -584,14 +594,14 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                             <Clock className="w-3.5 h-3.5" />
                           </span>
                           <span>
-                            <strong className="text-amber-400 font-bold uppercase">Transizione Handover 1:1 SBAR ({block.timeHandover}):</strong> Tassativo al minuto :30 (durata 5 min).
+                            <strong className="text-amber-400 font-bold uppercase">{isEn ? '1:1 SBAR Handover Transition' : 'Transizione Handover 1:1 SBAR'} ({block.timeHandover}):</strong> {isEn ? 'Mandatory at minute :30 (duration 5 min).' : 'Tassativo al minuto :30 (durata 5 min).'}
                           </span>
                         </div>
                         <div className="text-[11px] text-neutral-400 flex items-center gap-1.5 flex-wrap">
-                          <span className="text-emerald-400 font-bold">Ambiente Tattico {postazioneNum}</span>
+                          <span className="text-emerald-400 font-bold">{isEn ? 'Tactical Env.' : 'Ambiente Tattico'} {postazioneNum}</span>
                           <ArrowRight className="w-3 h-3 text-amber-400" />
                           <span className="text-indigo-400 font-bold">Box Shock Room {postazioneNum}</span>
-                          <span className="text-neutral-500">• Presidio Faculty & Tecnico</span>
+                          <span className="text-neutral-500">• {isEn ? 'Faculty & Tech Presence' : 'Presidio Faculty & Tecnico'}</span>
                         </div>
                       </div>
                     </div>

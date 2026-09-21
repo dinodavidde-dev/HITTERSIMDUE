@@ -102,52 +102,52 @@ export const ProtesiCatalogView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-12 px-2 sm:px-4 max-w-7xl mx-auto font-mono">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-neutral-900 via-slate-900 to-neutral-900 border-2 border-orange-500/40 p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-neutral-900 via-slate-900 to-neutral-900 border-2 border-orange-500/40 p-3 sm:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-xs uppercase tracking-widest flex items-center gap-1">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center gap-1">
                 <Package className="w-3.5 h-3.5" />
-                {isEn ? 'PROSTHETICS & MOULAGE MASTER' : 'CATALOGO UFFICIALE PROTESI & MOULAGE'}
+                {isEn ? 'PROSTHETICS & MOULAGE' : 'PROTESI & MOULAGE'}
               </span>
-              <span className="text-neutral-400 font-mono text-xs">
-                {PROTESI_CATALOG.length} DISPOSITIVI TRAUMATOLOGICI ATTIVI
+              <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">
+                {PROTESI_CATALOG.length} DISPOSITIVI ATTIVI
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-3">
-              <Droplet className="w-8 h-8 text-orange-500" />
-              {isEn ? 'Detailed List of Scenario Prosthetics & Moulage' : 'Elenco Dettagliato delle Protesi Citate negli Scenari'}
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 sm:gap-3">
+              <Droplet className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 shrink-0" />
+              <span>{isEn ? 'Scenario Prosthetics & Moulage' : 'Catalogo Protesi & Moulage'}</span>
             </h1>
-            <p className="text-neutral-300 text-sm mt-1 max-w-3xl">
+            <p className="text-neutral-300 text-xs sm:text-sm mt-1 max-w-3xl">
               {isEn
                 ? 'All anatomical prosthetics, biological soft-chest simulators, pressurized vascular circuits and theatrical moulage used across clinical scenarios.'
-                : 'Tutte le protesi anatomiche, simulatori biologici a torace morbido, circuiti vascolari pressurizzati e moulage teatrale impiegati negli scenari clinici.'}
+                : 'Tutte le protesi anatomiche, simulatori biologici a torace morbido, circuiti vascolari pressurizzati e moulage impiegati negli scenari.'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <LanguageSwitcher variant="badge" />
             <button
               onClick={handleExportProsthetics}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
+              className="w-full sm:w-auto min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
             >
               <Download className="w-4 h-4" />
-              {isEn ? 'Export Prosthetics JSON' : 'Esporta Protesi JSON'}
+              <span>{isEn ? 'Export JSON' : 'Esporta JSON'}</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-neutral-900 border border-neutral-800 p-4 shadow-lg space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="bg-neutral-900 border border-neutral-800 p-3 sm:p-4 shadow-lg space-y-2.5 sm:space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
-              placeholder={isEn ? 'Search prosthesis, code, procedure...' : 'Cerca protesi, codice, procedura...'}
+              placeholder={isEn ? 'Search prosthesis, code...' : 'Cerca protesi, codice, procedura...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 pl-9 pr-3 py-2 text-xs uppercase placeholder:text-neutral-600 focus:outline-none focus:border-orange-500"
@@ -181,7 +181,7 @@ export const ProtesiCatalogView: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-1 text-xs text-neutral-400 font-mono">
+        <div className="flex items-center justify-between pt-1 text-xs text-neutral-400 font-mono flex-wrap gap-2">
           <span>{isEn ? `Showing ${filteredProtesi.length} devices` : `Visualizzati ${filteredProtesi.length} dispositivi anatomici`}</span>
           {searchQuery || selectedDistrict !== 'ALL' || selectedDay !== 'ALL' ? (
             <button
@@ -198,8 +198,60 @@ export const ProtesiCatalogView: React.FC = () => {
         </div>
       </div>
 
-      {/* Prosthetics Master Table */}
-      <div className="bg-neutral-900 border border-neutral-800 shadow-xl overflow-x-auto">
+      {/* MOBILE PROSTHETICS CARD VIEW (< md) */}
+      <div className="block md:hidden space-y-3">
+        {filteredProtesi.map((item) => (
+          <div key={item.id} className="bg-neutral-950 border border-neutral-800 p-3.5 space-y-3 shadow-md rounded">
+            <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-xs rounded">
+                  {item.code}
+                </span>
+                {getDistrictBadge(item.district)}
+              </div>
+              <span className="text-[10px] text-neutral-400 font-mono">
+                {item.scenariosUsed.length} {isEn ? 'Scenarios' : 'Scenari'}
+              </span>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-white leading-snug">
+                {item.name}
+              </h3>
+              <p className="text-neutral-400 text-xs mt-1 font-sans line-clamp-2">
+                {item.description}
+              </p>
+            </div>
+
+            <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1.5 text-xs">
+              <div>
+                <span className="text-neutral-400 text-[10px] uppercase block">Procedura Guidata:</span>
+                <span className="text-orange-400 font-bold text-xs">{item.requiredProcedures[0] || 'Procedura Guidata'}</span>
+              </div>
+              <div>
+                <span className="text-neutral-400 text-[10px] uppercase block">Funzione / Feature:</span>
+                <span className="text-neutral-200 text-xs">{item.activeFeatures[0]}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-neutral-800 text-[11px]">
+                <span className="text-neutral-400">Lead Tech: <strong className="text-amber-300">{item.leadTechnician}</strong></span>
+                <span className="text-neutral-400 font-mono">{item.consumables.length} consumabili</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedModalItem(item)}
+              className="w-full min-h-[40px] py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-neutral-700"
+            >
+              <FileText className="w-3.5 h-3.5 text-orange-400" />
+              <span>Visualizza Scheda Protesi</span>
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* DESKTOP Prosthetics Master Table (>= md) */}
+      <div className="hidden md:block bg-neutral-900 border border-neutral-800 shadow-xl overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="bg-neutral-950 text-neutral-400 text-[11px] font-mono uppercase tracking-wider border-b border-neutral-800">

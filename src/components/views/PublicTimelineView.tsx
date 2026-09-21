@@ -1000,7 +1000,8 @@ export const PublicTimelineView: React.FC = () => {
                     currentSlot,
                     activeDay,
                     simulatorPatients,
-                    technicians
+                    technicians,
+                    language
                   );
 
                   const isActivelyDelivering = handoverInfo?.isHandover && handoverInfo.deliveringGroup === g;
@@ -1147,21 +1148,21 @@ export const PublicTimelineView: React.FC = () => {
                           <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 animate-spin flex-shrink-0" />
                           <div className="text-left">
                             <span className="text-[8px] sm:text-[9px] font-mono uppercase text-red-300 font-bold block leading-none">
-                              TEMPO RESIDUO HANDOVER
+                              {isEn ? 'HANDOVER TIME REMAINING' : 'TEMPO RESIDUO HANDOVER'}
                             </span>
                             <span className="text-lg sm:text-2xl font-mono font-black text-yellow-400 tracking-wider">
                               {formatTimer(timerSeconds)}
                             </span>
                           </div>
                           <div className="pl-2 border-l border-neutral-800 text-right hidden sm:block">
-                            <span className="text-[9px] font-mono uppercase text-neutral-400 block font-bold">Slot 5m</span>
+                            <span className="text-[9px] font-mono uppercase text-neutral-400 block font-bold">{isEn ? '5m Slot' : 'Slot 5m'}</span>
                             {timerSeconds <= 60 && timerSeconds > 0 ? (
                               <span className="text-[10px] font-mono font-black text-red-400 uppercase animate-ping block">
-                                ULTIMO MINUTO
+                                {isEn ? 'LAST MINUTE' : 'ULTIMO MINUTO'}
                               </span>
                             ) : (
                               <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase block">
-                                IN CORSO
+                                {isEn ? 'IN PROGRESS' : 'IN CORSO'}
                               </span>
                             )}
                           </div>
@@ -1172,17 +1173,17 @@ export const PublicTimelineView: React.FC = () => {
                           type="button"
                           onClick={() => setIsOverlayMinimized(!isOverlayMinimized)}
                           className="p-2 bg-neutral-900 hover:bg-neutral-800 border border-red-700 text-neutral-300 hover:text-white rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                          title={isOverlayMinimized ? 'Espandi sovrapposizione sui 4 gruppi' : 'Riduci sovrapposizione a barra'}
+                          title={isOverlayMinimized ? (isEn ? 'Expand overlay across 4 groups' : 'Espandi sovrapposizione sui 4 gruppi') : (isEn ? 'Minimize overlay to bar' : 'Riduci sovrapposizione a barra')}
                         >
                           {isOverlayMinimized ? (
                             <>
                               <Maximize2 className="w-4 h-4 text-red-400" />
-                              <span className="text-[10px] font-mono font-bold uppercase hidden sm:inline">Espandi</span>
+                              <span className="text-[10px] font-mono font-bold uppercase hidden sm:inline">{isEn ? 'Expand' : 'Espandi'}</span>
                             </>
                           ) : (
                             <>
                               <Minimize2 className="w-4 h-4 text-neutral-400" />
-                              <span className="text-[10px] font-mono font-bold uppercase hidden sm:inline">Riduci</span>
+                              <span className="text-[10px] font-mono font-bold uppercase hidden sm:inline">{isEn ? 'Minimize' : 'Riduci'}</span>
                             </>
                           )}
                         </button>
@@ -1196,7 +1197,7 @@ export const PublicTimelineView: React.FC = () => {
                         <div className="md:col-span-5 bg-neutral-950/95 border-2 border-orange-500 rounded-lg p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 shadow-inner">
                           <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
                             <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[9px] sm:text-[10px] uppercase tracking-wider rounded">
-                              GRUPPO CHE CONSEGNA (TCCC)
+                              {isEn ? 'DELIVERING GROUP (TCCC)' : 'GRUPPO CHE CONSEGNA (TCCC)'}
                             </span>
                             <span className="text-orange-400 font-mono text-xs font-bold">
                               {handoverInfo.deliveringRange}
@@ -1206,10 +1207,10 @@ export const PublicTimelineView: React.FC = () => {
                           <div>
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <h4 className="text-white font-black text-base sm:text-xl uppercase tracking-tight">
-                                GRUPPO {handoverInfo.deliveringName}
+                                {isEn ? `GROUP ${handoverInfo.deliveringName}` : `GRUPPO ${handoverInfo.deliveringName}`}
                               </h4>
                               <span className="text-xs text-neutral-400 font-mono">
-                                (Squadre {handoverInfo.deliveringSquads.join(', ')})
+                                ({isEn ? 'Teams' : 'Squadre'} {handoverInfo.deliveringSquads.join(', ')})
                               </span>
                             </div>
                             <p className="text-xs text-orange-200/90 font-medium leading-snug mt-0.5">
@@ -1220,14 +1221,14 @@ export const PublicTimelineView: React.FC = () => {
                           <div className="pt-1.5 border-t border-neutral-850 space-y-1 text-xs">
                             <div className="flex items-center gap-1.5 text-neutral-300">
                               <MapPin className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-                              <span className="text-neutral-400 text-[10px] uppercase font-mono">Origine:</span>
+                              <span className="text-neutral-400 text-[10px] uppercase font-mono">{isEn ? 'Origin:' : 'Origine:'}</span>
                               <span className="font-bold text-white truncate">{handoverInfo.deliveringLocation}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-neutral-300">
                               <Users className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-                              <span className="text-neutral-400 text-[10px] uppercase font-mono">Pazienti:</span>
+                              <span className="text-neutral-400 text-[10px] uppercase font-mono">{isEn ? 'Patients:' : 'Pazienti:'}</span>
                               <span className="font-bold text-orange-300">
-                                Pazienti #{handoverInfo.patientIds.join(', #')} (Barellati 1:1)
+                                {isEn ? `Patients #${handoverInfo.patientIds.join(', #')} (1:1 Stretcher)` : `Pazienti #${handoverInfo.patientIds.join(', #')} (Barellati 1:1)`}
                               </span>
                             </div>
                           </div>
@@ -1251,7 +1252,7 @@ export const PublicTimelineView: React.FC = () => {
                         <div className="md:col-span-5 bg-neutral-950/95 border-2 border-cyan-500 rounded-lg p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 shadow-inner">
                           <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
                             <span className="px-2 py-0.5 bg-cyan-600 text-black font-black text-[9px] sm:text-[10px] uppercase tracking-wider rounded">
-                              GRUPPO CHE RICEVE (SHOCK ROOM)
+                              {isEn ? 'RECEIVING GROUP (SHOCK ROOM)' : 'GRUPPO CHE RICEVE (SHOCK ROOM)'}
                             </span>
                             <span className="text-cyan-400 font-mono text-xs font-bold">
                               {handoverInfo.receivingRange}
@@ -1261,10 +1262,10 @@ export const PublicTimelineView: React.FC = () => {
                           <div>
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <h4 className="text-white font-black text-base sm:text-xl uppercase tracking-tight">
-                                GRUPPO {handoverInfo.receivingName}
+                                {isEn ? `GROUP ${handoverInfo.receivingName}` : `GRUPPO ${handoverInfo.receivingName}`}
                               </h4>
                               <span className="text-xs text-neutral-400 font-mono">
-                                (Squadre {handoverInfo.receivingSquads.join(', ')})
+                                ({isEn ? 'Teams' : 'Squadre'} {handoverInfo.receivingSquads.join(', ')})
                               </span>
                             </div>
                             <p className="text-xs text-cyan-200/90 font-medium leading-snug mt-0.5">
@@ -1275,14 +1276,14 @@ export const PublicTimelineView: React.FC = () => {
                           <div className="pt-1.5 border-t border-neutral-850 space-y-1 text-xs">
                             <div className="flex items-center gap-1.5 text-neutral-300">
                               <MapPin className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                              <span className="text-neutral-400 text-[10px] uppercase font-mono">Destinazione:</span>
+                              <span className="text-neutral-400 text-[10px] uppercase font-mono">{isEn ? 'Destination:' : 'Destinazione:'}</span>
                               <span className="font-bold text-white truncate">{handoverInfo.receivingLocation}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-neutral-300">
                               <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                              <span className="text-neutral-400 text-[10px] uppercase font-mono">Presa in Carico:</span>
+                              <span className="text-neutral-400 text-[10px] uppercase font-mono">{isEn ? 'Takeover:' : 'Presa in Carico:'}</span>
                               <span className="font-bold text-cyan-300 truncate">
-                                Box Shock Room • ABCDE & FAST
+                                {isEn ? 'Shock Room Box • ABCDE & FAST' : 'Box Shock Room • ABCDE & FAST'}
                               </span>
                             </div>
                           </div>
@@ -1310,7 +1311,8 @@ export const PublicTimelineView: React.FC = () => {
           currentSlot,
           activeDay,
           simulatorPatients,
-          technicians
+          technicians,
+          language
         );
         const groupDiscenti = (discenti || []).filter((d) => getDiscenteGroup(d.teamId) === g);
 
@@ -1354,17 +1356,17 @@ export const PublicTimelineView: React.FC = () => {
                 <div className="bg-neutral-900/90 p-2.5 rounded border border-neutral-800 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
                   <div>
-                    <span className="text-[10px] text-neutral-400 uppercase block">Postazione Assegnata</span>
-                    <strong className="text-white">{act?.location || 'Stazione Operativa'}</strong>
+                    <span className="text-[10px] text-neutral-400 uppercase block">{isEn ? 'Assigned Station' : 'Postazione Assegnata'}</span>
+                    <strong className="text-white">{act?.location || (isEn ? 'Operational Station' : 'Stazione Operativa')}</strong>
                   </div>
                 </div>
 
                 <div className="bg-neutral-900/90 p-2.5 rounded border border-neutral-800 flex items-center gap-2">
                   <Wrench className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                   <div>
-                    <span className="text-[10px] text-neutral-400 uppercase block">Presidio Tecnico & Regia</span>
-                    <strong className="text-white">{phaseDetails.technicianData.techName || 'Presidio Centrale'}</strong>
-                    <span className="text-neutral-400 text-[10px] block">Tel: {phaseDetails.technicianData.techPhone || 'Canale Radio 1'}</span>
+                    <span className="text-[10px] text-neutral-400 uppercase block">{isEn ? 'Technical & Control Supervision' : 'Presidio Tecnico & Regia'}</span>
+                    <strong className="text-white">{phaseDetails.technicianData.techName || (isEn ? 'Central Control' : 'Presidio Centrale')}</strong>
+                    <span className="text-neutral-400 text-[10px] block">Tel: {phaseDetails.technicianData.techPhone || (isEn ? 'Radio Channel 1' : 'Canale Radio 1')}</span>
                   </div>
                 </div>
               </div>
@@ -1373,7 +1375,7 @@ export const PublicTimelineView: React.FC = () => {
               <div className="bg-neutral-900/70 p-3 rounded-lg border border-neutral-800 space-y-1.5 text-xs">
                 <div className="flex items-center gap-1.5 text-orange-400 font-mono font-bold uppercase text-[11px]">
                   <Activity className="w-3.5 h-3.5" />
-                  <span>Inquadramento Clinico-Operativo</span>
+                  <span>{isEn ? 'Clinical-Operational Framework' : 'Inquadramento Clinico-Operativo'}</span>
                 </div>
                 <p className="text-neutral-200 leading-relaxed">
                   {phaseDetails.operationalDescription}
@@ -1389,7 +1391,7 @@ export const PublicTimelineView: React.FC = () => {
               <div className="bg-neutral-900/70 p-3 rounded-lg border border-neutral-800 space-y-1.5 text-xs">
                 <div className="flex items-center gap-1.5 text-emerald-400 font-mono font-bold uppercase text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Obiettivi Addestrativi Chiave</span>
+                  <span>{isEn ? 'Key Training Objectives' : 'Obiettivi Addestrativi Chiave'}</span>
                 </div>
                 <ul className="space-y-1 text-neutral-300 list-disc list-inside">
                   {phaseDetails.didacticObjectives.map((obj, idx) => (
@@ -1403,9 +1405,9 @@ export const PublicTimelineView: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
                   <span className="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-orange-400" />
-                    Squadre ({meta.squads.join(', ')}) • Rapporto Tutor 1:1
+                    {isEn ? `Teams (${meta.squads.join(', ')}) • 1:1 Tutor Ratio` : `Squadre (${meta.squads.join(', ')}) • Rapporto Tutor 1:1`}
                   </span>
-                  <span className="text-[10px] font-mono text-neutral-400">15 Discenti (5 per squadra)</span>
+                  <span className="text-[10px] font-mono text-neutral-400">{isEn ? '15 Learners (5 per team)' : '15 Discenti (5 per squadra)'}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1423,12 +1425,12 @@ export const PublicTimelineView: React.FC = () => {
                         className="bg-neutral-900/90 border border-neutral-800 p-2.5 rounded-lg space-y-1.5 text-xs font-mono"
                       >
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
-                          <span className="font-black text-orange-400">SQUADRA {sqNum}</span>
-                          <span className="text-[10px] text-neutral-400">Paziente #{sqNum % 3 === 0 ? 3 : sqNum % 3}</span>
+                          <span className="font-black text-orange-400">{isEn ? `TEAM ${sqNum}` : `SQUADRA ${sqNum}`}</span>
+                          <span className="text-[10px] text-neutral-400">{isEn ? `Patient #${sqNum % 3 === 0 ? 3 : sqNum % 3}` : `Paziente #${sqNum % 3 === 0 ? 3 : sqNum % 3}`}</span>
                         </div>
 
                         <div>
-                          <span className="text-[9px] text-neutral-400 uppercase block">Faculty Assegnato:</span>
+                          <span className="text-[9px] text-neutral-400 uppercase block">{isEn ? 'Assigned Faculty:' : 'Faculty Assegnato:'}</span>
                           <span className="font-bold text-white text-[11px] block truncate">
                             {facMatch?.badgeCode || `FAC-${sqNum < 10 ? '0' + sqNum : sqNum}`} • {facMatch?.name || 'Faculty Tutor'}
                           </span>
@@ -1437,12 +1439,12 @@ export const PublicTimelineView: React.FC = () => {
                         <div className="pt-1 border-t border-neutral-850 space-y-0.5 text-[10px]">
                           <div>
                             <span className="text-amber-400 font-bold">TL: </span>
-                            <span className="text-white">{teamLeader ? `${teamLeader.id} (${teamLeader.name})` : 'In assegnazione'}</span>
+                            <span className="text-white">{teamLeader ? `${teamLeader.id} (${teamLeader.name})` : (isEn ? 'Assigning...' : 'In assegnazione')}</span>
                           </div>
                           <div>
                             <span className="text-neutral-400 font-bold">Op: </span>
                             <span className="text-neutral-300">
-                              {operators.length > 0 ? operators.map((o) => o.id).join(', ') : 'Operatori'}
+                              {operators.length > 0 ? operators.map((o) => o.id).join(', ') : (isEn ? 'Operators' : 'Operatori')}
                             </span>
                           </div>
                         </div>
@@ -1455,26 +1457,26 @@ export const PublicTimelineView: React.FC = () => {
               {/* Cronoprogramma 90 Minuti */}
               <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 text-[11px] font-mono space-y-1">
                 <span className="text-[10px] text-orange-400 uppercase font-bold block">
-                  Regola Temporale Blocco Formativo (90 Minuti)
+                  {isEn ? 'Training Block Time Rule (90 Minutes)' : 'Regola Temporale Blocco Formativo (90 Minuti)'}
                 </span>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-1.5 text-neutral-400 text-[10px] pt-1">
                   <div className="bg-neutral-900/80 p-1.5 rounded">
-                    <strong className="text-neutral-200 block">:00 - :15</strong> Ingaggio / Standby
+                    <strong className="text-neutral-200 block">:00 - :15</strong> {isEn ? 'Engagement / Standby' : 'Ingaggio / Standby'}
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded">
-                    <strong className="text-neutral-200 block">:15 - :30</strong> Stabilizzazione / Pratica
+                    <strong className="text-neutral-200 block">:15 - :30</strong> {isEn ? 'Stabilization / Practice' : 'Stabilizzazione / Pratica'}
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded border border-red-800/60">
                     <strong className="text-red-400 block">:30 - :35</strong> Handover SBAR 1:1
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded">
-                    <strong className="text-neutral-200 block">:35 - :60</strong> Approccio ABCDE / Workshop
+                    <strong className="text-neutral-200 block">:35 - :60</strong> {isEn ? 'ABCDE Approach / Workshop' : 'Approccio ABCDE / Workshop'}
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded">
-                    <strong className="text-neutral-200 block">:60 - :75</strong> Debriefing Parte 1
+                    <strong className="text-neutral-200 block">:60 - :75</strong> {isEn ? 'Debriefing Part 1' : 'Debriefing Parte 1'}
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded border border-neutral-700">
-                    <strong className="text-neutral-200 block">:75 - :90</strong> Debriefing & Reset Tech
+                    <strong className="text-neutral-200 block">:75 - :90</strong> {isEn ? 'Debriefing & Tech Reset' : 'Debriefing & Reset Tech'}
                   </div>
                 </div>
               </div>
@@ -1487,7 +1489,7 @@ export const PublicTimelineView: React.FC = () => {
                   className="w-full min-h-[44px] py-2 px-4 bg-orange-500 hover:bg-orange-400 text-black font-mono font-black rounded-lg uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-lg"
                 >
                   <X className="w-4 h-4" />
-                  <span>CHIUDI SCHEDA OPERATIVA</span>
+                  <span>{isEn ? 'CLOSE OPERATIONAL SHEET' : 'CHIUDI SCHEDA OPERATIVA'}</span>
                 </button>
               </div>
             </div>

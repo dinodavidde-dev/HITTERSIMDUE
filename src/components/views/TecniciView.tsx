@@ -34,7 +34,10 @@ export const TecniciView: React.FC = () => {
     teams,
     sendCourseMessage,
     canSelectOperator,
+    language,
   } = useCourse();
+
+  const isEn = language === 'en';
 
   const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'registro' | 'checklists' | 'moulage'>('timeline');
   const [assignmentMode, setAssignmentMode] = useState<'single' | 'pairs'>('single');
@@ -81,35 +84,35 @@ export const TecniciView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 max-w-6xl mx-auto px-4 font-mono animate-fadeIn">
+    <div className="space-y-4 sm:space-y-6 pb-12 max-w-6xl mx-auto px-2 sm:px-4 font-mono animate-fadeIn">
       {/* Header Banner */}
-      <div className="bg-neutral-900 border-2 border-pink-500/60 p-4 shadow-lg flex flex-col lg:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="px-3 py-1 bg-pink-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
-            <Wrench className="w-4 h-4" /> VISUALE TECNICA & LOGISTICA SIMULAZIONE
+      <div className="bg-neutral-900 border-2 border-pink-500/60 p-3 sm:p-4 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <span className="px-2.5 sm:px-3 py-1 bg-pink-600 text-white font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
+            <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'TECHNICAL VIEW' : 'VISUALE TECNICA'}
           </span>
 
           <DaySelectorToggle variant="public" />
 
-          <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-xs border border-neutral-800 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping" /> DAY 0{activeDay} • FASE {activeSlotIndex + 1}/{dayMasterSlots.length}
+          <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-[11px] sm:text-xs border border-neutral-800 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping" /> DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{dayMasterSlots.length}
           </span>
-          <span className="px-2 py-0.5 bg-neutral-950 text-pink-400 border border-neutral-800 font-mono text-xs flex items-center gap-1.5">
-            <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-pink-400 animate-spin' : 'text-neutral-400'}`} /> T-Fase: {formatTimer(timerSeconds)}
+          <span className="px-2 py-0.5 bg-neutral-950 text-pink-400 border border-neutral-800 font-mono text-[11px] sm:text-xs flex items-center gap-1.5">
+            <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-pink-400 animate-spin' : 'text-neutral-400'}`} /> {isEn ? 'T-Phase:' : 'T-Fase:'} {formatTimer(timerSeconds)}
           </span>
         </div>
 
         {/* Technician Profile Selector & Assignment Mode - visible ONLY when opened by Regia or Direttore */}
         {canSelectOperator ? (
-          <div className="flex items-center gap-3 flex-wrap bg-pink-950/40 p-1.5 border border-pink-700/50 rounded">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap bg-pink-950/40 p-1.5 border border-pink-700/50 rounded">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="text-xs font-mono text-pink-300 uppercase font-bold flex items-center gap-1">
-                <User className="w-3.5 h-3.5" /> Tecnico:
+                <User className="w-3.5 h-3.5" /> {isEn ? 'Technician:' : 'Tecnico:'}
               </span>
               <select
                 value={currentTech.id}
                 onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                className="bg-neutral-950 text-pink-300 font-mono text-xs border border-pink-700/60 px-3 py-1.5 rounded focus:outline-none focus:border-pink-400 max-w-xs uppercase font-bold cursor-pointer"
+                className="bg-neutral-950 text-pink-300 font-mono text-xs border border-pink-700/60 px-2 sm:px-3 py-1.5 rounded focus:outline-none focus:border-pink-400 max-w-[160px] sm:max-w-xs uppercase font-bold cursor-pointer"
               >
                 {technicians.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -123,36 +126,36 @@ export const TecniciView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setAssignmentMode('single')}
-                className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
+                className={`px-2 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
                   assignmentMode === 'single' ? 'bg-pink-600 text-white shadow' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                👤 Singolo
+                👤 {isEn ? 'Single' : 'Singolo'}
               </button>
               <button
                 type="button"
                 onClick={() => setAssignmentMode('pairs')}
-                className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
+                className={`px-2 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
                   assignmentMode === 'pairs' ? 'bg-pink-600 text-white shadow' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                👥 Coppia
+                👥 {isEn ? 'Pair' : 'Coppia'}
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-1 bg-neutral-950 text-pink-300 font-mono text-xs border border-pink-800/80 rounded flex items-center gap-1.5 shadow-inner">
               <Lock className="w-3.5 h-3.5 text-pink-400" />
-              <span className="text-[11px] uppercase tracking-wider text-pink-400/80">Tecnico Assegnato:</span>
-              <strong className="text-white">{currentTech.badgeCode} • {currentTech.name}</strong>
-              <span className="text-neutral-400 text-[11px]">({currentTech.specialty})</span>
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-pink-400/80">{isEn ? 'Tech:' : 'Tecnico:'}</span>
+              <strong className="text-white text-xs">{currentTech.badgeCode} • {currentTech.name}</strong>
+              <span className="text-neutral-400 text-[10px] sm:text-[11px] hidden sm:inline">({currentTech.specialty})</span>
             </span>
             <button
               type="button"
               onClick={() => setShowUnlockModal(true)}
-              title="Sblocca Selettore (Regia / Direzione)"
-              className="p-1 text-neutral-500 hover:text-pink-400 transition-colors cursor-pointer"
+              title={isEn ? 'Unlock Selector (Control / Direction)' : 'Sblocca Selettore (Regia / Direzione)'}
+              className="p-1.5 text-neutral-500 hover:text-pink-400 transition-colors cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
             </button>
@@ -161,49 +164,49 @@ export const TecniciView: React.FC = () => {
       </div>
 
       {/* SubTab Navigation */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-1.5 sm:gap-2 border-b border-neutral-800 pb-2.5 sm:pb-3 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveSubTab('timeline')}
-          className={`px-4 py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border whitespace-nowrap shrink-0 ${
             activeSubTab === 'timeline'
               ? 'bg-pink-600 text-white border-pink-500 shadow-lg'
               : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
           }`}
         >
-          <Activity className="w-4 h-4" /> Timeline Affiancata (Corso & Mansioni)
+          <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'Side-by-Side Timeline' : 'Timeline Affiancata'}
         </button>
 
         <button
           onClick={() => setActiveSubTab('registro')}
-          className={`px-4 py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border whitespace-nowrap shrink-0 ${
             activeSubTab === 'registro'
               ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg'
               : 'bg-neutral-900 text-cyan-400/90 border-cyan-800/60 hover:text-white hover:border-cyan-500'
           }`}
         >
-          <ClipboardList className="w-4 h-4 text-cyan-400" /> Registro Risorse Tecniche ({simulatorPatients.length})
+          <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" /> {isEn ? `Resource Log (${simulatorPatients.length})` : `Registro Risorse (${simulatorPatients.length})`}
         </button>
 
         <button
           onClick={() => setActiveSubTab('checklists')}
-          className={`px-4 py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border whitespace-nowrap shrink-0 ${
             activeSubTab === 'checklists'
               ? 'bg-pink-600 text-white border-pink-500 shadow-lg'
               : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4" /> Checklist Postazioni & Reset
+          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'Station Checklist' : 'Checklist Postazioni'}
         </button>
 
         <button
           onClick={() => setActiveSubTab('moulage')}
-          className={`px-4 py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border whitespace-nowrap shrink-0 ${
             activeSubTab === 'moulage'
               ? 'bg-pink-600 text-white border-pink-500 shadow-lg'
               : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
           }`}
         >
-          <Package className="w-4 h-4" /> Catalogo Protesi & Moulage
+          <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'Prosthetics Catalog' : 'Catalogo Protesi'}
         </button>
       </div>
 
@@ -227,7 +230,7 @@ export const TecniciView: React.FC = () => {
                 senderName: currentTech.name,
                 senderRole: 'tecnico',
                 type: 'info',
-                subject: 'Dispaccio Radio CH3 Tecnico',
+                subject: isEn ? 'Radio Dispatch CH3 Tech' : 'Dispaccio Radio CH3 Tecnico',
                 content: msg,
               });
             }
@@ -251,16 +254,16 @@ export const TecniciView: React.FC = () => {
           <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-[10px] font-mono text-pink-400 uppercase font-black tracking-widest">
-                CHECKLIST ALLESTIMENTO PRE-SESSIONE & RESET POST-SESSIONE
+                {isEn ? 'PRE-SESSION SETUP & POST-SESSION RESET CHECKLIST' : 'CHECKLIST ALLESTIMENTO PRE-SESSIONE & RESET POST-SESSIONE'}
               </span>
               <h2 className="text-lg font-black text-white uppercase flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-pink-500" />
-                Gestione Postazioni, Moulage & 🟢 Segnale Luce Verde
+                {isEn ? 'Station Management, Moulage & 🟢 Green Light Signal' : 'Gestione Postazioni, Moulage & 🟢 Segnale Luce Verde'}
               </h2>
             </div>
             <div className="bg-pink-950/80 border border-pink-600 px-4 py-2 text-right">
               <span className="text-[10px] font-mono text-pink-300 uppercase block font-bold">
-                TEMPO UTILE FASE CORRENTE (T-)
+                {isEn ? 'CURRENT PHASE USEFUL TIME (T-)' : 'TEMPO UTILE FASE CORRENTE (T-)'}
               </span>
               <span className="text-white font-mono font-black text-base">
                 {formatTimer(timerSeconds)}
@@ -277,10 +280,10 @@ export const TecniciView: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5">
             <span className="text-[10px] font-mono text-pink-400 uppercase font-black tracking-widest">
-              CATALOGO PROTESI, MOULAGE & CONSUMABILI TECNICI
+              {isEn ? 'PROSTHETICS, MOULAGE & TECHNICAL CONSUMABLES CATALOG' : 'CATALOGO PROTESI, MOULAGE & CONSUMABILI TECNICI'}
             </span>
             <h2 className="text-lg font-black text-white uppercase mt-1">
-              Inventario e Allestimento Ferite, Sanguinamenti e Simulatori
+              {isEn ? 'Inventory and Preparation of Wounds, Bleeding and Simulators' : 'Inventario e Allestimento Ferite, Sanguinamenti e Simulatori'}
             </h2>
           </div>
           <ProtesiCatalogView />
@@ -305,7 +308,9 @@ export const TecniciView: React.FC = () => {
             activityType: 'scenario_extra',
             title: selectedProtesiPatient.title || selectedProtesiPatient.scenarioCode,
             subtitle: selectedProtesiPatient.dinamicaDelleLesioni || '',
-            location: `Postazione Pz #${selectedProtesiPatient.id} • ${selectedProtesiPatient.scenarioCode.includes('TCCC') ? 'Ambiente Tattico' : 'Shock Room'}`,
+            location: isEn
+              ? `Station Pt #${selectedProtesiPatient.id} • ${selectedProtesiPatient.scenarioCode.includes('TCCC') ? 'Tactical Environment' : 'Shock Room'}`
+              : `Postazione Pz #${selectedProtesiPatient.id} • ${selectedProtesiPatient.scenarioCode.includes('TCCC') ? 'Ambiente Tattico' : 'Shock Room'}`,
             patientIds: [selectedProtesiPatient.id],
           }}
           timeRange={selectedProtesiPatient.period === 'mattina' ? '08:30 - 13:00' : '14:00 - 18:30'}
@@ -329,7 +334,7 @@ export const TecniciView: React.FC = () => {
       <OperatorUnlockModal
         isOpen={showUnlockModal}
         onClose={() => setShowUnlockModal(false)}
-        roleLabel="Tecnico"
+        roleLabel={isEn ? 'Technician' : 'Tecnico'}
       />
     </div>
   );

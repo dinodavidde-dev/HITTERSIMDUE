@@ -278,7 +278,9 @@ const CourseMainContent: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 text-neutral-400 font-mono text-[11px]">
-            <span className="font-bold text-neutral-300">60 DISCENTI • 12 SQUADRE • 4 GRUPPI</span>
+            <span className="font-bold text-neutral-300">
+              {language === 'en' ? '60 TRAINEES • 12 TEAMS • 4 GROUPS' : '60 DISCENTI • 12 SQUADRE • 4 GRUPPI'}
+            </span>
             <span>|</span>
             <span className="text-orange-400 font-bold uppercase tracking-wider">REAL-TIME MULTI-SCREEN SYNC</span>
           </div>

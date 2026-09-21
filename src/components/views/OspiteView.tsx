@@ -91,9 +91,7 @@ export const OspiteView: React.FC = () => {
   }, [currentGuest.escortFaculty, faculty]);
 
   // Slots for the active day
-  const daySlots = useMemo(() => {
-    return INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
-  }, [activeDay]);
+  const daySlots = filteredSlots;
 
   const currentSlotInDayIndex = useMemo(() => {
     if (!currentSlot) return 0;
@@ -600,7 +598,8 @@ export const OspiteView: React.FC = () => {
                 currentSlot,
                 activeDay,
                 simulatorPatients,
-                technicians
+                technicians,
+                language
               );
 
               return (
