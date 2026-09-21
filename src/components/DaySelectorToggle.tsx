@@ -43,36 +43,36 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
       : 'bg-yellow-500 text-black font-black';
 
   return (
-    <div className={`flex items-center bg-neutral-950 p-1 border border-neutral-700 shadow-md rounded-none ${className}`}>
-      <span className="text-[10px] font-mono text-neutral-400 font-bold px-2 flex items-center gap-1 uppercase tracking-wider">
-        <Calendar className="w-3 h-3 text-yellow-400" />
-        <span>GIORNO:</span>
+    <div className={`flex items-center bg-neutral-950 p-1 border border-neutral-700 shadow-md rounded ${className}`}>
+      <span className="text-[10px] sm:text-[11px] font-mono text-neutral-400 font-bold px-1.5 sm:px-2 flex items-center gap-1 uppercase tracking-wider">
+        <Calendar className="w-3.5 h-3.5 text-yellow-400" />
+        <span className="hidden xs:inline">GIORNO:</span>
       </span>
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => handleSelectDay(2)}
-          className={`px-3 py-1 font-mono text-xs font-bold cursor-pointer transition-colors flex items-center gap-1 ${
+          className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 font-mono text-xs font-black cursor-pointer transition-colors flex items-center gap-1 rounded-sm ${
             activeDay === 2
               ? activeBg
-              : 'text-neutral-400 hover:text-white bg-neutral-900'
+              : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
           }`}
           title="Seleziona Giorno 2 di Corso"
         >
-          <Sun className="w-3 h-3" />
+          <Sun className="w-3.5 h-3.5" />
           <span>DAY 02</span>
         </button>
         <button
           type="button"
           onClick={() => handleSelectDay(3)}
-          className={`px-3 py-1 font-mono text-xs font-bold cursor-pointer transition-colors flex items-center gap-1 ${
+          className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 font-mono text-xs font-black cursor-pointer transition-colors flex items-center gap-1 rounded-sm ${
             activeDay === 3
               ? activeBg
-              : 'text-neutral-400 hover:text-white bg-neutral-900'
+              : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
           }`}
           title="Seleziona Giorno 3 di Corso"
         >
-          <Moon className="w-3 h-3" />
+          <Moon className="w-3.5 h-3.5" />
           <span>DAY 03</span>
         </button>
       </div>

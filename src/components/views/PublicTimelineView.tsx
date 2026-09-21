@@ -19,6 +19,14 @@ import {
   Maximize2,
   Info,
   ShieldAlert,
+  Smartphone,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Layers,
+  Sparkles,
+  FileText,
 } from 'lucide-react';
 import { GroupType } from '../../types';
 import { useCourse } from '../../context/CourseContext';
@@ -219,7 +227,8 @@ const extractHandoverInfo = (slot: any, day: number): HandoverInfo | null => {
 const GroupScrollingTicker: React.FC<{
   group: GroupType;
   phaseDetails: GroupPhaseEnrichedDetails;
-}> = ({ group, phaseDetails }) => {
+  onOpenDetails?: () => void;
+}> = ({ group, phaseDetails, onOpenDetails }) => {
   const tickerItems: { icon: string; label: string; text: string; highlight?: boolean }[] = [];
 
   if (phaseDetails.protocolTimingNote) {
@@ -304,17 +313,26 @@ const GroupScrollingTicker: React.FC<{
   return (
     <div
       className="bg-neutral-950/95 border border-neutral-800 rounded px-2 sm:px-2.5 py-1.5 overflow-hidden relative group/ticker shadow-inner w-full max-w-full"
-      title="Banner scorrevole dettagli fase (passa il mouse o tocca per mettere in pausa)"
+      title="Banner scorrevole dettagli fase (tocca per aprire la scheda dettagli)"
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <div className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-orange-950 text-orange-400 border border-orange-800/80 rounded text-[8px] sm:text-[9px] font-mono font-black uppercase">
+        <button
+          type="button"
+          onClick={onOpenDetails}
+          className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-orange-950 hover:bg-orange-900 active:bg-orange-800 text-orange-300 border border-orange-700/80 rounded text-[9px] sm:text-[10px] font-mono font-black uppercase transition-colors cursor-pointer min-h-[30px]"
+          title="Apri scheda dettagli operativi e didattici"
+        >
           <Radio className="w-2.5 h-2.5 text-orange-500 animate-pulse" />
           <span>INFO FASE</span>
-        </div>
+          <Info className="w-2.5 h-2.5 text-orange-400" />
+        </button>
 
-        <div className="overflow-hidden whitespace-nowrap flex-1 relative w-full">
+        <div
+          onClick={onOpenDetails}
+          className="overflow-hidden whitespace-nowrap flex-1 relative w-full cursor-pointer"
+        >
           {/* Dual marquee block for continuous seamless scroll */}
           <div
             className="animate-marquee inline-flex"
@@ -339,6 +357,7 @@ export const PublicTimelineView: React.FC = () => {
     faculty,
     simulatorPatients,
     technicians,
+    discenti,
     setCurrentTab,
     setUserRole,
     courseStartSchedule,
@@ -348,6 +367,16 @@ export const PublicTimelineView: React.FC = () => {
 
   // Overlay state for Handover alert: by default it is open/expanded overlaying the 4 groups
   const [isOverlayMinimized, setIsOverlayMinimized] = useState<boolean>(false);
+
+  // Mobile Group Filter: 'ALL' or a specific group 'A' | 'B' | 'C' | 'D'
+  const [selectedMobileGroup, setSelectedMobileGroup] = useState<'ALL' | GroupType>('ALL');
+
+  // Discente Quick-Finder state
+  const [isFinderOpen, setIsFinderOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Detailed group operational modal
+  const [detailedGroupModal, setDetailedGroupModal] = useState<GroupType | null>(null);
 
   const isCurrentUnlocked = true;
 
@@ -414,6 +443,26 @@ export const PublicTimelineView: React.FC = () => {
     D: { bg: 'bg-purple-500', text: 'text-white', border: 'border-purple-400' },
   };
 
+  // Discente Search Resolution
+  const searchedDiscenti = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return (discenti || []).filter(
+      (d) =>
+        d.id.toLowerCase().includes(q) ||
+        (d.badgeCode || '').toLowerCase().includes(q) ||
+        d.name.toLowerCase().includes(q) ||
+        (d.specialty || '').toLowerCase().includes(q)
+    ).slice(0, 5);
+  }, [searchQuery, discenti]);
+
+  const getDiscenteGroup = (teamId: number): GroupType => {
+    if (teamId <= 3) return 'A';
+    if (teamId <= 6) return 'B';
+    if (teamId <= 9) return 'C';
+    return 'D';
+  };
+
   return (
     <div className="space-y-3 sm:space-y-4 pb-12 w-full max-w-full 2xl:max-w-[1850px] mx-auto px-1.5 sm:px-3 md:px-4">
       {/* COUNTDOWN / WAITING SCREENS OR ACTIVE ACTIVITIES */}
@@ -423,21 +472,21 @@ export const PublicTimelineView: React.FC = () => {
 
         if (isScheduledGateWaiting) {
           return (
-            <div className="bg-neutral-950 border-3 border-amber-500 p-8 sm:p-14 shadow-2xl text-center space-y-6 relative overflow-hidden">
+            <div className="bg-neutral-950 border-2 sm:border-3 border-amber-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-transparent to-red-500/10 pointer-events-none" />
-              <div className="relative z-10 space-y-6 max-w-4xl mx-auto">
+              <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
                 {/* Course Name in First Plane / Primo Piano */}
-                <div className="space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[11px] font-black uppercase tracking-widest shadow-sm">
+                <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
                     <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
                     <span>CORSO UFFICIALE • INTUBATI EM</span>
                   </div>
                   
                   <div className="space-y-1">
-                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-none uppercase filter drop-shadow">
+                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
                       H.I.T.T.E.R.
                     </h1>
-                    <p className="text-sm sm:text-lg md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
+                    <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
                       High Intensive Training Trauma Emergency Response
                     </p>
                   </div>
@@ -445,41 +494,41 @@ export const PublicTimelineView: React.FC = () => {
 
                 {/* Event Phase: Countdown Apertura Gate */}
                 <div className="space-y-1">
-                  <span className="inline-block px-3 py-1 bg-amber-500 text-black font-black text-xs uppercase tracking-widest rounded shadow-sm">
+                  <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
                     STATO ACCESSO: PRE-CORSO
                   </span>
-                  <h2 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
+                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
                     COUNTDOWN APERTURA GATE
                   </h2>
                 </div>
 
-                <div className="bg-amber-950/80 border-2 border-amber-500 p-6 rounded shadow-lg max-w-xl mx-auto animate-pulse">
-                  <span className="text-xs font-mono font-bold text-amber-300 uppercase tracking-widest block mb-2 flex items-center justify-center gap-2">
+                <div className="bg-amber-950/80 border-2 border-amber-500 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 uppercase tracking-widest block mb-1.5 flex items-center justify-center gap-1.5">
                     <Lock className="w-4 h-4 text-amber-400" />
                     <span>AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA</span>
                   </span>
-                  <p className="text-lg sm:text-2xl font-black text-white uppercase tracking-wide">
+                  <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
                     IL GATE DISCENTI APRE ALLE ORE {courseStartSchedule.scheduledTime}
                   </p>
-                  <p className="text-xs font-mono text-amber-200 mt-2">
+                  <p className="text-[11px] sm:text-xs font-mono text-amber-200 mt-1.5">
                     Data prevista: {courseStartSchedule.scheduledDate} • Accesso riservato ai team assegnati
                   </p>
                 </div>
 
-                <div className="py-6 px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded shadow-inner inline-block my-2">
-                  <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
+                <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
+                  <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
                     TEMPO RIMANENTE ALL'APERTURA DEL GATE
                   </span>
-                  <div className="text-4xl sm:text-7xl font-mono font-black text-amber-400 animate-pulse tracking-wider">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
                     {formatGateCountdown(timeRemainingMs)}
                   </div>
                 </div>
 
-                <div className="pt-2 space-y-3">
-                  <p className="text-xl sm:text-2xl font-black text-amber-300 uppercase tracking-wider italic">
+                <div className="pt-1 sm:pt-2 space-y-2">
+                  <p className="text-base sm:text-xl md:text-2xl font-black text-amber-300 uppercase tracking-wider italic">
                     "Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."
                   </p>
-                  <p className="text-xs sm:text-sm text-neutral-400 font-mono">
+                  <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
                     Sincronizzazione oraria centralizzata dalla Regia Operativa
                   </p>
                 </div>
@@ -495,49 +544,49 @@ export const PublicTimelineView: React.FC = () => {
         // Prima della fase 2 (slot 0), mostra solo il messaggio di attesa senza countdown
         if (isDayBefore8) {
           return (
-            <div className="bg-neutral-950 border-3 border-orange-500 p-8 sm:p-14 shadow-2xl text-center space-y-6 relative overflow-hidden">
+            <div className="bg-neutral-950 border-2 sm:border-3 border-orange-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-red-500/10 pointer-events-none" />
-              <div className="relative z-10 space-y-6 max-w-4xl mx-auto">
+              <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
                 {/* Course Name in First Plane */}
-                <div className="space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[11px] font-black uppercase tracking-widest shadow-sm">
+                <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
                     <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
                     <span>CORSO UFFICIALE • INTUBATI EM</span>
                   </div>
                   
                   <div className="space-y-1">
-                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-none uppercase filter drop-shadow">
+                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
                       H.I.T.T.E.R.
                     </h1>
-                    <p className="text-sm sm:text-lg md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
+                    <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
                       High Intensive Training Trauma Emergency Response
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <span className="inline-block px-3 py-1 bg-orange-600 text-black font-black text-xs uppercase tracking-widest rounded shadow-sm">
+                  <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
                     STATO OPERATIVO: PRE-APERTURA
                   </span>
-                  <h2 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
+                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
                     ATTESA APERTURA CORSO
                   </h2>
                 </div>
 
-                <div className="bg-red-950/80 border-2 border-red-600 p-6 rounded shadow-lg max-w-xl mx-auto animate-pulse">
-                  <span className="text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-2">
+                <div className="bg-red-950/80 border-2 border-red-600 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-1.5">
                     AVVISO UFFICIALE REGIA • DAY 0{activeDay}
                   </span>
-                  <p className="text-lg sm:text-2xl font-black text-white uppercase tracking-wide">
+                  <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
                     IL GATE DISCENTI APRE ALLE {courseStartSchedule?.scheduledTime || '08:30'}
                   </p>
                 </div>
 
-                <div className="pt-2 space-y-3">
-                  <p className="text-xl sm:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
+                <div className="pt-1 sm:pt-2 space-y-2">
+                  <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
                     "Preparazione postazioni e briefing faculty in corso. Tenetevi pronti."
                   </p>
-                  <p className="text-xs sm:text-sm text-neutral-400 font-mono">
+                  <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
                     Day {activeDay} • Attesa apertura ufficiale ore {courseStartSchedule?.scheduledTime || '08:30'}
                   </p>
                 </div>
@@ -548,62 +597,62 @@ export const PublicTimelineView: React.FC = () => {
 
         if (isMorningCountdown || isNightToMorningCountdown) {
           return (
-            <div className="bg-neutral-950 border-3 border-orange-500 p-8 sm:p-14 shadow-2xl text-center space-y-6 relative overflow-hidden">
+            <div className="bg-neutral-950 border-2 sm:border-3 border-orange-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-red-500/10 pointer-events-none" />
-              <div className="relative z-10 space-y-6 max-w-4xl mx-auto">
+              <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
                 {/* Course Name in First Plane */}
-                <div className="space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[11px] font-black uppercase tracking-widest shadow-sm">
+                <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
                     <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
                     <span>CORSO UFFICIALE • INTUBATI EM</span>
                   </div>
                   
                   <div className="space-y-1">
-                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-none uppercase filter drop-shadow">
+                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
                       H.I.T.T.E.R.
                     </h1>
-                    <p className="text-sm sm:text-lg md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
+                    <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
                       High Intensive Training Trauma Emergency Response
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <span className="inline-block px-3 py-1 bg-orange-600 text-black font-black text-xs uppercase tracking-widest rounded shadow-sm">
+                  <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
                     STATO OPERATIVO: DEPLOYMENT SQUADRE
                   </span>
-                  <h2 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
+                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
                     {isMorningCountdown ? `COUNTDOWN VERSO APERTURA (${courseStartSchedule?.scheduledTime || '08:30'})` : 'ATTIVITÀ IN ARRIVO'}
                   </h2>
                 </div>
 
                 {isMorningCountdown && (
-                  <div className="bg-orange-950/80 border-2 border-orange-500 p-5 rounded shadow-lg max-w-xl mx-auto animate-pulse">
-                    <span className="text-xs font-mono font-bold text-orange-300 uppercase tracking-widest block mb-1">
+                  <div className="bg-orange-950/80 border-2 border-orange-500 p-4 sm:p-5 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+                    <span className="text-[10px] sm:text-xs font-mono font-bold text-orange-300 uppercase tracking-widest block mb-1">
                       DISPOSIZIONE UFFICIALE REGIA
                     </span>
-                    <p className="text-sm sm:text-base font-black text-white uppercase tracking-wide">
+                    <p className="text-xs sm:text-base font-black text-white uppercase tracking-wide leading-snug">
                       Ogni squadra è invitata a raggrupparsi ed a raggiungere il proprio Faculty assegnato.
                     </p>
                   </div>
                 )}
 
-                <div className="py-6 px-8 bg-neutral-900/95 border-2 border-orange-500/80 rounded shadow-inner inline-block my-2">
-                  <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
+                <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-orange-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
+                  <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
                     {isMorningCountdown ? 'TEMPO RIMANENTE ALL\'AVVIO' : 'COUNTDOWN BLOCCO'}
                   </span>
-                  <div className="text-5xl sm:text-7xl font-mono font-black text-orange-400 animate-pulse tracking-wider">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-orange-400 animate-pulse tracking-wider break-words">
                     {courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0
                       ? formatGateCountdown(timeRemainingMs)
                       : formatCumulativeTimer(getCumulativeSeconds(isMorningCountdown, isNightToMorningCountdown))}
                   </div>
                 </div>
 
-                <div className="pt-2 space-y-3">
-                  <p className="text-xl sm:text-3xl font-black text-orange-300 uppercase tracking-wider italic">
+                <div className="pt-1 sm:pt-2 space-y-2">
+                  <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
                     "{isMorningCountdown ? 'Raggruppamento squadre e contatto Faculty in corso' : 'Avvio Blocco'}"
                   </p>
-                  <p className="text-xs sm:text-sm text-neutral-400 font-mono">
+                  <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
                     {isMorningCountdown && `Day ${activeDay} • Countdown verso l'apertura delle ore ${courseStartSchedule?.scheduledTime || '08:30'}`}
                     {isNightToMorningCountdown && `Transizione Day 2 ➔ Day 3 (Scadenza ore ${courseStartSchedule?.scheduledTime || '08:30'})`}
                   </p>
@@ -646,20 +695,202 @@ export const PublicTimelineView: React.FC = () => {
             </div>
 
             {/* ========================================================================= */}
+            {/* TOOLBAR DI NAVIGAZIONE E RICERCA OTTIMIZZATA PER SMARTPHONE               */}
+            {/* ========================================================================= */}
+            <div className="bg-neutral-950/90 border border-neutral-800 p-2 sm:p-2.5 rounded-lg shadow-md space-y-2">
+              {/* Group Quick Filters */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
+                  <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1 flex-shrink-0 mr-0.5">
+                    <Smartphone className="w-3.5 h-3.5 text-orange-400" />
+                    <span className="hidden xs:inline">VISUALE:</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMobileGroup('ALL')}
+                    className={`min-h-[38px] px-2.5 sm:px-3 py-1 font-mono text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex-shrink-0 flex items-center gap-1 ${
+                      selectedMobileGroup === 'ALL'
+                        ? 'bg-orange-500 text-black shadow-md'
+                        : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>TUTTI (4)</span>
+                  </button>
+
+                  {ALL_GROUPS.map((grp) => {
+                    const isAct = selectedMobileGroup === grp;
+                    const meta = GROUP_META[grp];
+                    const badge = groupBadgeColors[grp];
+                    return (
+                      <button
+                        key={grp}
+                        type="button"
+                        onClick={() => setSelectedMobileGroup(grp)}
+                        className={`min-h-[38px] px-2.5 sm:px-3 py-1 font-mono text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex-shrink-0 flex items-center gap-1.5 ${
+                          isAct
+                            ? `${badge.bg} ${badge.text} shadow-md ring-2 ring-orange-500`
+                            : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800'
+                        }`}
+                      >
+                        <span>{grp} • {meta.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Quick Toggle for Discente Finder */}
+                <button
+                  type="button"
+                  onClick={() => setIsFinderOpen(!isFinderOpen)}
+                  className={`min-h-[38px] px-3 py-1.5 text-xs font-mono font-bold rounded border transition-colors flex items-center gap-1.5 justify-center cursor-pointer flex-shrink-0 self-stretch sm:self-auto ${
+                    isFinderOpen
+                      ? 'bg-amber-950/80 text-amber-300 border-amber-500'
+                      : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-800'
+                  }`}
+                  title="Cerca per matricola studente o nome"
+                >
+                  <Search className="w-3.5 h-3.5 text-orange-400" />
+                  <span>TROVA TUA MATRICOLA (DISC)</span>
+                  {isFinderOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              </div>
+
+              {/* Collapsible Quick-Finder Panel */}
+              {isFinderOpen && (
+                <div className="bg-neutral-900/95 border border-orange-500/50 p-2.5 sm:p-3 rounded-lg space-y-2 animate-fadeIn">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Digita matricola o cognome (es. DISC-12 o 12 o Rossi)..."
+                        className="w-full min-h-[38px] bg-neutral-950 border border-neutral-700 rounded pl-8 pr-8 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500 font-mono"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1 overflow-x-auto text-[10px] font-mono text-neutral-400 flex-shrink-0">
+                      <span>Rapidi:</span>
+                      {(['DISC-01', 'DISC-16', 'DISC-31', 'DISC-46'] as const).map((code) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => setSearchQuery(code)}
+                          className="px-2 py-1 bg-neutral-950 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 rounded cursor-pointer min-h-[30px]"
+                        >
+                          {code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Discente search results */}
+                  {searchQuery.trim() && (
+                    <div className="space-y-1.5 pt-1">
+                      {searchedDiscenti.length === 0 ? (
+                        <p className="text-xs text-neutral-400 italic">Nessun discente trovato con "{searchQuery}"</p>
+                      ) : (
+                        searchedDiscenti.map((disc) => {
+                          const discGrp = getDiscenteGroup(disc.teamId);
+                          const discAct = currentSlot?.groupActivities?.[discGrp];
+                          const facMatch = faculty.find((f) => f.assignedTeamId === disc.teamId) || faculty[disc.teamId - 1];
+                          const isLeader = disc.role?.toLowerCase().includes('leader') || disc.id.endsWith('01') || disc.id.endsWith('06') || disc.id.endsWith('11');
+
+                          return (
+                            <div
+                              key={disc.id}
+                              className="bg-neutral-950 border border-neutral-700 p-2 sm:p-2.5 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                            >
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.5 bg-orange-600 text-black font-mono font-black text-[10px] rounded">
+                                    {disc.id}
+                                  </span>
+                                  <span className="font-bold text-white">{disc.name}</span>
+                                  <span className="text-[10px] font-mono text-neutral-300">
+                                    • Sq {disc.teamId} ({isLeader ? 'Team Leader' : 'Operatore'})
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-700 text-orange-400 text-[10px] font-mono font-bold rounded">
+                                    GRUPPO {discGrp} ({GROUP_META[discGrp].name})
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-neutral-400 flex items-center gap-2 flex-wrap pt-0.5">
+                                  <span>Tutor: <strong className="text-neutral-200">{facMatch?.badgeCode || `FAC-${disc.teamId}`} ({facMatch?.name || 'Faculty'})</strong></span>
+                                  <span>• Postazione ora: <strong className="text-orange-300">{discAct?.location || 'Stazione'}</strong></span>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMobileGroup(discGrp);
+                                  setIsFinderOpen(false);
+                                }}
+                                className="min-h-[34px] px-3 py-1 bg-orange-500 hover:bg-orange-400 text-black font-mono font-black rounded text-xs flex items-center justify-center gap-1 cursor-pointer self-start sm:self-auto flex-shrink-0"
+                              >
+                                <span>VAI AL GRUPPO {discGrp}</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Single Group Isolation Banner */}
+            {selectedMobileGroup !== 'ALL' && (
+              <div className="bg-neutral-950/90 border border-neutral-700 px-3 py-2 rounded-lg flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="text-neutral-300 font-mono">
+                    Visualizzazione isolata: <strong className="text-white">GRUPPO {selectedMobileGroup} ({GROUP_META[selectedMobileGroup].name})</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMobileGroup('ALL')}
+                  className="text-orange-400 hover:text-orange-300 font-mono font-bold uppercase underline text-[11px] cursor-pointer min-h-[32px] flex items-center"
+                >
+                  Mostra tutti e 4 i gruppi
+                </button>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
             {/* WRAPPER RELATIVO: 4 GRUPPI CONTEMPORANEI + ALLARME HANDOVER SOVRAPPOSTO   */}
             {/* ========================================================================= */}
             <div className="relative min-h-[520px]">
               {/* ------------------------------------------------------------------------- */}
-              {/* TUTTI E QUATTRO I GRUPPI CONTEMPORANEAMENTE (GRIGLIA 4 COLONNE ADATTIVA) */}
+              {/* TUTTI E QUATTRO I GRUPPI (GRIGLIA 4 COLONNE DESKTOP / 1 COLONNA MOBILE) */}
               {/* ------------------------------------------------------------------------- */}
               <div
-                className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4 transition-all duration-300 ${
+                className={`grid gap-2.5 sm:gap-3.5 lg:gap-4 transition-all duration-300 ${
+                  selectedMobileGroup === 'ALL'
+                    ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4'
+                    : 'grid-cols-1 max-w-2xl mx-auto'
+                } ${
                   handoverInfo?.isHandover && !isOverlayMinimized
                     ? 'opacity-35 filter blur-[0.6px] select-none pointer-events-none'
                     : 'opacity-100'
                 }`}
               >
-                {ALL_GROUPS.map((g) => {
+                {(selectedMobileGroup === 'ALL' ? ALL_GROUPS : [selectedMobileGroup]).map((g) => {
                   const act = currentSlot?.groupActivities?.[g];
                   if (!act) return null;
 
@@ -850,7 +1081,23 @@ export const PublicTimelineView: React.FC = () => {
                       </div>
 
                       {/* BANNER SCORREVOLE ALL'INTERNO DI OGNI GRUPPO (TUTTI I DETTAGLI CONDENSATI) */}
-                      <GroupScrollingTicker group={g} phaseDetails={phaseDetails} />
+                      <GroupScrollingTicker
+                        group={g}
+                        phaseDetails={phaseDetails}
+                        onOpenDetails={() => setDetailedGroupModal(g)}
+                      />
+
+                      {/* Pulsante rapido dedicato per aprire la scheda dettagli operativi completa */}
+                      <button
+                        type="button"
+                        onClick={() => setDetailedGroupModal(g)}
+                        className="w-full min-h-[38px] py-1.5 px-2.5 bg-neutral-900 hover:bg-neutral-850 active:bg-neutral-800 border border-neutral-700 hover:border-orange-500/70 text-neutral-200 hover:text-white rounded text-[11px] font-mono font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        title="Visualizza scheda didattica e logistica completa"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+                        <span className="truncate">SCHEDA OPERATIVA {g}</span>
+                        <Info className="w-3 h-3 text-neutral-400 flex-shrink-0" />
+                      </button>
                     </div>
                   );
                 })}
@@ -1045,6 +1292,204 @@ export const PublicTimelineView: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ========================================================================= */}
+      {/* MODALE SCHEDA OPERATIVA DETTAGLIATA (OTTIMIZZATA PER SMARTPHONE & DESKTOP) */}
+      {/* ========================================================================= */}
+      {detailedGroupModal && (() => {
+        const g = detailedGroupModal;
+        const meta = GROUP_META[g];
+        const act = currentSlot?.groupActivities?.[g];
+        const phaseDetails = getGroupPhaseDetails(
+          g,
+          act,
+          currentSlot,
+          activeDay,
+          simulatorPatients,
+          technicians
+        );
+        const groupDiscenti = (discenti || []).filter((d) => getDiscenteGroup(d.teamId) === g);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+            <div className="w-full max-w-3xl bg-neutral-950 border-2 border-orange-500 rounded-xl shadow-2xl p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto relative text-white">
+              {/* Top Header */}
+              <div className="flex items-start justify-between border-b border-neutral-800 pb-3 gap-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2.5 py-0.5 font-mono text-xs font-black rounded ${groupBadgeColors[g].bg} ${groupBadgeColors[g].text}`}>
+                      GRUPPO {g}
+                    </span>
+                    <span className="text-white font-black text-base sm:text-lg uppercase tracking-wide">
+                      {meta.name} ({meta.range})
+                    </span>
+                    <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 text-neutral-300 font-mono text-[11px] rounded">
+                      Day 0{activeDay} • {currentSlot?.timeRange || 'Slot'}
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-orange-400 uppercase tracking-tight">
+                    {act?.title || 'Fase Operativa'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-300 font-medium">
+                    {act?.subtitle}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDetailedGroupModal(null)}
+                  className="min-w-[44px] min-h-[44px] p-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white rounded-lg flex items-center justify-center cursor-pointer transition-colors flex-shrink-0"
+                  aria-label="Chiudi scheda dettagli"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Location & Logistical Quick Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                <div className="bg-neutral-900/90 p-2.5 rounded border border-neutral-800 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-[10px] text-neutral-400 uppercase block">Postazione Assegnata</span>
+                    <strong className="text-white">{act?.location || 'Stazione Operativa'}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-neutral-900/90 p-2.5 rounded border border-neutral-800 flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-[10px] text-neutral-400 uppercase block">Presidio Tecnico & Regia</span>
+                    <strong className="text-white">{phaseDetails.technicianData.techName || 'Presidio Centrale'}</strong>
+                    <span className="text-neutral-400 text-[10px] block">Tel: {phaseDetails.technicianData.techPhone || 'Canale Radio 1'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inquadramento Operativo */}
+              <div className="bg-neutral-900/70 p-3 rounded-lg border border-neutral-800 space-y-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-orange-400 font-mono font-bold uppercase text-[11px]">
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>Inquadramento Clinico-Operativo</span>
+                </div>
+                <p className="text-neutral-200 leading-relaxed">
+                  {phaseDetails.operationalDescription}
+                </p>
+                {phaseDetails.protocolTimingNote && (
+                  <p className="text-amber-300/90 font-mono text-[11px] pt-1">
+                    ⏱ {phaseDetails.protocolTimingNote}
+                  </p>
+                )}
+              </div>
+
+              {/* Obiettivi Didattici */}
+              <div className="bg-neutral-900/70 p-3 rounded-lg border border-neutral-800 space-y-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-mono font-bold uppercase text-[11px]">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Obiettivi Addestrativi Chiave</span>
+                </div>
+                <ul className="space-y-1 text-neutral-300 list-disc list-inside">
+                  {phaseDetails.didacticObjectives.map((obj, idx) => (
+                    <li key={idx} className="leading-snug">{obj}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Articolazione Squadre & Faculty 1:1 */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
+                  <span className="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-orange-400" />
+                    Squadre ({meta.squads.join(', ')}) • Rapporto Tutor 1:1
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-400">15 Discenti (5 per squadra)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {meta.squads.map((sqNum) => {
+                    const facMatch = faculty.find((f) => f.assignedTeamId === sqNum) || faculty[sqNum - 1];
+                    const squadMembers = groupDiscenti.filter((d) => d.teamId === sqNum);
+                    const teamLeader = squadMembers.find(
+                      (d) => d.role?.toLowerCase().includes('leader') || d.id.endsWith('01') || d.id.endsWith('06') || d.id.endsWith('11')
+                    ) || squadMembers[0];
+                    const operators = squadMembers.filter((d) => d.id !== teamLeader?.id);
+
+                    return (
+                      <div
+                        key={sqNum}
+                        className="bg-neutral-900/90 border border-neutral-800 p-2.5 rounded-lg space-y-1.5 text-xs font-mono"
+                      >
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
+                          <span className="font-black text-orange-400">SQUADRA {sqNum}</span>
+                          <span className="text-[10px] text-neutral-400">Paziente #{sqNum % 3 === 0 ? 3 : sqNum % 3}</span>
+                        </div>
+
+                        <div>
+                          <span className="text-[9px] text-neutral-400 uppercase block">Faculty Assegnato:</span>
+                          <span className="font-bold text-white text-[11px] block truncate">
+                            {facMatch?.badgeCode || `FAC-${sqNum < 10 ? '0' + sqNum : sqNum}`} • {facMatch?.name || 'Faculty Tutor'}
+                          </span>
+                        </div>
+
+                        <div className="pt-1 border-t border-neutral-850 space-y-0.5 text-[10px]">
+                          <div>
+                            <span className="text-amber-400 font-bold">TL: </span>
+                            <span className="text-white">{teamLeader ? `${teamLeader.id} (${teamLeader.name})` : 'In assegnazione'}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400 font-bold">Op: </span>
+                            <span className="text-neutral-300">
+                              {operators.length > 0 ? operators.map((o) => o.id).join(', ') : 'Operatori'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cronoprogramma 90 Minuti */}
+              <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 text-[11px] font-mono space-y-1">
+                <span className="text-[10px] text-orange-400 uppercase font-bold block">
+                  Regola Temporale Blocco Formativo (90 Minuti)
+                </span>
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-1.5 text-neutral-400 text-[10px] pt-1">
+                  <div className="bg-neutral-900/80 p-1.5 rounded">
+                    <strong className="text-neutral-200 block">:00 - :15</strong> Ingaggio / Standby
+                  </div>
+                  <div className="bg-neutral-900/80 p-1.5 rounded">
+                    <strong className="text-neutral-200 block">:15 - :30</strong> Stabilizzazione / Pratica
+                  </div>
+                  <div className="bg-neutral-900/80 p-1.5 rounded border border-red-800/60">
+                    <strong className="text-red-400 block">:30 - :35</strong> Handover SBAR 1:1
+                  </div>
+                  <div className="bg-neutral-900/80 p-1.5 rounded">
+                    <strong className="text-neutral-200 block">:35 - :60</strong> Approccio ABCDE / Workshop
+                  </div>
+                  <div className="bg-neutral-900/80 p-1.5 rounded">
+                    <strong className="text-neutral-200 block">:60 - :75</strong> Debriefing Parte 1
+                  </div>
+                  <div className="bg-neutral-900/80 p-1.5 rounded border border-neutral-700">
+                    <strong className="text-neutral-200 block">:75 - :90</strong> Debriefing & Reset Tech
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Action Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDetailedGroupModal(null)}
+                  className="w-full min-h-[44px] py-2 px-4 bg-orange-500 hover:bg-orange-400 text-black font-mono font-black rounded-lg uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-lg"
+                >
+                  <X className="w-4 h-4" />
+                  <span>CHIUDI SCHEDA OPERATIVA</span>
+                </button>
+              </div>
             </div>
           </div>
         );
