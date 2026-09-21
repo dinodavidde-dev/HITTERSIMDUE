@@ -89,7 +89,6 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
     // Check by activity type (e.g. wetlab, workshop, night)
     if (groupActivity.activityType === 'workshop' && tech.specialty.toLowerCase().includes('tccc')) return true;
     if (groupActivity.activityType === 'skills' && tech.specialty.toLowerCase().includes('macgyver')) return true;
-    if (groupActivity.activityType === 'night_scenario' && tech.specialty.toLowerCase().includes('notturn')) return true;
     
     // Always include Lead Moulage Silvia if it's a scenario with prostheses
     if (relevantPatients.length > 0 && tech.id === 'tech-1') return true;

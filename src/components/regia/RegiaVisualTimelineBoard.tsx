@@ -74,12 +74,13 @@ import {
   TeamEvaluation,
   TimelineSlot,
 } from '../../types';
-import { ModuleDetailModal } from './ModuleDetailModal';
 import { getTeamCodeName } from '../../utils/teamUtils';
 import { ProtesiAttoriTecniciModal } from './ProtesiAttoriTecniciModal';
 import { ScenarioCriticalityModal } from './ScenarioCriticalityModal';
 import { EvaluationSummaryModal } from './EvaluationSummaryModal';
-import { CourseTimelineLegend, TimelineStatusState } from './CourseTimelineLegend';
+import { RegiaRadioCoordinationPanel } from './RegiaRadioCoordinationPanel';
+import { INITIAL_TIMELINE_SLOTS, INITIAL_TEAMS, INITIAL_FACULTY } from '../../data/initialData';
+import { DaySelectorToggle } from '../DaySelectorToggle';
 
 const GROUP_THEMES: Record<GroupType, { label: string; name: string; border: string; bg: string; text: string; badgeBg: string }> = {
   A: { label: 'ROSSO', name: 'Triage & TCCC', border: '#ef4444', bg: 'bg-red-950/30', text: 'text-red-400', badgeBg: 'bg-red-600' },
@@ -89,14 +90,10 @@ const GROUP_THEMES: Record<GroupType, { label: string; name: string; border: str
 };
 
 interface RegiaVisualTimelineBoardProps {
-  onOpenMessenger?: () => void;
-  onOpenBroadcast?: () => void;
   isMaster?: boolean;
 }
 
 export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> = ({
-  onOpenMessenger,
-  onOpenBroadcast,
   isMaster = true,
 }) => {
   const {
@@ -124,7 +121,6 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     setTimeMultiplier,
     jumpToTimelinePoint,
     sendCourseMessage,
-    sendBroadcastAlert,
     autoAdvancePhases,
     setAutoAdvancePhases,
     setCourseGateEnabled,
@@ -139,29 +135,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
   const isEn = language === 'en';
 
-  // Format remaining time for gate countdown
-  const totalSecsGate = Math.floor(timeRemainingMs / 1000);
-  const gateDays = Math.floor(totalSecsGate / (3600 * 24));
-  const gateHours = Math.floor((totalSecsGate % (3600 * 24)) / 3600);
-  const gateMins = Math.floor((totalSecsGate % 3600) / 60);
-  const gateSecs = totalSecsGate % 60;
-
-  const [regiaDateInput, setRegiaDateInput] = useState(courseStartSchedule.scheduledDate || '');
-  const [regiaTimeInput, setRegiaTimeInput] = useState(courseStartSchedule.scheduledTime || '08:30');
-  const [isRegiaSavedRecently, setIsRegiaSavedRecently] = useState(false);
-
-  const handleRegiaApplySchedule = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!regiaDateInput || !regiaTimeInput) return;
-    updateCourseStartSchedule({
-      scheduledDate: regiaDateInput,
-      scheduledTime: regiaTimeInput,
-      isoTimestamp: `${regiaDateInput}T${regiaTimeInput}:00`,
-      isGateEnabled: true,
-    });
-    setIsRegiaSavedRecently(true);
-    setTimeout(() => setIsRegiaSavedRecently(false), 2500);
-  };
+  const currentFilteredIndex = useMemo(() => {
+    const idx = filteredSlots.findIndex((s) => s.id === currentSlot.id);
+    return idx !== -1 ? idx : 0;
+  }, [filteredSlots, currentSlot]);
 
   // Real-time station checklists sync for green light monitoring
   const [stationChecklists, setStationChecklists] = useState<StationPreSessionChecklist[]>(() => {
@@ -197,21 +174,14 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
   // Auto-scroll timeline strip to keep active milestone/slot centered in viewport
   useEffect(() => {
     if (timelineScrollRef.current) {
-      const activeElement = timelineScrollRef.current.children[activeSlotIndex] as HTMLElement;
+      const activeElement = timelineScrollRef.current.children[currentFilteredIndex] as HTMLElement;
       if (activeElement) {
         activeElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }
     }
-  }, [activeSlotIndex]);
+  }, [currentFilteredIndex]);
 
   // Active Modals State
-  const [selectedModuleDetail, setSelectedModuleDetail] = useState<{
-    groupId: GroupType;
-    groupActivity: GroupActivitySlot;
-    timeRange: string;
-    isNext?: boolean;
-  } | null>(null);
-
   const [selectedProtesiModal, setSelectedProtesiModal] = useState<{
     groupId: GroupType;
     groupActivity: GroupActivitySlot;
@@ -230,7 +200,6 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
   } | null>(null);
 
   const [filterGroup, setFilterGroup] = useState<GroupType | 'ALL'>('ALL');
-  const [statusLegendFilter, setStatusLegendFilter] = useState<TimelineStatusState | 'ALL'>('ALL');
   // State for expanded accordions (menu a tendina) per group
   const [expandedGroups, setExpandedGroups] = useState<Record<GroupType, boolean>>({
     A: false,
@@ -276,8 +245,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
     const isPracticalScenario =
       type === 'scenario_extra' ||
-      type === 'scenario_intra' ||
-      type === 'night_scenario';
+      type === 'scenario_intra';
 
     const isPreparationTeamED =
       titleLower.includes('preparazione team') ||
@@ -356,9 +324,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
       return ['Handover SBAR', 'Analisi ABCDE', 'Gestione Errori'];
     }
 
-    if (activity.activityType === 'night_scenario') {
-      return ['Triage Notturno', 'Illuminazione NVG / UV', 'Fasce Emostatiche'];
-    }
+
 
     return ['Briefing Tecnico', 'Coordinamento Squadra'];
   };
@@ -384,19 +350,19 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         };
       case 'workshop':
         return {
-          label: 'WORKSHOP TCCC',
-          shortLabel: 'WORKSHOP',
-          bg: 'bg-purple-950/90 text-purple-300 border-purple-500/60',
-          chip: 'bg-purple-500 text-black',
-          icon: <Wrench className="w-3 h-3 text-purple-400" />,
+          label: 'SESSIONE PRATICA',
+          shortLabel: 'PRATICA',
+          bg: 'bg-neutral-800 text-neutral-300 border-neutral-700',
+          chip: 'bg-neutral-600 text-white',
+          icon: <Wrench className="w-3 h-3 text-neutral-400" />,
         };
       case 'skills':
         return {
           label: 'SKILLS LAB',
           shortLabel: 'SKILLS LAB',
-          bg: 'bg-fuchsia-950/90 text-fuchsia-300 border-fuchsia-500/60',
-          chip: 'bg-fuchsia-500 text-black',
-          icon: <Layers className="w-3 h-3 text-fuchsia-400" />,
+          bg: 'bg-neutral-800 text-neutral-300 border-neutral-700',
+          chip: 'bg-neutral-600 text-white',
+          icon: <Layers className="w-3 h-3 text-neutral-400" />,
         };
       case 'debriefing':
         return {
@@ -406,14 +372,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           chip: 'bg-amber-500 text-black',
           icon: <GraduationCap className="w-3 h-3 text-amber-400" />,
         };
-      case 'night_scenario':
-        return {
-          label: 'NOTTURNO',
-          shortLabel: 'NOTTURNO',
-          bg: 'bg-indigo-950/90 text-indigo-300 border-indigo-500/60',
-          chip: 'bg-indigo-500 text-white',
-          icon: <Zap className="w-3 h-3 text-indigo-400" />,
-        };
+
       case 'pause':
       default:
         return {
@@ -465,14 +424,27 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     };
   };
 
+  const getGroupTeams = (grp: GroupType) => {
+    const list = teams.filter((t) => {
+      if (t.groupId) return t.groupId === grp;
+      if (grp === 'A') return t.id >= 1 && t.id <= 3;
+      if (grp === 'B') return t.id >= 4 && t.id <= 6;
+      if (grp === 'C') return t.id >= 7 && t.id <= 9;
+      if (grp === 'D') return t.id >= 10 && t.id <= 12;
+      return false;
+    });
+    if (list.length > 0) return list;
+    return INITIAL_TEAMS.filter((t) => t.groupId === grp);
+  };
+
   // Group evaluation status for a specific group
   const getGroupEvaluationSummary = (grp: GroupType) => {
-    const grpTeams = teams.filter((t) => t.groupId === grp);
+    const grpTeams = getGroupTeams(grp);
     const evals = grpTeams.map((tm) => {
       const evaluation = evaluations.find(
         (e) => e.teamId === tm.id && e.day === activeDay
       );
-      const assignedFaculty = faculty.find((f) => f.assignedTeamId === tm.id);
+      const assignedFaculty = faculty.find((f) => f.assignedTeamId === tm.id) || faculty.find((f) => f.id === tm.facultyId) || INITIAL_FACULTY.find((f) => f.assignedTeamId === tm.id);
       return {
         team: tm,
         faculty: assignedFaculty,
@@ -508,290 +480,6 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
   return (
     <div className="space-y-4 animate-fadeIn">
-      {/* SYNCHRONIZED START GATE & COUNTDOWN REGIA PANEL */}
-      <div className="bg-neutral-900 border-4 border-orange-500 p-4 sm:p-5 shadow-2xl space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 bg-orange-500 text-black text-xs font-black uppercase tracking-wider flex items-center gap-1 font-mono">
-                <Clock className="w-3.5 h-3.5" />
-                {isEn ? 'START GATE & COUNTDOWN SYNCHRONIZATION' : 'SINCRONIZZAZIONE START GATE & COUNTDOWN'}
-              </span>
-              {!isCourseStarted ? (
-                <span className="px-2 py-0.5 bg-red-950 border border-red-600 text-red-300 text-xs font-mono font-bold animate-pulse flex items-center gap-1">
-                  <Lock className="w-3 h-3 text-red-400" />
-                  {isEn ? 'PARTICIPANTS LOCKED (COUNTDOWN ACTIVE)' : 'DISCENTI BLOCCATI (COUNTDOWN ATTIVO)'}
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-600 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  {isEn ? 'COURSE STARTED • UNLOCKED' : 'CORSO AVVIATO • ACCESSO LIBERO'}
-                </span>
-              )}
-            </div>
-            <h3 className="text-lg font-black text-white uppercase tracking-tight">
-              {isEn ? 'Master Regia Start Gate Control' : 'Controllo Master Regia Start Gate'}
-            </h3>
-          </div>
-
-          {/* Live Remaining Time Box */}
-          <div className="bg-neutral-950 border-2 border-neutral-700 px-3 py-2 flex flex-col items-center justify-center min-w-[150px] flex-shrink-0">
-            <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold">
-              {!isCourseStarted ? (isEn ? 'OPENS IN:' : 'APERTURA TRA:') : (isEn ? 'STATUS:' : 'STATO:')}
-            </span>
-            {!isCourseStarted ? (
-              <div className="text-base sm:text-lg font-mono font-black text-orange-400">
-                {gateDays > 0 && `${gateDays}${isEn ? 'd ' : 'g '}`}{String(gateHours).padStart(2, '0')}:{String(gateMins).padStart(2, '0')}:{String(gateSecs).padStart(2, '0')}
-              </div>
-            ) : (
-              <div className="text-xs font-mono font-black text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                {isEn ? 'UNLOCKED' : 'SBLOCCATO'}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* Date & Time Form */}
-          <form onSubmit={handleRegiaApplySchedule} className="md:col-span-6 bg-neutral-950 border border-neutral-800 p-3 space-y-3">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
-              <span className="text-[11px] font-mono font-bold text-neutral-300 uppercase flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-orange-400" />
-                {isEn ? 'SET START SCHEDULE' : 'IMPOSTA PROGRAMMAZIONE AVVIO'}
-              </span>
-              {isRegiaSavedRecently && (
-                <span className="text-[10px] font-mono text-emerald-400 font-bold animate-pulse">
-                  {isEn ? '✓ Updated!' : '✓ Aggiornato!'}
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[10px] font-mono text-neutral-400 uppercase mb-0.5">
-                  {isEn ? 'Date' : 'Data'}
-                </label>
-                <input
-                  type="date"
-                  value={regiaDateInput}
-                  onChange={(e) => setRegiaDateInput(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-xs px-2 py-1.5 outline-none font-bold"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-mono text-neutral-400 uppercase mb-0.5">
-                  {isEn ? 'Time (HH:MM)' : 'Ora (HH:MM)'}
-                </label>
-                <input
-                  type="time"
-                  value={regiaTimeInput}
-                  onChange={(e) => setRegiaTimeInput(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-xs px-2 py-1.5 outline-none font-bold"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {isEn ? 'APPLY & ENABLE GATE' : 'APPLICA & ABILITA GATE'}
-            </button>
-          </form>
-
-          {/* Quick Actions */}
-          <div className="md:col-span-6 bg-neutral-950 border border-neutral-800 p-3 space-y-3 flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
-              <span className="text-[11px] font-mono font-bold text-yellow-400 uppercase flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5" />
-                {isEn ? 'QUICK LAUNCH & TEST PRESETS' : 'AVVIO RAPIDO & PRESET TEST'}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={startCourseImmediately}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>{isEn ? 'START COURSE NOW (UNLOCK ALL)' : 'AVVIA CORSO ORA (SBLOCCA TUTTI)'}</span>
-            </button>
-
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={() => resetCourseScheduleToFuture(1)}
-                className="py-1.5 px-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
-              >
-                <Timer className="w-3 h-3 text-orange-400" />
-                <span>+1 min</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => resetCourseScheduleToFuture(15)}
-                className="py-1.5 px-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
-              >
-                <Clock className="w-3 h-3 text-orange-400" />
-                <span>+15 min</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => resetCourseScheduleToFuture(60)}
-                className="py-1.5 px-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
-              >
-                <Clock className="w-3 h-3 text-yellow-400" />
-                <span>+1 ora</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 0. PRE-COURSE WINDOW (08:00 - 08:30) & REAL-TIME WORKSTATION GREEN LIGHT STATUS */}
-      <div className="bg-neutral-900 border-2 border-emerald-500/80 p-4 shadow-xl space-y-4">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 bg-emerald-500 text-black font-black font-mono text-xs uppercase tracking-wider flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                {isEn ? 'PRE-COURSE WINDOW (08:00 - 08:30) & WORKSTATION GREEN LIGHT' : 'FINESTRA PRE-CORSO (08:00 - 08:30) & LUCE VERDE POSTAZIONI'}
-              </span>
-              <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-600 text-emerald-300 font-mono text-xs font-bold">
-                {isEn ? 'STAFF GATE: 08:00 • STATIONS ASSIGNED BY 08:30' : 'GATE STAFF: 08:00 • POSTI ASSEGNATI ENTRO 08:30'}
-              </span>
-            </div>
-            <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
-              {isEn ? 'Morning Management: Staff Gate Opening at 08:00 & Real-Time Workstation Control' : 'Gestione Mattina: Apertura Gate Staff alle 08:00 & Controllo Postazioni in Tempo Reale'}
-            </h3>
-            <p className="text-xs text-neutral-300">
-              {isEn
-                ? 'At 08:00 the staff gate opens with a reminder to reach your assigned workstation. By 08:30 all learners, instructors, and staff must be in place.'
-                : 'Alle 08:00 viene aperto il gate per lo staff con promemoria di raggiungere la propria postazione assegnata. Entro le 08:30 tutti i discenti, istruttori e staff devono aver preso posto.'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => {
-                if (setCourseGateEnabled) setCourseGateEnabled(true);
-                sendBroadcastAlert({
-                  senderRole: 'direttore',
-                  senderName: 'Regia Master',
-                  type: 'info',
-                  title: 'GATE STAFF APERTO (08:00)',
-                  message: 'Il gate per lo staff è aperto! Si prega di raggiungere tempestivamente la propria postazione assegnata.',
-                  targetGroups: ['ALL'],
-                  priority: 'high',
-                });
-              }}
-              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase font-mono flex items-center gap-1.5 cursor-pointer shadow"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Apri Gate Staff (08:00) & Notifica
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                sendBroadcastAlert({
-                  senderRole: 'direttore',
-                  senderName: 'Regia Master',
-                  type: 'warning',
-                  title: 'PROMEMORIA POSTAZIONE (ENTRO 08:30)',
-                  message: 'Mancano 30 minuti all\'inizio del corso. Tutti i discenti e lo staff devono aver preso posto entro le 08:30.',
-                  targetGroups: ['ALL'],
-                  priority: 'high',
-                });
-              }}
-              className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xs uppercase font-mono flex items-center gap-1.5 cursor-pointer shadow"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              Invia Promemoria Postazioni (08:30)
-            </button>
-          </div>
-        </div>
-
-        {/* Note alla Regia Operative Dettagliate */}
-        <div className="bg-neutral-950 border border-neutral-800 p-3 space-y-2 text-xs text-neutral-300">
-          <div className="flex items-center gap-2 font-black uppercase text-orange-400 tracking-wider">
-            <span>📋 NOTE ALLA REGIA OPERATIVE (PROTOCOLLO TIMELINE & VISUALI)</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
-            <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1">
-              <div className="font-black text-white uppercase">🌅 Flusso Mattina (Giorno 2 & Giorno 3):</div>
-              <ul className="list-disc list-inside space-y-1 text-neutral-300">
-                <li><strong className="text-emerald-400">08:00 - 08:30:</strong> Accoglienza staff, Faculty & Tecnici, setup postazioni (Countdown in primo piano).</li>
-                <li><strong className="text-amber-400">08:30 - 08:45:</strong> Riduzione dimensioni countdown e visualizzazione schermata: <span className="text-white italic">"APERTURA CORSO IMMINENTE, raggiungere il proprio faculty"</span>.</li>
-                <li><strong className="text-orange-400">08:45:</strong> Apertura automatica della visuale personalizzata discenti (<code className="text-neutral-200">DiscenteView</code>).</li>
-                <li><strong className="text-red-400">09:00:</strong> Apertura visuale pubblica e avvio ufficiale del primo scenario.</li>
-              </ul>
-            </div>
-            <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1">
-              <div className="font-black text-white uppercase">🌙 Flusso Notturno (Esclusivo Giorno 3):</div>
-              <ul className="list-disc list-inside space-y-1 text-neutral-300">
-                <li>Lo scenario notturno è presente <strong className="text-amber-400">unicamente nel Giorno 3</strong>.</li>
-                <li><strong className="text-emerald-400">20:00 - 20:30:</strong> Apertura Gate Faculty & Tecnici Notturni.</li>
-                <li><strong className="text-amber-400">20:30 - 21:00:</strong> Apertura Gate Discenti & Briefing Tattico.</li>
-                <li><strong className="text-red-400">21:00 - 22:00:</strong> Esecuzione del Maxi-Scenario Notturno in ambiente tattico.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Real-time Workstation Green Light Status Bar */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold text-neutral-300 uppercase flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              Stato Postazioni & Luce Verde (Monitoraggio Live Regia)
-            </span>
-            <span className="text-[11px] font-mono text-emerald-400 font-bold">
-              {stationChecklists.filter(s => s.readinessScore === 100 || s.isFullyCertified).length} / {stationChecklists.length} Pronte (Luce Verde)
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {stationChecklists.map((st) => {
-              const items = st.items || [];
-              const readyCount = items.filter(i => i.status === 'READY').length;
-              const isGreen = st.readinessScore === 100 || st.isFullyCertified || (items.length > 0 && readyCount === items.length);
-              return (
-                <div
-                  key={st.stationId}
-                  className={`p-3 border-2 transition-all ${
-                    isGreen
-                      ? 'bg-emerald-950/40 border-emerald-500/80 text-emerald-200 shadow-lg shadow-emerald-950/50'
-                      : 'bg-neutral-950 border-neutral-700 text-neutral-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-mono font-black text-white truncate max-w-[130px]" title={st.stationName}>
-                      {st.stationId}
-                    </span>
-                    <span className={`px-1.5 py-0.5 text-[10px] font-mono font-black uppercase ${
-                      isGreen ? 'bg-emerald-500 text-black' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
-                    }`}>
-                      {isGreen ? '🟢 LUCE VERDE' : '🟡 IN PREP'}
-                    </span>
-                  </div>
-                  <div className="text-[11px] font-bold text-neutral-300 truncate mb-1.5" title={st.stationName}>
-                    {st.stationName.split('(')[0]}
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 border-t border-neutral-800 pt-1">
-                    <span>Score: {st.readinessScore || Math.round((readyCount / (items.length || 1)) * 100)}%</span>
-                    <span>{readyCount}/{items.length} voci</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* 1. MASTER REGIA TOP CONTROLS & COMPACT STATUS BAR */}
       <div className="bg-neutral-900 border-2 border-yellow-500/80 p-3 sm:p-4 shadow-xl space-y-3">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 border-b border-neutral-800 pb-2.5">
@@ -803,37 +491,8 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                 REGIA MASTER • TIMELINE COMPATTA 4 GRUPPI
               </span>
 
-              {/* Day Switcher */}
-              <div className="flex items-center bg-neutral-950 p-0.5 border border-neutral-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveDay(2);
-                    setActiveSlotIndex(0);
-                  }}
-                  className={`px-2 py-0.5 font-mono text-[10px] font-bold cursor-pointer transition-colors ${
-                    activeDay === 2
-                      ? 'bg-yellow-500 text-black font-black'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  GIORNO 2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveDay(3);
-                    setActiveSlotIndex(0);
-                  }}
-                  className={`px-2 py-0.5 font-mono text-[10px] font-bold cursor-pointer transition-colors ${
-                    activeDay === 3
-                      ? 'bg-yellow-500 text-black font-black'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  GIORNO 3
-                </button>
-              </div>
+              {/* Day Switcher Component */}
+              <DaySelectorToggle variant="regia" />
 
               {/* Auto Advance toggle */}
               <button
@@ -868,54 +527,56 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           </div>
 
           {/* Master Countdown Timer & Controls */}
-          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end">
-            <div className="bg-neutral-950 border border-yellow-500 px-3 py-1 text-center min-w-[110px]">
-              <span className="text-[9px] font-mono text-yellow-500 font-black uppercase block">
-                {isTimerRunning ? 'IN CORSO' : 'IN PAUSA'}
+          <div className={`flex items-center gap-2 self-stretch sm:self-auto ${isMaster ? 'justify-between sm:justify-end' : 'justify-end lg:ml-auto w-full lg:w-auto'}`}>
+            <div className="bg-neutral-950 border border-yellow-500/80 px-4 py-1.5 text-center min-w-[130px] shadow-md">
+              <span className="text-[10px] font-mono text-yellow-400 font-black uppercase block tracking-wider">
+                {isTimerRunning ? 'TIMER FASE (ATTIVO)' : 'TIMER FASE (PAUSA)'}
               </span>
-              <span className="text-xl sm:text-2xl font-black font-mono text-yellow-400 leading-none">
+              <span className="text-2xl font-black font-mono text-yellow-300 leading-none">
                 {formatTimer(timerSeconds)}
               </span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={toggleTimer}
-                className="p-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer transition-colors shadow"
-                title={isTimerRunning ? 'Pausa Timer' : 'Avvia Timer'}
-              >
-                {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => resetTimer()}
-                className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase cursor-pointer border border-neutral-700"
-                title="Reset Timer Slot"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-
-              <div className="flex flex-col gap-0.5 text-[9px] font-mono">
+            {isMaster && (
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => adjustTimer(-60)}
-                  className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
-                  title="-1 minuto"
+                  onClick={toggleTimer}
+                  className="p-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer transition-colors shadow"
+                  title={isTimerRunning ? 'Pausa Timer' : 'Avvia Timer'}
                 >
-                  -1m
+                  {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => adjustTimer(60)}
-                  className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
-                  title="+1 minuto"
+                  onClick={() => resetTimer()}
+                  className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase cursor-pointer border border-neutral-700"
+                  title="Reset Timer Slot"
                 >
-                  +1m
+                  <RotateCcw className="w-3.5 h-3.5" />
                 </button>
+
+                <div className="flex flex-col gap-0.5 text-[9px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => adjustTimer(-60)}
+                    className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
+                    title="-1 minuto"
+                  >
+                    -1m
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustTimer(60)}
+                    className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
+                    title="+1 minuto"
+                  >
+                    +1m
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -954,83 +615,99 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 items-center">
               {/* 1. Step Backward / Revert / Play-Pause / Step Forward */}
-              <div className="flex items-center gap-1.5 justify-center sm:justify-start flex-wrap">
-                <button
-                  type="button"
-                  onClick={prevSlot}
-                  disabled={activeSlotIndex === 0}
-                  className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
-                  title={isEn ? 'Previous Phase / Slot' : 'Fase Precedente'}
-                >
-                  <ChevronLeft className="w-4 h-4 text-yellow-400" />
-                  <span>{isEn ? 'Prev' : 'Indietro'}</span>
-                </button>
+              {isMaster && (
+                <div className="flex items-center gap-1.5 justify-center sm:justify-start flex-wrap">
+                  <button
+                    type="button"
+                    onClick={prevSlot}
+                    disabled={activeSlotIndex <= 0}
+                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                    title={isEn ? 'Previous Phase / Slot' : 'Fase Precedente'}
+                  >
+                    <ChevronLeft className="w-4 h-4 text-yellow-400" />
+                    <span>{isEn ? 'Prev' : 'Indietro'}</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={prevSlot}
-                  disabled={activeSlotIndex === 0}
-                  className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 disabled:opacity-40 font-bold text-xs uppercase border border-amber-700/60 flex items-center gap-1 cursor-pointer"
-                  title={isEn ? 'Revert last course phase / milestone' : 'Annulla ultima fase e torna indietro'}
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{isEn ? 'Revert Phase' : 'Revert Fasi'}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={prevSlot}
+                    disabled={activeSlotIndex <= 0}
+                    className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 disabled:opacity-40 font-bold text-xs uppercase border border-amber-700/60 flex items-center gap-1 cursor-pointer"
+                    title={isEn ? 'Revert last course phase / milestone' : 'Annulla ultima fase e torna indietro'}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{isEn ? 'Revert Phase' : 'Revert Fasi'}</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={toggleTimer}
-                  className={`px-3 py-1.5 font-black text-xs uppercase flex items-center gap-1.5 cursor-pointer transition-all shadow ${
-                    isTimerRunning
-                      ? 'bg-amber-500 hover:bg-amber-400 text-black'
-                      : 'bg-yellow-500 hover:bg-yellow-400 text-black'
-                  }`}
-                  title={isTimerRunning ? 'Pausa Timer Corso' : 'Avvia Timer Corso'}
-                >
-                  {isTimerRunning ? (
-                    <>
-                      <Pause className="w-4 h-4" />
-                      <span>{isEn ? 'Pause' : 'Pausa'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 fill-current" />
-                      <span>{isEn ? 'Play' : 'Avvia'}</span>
-                    </>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={toggleTimer}
+                    className={`px-3 py-1.5 font-black text-xs uppercase flex items-center gap-1.5 cursor-pointer transition-all shadow ${
+                      isTimerRunning
+                        ? 'bg-amber-500 hover:bg-amber-400 text-black'
+                        : 'bg-yellow-500 hover:bg-yellow-400 text-black'
+                    }`}
+                    title={isTimerRunning ? 'Pausa Timer Corso' : 'Avvia Timer Corso'}
+                  >
+                    {isTimerRunning ? (
+                      <>
+                        <Pause className="w-4 h-4" />
+                        <span>{isEn ? 'Pause' : 'Pausa'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 fill-current" />
+                        <span>{isEn ? 'Play' : 'Avvia'}</span>
+                      </>
+                    )}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={nextSlot}
-                  disabled={activeSlotIndex === filteredSlots.length - 1}
-                  className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
-                  title={isEn ? 'Next Phase / Slot' : 'Fase Successiva'}
-                >
-                  <span>{isEn ? 'Next' : 'Avanti'}</span>
-                  <ChevronRight className="w-4 h-4 text-yellow-400" />
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={nextSlot}
+                    disabled={activeSlotIndex >= INITIAL_TIMELINE_SLOTS.length - 1}
+                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                    title={isEn ? 'Next Phase / Slot' : 'Fase Successiva'}
+                  >
+                    <span>{isEn ? 'Next' : 'Avanti'}</span>
+                    <ChevronRight className="w-4 h-4 text-yellow-400" />
+                  </button>
+                </div>
+              )}
 
               {/* 2. Direct Phase Jump Dropdown */}
-              <div className="flex items-center gap-1.5">
-                <label htmlFor="jump-to-phase-select" className="text-[10px] font-mono text-neutral-400 whitespace-nowrap font-bold">
-                  {isEn ? 'Jump Phase:' : 'Vai a Fase:'}
-                </label>
-                <select
-                  id="jump-to-phase-select"
-                  aria-label={isEn ? 'Jump to phase' : 'Vai a fase'}
-                  value={activeSlotIndex}
-                  onChange={(e) => setActiveSlotIndex(Number(e.target.value))}
-                  className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 font-mono text-xs px-2 py-1.5 focus:outline-none focus:border-yellow-500 truncate"
-                >
-                  {filteredSlots.map((s, idx) => (
-                    <option key={s.id} value={idx}>
-                      Fase {idx + 1} ({s.timeRange}): {s.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isMaster ? (
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="jump-to-phase-select" className="text-[10px] font-mono text-neutral-400 whitespace-nowrap font-bold">
+                    {isEn ? 'Jump Phase:' : 'Vai a Fase:'}
+                  </label>
+                  <select
+                    id="jump-to-phase-select"
+                    aria-label={isEn ? 'Jump to phase' : 'Vai a fase'}
+                    value={currentFilteredIndex}
+                    onChange={(e) => {
+                      const localIdx = Number(e.target.value);
+                      const targetSlot = filteredSlots[localIdx];
+                      if (targetSlot) {
+                        const globalIdx = INITIAL_TIMELINE_SLOTS.findIndex(s => s.id === targetSlot.id);
+                        if (globalIdx !== -1) setActiveSlotIndex(globalIdx);
+                      }
+                    }}
+                    className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 font-mono text-xs px-2 py-1.5 focus:outline-none focus:border-yellow-500 truncate"
+                  >
+                    {filteredSlots.map((s, idx) => (
+                      <option key={s.id} value={idx}>
+                        Fase {idx + 1} ({s.timeRange}): {s.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-neutral-950 px-3 py-1.5 border border-yellow-500/40 font-mono text-xs">
+                  <span className="text-yellow-400 font-bold uppercase">SYNC REGIA ATTIVO:</span>
+                  <span className="text-white font-black truncate">{currentSlot.title} ({currentSlot.timeRange})</span>
+                </div>
+              )}
 
               {/* 3. Quick Status info */}
               <div className="flex items-center justify-end gap-2 text-xs font-mono text-neutral-300">
@@ -1042,6 +719,19 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
             </div>
           </div>
         )}
+
+        {/* REGIA RADIO COORDINATION PANEL (TIMELINE_REGIA_COORDINAMENTO) */}
+        <RegiaRadioCoordinationPanel
+          currentSlot={currentSlot}
+          activeDay={activeDay}
+          onJumpToSlot={(targetSlotId) => {
+            const globalIdx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === targetSlotId);
+            if (globalIdx !== -1) {
+              setActiveSlotIndex(globalIdx);
+            }
+          }}
+          isMaster={isMaster}
+        />
 
         {/* HORIZONTAL COURSE TIMELINE SCROLLER (INTERACTIVE SCHEDULE STRIP) */}
         <div className="bg-neutral-950 border border-neutral-800 p-2 space-y-1.5">
@@ -1078,14 +768,17 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
             className="flex items-stretch gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-900 scroll-smooth"
           >
             {filteredSlots.map((slot, sIdx) => {
-              const isCurrent = sIdx === activeSlotIndex;
-              const isNext = sIdx === activeSlotIndex + 1;
-              const isPast = sIdx < activeSlotIndex;
+              const isCurrent = slot.id === currentSlot.id;
+              const isNext = sIdx === currentFilteredIndex + 1;
+              const isPast = sIdx < currentFilteredIndex;
 
               return (
                 <div
                   key={slot.id}
-                  onClick={isMaster ? () => setActiveSlotIndex(sIdx) : undefined}
+                  onClick={isMaster ? () => {
+                    const globalIdx = INITIAL_TIMELINE_SLOTS.findIndex(s => s.id === slot.id);
+                    if (globalIdx !== -1) setActiveSlotIndex(globalIdx);
+                  } : undefined}
                   className={`min-w-[190px] max-w-[220px] p-2 border flex flex-col justify-between ${isMaster ? 'cursor-pointer transition-all' : 'cursor-default'} flex-shrink-0 text-left relative ${
                     isCurrent
                       ? 'bg-neutral-900 border-yellow-400 ring-2 ring-yellow-400/40 shadow-lg'
@@ -1170,29 +863,34 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           {/* Stepper Slot */}
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={prevSlot}
-              disabled={activeSlotIndex === 0}
-              className="px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 font-bold text-[11px] uppercase border border-neutral-800 flex items-center gap-1 cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>PREC</span>
-            </button>
+            {isMaster && (
+              <button
+                type="button"
+                onClick={prevSlot}
+                disabled={activeSlotIndex <= 0}
+                className="px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 font-bold text-[11px] uppercase border border-neutral-800 flex items-center gap-1 cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>PREC</span>
+              </button>
+            )}
 
-            <span className="text-[11px] font-mono text-neutral-300 font-semibold px-2 py-1 bg-neutral-950 border border-neutral-800">
-              Fase {activeSlotIndex + 1}/{filteredSlots.length}
+            <span className="text-[11px] font-mono text-yellow-400 font-bold px-2.5 py-1 bg-neutral-950 border border-yellow-500/40 flex items-center gap-1.5">
+              <span>FASE {currentFilteredIndex + 1} / {filteredSlots.length}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-ping" />
             </span>
 
-            <button
-              type="button"
-              onClick={nextSlot}
-              disabled={activeSlotIndex === filteredSlots.length - 1}
-              className="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-[11px] uppercase flex items-center gap-1 cursor-pointer"
-            >
-              <span>SUCC</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            {isMaster && (
+              <button
+                type="button"
+                onClick={nextSlot}
+                disabled={activeSlotIndex >= INITIAL_TIMELINE_SLOTS.length - 1}
+                className="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-[11px] uppercase flex items-center gap-1 cursor-pointer"
+              >
+                <span>SUCC</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Quick Global Indicators */}
@@ -1267,8 +965,8 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
       {/* 2. COMPACT 4-GROUPS TIMELINE BOARD (ALL 4 GROUPS SIMULTANEOUSLY VISIBLE ON SCREEN) */}
       <div className="space-y-2">
         {groupsToDisplay.map((grpId) => {
-          const groupTheme = GROUP_THEMES[grpId];
-          const assignedTeams = teams.filter((t) => t.groupId === grpId);
+          const groupTheme = GROUP_THEMES[grpId as GroupType] || GROUP_THEMES.A;
+          const assignedTeams = getGroupTeams(grpId as GroupType);
           const activeActivity = currentSlot.groupActivities[grpId];
           const nextActivity = nextSlotObj ? nextSlotObj.groupActivities[grpId] : null;
 
@@ -1294,7 +992,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               style={{ borderLeftColor: groupTheme.border, borderLeftWidth: '5px' }}
             >
               {/* COMPACT MAIN ROW: Adaptive layout across Mobile, Tablet, and Desktop */}
-              <div className="p-2 sm:p-3 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 sm:gap-2.5 bg-neutral-900">
+              <div
+                onClick={() => toggleGroupDropdown(grpId)}
+                className="p-2 sm:p-3 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 sm:gap-2.5 bg-neutral-900 cursor-pointer hover:bg-neutral-850/80 transition-colors"
+                title="Clicca per espandere/comprimere le specifiche del modulo"
+              >
                 {/* 1. Group Badge & Squads */}
                 <div className="flex items-center gap-2.5 w-full sm:w-auto min-w-0 sm:min-w-[180px] flex-shrink-0">
                   <div
@@ -1361,23 +1063,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedModuleDetail({
-                            groupId: grpId,
-                            groupActivity: activeActivity,
-                            timeRange: currentSlot.timeRange,
-                            isNext: false,
-                          })
-                        }
-                        className="text-xs sm:text-sm font-black text-white hover:text-yellow-400 uppercase text-left truncate cursor-pointer transition-colors flex items-center gap-1 w-full"
-                        title="Clicca per aprire le specifiche complete del modulo"
-                      >
+                    <div>
+                      <span className="text-xs sm:text-sm font-black text-white uppercase text-left truncate block w-full">
                         <span className="truncate">{activeActivity.title}</span>
-                        <ExternalLink className="w-3 h-3 text-neutral-500 hover:text-yellow-400 flex-shrink-0" />
-                      </button>
+                      </span>
                     </div>
 
                     {activeActivity.subtitle && (
@@ -1503,15 +1192,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                         <span>{nextSlotObj.timeRange}</span>
                       </div>
                       <div
-                        onClick={() =>
-                          setSelectedModuleDetail({
-                            groupId: grpId,
-                            groupActivity: nextActivity,
-                            timeRange: nextSlotObj.timeRange,
-                            isNext: true,
-                          })
-                        }
-                        className="text-[11px] font-bold text-neutral-200 hover:text-yellow-400 truncate cursor-pointer transition-colors"
+                        className="text-[11px] font-bold text-neutral-200 truncate"
                         title={nextActivity.title}
                       >
                         {nextActivity.title}
@@ -1529,183 +1210,194 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     </div>
                   )}
                 </div>
-
-                {/* 4. Accordion Trigger (Menu a Tendina) */}
-                <div className="flex items-center self-end xl:self-center flex-shrink-0">
-                  {/* MENU A TENDINA (ACCORDION TOGGLE) */}
-                  <button
-                    type="button"
-                    onClick={() => toggleGroupDropdown(grpId)}
-                    className={`px-2.5 py-1.5 font-bold text-[11px] font-mono uppercase flex items-center gap-1 cursor-pointer border transition-all ${
-                      isExpanded
-                        ? 'bg-yellow-500 text-black border-yellow-400'
-                        : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-neutral-700'
-                    }`}
-                    title={isExpanded ? 'Chiudi menu a tendina dettagli' : 'Apri menu a tendina dettagli'}
-                  >
-                    <span className="text-[10px]">{isExpanded ? 'CHIUDI' : 'DETTAGLI'}</span>
-                    {isExpanded ? (
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    ) : (
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
               </div>
 
               {/* 5. MENU A TENDINA (EXPANDABLE ACCORDION SECTION WITH FULL TIMELINE & DETAILS) */}
               {isExpanded && (
                 <div className="p-3 sm:p-4 bg-neutral-950 border-t border-neutral-800 space-y-3 animate-fadeIn">
-                  {/* Timeline Milestones (T-30m -> T+30m) */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-mono text-neutral-400 uppercase font-black tracking-wider flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-yellow-400" />
-                      TIMELINE CRONOLOGICA OPERATIVA (T-30m ➔ T+30m):
-                    </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[10px] font-mono text-center">
-                      <div className="p-1.5 bg-neutral-900 border border-neutral-800">
-                        <span className="block font-black text-cyan-400 text-[11px]">T-30m</span>
-                        <span className="text-neutral-300 font-bold block">Setup Presidi</span>
-                        <span className="text-[9px] text-neutral-500 block">Check pompe sangue</span>
-                      </div>
-                      <div className="p-1.5 bg-neutral-900 border border-neutral-800">
-                        <span className="block font-black text-amber-400 text-[11px]">T-15m</span>
-                        <span className="text-neutral-300 font-bold block">Trucco Attori</span>
-                        <span className="text-[9px] text-neutral-500 block">Briefing canovaccio</span>
-                      </div>
-                      <div className="p-1.5 bg-neutral-900 border border-red-500/70 bg-red-950/30">
-                        <span className="block font-black text-red-400 text-[11px]">T0 START</span>
-                        <span className="text-white font-bold block">Ingresso Squadra</span>
-                        <span className="text-[9px] text-neutral-400 block">Allarme & Triage</span>
-                      </div>
-                      <div className="p-1.5 bg-neutral-900 border border-neutral-800">
-                        <span className="block font-black text-emerald-400 text-[11px]">T+15m</span>
-                        <span className="text-neutral-300 font-bold block">Handover SBAR</span>
-                        <span className="text-[9px] text-neutral-500 block">Passaggio consegne</span>
-                      </div>
-                      <div className="p-1.5 bg-neutral-900 border border-neutral-800">
-                        <span className="block font-black text-yellow-400 text-[11px]">T+30m</span>
-                        <span className="text-neutral-300 font-bold block">Debriefing</span>
-                        <span className="text-[9px] text-neutral-500 block">Scoring rubrica ABCDE</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Full List of Procedures & Clinical Overview */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                    {/* Left: Expected Procedures & Dynamic */}
-                    <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-2">
-                      <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
-                        <span className="text-[11px] font-mono text-emerald-400 font-bold flex items-center gap-1">
-                          <Stethoscope className="w-3.5 h-3.5" />
-                          PROCEDURE ATTESE NEL MODULO
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedModuleDetail({
-                              groupId: grpId,
-                              groupActivity: activeActivity,
-                              timeRange: currentSlot.timeRange,
-                              isNext: false,
-                            })
-                          }
-                          className="text-[10px] font-mono text-yellow-400 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>SCHEDA COMPLETA</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1">
-                        {activeExpectedProcs.map((proc, pIdx) => (
-                          <span
-                            key={pIdx}
-                            className="px-2 py-0.5 bg-emerald-950 border border-emerald-700/80 text-emerald-200 text-[10px] font-mono font-bold flex items-center gap-1"
-                          >
-                            <Check className="w-2.5 h-2.5 text-emerald-400" />
-                            <span>{proc}</span>
-                          </span>
-                        ))}
-                      </div>
-
-                      <p className="text-xs text-neutral-300 pt-1">
-                        {activeActivity.subtitle}
-                      </p>
-                    </div>
-
-                    {/* Right: Squads Evaluations Status & Tutor Reminders */}
-                    <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-2">
-                      <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
-                        <span className="text-[11px] font-mono text-cyan-400 font-bold flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />
-                          SQUADRE & DEBRIEFING TUTOR
-                        </span>
-                        <span className="text-[10px] font-mono text-neutral-400">
-                          {evalSummary.evaluatedCount}/{assignedTeams.length} Completate
-                        </span>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        {assignedTeams.map((tm) => {
-                          const evalItem = evalSummary.evals.find((e) => e.team.id === tm.id);
-                          const isEvaluated = Boolean(evalItem?.evaluation);
-                          const tmFaculty = evalItem?.faculty;
-
+                  {/* SHARED TOP BOX: Teams & Tutors (Faculty) */}
+                  <div className="w-full text-xs">
+                    <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">Squadre & Tutor (Faculty) Associati:</span>
+                      {assignedTeams.length > 0 ? (
+                        assignedTeams.map(tm => {
+                          const evalItem = evalSummary.evals.find(e => e.team.id === tm.id);
+                          const facName = evalItem?.faculty?.name || 'Faculty da assegnare';
                           return (
-                            <div
-                              key={tm.id}
-                              className="p-2 bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-2"
-                            >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: tm.color }}
-                                />
-                                <div>
-                                  <span className="font-black text-xs text-white">
-                                    {tm.name}
-                                  </span>
-                                  <span className="text-[10px] font-mono text-neutral-400 block">
-                                    Tutor: {tmFaculty ? tmFaculty.name : 'Non assegnato'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedEvalModal({
-                                    team: tm,
-                                    faculty: tmFaculty,
-                                    evaluation: evalItem?.evaluation,
-                                    scenarioCode: activeActivity.title,
-                                  })
-                                }
-                                className={`px-2 py-1 text-[10px] font-mono font-bold uppercase flex items-center gap-1 cursor-pointer border ${
-                                  isEvaluated
-                                    ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                                    : 'bg-amber-500 text-black border-amber-300 font-black animate-pulse'
-                                }`}
-                              >
-                                {isEvaluated ? (
-                                  <>
-                                    <Check className="w-3 h-3" />
-                                    <span>Vedi Voto</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <AlertTriangle className="w-3 h-3" />
-                                    <span>Compila / Sollecita</span>
-                                  </>
-                                )}
-                              </button>
+                            <div key={tm.id} className="flex items-center justify-between text-neutral-200 font-mono text-[11px]">
+                              <span className="flex items-center gap-1.5 font-bold">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tm.color }} />
+                                {tm.name}
+                              </span>
+                              <span className="text-yellow-400 font-medium">Tutor: {facName}</span>
                             </div>
                           );
-                        })}
-                      </div>
+                        })
+                      ) : (
+                        <span className="text-neutral-500 font-mono text-[11px]">Nessuna squadra assegnata</span>
+                      )}
                     </div>
                   </div>
+
+                  {(() => {
+                    const isStandby = activeActivity.title.toLowerCase().includes('standby') || activeActivity.subtitle.toLowerCase().includes('standby');
+                    const isRealWorkshop = (activeActivity.activityType === 'workshop' || activeActivity.activityType === 'skills') && !isStandby;
+
+                    if (isRealWorkshop) {
+                      return (
+                        <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-2">
+                          <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
+                            <h4 className="text-white font-black text-sm uppercase tracking-wide">
+                              {activeActivity.title}
+                            </h4>
+                            <div className="text-xs font-mono text-purple-400 bg-purple-950/60 px-2 py-1 border border-purple-800">
+                              📍 Postazione: <strong>{activeActivity.location}</strong>
+                            </div>
+                          </div>
+                          <p className="text-xs text-neutral-300 leading-relaxed font-medium pt-1">
+                            {activeActivity.subtitle || 'Sessione pratica intensiva di addestramento tecnico sulle manovre salvavita e presidi dedicati, con supervisione costante del tutor di postazione.'}
+                          </p>
+                        </div>
+                      );
+                    } else if (activeActivity.activityType === 'scenario_extra' || activeActivity.activityType === 'scenario_intra') {
+                      return (
+                        <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 pb-2">
+                            <div>
+                              <span className="px-2 py-0.5 bg-blue-950 text-blue-300 font-mono text-[10px] font-black uppercase border border-blue-700">
+                                SCENARIO CLINICO / TATTICO
+                              </span>
+                              <h4 className="text-white font-black text-sm uppercase tracking-wide mt-1">
+                                {activeActivity.title}
+                              </h4>
+                            </div>
+                            <div className="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2 py-1 border border-cyan-800">
+                              📍 Postazione: <strong>{activeActivity.location}</strong>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 font-bold">
+                              <Stethoscope className="w-3.5 h-3.5" />
+                              <span>PROCEDURE ATTESE NEL MODULO</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {activeExpectedProcs.map((proc, pIdx) => (
+                                <span
+                                  key={pIdx}
+                                  className="px-2 py-0.5 bg-emerald-950 border border-emerald-700/80 text-emerald-200 text-[10px] font-mono font-bold flex items-center gap-1"
+                                >
+                                  <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                  <span>{proc}</span>
+                                </span>
+                              ))}
+                            </div>
+                            <p className="text-xs text-neutral-300 pt-1">
+                              {activeActivity.subtitle}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      const badgeLabel = activeActivity.activityType === 'debriefing' ? 'DEBRIEFING & REVISIONE' : isStandby ? 'STANDBY ATTIVO SHOCK ROOM' : 'FASE DI TRANSIZIONE / ATTESA';
+                      const badgeColor = activeActivity.activityType === 'debriefing' ? 'bg-amber-950 text-amber-300 border-amber-700' : 'bg-cyan-950 text-cyan-300 border-cyan-700';
+
+                      return (
+                        <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-2">
+                          <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 font-mono text-[10px] font-black uppercase border ${badgeColor}`}>
+                                {badgeLabel}
+                              </span>
+                              <h4 className="text-white font-black text-sm uppercase tracking-wide">
+                                {activeActivity.title}
+                              </h4>
+                            </div>
+                            <div className="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2 py-1 border border-cyan-800">
+                              📍 Postazione: <strong>{activeActivity.location}</strong>
+                            </div>
+                          </div>
+                          <p className="text-xs text-neutral-300 leading-relaxed font-medium pt-1">
+                            {activeActivity.subtitle || 'Fase operativa di coordinamento, transizione o debriefing collegiale guidata dalla faculty.'}
+                          </p>
+                        </div>
+                      );
+                    }
+                  })()}
+
+                  {/* SIMULATOR PATIENTS, PROSTHETICS & TECHNICIANS RESOURCE BOX */}
+                  {(() => {
+                    const relevantPatients = (activeActivity.patientIds || [])
+                      .map(pId => simulatorPatients.find(p => p.id === pId))
+                      .filter(Boolean) as SimulatorPatient[];
+
+                    const associatedTechs = technicians.filter(tech => {
+                      const loc = (activeActivity.location || '').toLowerCase();
+                      return tech.assignedStations.some(s => loc.includes(s.toLowerCase()) || s.toLowerCase().includes(loc)) ||
+                        (relevantPatients.length > 0 && tech.id === 'tech-1') ||
+                        (activeActivity.activityType === 'workshop' && tech.specialty.toLowerCase().includes('tccc'));
+                    });
+
+                    return (
+                      <div className="bg-neutral-900 border border-neutral-800 p-3 space-y-2 text-xs">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
+                          <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wide flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>Simulatori, Pazienti & Tecnici di Postazione:</span>
+                          </span>
+                          <button
+                            onClick={() => setSelectedProtesiModal({ groupId: grpId, groupActivity: activeActivity })}
+                            className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-mono text-[10px] uppercase font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <ClipboardList className="w-3 h-3" />
+                            <span>Registro Risorse & Protesi</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {/* Patients / Simulatori */}
+                          <div className="bg-neutral-950 p-2 border border-neutral-800 space-y-1">
+                            <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">Pazienti / Manichini / Moulage:</span>
+                            {relevantPatients.length > 0 ? (
+                              relevantPatients.map(pat => (
+                                <div key={pat.id} className="text-neutral-200 font-mono text-[11px] space-y-0.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-yellow-400 font-bold">Pz #{pat.id}: {pat.scenarioCode || pat.title || 'Scenario Clinico'}</span>
+                                    <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase border ${pat.readinessStatus === 'ready' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-red-950 text-red-300 border-red-700'}`}>
+                                      {pat.readinessStatus === 'ready' ? 'PRONTO' : 'CRITICO / RESET'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-neutral-400">
+                                    💄 Protesi: <strong className="text-neutral-300">{pat.moulageProtesi}</strong> | Attore: <strong className="text-neutral-300">{pat.attoreDettagli || 'Presente'}</strong>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-neutral-500 font-mono text-[11px]">Nessun paziente associato a questo modulo (Sessione Pratica / Transizione)</span>
+                            )}
+                          </div>
+
+                          {/* Assigned Technicians */}
+                          <div className="bg-neutral-950 p-2 border border-neutral-800 space-y-1">
+                            <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">Tecnico di Postazione (TECH):</span>
+                            {associatedTechs.length > 0 ? (
+                              associatedTechs.map(tech => (
+                                <div key={tech.id} className="flex items-center justify-between text-neutral-200 font-mono text-[11px]">
+                                  <span className="font-bold flex items-center gap-1">
+                                    <Wrench className="w-3 h-3 text-cyan-400" />
+                                    <span>{tech.name} ({tech.specialty})</span>
+                                  </span>
+                                  <span className="text-cyan-300 font-medium">{tech.phone || 'Regia Audio/Video'}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-neutral-500 font-mono text-[11px]">TECH-01 / TECH-02 (Presidio Standard)</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -1713,42 +1405,9 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         })}
       </div>
 
-      {/* 2.5 INTERACTIVE TIMELINE & MODULE STATUS LEGEND */}
-      <CourseTimelineLegend
-        activeDay={activeDay}
-        currentSlotTitle={currentSlot.title}
-        currentSlotTimeRange={currentSlot.timeRange}
-        totalPendingEvaluations={totalPendingEvals}
-        totalCompletedEvaluations={evaluations.filter((e) => e.day === activeDay).length}
-        selectedStatusFilter={statusLegendFilter}
-        onSelectStatusFilter={(st) => setStatusLegendFilter(st)}
-      />
+
 
       {/* 3. MODALS & POPUPS CONTAINER */}
-
-      {/* A. Module Detail Modal (Intra vs Extra specifications, patient clinical cases) */}
-      {selectedModuleDetail && (
-        <ModuleDetailModal
-          isOpen={Boolean(selectedModuleDetail)}
-          onClose={() => setSelectedModuleDetail(null)}
-          groupId={selectedModuleDetail.groupId}
-          groupActivity={selectedModuleDetail.groupActivity}
-          timeRange={selectedModuleDetail.timeRange}
-          isNext={selectedModuleDetail.isNext}
-          patients={simulatorPatients}
-          teams={teams}
-          facultyList={faculty}
-          technicians={technicians}
-          onOpenProtesiModal={() =>
-            setSelectedProtesiModal({
-              groupId: selectedModuleDetail.groupId,
-              groupActivity: selectedModuleDetail.groupActivity,
-              timeRange: selectedModuleDetail.timeRange,
-            })
-          }
-          onOpenCriticalityModal={(patientId) => setSelectedCriticalityPatientId(patientId)}
-        />
-      )}
 
       {/* B. Protesi, Attori & Tecnici Modal */}
       {selectedProtesiModal && (
@@ -1783,14 +1442,13 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           technicians={technicians}
           onUpdatePatient={(pId, updates) => updateSimulatorPatient(pId, updates)}
           onSendRadioAlert={(msg) => {
-            sendBroadcastAlert({
-              senderRole: 'direttore',
+            sendCourseMessage({
+              senderId: 'regia-master',
               senderName: 'Regia Master (Direzione Corso)',
+              senderRole: 'direttore',
               type: 'warning',
-              title: 'AVVISO REGIA • CRITICITÀ POSTAZIONE',
-              message: msg,
-              targetGroups: ['ALL'],
-              priority: 'high',
+              subject: 'AVVISO REGIA • CRITICITÀ POSTAZIONE',
+              content: msg,
             });
           }}
         />

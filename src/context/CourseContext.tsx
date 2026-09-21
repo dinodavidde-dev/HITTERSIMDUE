@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import {
-  BroadcastAlert,
   CourseDay,
   CourseMessage,
   CourseSuspensionInfo,
@@ -9,7 +8,6 @@ import {
   RegiaStaff,
   Faculty,
   Guest,
-  NightScenarioCase,
   SimulatorPatient,
   SyncStatusInfo,
   ConnectedPeer,
@@ -24,14 +22,12 @@ import {
   PhaseShiftLogEntry,
 } from '../types';
 import {
-  INITIAL_BROADCAST_ALERTS,
   INITIAL_COURSE_MESSAGES,
   INITIAL_DIRECTORS,
   INITIAL_REGIA_STAFF,
   INITIAL_DISCENTI,
   INITIAL_FACULTY,
   INITIAL_GUESTS,
-  INITIAL_NIGHT_SCENARIOS,
   INITIAL_SIMULATOR_PATIENTS,
   INITIAL_TEAMS,
   INITIAL_TECHNICIANS,
@@ -68,6 +64,10 @@ interface CourseContextType {
 
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
+  openedByRole: 'regia' | 'direttore' | null;
+  setOpenedByRole: (role: 'regia' | 'direttore' | null) => void;
+  canSelectOperator: boolean;
+  unlockOperatorSelection: (pin: string) => boolean;
   activeDay: CourseDay;
   setActiveDay: (day: CourseDay) => void;
   activeSlotIndex: number;
@@ -93,10 +93,6 @@ interface CourseContextType {
   acknowledgeCourseMessage: (id: string, ackBy?: string) => void;
   deleteCourseMessage: (id: string) => void;
 
-  broadcastAlerts: BroadcastAlert[];
-  latestAlert: BroadcastAlert | null;
-  sendBroadcastAlert: (alert: Omit<BroadcastAlert, 'id' | 'timestamp' | 'active'>) => void;
-  dismissAlert: (id: string) => void;
   phaseShiftLogs: PhaseShiftLogEntry[];
   recordPhaseShiftLog: (entry: Omit<PhaseShiftLogEntry, 'id' | 'timestamp' | 'dateTimeStr'>) => void;
   clearPhaseShiftLogs: () => void;
@@ -138,9 +134,6 @@ interface CourseContextType {
   addGuest: (newGuest: Omit<Guest, 'id'>) => void;
   deleteGuest: (id: string) => void;
 
-  nightScenarios: NightScenarioCase[];
-  updateNightScenarioTriage: (teamId: number, triage: TriageCategory) => void;
-
   evaluations: TeamEvaluation[];
   saveEvaluation: (evalData: Omit<TeamEvaluation, 'id' | 'timestamp'>) => void;
   bulkSaveEvaluations: (evalsData: Omit<TeamEvaluation, 'id' | 'timestamp'>[]) => void;
@@ -162,6 +155,10 @@ interface CourseContextType {
   setSelectedRegiaId: (id: string) => void;
   selectedGuestId: string;
   setSelectedGuestId: (id: string) => void;
+  currentTab: string;
+  setCurrentTab: (tab: string) => void;
+  selectedCatalogPatientId: number | null;
+  setSelectedCatalogPatientId: (id: number | null) => void;
 
   facultyAuthSession: FacultyAuthSession;
   authorizeFaculty: (pin: string, facultyId?: string) => boolean;
@@ -176,7 +173,7 @@ interface CourseContextType {
   resetCourseScheduleToFuture: (minutesFromNow?: number) => void;
   setGatePaused: (paused: boolean) => void;
   toggleGatePause: () => void;
-  setGateMode: (mode: 'start' | 'lunch' | 'night', customTime?: string) => void;
+  setGateMode: (mode: 'start' | 'lunch', customTime?: string) => void;
 
   syncStatus: SyncStatusInfo;
   triggerManualSync: () => void;
@@ -213,9 +210,6 @@ interface CourseContextType {
 
   resetAllData: () => void;
 
-  publicLayoutMode: 'single' | 'multi';
-  setPublicLayoutMode: (mode: 'single' | 'multi') => void;
-
   isBeeping: boolean;
 }
 
@@ -236,7 +230,48 @@ function getStoredOrDefault<T>(key: string, defaultVal: T): T {
 
 export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => getStoredOrDefault<Language>('language', 'en'));
-  const [userRole, setUserRole] = useState<UserRole>(() => getStoredOrDefault('userRole', 'public'));
+  const [userRole, setUserRole] = useState<UserRole>('regia');
+  const [openedByRole, setOpenedByRoleState] = useState<'regia' | 'direttore' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const fromParam = params.get('from') || params.get('openedBy') || params.get('source');
+      if (fromParam === 'regia' || fromParam === 'direttore') return fromParam;
+      const stored = sessionStorage.getItem('trauma_opened_by');
+      if (stored === 'regia' || stored === 'direttore') return stored as 'regia' | 'direttore';
+    }
+    return null;
+  });
+
+  const setOpenedByRole = useCallback((role: 'regia' | 'direttore' | null) => {
+    setOpenedByRoleState(role);
+    if (typeof window !== 'undefined') {
+      if (role) {
+        sessionStorage.setItem('trauma_opened_by', role);
+      } else {
+        sessionStorage.removeItem('trauma_opened_by');
+      }
+    }
+  }, []);
+
+  const unlockOperatorSelection = useCallback(
+    (pin: string): boolean => {
+      const clean = pin.trim();
+      const validPins = ['118', '2026', '112', '9999', '0000'];
+      if (validPins.includes(clean) || clean.toLowerCase() === 'regia' || clean.toLowerCase() === 'direttore') {
+        setOpenedByRole('regia');
+        return true;
+      }
+      return false;
+    },
+    [setOpenedByRole]
+  );
+
+  const canSelectOperator =
+    userRole === 'regia' ||
+    userRole === 'direttore' ||
+    openedByRole === 'regia' ||
+    openedByRole === 'direttore';
+
   const [activeDay, setActiveDayState] = useState<CourseDay>(() => getStoredOrDefault('activeDay', 2));
   const [activeSlotIndex, setActiveSlotIndexState] = useState<number>(() => getStoredOrDefault('activeSlotIndex', 0));
 
@@ -304,34 +339,51 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const filteredSlots = timelineSlots.filter((s) => s.day === activeDay);
   const currentSlot = timelineSlots[activeSlotIndex] || timelineSlots[0];
 
+  const getSlotDurationSeconds = (slot: TimelineSlot) => {
+    if (slot.id === 'd2-setup-1' || slot.id === 'd2-setup-2') return 1800; // 30 mins (08:00 - 08:30)
+    if (slot.id === 'd2-chiusura' || slot.id === 'd3-setup-1') return 52200; // 14h 30m (18:00 Day 2 to 08:30 Day 3)
+    if (slot.id === 'd3-chiusura') return 9000; // 2h 30m (18:00 to 20:30 Day 3)
+    return slot.durationMinutes * 60;
+  };
+
   const [timerSeconds, setTimerSeconds] = useState<number>(() => {
-    return (currentSlot?.durationMinutes || 30) * 60;
+    return getSlotDurationSeconds(currentSlot);
   });
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 
-  const [broadcastAlerts, setBroadcastAlerts] = useState<BroadcastAlert[]>(() =>
-    getStoredOrDefault('broadcastAlerts', INITIAL_BROADCAST_ALERTS)
-  );
-  const [latestAlert, setLatestAlert] = useState<BroadcastAlert | null>(null);
 
   const [phaseShiftLogs, setPhaseShiftLogs] = useState<PhaseShiftLogEntry[]>(() =>
     getStoredOrDefault('phaseShiftLogs', [])
   );
 
-  const [simulatorPatients, setSimulatorPatients] = useState<SimulatorPatient[]>(() =>
-    getStoredOrDefault('simulatorPatients', INITIAL_SIMULATOR_PATIENTS)
-  );
+  const [simulatorPatients, setSimulatorPatients] = useState<SimulatorPatient[]>(() => {
+    try {
+      const stored = getStoredOrDefault('simulatorPatients', INITIAL_SIMULATOR_PATIENTS);
+      if (!stored || stored.length < 24) {
+        localStorage.removeItem(STORAGE_KEY_PREFIX + 'simulatorPatients');
+        return INITIAL_SIMULATOR_PATIENTS;
+      }
+      return stored;
+    } catch (e) {
+      return INITIAL_SIMULATOR_PATIENTS;
+    }
+  });
 
   const [teams, setTeams] = useState<Team[]>(() => getStoredOrDefault('teams', INITIAL_TEAMS));
-  const [discenti, setDiscenti] = useState<Discente[]>(() => getStoredOrDefault('discenti', INITIAL_DISCENTI));
+  const [discenti, setDiscenti] = useState<Discente[]>(() => {
+    // Recreate entire discenti registry from scratch using INITIAL_DISCENTI
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'discenti');
+    } catch (e) {
+      // ignore
+    }
+    return INITIAL_DISCENTI;
+  });
   const [faculty, setFaculty] = useState<Faculty[]>(() => getStoredOrDefault('faculty', INITIAL_FACULTY));
   const [technicians, setTechnicians] = useState<Technician[]>(() => getStoredOrDefault('technicians', INITIAL_TECHNICIANS));
   const [directors, setDirectors] = useState<Director[]>(() => getStoredOrDefault('directors', INITIAL_DIRECTORS));
   const [regiaStaff, setRegiaStaff] = useState<RegiaStaff[]>(() => getStoredOrDefault('regiaStaff', INITIAL_REGIA_STAFF));
   const [guests, setGuests] = useState<Guest[]>(() => getStoredOrDefault('guests', INITIAL_GUESTS));
-  const [nightScenarios, setNightScenarios] = useState<NightScenarioCase[]>(() =>
-    getStoredOrDefault('nightScenarios', INITIAL_NIGHT_SCENARIOS)
-  );
 
   const [evaluations, setEvaluations] = useState<TeamEvaluation[]>(() =>
     getStoredOrDefault('evaluations', [])
@@ -357,6 +409,29 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedGuestId, setSelectedGuestId] = useState<string>(() =>
     getStoredOrDefault('selectedGuestId', 'guest-1')
   );
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view') || params.get('public');
+      if (viewParam === 'public' || viewParam === 'true') return 'public';
+      if (viewParam) return viewParam;
+      const hasSpecificParam =
+        params.get('discente') ||
+        params.get('faculty') ||
+        params.get('tecnico') ||
+        params.get('direttore') ||
+        params.get('regia') ||
+        params.get('ospite') ||
+        params.get('badge') ||
+        params.get('id') ||
+        params.get('role');
+      if (hasSpecificParam) {
+        return 'public'; // Will be resolved by App.tsx
+      }
+    }
+    return 'public';
+  });
+  const [selectedCatalogPatientId, setSelectedCatalogPatientId] = useState<number | null>(null);
 
   // Suspension Management State
   const [suspensionInfo, setSuspensionInfo] = useState<CourseSuspensionInfo>(() =>
@@ -372,14 +447,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     d.setDate(d.getDate() + 2);
     const pad = (n: number) => String(n).padStart(2, '0');
     const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const timeStr = '08:00';
+    const timeStr = '08:30';
     return {
       scheduledDate: dateStr,
       scheduledTime: timeStr,
       isoTimestamp: `${dateStr}T${timeStr}:00`,
       isGateEnabled: true,
-      title: 'H.I.T.T.E.R. MASTER COURSE • ADVANCED  MANAGEMENT',
-      location: 'Hig Intensive Trauma Training Emergency Rsponse',
+      title: 'H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM',
+      location: 'Centro di Simulazione Avanzata e Medicina Tattica',
     };
   };
 
@@ -450,16 +525,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [autoAdvancePhases, setAutoAdvancePhasesState] = useState<boolean>(() => getStoredOrDefault('autoAdvancePhases', true));
   const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
 
-  // Public View Layout Mode (Single vs Multi-Monitor)
-  const [publicLayoutMode, setPublicLayoutModeState] = useState<'single' | 'multi'>(() => getStoredOrDefault('publicLayoutMode', 'single'));
-  const setPublicLayoutMode = useCallback((mode: 'single' | 'multi') => {
-    setPublicLayoutModeState(mode);
-    try {
-      localStorage.setItem(STORAGE_KEY_PREFIX + 'publicLayoutMode', JSON.stringify(mode));
-    } catch (e) {
-      console.warn('Failed to save publicLayoutMode', e);
-    }
-  }, []);
 
   // Real-Time Mesh Synchronization State
   const [clientId] = useState<string>(() => {
@@ -532,31 +597,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to course_state:', err);
     }
 
-    // 2. Listen to Broadcast Alerts
-    const alertsPath = 'broadcast_alerts';
-    try {
-      const unsubAlerts = onSnapshot(
-        collection(db, alertsPath),
-        (snapshot) => {
-          if (!snapshot.empty) {
-            const alertsList: BroadcastAlert[] = [];
-            snapshot.forEach((d) => alertsList.push(d.data() as BroadcastAlert));
-            alertsList.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
-            setBroadcastAlerts(alertsList);
-            if (alertsList.length > 0 && alertsList[0].active) {
-              setLatestAlert(alertsList[0]);
-            }
-            setLastSyncTimestamp(Date.now());
-          }
-        },
-        (error) => {
-          handleFirestoreError(error, OperationType.LIST, alertsPath);
-        }
-      );
-      unsubscribers.push(unsubAlerts);
-    } catch (err) {
-      console.warn('Failed to listen to broadcast_alerts:', err);
-    }
 
     // 3. Listen to Course Messages
     const messagesPath = 'course_messages';
@@ -613,8 +653,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const patientsList: SimulatorPatient[] = [];
             snapshot.forEach((d) => patientsList.push(d.data() as SimulatorPatient));
             patientsList.sort((a, b) => a.id - b.id);
-            setSimulatorPatients(patientsList);
+            if (patientsList.length >= 24) {
+              setSimulatorPatients(patientsList);
+            } else {
+              setSimulatorPatients(INITIAL_SIMULATOR_PATIENTS);
+              INITIAL_SIMULATOR_PATIENTS.forEach((p) => {
+                setDoc(doc(db, patientsPath, p.id.toString()), p).catch(() => {});
+              });
+            }
             setLastSyncTimestamp(Date.now());
+          } else {
+            INITIAL_SIMULATOR_PATIENTS.forEach((p) => {
+              setDoc(doc(db, patientsPath, p.id.toString()), p).catch(() => {});
+            });
+            setSimulatorPatients(INITIAL_SIMULATOR_PATIENTS);
           }
         },
         (error) => {
@@ -781,27 +833,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to guests:', err);
     }
 
-    // 12. Listen to Night Scenarios
-    const nightPath = 'night_scenarios';
-    try {
-      const unsubNight = onSnapshot(
-        collection(db, nightPath),
-        (snapshot) => {
-          if (!snapshot.empty) {
-            const list: NightScenarioCase[] = [];
-            snapshot.forEach((d) => list.push(d.data() as NightScenarioCase));
-            setNightScenarios(list);
-            setLastSyncTimestamp(Date.now());
-          }
-        },
-        (error) => {
-          handleFirestoreError(error, OperationType.LIST, nightPath);
-        }
-      );
-      unsubscribers.push(unsubNight);
-    } catch (err) {
-      console.warn('Failed to listen to night_scenarios:', err);
-    }
+
 
     return () => {
       unsubscribers.forEach((u) => u());
@@ -910,7 +942,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.setItem(STORAGE_KEY_PREFIX + 'userRole', JSON.stringify(userRole));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'activeDay', JSON.stringify(activeDay));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'activeSlotIndex', JSON.stringify(activeSlotIndex));
-      localStorage.setItem(STORAGE_KEY_PREFIX + 'broadcastAlerts', JSON.stringify(broadcastAlerts));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'simulatorPatients', JSON.stringify(simulatorPatients));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'teams', JSON.stringify(teams));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(discenti));
@@ -931,7 +962,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     userRole,
     activeDay,
     activeSlotIndex,
-    broadcastAlerts,
     simulatorPatients,
     teams,
     discenti,
@@ -1019,7 +1049,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (firstIdx !== -1) {
       setActiveSlotIndexState(firstIdx);
       const slot = INITIAL_TIMELINE_SLOTS[firstIdx];
-      const newSecs = slot.durationMinutes * 60;
+      const newSecs = getSlotDurationSeconds(slot);
       setTimerSeconds(newSecs);
       setIsTimerRunning(false);
       syncCourseStateToFirestore({
@@ -1036,7 +1066,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setActiveSlotIndexState(idx);
       const slot = INITIAL_TIMELINE_SLOTS[idx];
       setActiveDayState(slot.day);
-      const newSecs = slot.durationMinutes * 60;
+      const newSecs = getSlotDurationSeconds(slot);
       setTimerSeconds(newSecs);
       setIsTimerRunning(false);
       syncCourseStateToFirestore({
@@ -1054,7 +1084,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (next < INITIAL_TIMELINE_SLOTS.length) {
         const slot = INITIAL_TIMELINE_SLOTS[next];
         setActiveDayState(slot.day);
-        const newSecs = slot.durationMinutes * 60;
+        const newSecs = getSlotDurationSeconds(slot);
         setTimerSeconds(newSecs);
         setIsTimerRunning(false);
         playBroadcastSound('phase_change');
@@ -1075,7 +1105,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const next = Math.max(0, prev - 1);
       const slot = INITIAL_TIMELINE_SLOTS[next];
       setActiveDayState(slot.day);
-      const newSecs = slot.durationMinutes * 60;
+      const newSecs = getSlotDurationSeconds(slot);
       setTimerSeconds(newSecs);
       setIsTimerRunning(false);
       syncCourseStateToFirestore({
@@ -1123,22 +1153,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setSuspensionInfo(newSuspension);
     setIsTimerRunning(false);
-
-    const alert: BroadcastAlert = {
-      id: `alert-susp-${Date.now()}`,
-      timestamp: timeStr,
-      senderRole: 'direttore',
-      senderName: suspendedBy,
-      type: 'emergency',
-      title: '🔴 CORSO SOSPESO / STOP ATTIVITÀ IN CORSO',
-      message: `[DIREZIONE CORSO] Il corso è stato temporaneamente sospeso. Motivo: ${newSuspension.reason}. Rimanere nelle rispettive postazioni in attesa di ulteriori istruzioni operative.`,
-      targetGroups: ['ALL'],
-      active: true,
-      priority: 'critical',
-    };
-
-    setBroadcastAlerts((prev) => [alert, ...prev]);
-    setLatestAlert(alert);
     playBroadcastSound('emergency');
 
     // Persist to Firestore
@@ -1146,14 +1160,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       suspensionInfo: newSuspension,
       isTimerRunning: false,
     });
-    setDoc(doc(db, 'broadcast_alerts', alert.id), alert).catch((err) => {
-      handleFirestoreError(err, OperationType.CREATE, `broadcast_alerts/${alert.id}`);
-    });
   }, [syncCourseStateToFirestore]);
 
   const resumeCourse = useCallback((resumedBy: string = 'Direzione Corso') => {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const clearedSuspension: CourseSuspensionInfo = {
       isSuspended: false,
       reason: '',
@@ -1162,30 +1171,11 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setSuspensionInfo(clearedSuspension);
-
-    const alert: BroadcastAlert = {
-      id: `alert-resum-${Date.now()}`,
-      timestamp: timeStr,
-      senderRole: 'direttore',
-      senderName: resumedBy,
-      type: 'info',
-      title: '🟢 CORSO RIPARTITO / ATTIVITÀ RIPRESE',
-      message: `[DIREZIONE CORSO] Il corso è ripartito regolarmente. Proseguire con le attività previste dalla fase attiva sul campo.`,
-      targetGroups: ['ALL'],
-      active: true,
-      priority: 'high',
-    };
-
-    setBroadcastAlerts((prev) => [alert, ...prev]);
-    setLatestAlert(alert);
     playBroadcastSound('info');
 
     // Persist to Firestore
     syncCourseStateToFirestore({
       suspensionInfo: clearedSuspension,
-    });
-    setDoc(doc(db, 'broadcast_alerts', alert.id), alert).catch((err) => {
-      handleFirestoreError(err, OperationType.CREATE, `broadcast_alerts/${alert.id}`);
     });
   }, [syncCourseStateToFirestore]);
 
@@ -1243,38 +1233,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
-  const sendBroadcastAlert = useCallback(
-    (alertData: Omit<BroadcastAlert, 'id' | 'timestamp' | 'active'>) => {
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const newAlert: BroadcastAlert = {
-        ...alertData,
-        id: `alert-${Date.now()}`,
-        timestamp: timeStr,
-        active: true,
-      };
-
-      setBroadcastAlerts((prev) => [newAlert, ...prev]);
-      setLatestAlert(newAlert);
-      playBroadcastSound(newAlert.type);
-
-      setDoc(doc(db, 'broadcast_alerts', newAlert.id), newAlert).catch((err) => {
-        handleFirestoreError(err, OperationType.CREATE, `broadcast_alerts/${newAlert.id}`);
-      });
-    },
-    []
-  );
-
-  const dismissAlert = useCallback((id: string) => {
-    setBroadcastAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, active: false } : a))
-    );
-    setLatestAlert((prev) => (prev?.id === id ? null : prev));
-
-    updateDoc(doc(db, 'broadcast_alerts', id), { active: false }).catch((err) => {
-      handleFirestoreError(err, OperationType.UPDATE, `broadcast_alerts/${id}`);
-    });
-  }, []);
 
   const recordPhaseShiftLog = useCallback((entryData: Omit<PhaseShiftLogEntry, 'id' | 'timestamp'>) => {
     const now = new Date();
@@ -1587,14 +1545,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
-  const updateNightScenarioTriage = useCallback((teamId: number, triage: TriageCategory) => {
-    setNightScenarios((prev) =>
-      prev.map((s) => (s.teamId === teamId ? { ...s, triageAssigned: triage } : s))
-    );
-    setDoc(doc(db, 'night_scenarios', String(teamId)), { triageAssigned: triage }, { merge: true }).catch((err) => {
-      handleFirestoreError(err, OperationType.UPDATE, `night_scenarios/${teamId}`);
-    });
-  }, []);
+
 
   const updateCourseStartSchedule = useCallback((updates: Partial<CourseStartSchedule>) => {
     setCourseStartSchedule((prev) => {
@@ -1682,7 +1633,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setGatePaused(!courseStartSchedule.isGatePaused);
   }, [courseStartSchedule.isGatePaused, setGatePaused]);
 
-  const setGateMode = useCallback((mode: 'start' | 'lunch' | 'night', customTime?: string) => {
+  const setGateMode = useCallback((mode: 'start' | 'lunch', customTime?: string) => {
     setCourseStartSchedule((prev) => {
       let tTime = customTime;
       let title = prev.title;
@@ -1691,14 +1642,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         tTime = customTime || '13:00';
         title = 'PAUSA PRANZO • GATE CHIUSO IN STANDBY';
         location = 'Ristorante Centro Simulazione / Mensa (12:00 - 13:00)';
-      } else if (mode === 'night') {
-        tTime = customTime || '20:30';
-        title = 'SCENARIO NOTTURNO • GATE CHIUSO IN STANDBY';
-        location = 'Area Tattica Notturna';
       } else {
         tTime = customTime || '08:30';
-        title = 'H.I.T.T.E.R. MASTER COURSE • ADVANCED MANAGEMENT';
-        location = 'High Intensive Trauma Training Emergency Response';
+        title = 'H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM';
+        location = 'Centro di Simulazione Avanzata e Medicina Tattica';
       }
       const today = new Date();
       const pad = (n: number) => String(n).padStart(2, '0');
@@ -1774,7 +1721,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       authorizedAt: null,
     };
     setFacultyAuthSession(emptySession);
-    setUserRole('public');
+    setUserRole('direttore');
   }, []);
 
   const jumpToTimelinePoint = useCallback(
@@ -1786,7 +1733,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         | 'day1_intro'
         | 'day2_morning'
         | 'day2_afternoon'
-        | 'night_scenario'
         | 'day3_exams'
         | 'next_slot'
         | 'prev_slot'
@@ -1851,19 +1797,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
-        case 'night_scenario': {
-          setActiveDayState(3);
-          const idx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.day === 3 && s.period === 'notturno');
-          const targetIdx = idx !== -1 ? idx : INITIAL_TIMELINE_SLOTS.length - 1;
-          setActiveSlotIndexState(targetIdx);
-          const s = INITIAL_TIMELINE_SLOTS[targetIdx];
-          const secs = s ? s.durationMinutes * 60 : 3600;
-          setTimerSeconds(secs);
-          setIsTimerRunning(true);
-          playAirRaidSiren();
-          syncCourseStateToFirestore({ activeDay: 3, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
-          break;
-        }
+
         case 'day3_exams': {
           setActiveDayState(3);
           const idx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.day === 3);
@@ -1922,30 +1856,18 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     ];
 
     const evt = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-    const newAlert: BroadcastAlert = {
-      id: `alert-sim-${Date.now()}`,
-      timestamp: timeStr,
-      senderRole: 'direttore',
+    sendCourseMessage({
+      senderId: 'sim-regia',
       senderName: 'Simulatore Regia Trauma',
-      type: evt.priority === 'critical' ? 'emergency' : 'warning',
-      title: evt.title,
+      senderRole: 'direttore',
+      recipientTarget: 'ALL',
+      subject: evt.title,
       message: evt.msg,
-      targetGroups: ['ALL'],
-      active: true,
-      priority: evt.priority,
-    };
-
-    setBroadcastAlerts((prev) => [newAlert, ...prev]);
-    setLatestAlert(newAlert);
-    playBroadcastSound(evt.priority === 'critical' ? 'emergency' : 'warning');
-
-    setDoc(doc(db, 'broadcast_alerts', newAlert.id), newAlert).catch((err) => {
-      handleFirestoreError(err, OperationType.CREATE, `broadcast_alerts/${newAlert.id}`);
+      priority: evt.priority === 'critical' ? 'urgent' : 'normal',
+      category: 'clinical_alert',
     });
-  }, []);
+    playBroadcastSound(evt.priority === 'critical' ? 'emergency' : 'warning');
+  }, [sendCourseMessage]);
 
   const sendPing = useCallback(() => {
     if (channelRef.current) {
@@ -1967,26 +1889,27 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsSyncing(true);
     setLastSyncTimestamp(Date.now());
     // Trigger snapshot refresh
-    getDocs(collection(db, 'broadcast_alerts'))
+    getDocs(collection(db, 'course_messages'))
       .then((snap) => {
-        const alertsList: BroadcastAlert[] = [];
-        snap.forEach((d) => alertsList.push(d.data() as BroadcastAlert));
-        if (alertsList.length > 0) setBroadcastAlerts(alertsList);
+        const msgsList: CourseMessage[] = [];
+        snap.forEach((d) => msgsList.push(d.data() as CourseMessage));
+        if (msgsList.length > 0) setCourseMessages(msgsList);
       })
-      .catch((e) => console.warn('Manual sync alert error:', e));
+      .catch((e) => console.warn('Manual sync message error:', e));
 
     setTimeout(() => {
       setIsSyncing(false);
     }, 400);
-  }, []);
+  }, [setCourseMessages]);
 
   const getRoleLabel = (role: UserRole) => {
     switch (role) {
-      case 'public': return 'Schermo Condiviso';
       case 'discente': return 'Discente Badge';
       case 'tecnico': return 'Console Tecnico';
       case 'faculty': return 'Istruttore Faculty';
       case 'direttore': return 'Regia Direttore';
+      case 'regia': return 'Staff Regia';
+      case 'ospite': return 'Ospite / VIP';
       default: return role;
     }
   };
@@ -2032,7 +1955,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setTechnicians(INITIAL_TECHNICIANS);
     setDirectors(INITIAL_DIRECTORS);
     setGuests(INITIAL_GUESTS);
-    setBroadcastAlerts(INITIAL_BROADCAST_ALERTS);
     setEvaluations([]);
     setActiveSlotIndexState(0);
     setActiveDayState(2);
@@ -2049,6 +1971,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         t,
         userRole,
         setUserRole,
+        openedByRole,
+        setOpenedByRole,
+        canSelectOperator,
+        unlockOperatorSelection,
         activeDay,
         setActiveDay,
         activeSlotIndex,
@@ -2069,10 +1995,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         sendCourseMessage,
         acknowledgeCourseMessage,
         deleteCourseMessage,
-        broadcastAlerts,
-        latestAlert,
-        sendBroadcastAlert,
-        dismissAlert,
         phaseShiftLogs,
         recordPhaseShiftLog,
         clearPhaseShiftLogs,
@@ -2105,8 +2027,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateGuest,
         addGuest,
         deleteGuest,
-        nightScenarios,
-        updateNightScenarioTriage,
         evaluations,
         saveEvaluation,
         bulkSaveEvaluations,
@@ -2127,6 +2047,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setSelectedRegiaId,
         selectedGuestId,
         setSelectedGuestId,
+        currentTab,
+        setCurrentTab,
+        selectedCatalogPatientId,
+        setSelectedCatalogPatientId,
         facultyAuthSession,
         authorizeFaculty,
         deauthorizeFaculty,
@@ -2157,8 +2081,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         jumpToTimelinePoint,
         triggerSimulatedClinicalEvent,
         resetAllData,
-        publicLayoutMode,
-        setPublicLayoutMode,
         isBeeping,
       }}
     >

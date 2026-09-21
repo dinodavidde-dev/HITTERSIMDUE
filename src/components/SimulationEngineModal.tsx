@@ -482,23 +482,7 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                   </p>
                 </button>
 
-                {/* Night Scenario */}
-                <button
-                  id="jump-night-btn"
-                  onClick={() => {
-                    jumpToTimelinePoint('night_scenario');
-                    onClose();
-                  }}
-                  className="p-3 bg-purple-950/40 hover:bg-purple-900/60 border-2 border-purple-500/80 text-left transition-all cursor-pointer group sm:col-span-2"
-                >
-                  <div className="flex items-center gap-2 font-mono font-black text-sm text-purple-300">
-                    <Compass className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-                    <span>🌙 GIORNO 3 NOTTE (21:00): MAXIEMERGENZA NOTTURNA MASS CASUALTY</span>
-                  </div>
-                  <p className="text-xs text-neutral-300 mt-1">
-                    Scenario notturno con simulazione di esplosione/blast, Triage START, 12 squadre operative simultaneamente in ambiente austero.
-                  </p>
-                </button>
+
 
                 {/* Day 3 Final Exams */}
                 <button

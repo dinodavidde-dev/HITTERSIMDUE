@@ -4,6 +4,7 @@ import { UserRole } from '../types';
 import {
   Activity,
   AlertOctagon,
+  Award,
   BookOpen,
   Check,
   ChevronLeft,
@@ -19,7 +20,6 @@ import {
   LogOut,
   MessageSquare,
   Monitor,
-  Moon,
   Package,
   Pause,
   Play,
@@ -39,9 +39,9 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
-import { QRScannerModal } from './QRScannerModal';
 import { SyncStatusModal } from './SyncStatusModal';
-import { FacultyAuthModal } from './FacultyAuthModal';
+import { RegiaKeypadModal } from './RegiaKeypadModal';
+
 import { SimulationEngineModal } from './SimulationEngineModal';
 import { EmailAccessModal } from './EmailAccessModal';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -67,24 +67,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     toggleTimer,
     resetTimer,
     activeSlotIndex,
-    broadcastAlerts,
     syncStatus,
-    facultyAuthSession,
-    deauthorizeFaculty,
     suspensionInfo,
-    courseStartSchedule,
-    isCourseStarted,
-    timeRemainingMs,
     timeMultiplier,
     isSimulationModalOpen,
     setIsSimulationModalOpen,
   } = useCourse();
 
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const [isFacultyAuthModalOpen, setIsFacultyAuthModalOpen] = useState(false);
   const [isEmailAccessModalOpen, setIsEmailAccessModalOpen] = useState(false);
-  const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
+  const [isKeypadModalOpen, setIsKeypadModalOpen] = useState(false);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const subScrollRef = useRef<HTMLDivElement>(null);
@@ -102,37 +94,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const totalSeconds = Math.floor(timeRemainingMs / 1000);
-  const isGateActive = courseStartSchedule.isGateEnabled;
-  const isCurrentUnlocked = userRole === 'direttore' ? true : userRole === 'tecnico' ? (!isGateActive || isCourseStarted || totalSeconds <= 3600) : (!isGateActive || isCourseStarted || totalSeconds <= 1800);
-
-  const activeAlertsCount = broadcastAlerts.filter((a) => a.active).length;
+  const isCurrentUnlocked = true;
 
   const roleOptions: { role: UserRole; label: string; shortLabel: string; icon: React.ReactNode }[] = [
-    {
-      role: 'public',
-      label: language === 'en' ? 'Shared Screen' : 'Condivisa',
-      shortLabel: language === 'en' ? 'Public' : 'Pubblica',
-      icon: <Eye className="w-3.5 h-3.5" />,
-    },
-    {
-      role: 'discente',
-      label: language === 'en' ? 'Learner' : 'Discente',
-      shortLabel: language === 'en' ? 'Learner' : 'Discente',
-      icon: <User className="w-3.5 h-3.5" />,
-    },
-    {
-      role: 'tecnico',
-      label: language === 'en' ? 'Technician' : 'Tecnico',
-      shortLabel: language === 'en' ? 'Tech' : 'Tecnico',
-      icon: <Wrench className="w-3.5 h-3.5" />,
-    },
-    {
-      role: 'faculty',
-      label: language === 'en' ? 'Faculty Tutor' : 'Faculty Tutor',
-      shortLabel: 'Faculty',
-      icon: <GraduationCap className="w-3.5 h-3.5" />,
-    },
     {
       role: 'direttore',
       label: language === 'en' ? 'Director' : 'Direzione',
@@ -148,31 +112,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
   ];
 
   const handleRoleSelection = (targetRole: UserRole) => {
-    // If selecting public, discente, or ospite allow switch directly
-    if (targetRole === 'public' || targetRole === 'discente' || targetRole === 'ospite') {
-      setUserRole(targetRole);
-      setCurrentTab('main');
-      return;
-    }
-
-    // If selecting protected faculty/tecnico/direttore:
-    if (facultyAuthSession.isAuthorized) {
-      setUserRole(targetRole);
-      setCurrentTab('main');
-    } else {
-      setPendingRole(targetRole);
-      setIsFacultyAuthModalOpen(true);
-    }
-  };
-
-  const handleFacultyAuthSuccess = (roleToSet?: UserRole) => {
-    const target = roleToSet || pendingRole || 'faculty';
-    setUserRole(target);
+    setUserRole(targetRole);
     setCurrentTab('main');
-    setPendingRole(null);
   };
 
   const currentRoleObj = roleOptions.find((r) => r.role === userRole) || roleOptions[0];
+
+  // Specific views where the view selector navigation bar must be hidden
+  const isDirectorView = currentTab === 'direttori' || (currentTab === 'main' && userRole === 'direttore');
+  const isPublicView = currentTab === 'public';
+  const isDiscenteView = currentTab === 'discente' || (currentTab === 'main' && userRole === 'discente');
+  const isTecniciView = currentTab === 'tecnici' || (currentTab === 'main' && userRole === 'tecnico');
+  const isOspitiView = currentTab === 'ospite' || (currentTab === 'main' && userRole === 'ospite');
+
+  const hideViewSelectorBar = isDirectorView || isPublicView || isDiscenteView || isTecniciView || isOspitiView;
 
   return (
     <>
@@ -189,13 +142,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           >
             <div className="flex items-center justify-between gap-2.5 sm:gap-3.5 min-w-max">
               
-              {/* BLOCK 1: Logo & Home Trigger (INTUBATI EM style) */}
+              {/* BLOCK 1: Logo & Home Trigger (H.I.T.T.E.R. • INTUBATI EM) */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setCurrentTab('main')}
+                  onClick={() => setCurrentTab('public')}
                   className="flex items-center gap-2 group cursor-pointer focus:outline-hidden"
-                  title={language === 'en' ? 'Go to Main Screen • INTUBATI EM' : 'Torna alla schermata principale • INTUBATI EM'}
+                  title="H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM"
                 >
                   <div className="w-8 h-8 bg-red-600 text-white flex items-center justify-center font-black rounded shadow-md group-hover:bg-red-500 transition-colors">
                     <Activity className="w-4 h-4 stroke-[3]" />
@@ -203,14 +156,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   <div className="flex flex-col text-left">
                     <div className="flex items-center gap-1.5">
                       <span className="font-black text-sm sm:text-base tracking-tight text-white uppercase group-hover:text-red-400 transition-colors">
-                        INTUBATI EM
+                        H.I.T.T.E.R.
                       </span>
                       <span className="text-[8px] font-black uppercase tracking-widest px-1 py-0.2 bg-red-600 text-white rounded">
-                        {language === 'en' ? 'SIMULATION' : 'SIMULAZIONE'}
+                        INTUBATI EM
                       </span>
                     </div>
-                    <span className="text-[9px] text-slate-400 font-mono tracking-wider hidden sm:inline">
-                      GLOBAL HEALTH EDUCATORS
+                    <span className="text-[8px] sm:text-[9px] text-slate-400 font-mono tracking-wider hidden sm:inline truncate max-w-[200px] lg:max-w-none">
+                      High Intensive Training Trauma Emergency Response
                     </span>
                   </div>
                 </button>
@@ -221,109 +174,83 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 <LanguageSwitcher variant="badge" />
               </div>
 
-              {/* Role & View Switcher Dropdown (Accessible from any view, especially Director) */}
-              <div className="relative group flex-shrink-0">
-                <button
-                  type="button"
-                  id="navbar-role-switcher-btn"
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xs uppercase tracking-wider rounded border border-yellow-400 transition-all cursor-pointer shadow-md"
-                  title={language === 'en' ? 'Switch Role / View instantly' : 'Cambia Vista / Ruolo istantaneamente'}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>{language === 'en' ? `VIEW: ${userRole.toUpperCase()}` : `VISTA: ${userRole.toUpperCase()}`}</span>
-                </button>
-                <div className="absolute right-0 mt-1 w-48 bg-neutral-950 border border-neutral-700 shadow-2xl rounded py-1 hidden group-hover:block z-50">
-                  <div className="px-3 py-1.5 text-[10px] font-mono text-neutral-400 border-b border-neutral-800 uppercase">
-                    {language === 'en' ? 'Switch View & Role' : 'Cambia Vista & Ruolo'}
-                  </div>
-                  {roleOptions.map((opt) => (
+              {/* Visuale Pubblica Indicator */}
+              {isPublicView && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="px-2.5 py-1 bg-orange-600 text-black font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-sm">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>{language === 'en' ? 'PUBLIC VIEW' : 'VISUALE PUBBLICA'}</span>
+                  </span>
+                </div>
+              )}
+
+              {/* Role & View Switcher Dropdown (Hidden in Direttori, Public, Discente, Tecnici, Ospiti) */}
+              {!hideViewSelectorBar && (
+                <div className="relative group flex-shrink-0">
+                  <button
+                    type="button"
+                    id="navbar-role-switcher-btn"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xs uppercase tracking-wider rounded border border-yellow-400 transition-all cursor-pointer shadow-md"
+                    title={language === 'en' ? 'Switch Role / View instantly' : 'Cambia Vista / Ruolo istantaneamente'}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{language === 'en' ? `VIEW: ${userRole.toUpperCase()}` : `VISTA: ${userRole.toUpperCase()}`}</span>
+                  </button>
+                  <div className="absolute right-0 mt-1 w-48 bg-neutral-950 border border-neutral-700 shadow-2xl rounded py-1 hidden group-hover:block z-50">
+                    <div className="px-3 py-1.5 text-[10px] font-mono text-neutral-400 border-b border-neutral-800 uppercase">
+                      {language === 'en' ? 'Switch View & Role' : 'Cambia Vista & Ruolo'}
+                    </div>
+                    {roleOptions.map((opt) => (
+                      <button
+                        key={opt.role}
+                        onClick={() => handleRoleSelection(opt.role)}
+                        className={`w-full text-left px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer ${
+                          userRole === opt.role ? 'bg-yellow-500/20 text-yellow-400' : 'text-neutral-200'
+                        }`}
+                      >
+                        {opt.icon}
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
                     <button
-                      key={opt.role}
-                      onClick={() => handleRoleSelection(opt.role)}
-                      className={`w-full text-left px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer ${
-                        userRole === opt.role ? 'bg-yellow-500/20 text-yellow-400' : 'text-neutral-200'
+                      onClick={() => handleRoleSelection('regia')}
+                      className={`w-full text-left px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer border-t border-neutral-800 ${
+                        userRole === 'regia' ? 'bg-pink-500/20 text-pink-400' : 'text-pink-300'
                       }`}
                     >
-                      {opt.icon}
-                      <span>{opt.label}</span>
+                      <Radio className="w-3.5 h-3.5 text-pink-400" />
+                      <span>REGIA & CONTROL</span>
                     </button>
-                  ))}
-                  <button
-                    onClick={() => handleRoleSelection('regia')}
-                    className={`w-full text-left px-3 py-1.5 text-xs font-bold uppercase flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer border-t border-neutral-800 ${
-                      userRole === 'regia' ? 'bg-pink-500/20 text-pink-400' : 'text-pink-300'
-                    }`}
-                  >
-                    <Radio className="w-3.5 h-3.5 text-pink-400" />
-                    <span>REGIA & CONTROL</span>
-                  </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
 
 
-              {/* BLOCK 2.2: Public View Toggle / Staff Area Button & Projector New Tab */}
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                {userRole !== 'public' ? (
-                  <button
-                    type="button"
-                    id="switch-to-public-mode-btn"
-                    onClick={() => handleRoleSelection('public')}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-slate-700 hover:border-cyan-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                    title={language === 'en' ? 'Switch to Public Shared Screen View' : 'Passa alla Modalità Pubblica / Vista Condivisa'}
-                  >
-                    <Eye className="w-3 h-3" />
-                    <span>{language === 'en' ? 'PUBLIC' : 'PUBBLICA'}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    id="public-staff-access-btn"
-                    onClick={() => {
-                      setPendingRole('direttore');
-                      setIsFacultyAuthModalOpen(true);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-wider rounded border border-red-400 transition-all cursor-pointer shadow-md flex-shrink-0"
-                    title={language === 'en' ? 'Staff & Professionals Area Access' : 'Accesso Area Addetti ai Lavori'}
-                  >
-                    <Lock className="w-3 h-3 text-red-200" />
-                    <span>{language === 'en' ? 'STAFF AREA' : 'ADDETTI AI LAVORI'}</span>
-                  </button>
-                )}
+              {/* BLOCK 2.2: Direttore & Regia Quick Switch Buttons */}
+              {!hideViewSelectorBar && (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
 
-                {userRole !== 'regia' && (
-                  <button
-                    type="button"
-                    id="switch-to-regia-mode-btn"
-                    onClick={() => handleRoleSelection('regia')}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-pink-950/80 hover:bg-pink-900 text-pink-300 font-bold text-[11px] uppercase tracking-wider rounded border border-pink-700 hover:border-pink-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                    title={language === 'en' ? 'Switch to Regia & Mission Control View' : 'Passa alla Visuale Regia & Mission Control'}
-                  >
-                    <Radio className="w-3 h-3 text-pink-400" />
-                    <span>REGIA</span>
-                  </button>
-                )}
 
-                {userRole === 'direttore' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetUrl = `${window.location.origin}${window.location.pathname}?role=public`;
-                      window.open(targetUrl, '_blank');
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 font-bold text-[11px] uppercase tracking-wider rounded border border-cyan-700 transition-all cursor-pointer shadow-xs flex-shrink-0"
-                    title={language === 'en' ? 'Open Public View in New Tab for Central Monitor Projection' : 'Apri Vista Pubblica in Nuova Pagina per Proiezione su Monitor Centrale'}
-                  >
-                    <Monitor className="w-3 h-3 text-cyan-400" />
-                    <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />
-                    <span className="hidden md:inline">{language === 'en' ? 'PROJECTOR' : 'PROIETTORE'}</span>
-                  </button>
-                )}
-              </div>
 
-              {/* Conditional Controls for Staff / Directors / Tech / Faculty (Hidden for Public & Discente) */}
-              {userRole !== 'public' && userRole !== 'discente' && (
-                <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
+
+                  {userRole !== 'regia' && (
+                    <button
+                      type="button"
+                      id="switch-to-regia-mode-btn"
+                      onClick={() => handleRoleSelection('regia')}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-pink-950/80 hover:bg-pink-900 text-pink-300 font-bold text-[11px] uppercase tracking-wider rounded border border-pink-700 hover:border-pink-500 transition-all cursor-pointer shadow-xs flex-shrink-0"
+                      title={language === 'en' ? 'Switch to Regia & Mission Control View' : 'Passa alla Visuale Regia & Mission Control'}
+                    >
+                      <Radio className="w-3 h-3 text-pink-400" />
+                      <span>REGIA</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Conditional Controls for Staff / Directors */}
+              <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
 
               {/* BLOCK 3: Timer & Live Phase Controller */}
               <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900/90 border border-slate-700 shadow-inner rounded flex-shrink-0">
@@ -352,8 +279,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   <span>{formatTime(timerSeconds)}</span>
                 </div>
 
-                {/* Timer Controls for Direttore / Tecnico */}
-                {(userRole === 'direttore' || userRole === 'tecnico') && (
+                {/* Timer Controls for Direttore */}
+                {userRole === 'direttore' && (
                   <div className="flex items-center gap-0.5 border-l border-slate-700 pl-1.5">
                     <button
                       onClick={toggleTimer}
@@ -372,7 +299,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   </div>
                 )}
               </div>
-
 
 
               {/* BLOCK 6: Real-Time Connectivity & Client Sync Indicator */}
@@ -408,30 +334,37 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 </span>
               </button>
 
+              {/* BLOCK 7: Top Right INTUBATI EM Header Button (PIN Keypad Trigger) */}
+              <button
+                type="button"
+                id="header-right-intubati-em-btn"
+                onClick={() => setIsKeypadModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-red-950/90 hover:bg-red-900 text-white font-black text-xs uppercase tracking-wider rounded border border-red-600 hover:border-red-400 transition-all cursor-pointer shadow-md group flex-shrink-0"
+                title="Accesso Regia protetto da PIN • INTUBATI EM"
+              >
+                <div className="w-5 h-5 bg-red-600 text-white flex items-center justify-center font-black rounded group-hover:bg-red-500 transition-colors shadow-xs">
+                  <Activity className="w-3.5 h-3.5 stroke-[3]" />
                 </div>
-              )}
+                <div className="flex items-center gap-1">
+                  <span className="font-black text-xs sm:text-sm text-white tracking-tight group-hover:text-red-300 transition-colors">
+                    INTUBATI EM
+                  </span>
+                  <Lock className="w-3.5 h-3.5 text-red-400 group-hover:text-white transition-colors" />
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-        {/* Tier 2: Views Navigation Bar - Horizontally Scrollable with Tabs */}
-        {!isCurrentUnlocked && (userRole === 'discente' || userRole === 'public') ? (
-          <div className="bg-slate-900 border-t border-red-500/80 py-1.5 px-3 sm:px-4 flex items-center justify-between text-xs font-mono">
-            <div className="flex items-center gap-1.5 text-red-400 font-bold">
-              <Clock className="w-3.5 h-3.5 animate-pulse" />
-              <span>{language === 'en' ? `OPERATIONAL STANDBY • SCHEDULED START: ${courseStartSchedule.scheduledDate} AT ${courseStartSchedule.scheduledTime}` : `STANDBY OPERATIVO • AVVIO PREVISTO: ${courseStartSchedule.scheduledDate} ORE ${courseStartSchedule.scheduledTime}`}</span>
-            </div>
-            <div className="text-slate-400 text-[11px] hidden sm:block">
-              {language === 'en' ? 'Countdown active • Features will unlock automatically at the scheduled time' : 'Conto alla rovescia attivo • Le funzioni si attiveranno automaticamente all\'orario stabilito'}
-            </div>
-          </div>
-        ) : (
+        {/* Tier 2: Views Navigation Bar - Horizontally Scrollable with Tabs (Hidden in Direttori, Public, Discente, Tecnici, Ospiti) */}
+        {!hideViewSelectorBar && (
           <div className="bg-slate-900/95 border-t border-slate-800 backdrop-blur-xs">
-            <div
-              ref={subScrollRef}
-              className="w-full overflow-x-auto scrollbar-thin scroll-smooth py-1 px-2.5 sm:px-4"
-              style={{ WebkitOverflowScrolling: 'touch' }}
-            >
+          <div
+            ref={subScrollRef}
+            className="w-full overflow-x-auto scrollbar-thin scroll-smooth py-1 px-2.5 sm:px-4"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
               <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 min-w-max">
                 
                 {/* Left Side: Navigation Tabs */}
@@ -449,64 +382,127 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <span>{language === 'en' ? `${currentRoleObj.shortLabel.toUpperCase()} DASHBOARD` : `PANNELLO ${currentRoleObj.shortLabel.toUpperCase()}`}</span>
                   </button>
 
-                  {userRole !== 'public' && userRole !== 'discente' && (
-                    <button
-                      id="subnav-sync-countdown-btn"
-                      onClick={() => setCurrentTab('schedule_gate')}
-                      className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                        currentTab === 'schedule_gate'
-                          ? 'bg-orange-500 text-black border-orange-400 shadow-xs font-black'
-                          : 'text-orange-400 hover:text-white bg-slate-950 border-orange-500/60 hover:border-orange-500'
-                      }`}
-                      title={language === 'en' ? 'Sync & Start Countdown Management' : 'Sincronizzazione Start & Countdown'}
-                    >
-                      <Clock className="w-3 h-3 text-orange-400" />
-                      <span>{language === 'en' ? 'SYNC & COUNTDOWN' : 'SINCRONIZZAZIONE START & COUNTDOWN'}</span>
-                    </button>
-                  )}
-
-                  {userRole === 'tecnico' && (
+                  {/* Public, Discente, Faculty quick buttons for staff */}
+                  {['tecnico', 'regia', 'direttore', 'ospite'].includes(userRole) && (
                     <>
                       <button
-                        id="subnav-catalog-btn"
-                        onClick={() => setCurrentTab('catalog')}
+                        id="subnav-public-btn"
+                        onClick={() => {
+                          setCurrentTab('public');
+                        }}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'catalog'
-                            ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                            : 'text-slate-300 hover:text-white bg-slate-950 border-slate-800 hover:border-slate-600'
+                          currentTab === 'public'
+                            ? 'text-white bg-orange-600 border-orange-500 shadow-xs'
+                            : 'text-orange-300 hover:text-white bg-neutral-900 border-orange-600/40 hover:border-orange-500'
                         }`}
                       >
-                        <BookOpen className="w-3 h-3 text-red-400" />
-                        <span>{language === 'en' ? 'SCENARIO CATALOG (24)' : 'CATALOGO SCENARI (24)'}</span>
+                        <Globe className="w-3 h-3 text-orange-400" />
+                        <span>{language === 'en' ? 'PUBLIC LIVE VIEW' : 'VISUALE PUBBLICA LIVE'}</span>
                       </button>
 
                       <button
-                        id="subnav-protesi-btn"
-                        onClick={() => setCurrentTab('protesi')}
-                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'protesi'
-                            ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                            : 'text-slate-300 hover:text-white bg-slate-950 border-slate-800 hover:border-slate-600'
-                        }`}
+                        id="subnav-discente-btn"
+                        onClick={() => {
+                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
+                          window.open(`${window.location.origin}${window.location.pathname}?view=discente${fromParam}`, '_blank');
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500"
                       >
-                        <Package className="w-3 h-3 text-cyan-400" />
-                        <span>{language === 'en' ? 'PROSTHETICS & MOULAGE' : 'PROTESI & MOULAGE'}</span>
+                        <GraduationCap className="w-3 h-3 text-cyan-400" />
+                        <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
                       </button>
 
                       <button
-                        id="subnav-night-btn"
-                        onClick={() => setCurrentTab('night')}
-                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'night'
-                            ? 'bg-red-600 text-white border-red-600 shadow-xs font-black'
-                            : 'text-slate-300 hover:text-white bg-slate-950 border-slate-800 hover:border-slate-600'
-                        }`}
+                        id="subnav-faculty-btn"
+                        onClick={() => {
+                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
+                          window.open(`${window.location.origin}${window.location.pathname}?view=faculty${fromParam}`, '_blank');
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-amber-300 hover:text-white bg-neutral-900 border-amber-600/40 hover:border-amber-500"
                       >
-                        <Moon className="w-3 h-3 text-red-400" />
-                        <span>{language === 'en' ? 'NIGHT SHIFT (DAY 3)' : 'NOTTURNO (DAY 3)'}</span>
+                        <Award className="w-3 h-3 text-amber-400" />
+                        <span>{language === 'en' ? 'FACULTY VIEW' : 'VISUALE FACULTY'}</span>
+                      </button>
+
+                      <button
+                        id="subnav-tecnici-btn"
+                        onClick={() => {
+                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
+                          window.open(`${window.location.origin}${window.location.pathname}?view=tecnici${fromParam}`, '_blank');
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-pink-300 hover:text-white bg-neutral-900 border-pink-600/40 hover:border-pink-500"
+                      >
+                        <Wrench className="w-3 h-3 text-pink-400" />
+                        <span>{language === 'en' ? 'TECH VIEW' : 'VISUALE TECNICI'}</span>
+                      </button>
+
+                      {userRole !== 'direttore' && currentTab !== 'direttori' && (
+                        <>
+                          <button
+                            id="subnav-regia-btn"
+                            onClick={() => {
+                              window.open(`${window.location.origin}${window.location.pathname}?view=regia`, '_blank');
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-pink-300 hover:text-white bg-neutral-900 border-pink-600/40 hover:border-pink-500"
+                          >
+                            <Radio className="w-3 h-3 text-pink-400" />
+                            <span>{language === 'en' ? 'REGIA VIEW' : 'VISUALE REGIA'}</span>
+                          </button>
+
+                          <button
+                            id="subnav-direttori-btn"
+                            onClick={() => {
+                              const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
+                              window.open(`${window.location.origin}${window.location.pathname}?view=direttori${fromParam}`, '_blank');
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-yellow-300 hover:text-white bg-neutral-900 border-yellow-600/40 hover:border-yellow-500"
+                          >
+                            <ShieldCheck className="w-3 h-3 text-yellow-400" />
+                            <span>{language === 'en' ? 'DIRECTORS VIEW' : 'VISUALE DIRETTORI'}</span>
+                          </button>
+                        </>
+                      )}
+
+                      <button
+                        id="subnav-ospiti-btn"
+                        onClick={() => {
+                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
+                          window.open(`${window.location.origin}${window.location.pathname}?view=ospite${fromParam}`, '_blank');
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/40 hover:border-emerald-500"
+                      >
+                        <UserCheck className="w-3 h-3 text-emerald-400" />
+                        <span>{language === 'en' ? 'GUEST VIEW' : 'VISUALE OSPITI'}</span>
                       </button>
                     </>
                   )}
+
+                  {/* Scenari and Protesi available for all roles */}
+                  <button
+                    id="subnav-scenari-btn"
+                    onClick={() => setCurrentTab('scenari')}
+                    className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                      currentTab === 'scenari' || currentTab === 'catalog'
+                        ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                        : 'text-slate-300 hover:text-white bg-slate-950 border-slate-800 hover:border-slate-600'
+                    }`}
+                  >
+                    <BookOpen className="w-3 h-3 text-orange-400" />
+                    <span>{language === 'en' ? 'SCENARI (24)' : 'SCENARI (24)'}</span>
+                  </button>
+
+                  <button
+                    id="subnav-protesi-btn"
+                    onClick={() => setCurrentTab('protesi')}
+                    className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                      currentTab === 'protesi'
+                        ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                        : 'text-slate-300 hover:text-white bg-slate-950 border-slate-800 hover:border-slate-600'
+                    }`}
+                  >
+                    <Package className="w-3 h-3 text-cyan-400" />
+                    <span>{language === 'en' ? 'PROTESI' : 'PROTESI'}</span>
+                  </button>
 
                   {!isCurrentUnlocked && (
                     <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/80 border border-red-600 text-red-300 font-mono text-[10px] font-bold rounded">
@@ -537,7 +533,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                     <span className="text-slate-400 uppercase font-bold">{language === 'en' ? `D${activeDay}` : `G${activeDay}`}</span>
                     <span className="text-slate-600">|</span>
-                    <span className={`font-bold uppercase ${facultyAuthSession.isAuthorized ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <span className="font-bold uppercase text-emerald-400">
                       {userRole}
                     </span>
                   </div>
@@ -549,22 +545,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
         )}
       </header>
 
-      {/* QR Code Scanner / Access Modal */}
-      <QRScannerModal isOpen={isQRScannerOpen} onClose={() => setIsQRScannerOpen(false)} />
-
       {/* Real-time Connectivity & Sync Status Modal */}
       <SyncStatusModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} />
 
-      {/* Secure Faculty Authentication Modal */}
-      <FacultyAuthModal
-        isOpen={isFacultyAuthModalOpen}
-        onClose={() => {
-          setIsFacultyAuthModalOpen(false);
-          setPendingRole(null);
-        }}
-        targetRolePending={pendingRole}
-        onSuccess={handleFacultyAuthSuccess}
-      />
 
       {/* Simulation Engine & Time Acceleration Modal */}
       <SimulationEngineModal
@@ -576,6 +559,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
       <EmailAccessModal
         isOpen={isEmailAccessModalOpen}
         onClose={() => setIsEmailAccessModalOpen(false)}
+      />
+
+      {/* Protected Regia Access Keypad Modal (PIN: 9438) */}
+      <RegiaKeypadModal
+        isOpen={isKeypadModalOpen}
+        onClose={() => setIsKeypadModalOpen(false)}
+        onSuccess={() => {
+          setCurrentTab('regia');
+          setUserRole('regia');
+        }}
       />
     </>
   );

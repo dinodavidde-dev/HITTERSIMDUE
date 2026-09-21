@@ -6,7 +6,6 @@ import {
   Faculty,
   GroupType,
   Guest,
-  NightScenarioCase,
   SimulatorPatient,
   Team,
   Technician,
@@ -72,7 +71,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
   {
     id: 'tech-1',
     name: 'Silvia Rossi (Lead Moulage & Protesi)',
-    assignedStations: ['Postazione 1', 'Postazione 4', 'Postazione 7', 'Postazione 10', 'Postazione 13', 'Postazione 16', 'Postazione 19', 'Postazione 22'],
+    assignedStations: ['Postazione 1', 'Box Shock Room 1', 'Ambiente Tattico 1'],
     specialty: 'Moulage avanzato, ferite balistiche, protesi cricotirotomia',
     nationality: 'Italiana',
     organization: 'Centro Simulazione Medica Avanzata',
@@ -84,20 +83,20 @@ export const INITIAL_TECHNICIANS: Technician[] = [
   {
     id: 'tech-2',
     name: 'Roberto Bianchi',
-    assignedStations: ['Postazione 2', 'Postazione 5', 'Postazione 8', 'Postazione 11', 'Postazione 14', 'Postazione 17', 'Postazione 20', 'Postazione 23'],
-    specialty: 'Simulatori torace morbido con tessuti biologici (organi maiale), toracotomia',
+    assignedStations: ['Postazione 2', 'Box Shock Room 2', 'Ambiente Tattico 2'],
+    specialty: 'Simulatori torace morbido con tessuti biologici, toracotomia',
     nationality: 'Italiana',
     organization: 'Laboratorio Wet-Lab & Biomodelli',
     phone: '+39 334 2345678',
     email: 'r.bianchi@wetlab.it',
     badgeCode: 'TECH-02',
-    notes: 'Preparazione cuori/polmoni suini e clamping ilo polmonare',
+    notes: 'Preparazione organi suini e clamping ilo polmonare',
   },
   {
     id: 'tech-3',
     name: 'Alessandro Conti',
-    assignedStations: ['Postazione 3', 'Postazione 6', 'Postazione 9', 'Postazione 12', 'Postazione 15', 'Postazione 18', 'Postazione 21', 'Postazione 24'],
-    specialty: 'Simulatori REBOA endovascolari, controllo emorragie arteriose da moncone',
+    assignedStations: ['Postazione 3', 'Box Shock Room 3', 'Ambiente Tattico 3'],
+    specialty: 'Simulatori REBOA endovascolari, controllo emorragie arteriose',
     nationality: 'Italiana',
     organization: 'Vascular Sim Technologies',
     phone: '+39 335 3456789',
@@ -108,7 +107,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
   {
     id: 'tech-4',
     name: 'Matteo Ferrari',
-    assignedStations: ['Workshop TCCC / Skills Lab 1'],
+    assignedStations: ['Box Shock Room 1', 'Ambiente Tattico 1'],
     specialty: 'Gestione materiali TCCC, barelle di estrazione, manichini da trascinamento',
     nationality: 'Italiana',
     organization: 'Tactical Rescue Sim',
@@ -120,7 +119,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
   {
     id: 'tech-5',
     name: 'Giulia Barbieri',
-    assignedStations: ['Skills Lab 2 / MacGyver Medicine'],
+    assignedStations: ['Box Shock Room 2', 'Ambiente Tattico 2'],
     specialty: 'Materiali di improvvisazione, steccaggi da campo, presidi ventilatori',
     nationality: 'Italiana',
     organization: 'Wilderness & Austere Medicine Institute',
@@ -132,14 +131,86 @@ export const INITIAL_TECHNICIANS: Technician[] = [
   {
     id: 'tech-6',
     name: 'Davide Esposito',
-    assignedStations: ['Regia Audio/Video & Scenario Notturno'],
-    specialty: 'Effetti sonori, fumi scenici, illuminazione tattica notturna, briefing video',
+    assignedStations: ['Box Shock Room 3', 'Ambiente Tattico 3'],
+    specialty: 'Effetti sonori, fumi scenici, illuminazione tattica notturna',
     nationality: 'Italiana',
     organization: 'AudioVideo Sim Live',
     phone: '+39 338 6789012',
     email: 'd.esposito@audiovideosim.it',
     badgeCode: 'TECH-06',
-    notes: 'Regia telecamere debriefing e pirotecnica scenica notturna',
+    notes: 'Regia telecamere debriefing e pirotecnica scenica',
+  },
+  {
+    id: 'tech-7',
+    name: 'Marco Rinaldi',
+    assignedStations: ['Box Shock Room 1', 'Skills Lab WS1'],
+    specialty: 'Monitoraggio emodinamico avanzato, telemetria e sinottici vitali',
+    nationality: 'Italiana',
+    organization: 'SimTelemetry Systems',
+    phone: '+39 339 7890123',
+    email: 'm.rinaldi@simtelemetry.it',
+    badgeCode: 'TECH-07',
+    notes: 'Configurazione script emodinamici per shock emorragico',
+  },
+  {
+    id: 'tech-8',
+    name: 'Chiara Moretti',
+    assignedStations: ['Box Shock Room 2', 'Skills Lab WS2'],
+    specialty: 'Ecografia clinica di simulazione e sonde FAST',
+    nationality: 'Italiana',
+    organization: 'EchoSim Technologies',
+    phone: '+39 330 8901234',
+    email: 'c.moretti@echosim.it',
+    badgeCode: 'TECH-08',
+    notes: 'Caricamento clip ecografiche FAST patologiche sui phantom',
+  },
+  {
+    id: 'tech-9',
+    name: 'Lorenzo Romano',
+    assignedStations: ['Box Shock Room 3', 'Aula Plenaria'],
+    specialty: 'Gestione reti di simulazione distribuite e database eventi',
+    nationality: 'Italiana',
+    organization: 'TraumaNet IT Solutions',
+    phone: '+39 331 9012345',
+    email: 'l.romano@traumanet.it',
+    badgeCode: 'TECH-09',
+    notes: 'Supervisione rete LAN e sincronizzazione tablet faculty',
+  },
+  {
+    id: 'tech-10',
+    name: 'Francesca De Luca',
+    assignedStations: ['Skills Lab WS1', 'Ambiente Tattico 1'],
+    specialty: 'Gestione vie aeree difficili, manichini intubazione e cricotiroidotomia',
+    nationality: 'Italiana',
+    organization: 'Airway Sim Solutions',
+    phone: '+39 332 0123456',
+    email: 'f.deluca@airwaysim.it',
+    badgeCode: 'TECH-10',
+    notes: 'Sostituzione inserti tracheali e polmoni artificiali',
+  },
+  {
+    id: 'tech-11',
+    name: 'Simone Gallo',
+    assignedStations: ['Skills Lab WS2', 'Ambiente Tattico 2'],
+    specialty: 'Accessi vascolari ecoguidati, cateterismo venoso centrale e intraosseo',
+    nationality: 'Italiana',
+    organization: 'Vascular Access Lab',
+    phone: '+39 333 1230987',
+    email: 's.gallo@vascularlab.it',
+    badgeCode: 'TECH-11',
+    notes: 'Ricarica vasi artificiali e gel ecografico',
+  },
+  {
+    id: 'tech-12',
+    name: 'Martina Rizzo',
+    assignedStations: ['Regia Centrale', 'Area Logistica'],
+    specialty: 'Logistica generale, controllo inventario presidi e rifornimento sacche sangue',
+    nationality: 'Italiana',
+    organization: 'SimLogistics Corp',
+    phone: '+39 334 2341122',
+    email: 'm.rizzo@simlogistics.it',
+    badgeCode: 'TECH-12',
+    notes: 'Coordinamento turnarounds 15 minuti tra i blocchi formativi',
   },
 ];
 
@@ -359,18 +430,18 @@ export const INITIAL_GUESTS: Guest[] = [
 ];
 
 export const INITIAL_TEAMS: Team[] = [
-  { id: 1, name: 'ALPHA 1', groupId: 'A', facultyId: 'fac-1', color: '#dc2626', notes: 'Team leader specializzando anestesia' },
-  { id: 2, name: 'ALPHA 2', groupId: 'A', facultyId: 'fac-2', color: '#ea580c', notes: 'Personale con esperienza 118' },
-  { id: 3, name: 'ALPHA 3', groupId: 'A', facultyId: 'fac-3', color: '#d97706', notes: 'Infermieri area critica e chirurgo' },
-  { id: 4, name: 'BRAVO 1', groupId: 'B', facultyId: 'fac-4', color: '#2563eb', notes: 'Equipe mista PS / Rianimazione' },
-  { id: 5, name: 'BRAVO 2', groupId: 'B', facultyId: 'fac-5', color: '#0284c7', notes: 'Equipe HEMS e PS' },
-  { id: 6, name: 'BRAVO 3', groupId: 'B', facultyId: 'fac-6', color: '#0891b2', notes: 'Medici urgenza e infermieri' },
-  { id: 7, name: 'CHARLIE 1', groupId: 'C', facultyId: 'fac-7', color: '#16a34a', notes: 'Discenti orientamento preospedaliero' },
-  { id: 8, name: 'CHARLIE 2', groupId: 'C', facultyId: 'fac-8', color: '#059669', notes: 'Personale Shock Room' },
-  { id: 9, name: 'CHARLIE 3', groupId: 'C', facultyId: 'fac-9', color: '#0d9488', notes: 'Team bilanciato trauma vascolare' },
-  { id: 10, name: 'DELTA 1', groupId: 'D', facultyId: 'fac-10', color: '#9333ea', notes: 'Anestesisti e chirurghi' },
-  { id: 11, name: 'DELTA 2', groupId: 'D', facultyId: 'fac-11', color: '#c026d3', notes: 'Medici emergenza e infermieri 118' },
-  { id: 12, name: 'DELTA 3', groupId: 'D', facultyId: 'fac-12', color: '#db2777', notes: 'Equipe multidisciplinare' },
+  { id: 1, name: 'ALPHA1', groupId: 'A', facultyId: 'fac-1', color: '#1A73E8', notes: 'Gruppo ALPHA • Squadra ALPHA1 • Amb. Tattico 1 / Box SR 1' },
+  { id: 2, name: 'ALPHA2', groupId: 'A', facultyId: 'fac-2', color: '#669DF6', notes: 'Gruppo ALPHA • Squadra ALPHA2 • Amb. Tattico 2 / Box SR 2' },
+  { id: 3, name: 'ALPHA3', groupId: 'A', facultyId: 'fac-3', color: '#AECBFA', notes: 'Gruppo ALPHA • Squadra ALPHA3 • Amb. Tattico 3 / Box SR 3' },
+  { id: 4, name: 'BETA1', groupId: 'B', facultyId: 'fac-4', color: '#1E8E3E', notes: 'Gruppo BETA • Squadra BETA1 • Amb. Tattico 1 / Box SR 1' },
+  { id: 5, name: 'BETA2', groupId: 'B', facultyId: 'fac-5', color: '#5BB974', notes: 'Gruppo BETA • Squadra BETA2 • Amb. Tattico 2 / Box SR 2' },
+  { id: 6, name: 'BETA3', groupId: 'B', facultyId: 'fac-6', color: '#A8DAB5', notes: 'Gruppo BETA • Squadra BETA3 • Amb. Tattico 3 / Box SR 3' },
+  { id: 7, name: 'CHARLIE1', groupId: 'C', facultyId: 'fac-7', color: '#D97706', notes: 'Gruppo CHARLIE • Squadra CHARLIE1 • Amb. Tattico 1 / Box SR 1' },
+  { id: 8, name: 'CHARLIE2', groupId: 'C', facultyId: 'fac-8', color: '#F59E0B', notes: 'Gruppo CHARLIE • Squadra CHARLIE2 • Amb. Tattico 2 / Box SR 2' },
+  { id: 9, name: 'CHARLIE3', groupId: 'C', facultyId: 'fac-9', color: '#FBBF24', notes: 'Gruppo CHARLIE • Squadra CHARLIE3 • Amb. Tattico 3 / Box SR 3' },
+  { id: 10, name: 'DELTA1', groupId: 'D', facultyId: 'fac-10', color: '#7B1FA2', notes: 'Gruppo DELTA • Squadra DELTA1 • Amb. Tattico 1 / Box SR 1' },
+  { id: 11, name: 'DELTA2', groupId: 'D', facultyId: 'fac-11', color: '#AB47BC', notes: 'Gruppo DELTA • Squadra DELTA2 • Amb. Tattico 2 / Box SR 2' },
+  { id: 12, name: 'DELTA3', groupId: 'D', facultyId: 'fac-12', color: '#CE93D8', notes: 'Gruppo DELTA • Squadra DELTA3 • Amb. Tattico 3 / Box SR 3' },
 ];
 
 // Generate 60 discenti (5 per team)
@@ -426,16 +497,26 @@ const HOSPITALS_POOL = [
 export const INITIAL_DISCENTI: Discente[] = Array.from({ length: 60 }).map((_, idx) => {
   const teamIndex = Math.floor(idx / 5); // 0 to 11
   const teamId = teamIndex + 1;
-  const roleInTeam = ROLES_POOL[idx % 5];
   const name = `${FIRST_NAMES[idx % FIRST_NAMES.length]} ${LAST_NAMES[idx % LAST_NAMES.length]}`;
   const nationality = NATIONALITIES_POOL[idx % NATIONALITIES_POOL.length];
   const organization = HOSPITALS_POOL[idx % HOSPITALS_POOL.length];
   const emailName = name.toLowerCase().replace(/\s+/g, '.').replace(/[']/g, '');
+  
+  const roleInTeam = idx % 5;
+  const role = roleInTeam === 0 
+    ? 'Team Leader / Medico Emergenza' 
+    : roleInTeam === 1 
+    ? 'Airway Specialist / Anestesista' 
+    : roleInTeam === 2 
+    ? 'Circulation Specialist / Infermiere' 
+    : roleInTeam === 3 
+    ? 'Procedural Doctor / Chirurgo' 
+    : 'Scribe & Timekeeper / Infermiere Area Critica';
 
   return {
     id: `disc-${idx + 1}`,
     name,
-    role: roleInTeam,
+    role,
     teamId,
     nationality,
     phone: `+39 392 ${String(1000000 + idx).padStart(7, '0')}`,
@@ -464,6 +545,7 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
       'Ferita ascellare sinistra con emorragia compressibile/giunzionale',
       'Emotorace sinistro massivo'
     ],
+    dinamicaDelleLesioni: 'Colpito da fuoco ostile in ambiente urbano da cecchino (ferita maxillo-facciale e toraco-ascellare con proiettile ad alta energia).',
     procedureExtra: [
       'Cricotirotomia chirurgica (CRIC)',
       'Decompressiva con ago (ND)'
@@ -472,6 +554,12 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
       'Toracostomia con posizionamento drenaggio toracico',
       'Resuscitative Thoracotomy / Resus Thoraco'
     ],
+    procedureSpecifiche: [
+      'Controllo emorragia ascellare giunzionale con garza emostatica e compressione',
+      'Cricotirotomia d\'urgenza per ostruzione da sangue/edema',
+      'Toracocentesi decompressiva d\'urgenza'
+    ],
+    approccioTcccVsShockRoom: 'In TCCC (Ambiente Tattico): Intervento Under Fire / Tactical Field Care, priorità assoluta a emorragia massiva giunzionale e airway chirurgica d\'emergenza prima dell\'estrazione barellata. In Shock Room (ED): Gestione ABCDE avanzata, toracostomia con drenaggio toracico e valutazione per toracotomia di rianimazione (Resus Thoracotomy).',
     moulageProtesi: 'Protesi CRICO sanguina ed espande, ferita arma da fuoco schiena sanguinante con pompa, ferita ascellare sinistra',
     simulatori: 'Simulatore torace morbido + simulatore torace fisso',
     attoriCount: 2,
@@ -493,6 +581,7 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
       'Frattura esposta avambraccio con sanguinamento a getto',
       'Ferita da arma da fuoco al torace con pneumotorace aperto'
     ],
+    dinamicaDelleLesioni: 'Esplosione da ordigno a basso potenziale con proiezione di schegge metalliche e trauma diretto da scoppio su arto e torace.',
     procedureExtra: [
       'Drenaggio torace Finger (Toracostomia a dito / Decompressione)',
       'Tourniquet TQ arto superiore + medicazione toracica valvola'
@@ -501,6 +590,12 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
       'Resus Thoracotomy',
       'Fissazione e controllo emorragia vascolare avambraccio'
     ],
+    procedureSpecifiche: [
+      'Applicazione Tourniquet (TQ) alto a monte su arto superiore',
+      'Medicazione toracica con valvola (Chest Seal)',
+      'Toracostomia a dito (Finger Thoracostomy)'
+    ],
+    approccioTcccVsShockRoom: 'In TCCC: Controllo immediato dell\'emorragia arteriosa a getto con tourniquet e trattamento del pneumotorace aperto con valvola di flutter. In Shock Room: Stabilizzazione emodinamica, accesso vascolare ecoguidato, trasfusione massiva (MTP) e revisione chirurgica vascolare dell\'avambraccio.',
     moulageProtesi: 'Frattura esposta avambraccio con osso sporgente, foro proiettile torace con bolle d\'aria',
     simulatori: 'Torace morbido con organi di maiale per toracotomia di rianimazione',
     attoriCount: 1,
@@ -525,6 +620,7 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
       'Pneumotorace iperteso (PNX) destro con shock ostruttivo',
       'Amputazione traumatica gamba destra sub-totale da deflagrazione'
     ],
+    dinamicaDelleLesioni: 'Calpestamento di mina antiuomo / IED con deflagrazione e distruzione parziale dell\'arto inferiore destro e barotrauma polmonare.',
     procedureExtra: [
       'Drenaggio con ago (Decompressione toracica d\'emergenza)',
       'Amputazione di emergenza / applicazione Tourniquet giunzionale TQ'
@@ -533,6 +629,12 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
       'Drenaggio thorax definitivo',
       'Posizionamento catetere REBOA (Zone 1 / Zone 3) per emorragia da amputazione'
     ],
+    procedureSpecifiche: [
+      'Applicazione di Tourniquet giunzionale e medicazione compressiva per moncone',
+      'Decompressione toracica con ago in 2° spazio intercostale',
+      'Posizionamento catetere REBOA (Zone 1)'
+    ],
+    approccioTcccVsShockRoom: 'In TCCC: Controllo del sanguinamento catastrofico da amputazione con TQ d\'emergenza e trattamento del pneumotorace iperteso prima del trasporto. In Shock Room: Inserimento di catetere endovascolare per occlusione aortica (REBOA) per controllo emorragia sottodiaframmatica e stabilizzazione.',
     moulageProtesi: 'Moncone emorragico gamba destra, enfisema sottocutaneo emitorace dx',
     simulatori: 'Torace morbido + simulatore REBOA endovascolare + moncone arto inferiore',
     attoriCount: 1,
@@ -1149,1362 +1251,942 @@ export const INITIAL_SIMULATOR_PATIENTS: SimulatorPatient[] = [
   },
 ];
 
-// Full Schedule Timetable for Day 2 & Day 3 based on official roadmap (Subdivided into distinct operational phases)
+// Timeline slots emptied and prepared for new programming
 export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
-  // ================= DAY 2 MATTINA & POMERIGGIO (15-min intervals) =================
+  // ==================== DAY 2 ====================
   {
-    id: 'd2-m-0800',
+    id: 'd2-setup-1',
     day: 2,
     period: 'mattina',
-    timeRange: '08:00 - 08:15',
+    timeRange: '07:30 - 08:00',
+    startMinutes: 450,
+    durationMinutes: 30,
+    title: 'Setup Staff (Fase 1 & 2)',
+    description: 'Briefing Staff, check radio (CH1, CH2, CH3) e calibrazione manichini e simulatori.',
+    groupActivities: {
+      A: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' },
+      B: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' },
+      C: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' },
+      D: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' }
+    }
+  },
+  {
+    id: 'd2-setup-2',
+    day: 2,
+    period: 'mattina',
+    timeRange: '08:00 - 08:30',
     startMinutes: 480,
-    durationMinutes: 15,
-    title: '08:00 - Gate Opening Faculty & Tecnici',
-    description: 'Apertura anticipata dei gate alle ore 08:00 per Faculty e Tecnici (preparazione postazioni, allestimento e briefing interno).',
+    durationMinutes: 30,
+    title: 'Setup Staff (Fase 3 & 4)',
+    description: 'Allineamento tutor/regia e verifica finale postazioni (GO / NO-GO).',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Gate Opening Faculty Alfa', subtitle: 'Setup Settore Scenari TCCC (08:00)', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Gate Opening Faculty Bravo', subtitle: 'Setup Shock Room 1-3 (08:00)', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Gate Opening Faculty Charlie', subtitle: 'Setup Area Tattica (08:00)', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Gate Opening Faculty Delta', subtitle: 'Setup Skills Lab (08:00)', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' },
+      B: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' },
+      C: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' },
+      D: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' }
     }
   },
   {
-    id: 'd2-m-0815',
-    day: 2,
-    period: 'mattina',
-    timeRange: '08:15 - 08:30',
-    startMinutes: 495,
-    durationMinutes: 15,
-    title: '08:15 - Briefing Operativo Faculty & Tecnici',
-    description: 'Briefing di coordinamento tra Direzione, Faculty e Tecnici (verifica moulage, simulatori e flussi).',
-    groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Briefing Faculty Alfa', subtitle: 'Verifica Pz 1-3 & Moulage', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Briefing Faculty Bravo', subtitle: 'Checklist Shock Room & Circuiti', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Briefing Faculty Charlie', subtitle: 'Preparazione Materiali Workshop', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Briefing Faculty Delta', subtitle: 'Preparazione Postazioni Skills', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd2-m-0830',
+    id: 'd2-welcome',
     day: 2,
     period: 'mattina',
     timeRange: '08:30 - 08:45',
     startMinutes: 510,
     durationMinutes: 15,
-    title: '08:30 - Gate Opening Discenti',
-    description: 'Apertura gate per i discenti alle ore 08:30. Ingresso al centro e accoglienza nelle aree di raduno.',
+    title: 'Accoglienza Allievi & Patto d\'Aula',
+    description: 'Raduno discenti e ricognizione postazioni.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Arrivo Discenti Gruppo Alfa', subtitle: 'Accoglienza & Assegnazione Squadre 1-3', location: 'Settore Scenari Alfa - Area Raduno', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Arrivo Discenti Gruppo Bravo', subtitle: 'Accoglienza & Assegnazione Squadre 4-6', location: 'Shock Room 1, 2, 3 - Briefing Room', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Arrivo Discenti Gruppo Charlie', subtitle: 'Accoglienza & Assegnazione Squadre 7-9', location: 'Area Tattica - Aula Briefing', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Arrivo Discenti Gruppo Delta', subtitle: 'Accoglienza & Assegnazione Squadre 10-12', location: 'Skills Lab 2 - Briefing', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Convocazione Squadre TCCC', subtitle: 'Briefing iniziale', location: 'Aula Plenaria' },
+      B: { activityType: 'workshop', title: 'Raduno Aula WS1', subtitle: 'Patto d\'aula', location: 'Aula WS1' },
+      C: { activityType: 'workshop', title: 'Convocazione squadre ShockRoomR', subtitle: 'Briefing iniziale', location: 'Box Shock Room' },
+      D: { activityType: 'workshop', title: 'Raduno Aula WS2', subtitle: 'Patto d\'aula', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd2-m-0845',
+    id: 'd2-prealert-1',
     day: 2,
     period: 'mattina',
     timeRange: '08:45 - 09:00',
     startMinutes: 525,
     durationMinutes: 15,
-    title: '08:45 - Pre-allerta T-15 & Assegnazione Pazienti',
-    description: 'Pre-allerta T-15 per TCCC (Gruppo A, Squadre 1-3, Pazienti 1, 2, 3) e pre-standby Shock Room (Gruppo B).',
+    title: 'Pre-Alert T-15 Blocco 1',
+    description: 'PRE-ALLERTA TCCC e allestimento postazioni a T-15.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC (T -15)', subtitle: 'Vestizione & Briefing Missione Pz 1-3', location: 'Settore Scenari Alfa', patientIds: [1, 2, 3], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Pre-allerta Shock Room (Standby)', subtitle: 'Preparazione Box 1-3 per Handover T+30', location: 'Shock Room 1, 2, 3', patientIds: [1, 2, 3], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Briefing Workshop Mattutino', subtitle: 'Introduzione Modulo Tattico', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Briefing Skills Lab Mattutino', subtitle: 'Introduzione Procedure Avanzate', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'PRE-ALLERTA TCCC', subtitle: 'Ambienti Tattici 1-3', location: 'Ambiente Tattico 1' },
+      B: { activityType: 'workshop', title: 'Allestimento WS1', subtitle: 'Preparazione materiale', location: 'Aula WS1' },
+      C: { activityType: 'workshop', title: 'Standby SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room 1' },
+      D: { activityType: 'workshop', title: 'Allestimento WS2', subtitle: 'Preparazione materiale', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd2-m-0900',
+    id: 'd2-b1-tccc',
     day: 2,
     period: 'mattina',
-    timeRange: '09:00 - 09:15',
+    timeRange: '09:00 - 09:30',
     startMinutes: 540,
-    durationMinutes: 15,
-    title: '09:00 - Avvio Scenario TCCC (T 0)',
-    description: 'Inizio ufficiale dello scenario TCCC (30 min) per Gruppo A (Sq 1-3) sui Pazienti 1, 2, 3. Squadre Shock Room (Gruppo B) in attesa pre-operativa.',
+    durationMinutes: 30,
+    title: 'BLOCCO 1 • Scenario TCCC & WS',
+    description: 'Ingaggio TCCC, triage, Stop Bleed (Pz 1-3) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Avvio Scenario TCCC (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 1, 2, 3', location: 'Settore Scenari Alfa (Postazioni 1-3)', scenarioRef: 'Scenari 6, 1, 11', patientIds: [1, 2, 3], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Attesa in Box 1-3 per arrivo paziente da TCCC', location: 'Shock Room 1, 2, 3', patientIds: [1, 2, 3], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Tecnico Sessione 1', subtitle: 'Svolgimento Workshop', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Sessione 1', subtitle: 'Svolgimento Skills Pratiche', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ingaggio / Stop Bleed (Pz 1-3)', location: 'Ambiente Tattico 1', facultyInvolved: ['FAC-01'], patientIds: [1, 2, 3] },
+      B: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-m-0915',
+    id: 'd2-b1-handover',
     day: 2,
     period: 'mattina',
-    timeRange: '09:15 - 09:30',
-    startMinutes: 555,
-    durationMinutes: 15,
-    title: '09:15 - Continuazione TCCC & Standby Shock Room (T +15)',
-    description: 'Fase centrale TCCC (T 15-30). Squadre Shock Room (Gruppo B) entrano in Standby operativo nei Box 1-3 a T -15 dall\'handover.',
-    groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Esecuzione TCCC (T +15)', subtitle: 'Gestione emorragie e manovre salvavita in corso', location: 'Settore Scenari Alfa', scenarioRef: 'Scenari 6, 1, 11', patientIds: [1, 2, 3], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo (T -15)', subtitle: 'Squadre in Box 1-3 pronte a ricevere Handover', location: 'Shock Room 1, 2, 3', patientIds: [1, 2, 3], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Tecnico Sessione 1 (Cont.)', subtitle: 'Svolgimento Workshop', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Sessione 1 (Cont.)', subtitle: 'Svolgimento Skills Pratiche', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd2-m-0930',
-    day: 2,
-    period: 'mattina',
-    timeRange: '09:30 - 09:45',
+    timeRange: '09:30 - 09:35',
     startMinutes: 570,
-    durationMinutes: 15,
-    title: '09:30 - Handover Concomitante TCCC -> Shock Room (T +30)',
-    description: 'Scadenza TCCC (30 min). Handover SBAR concomitante tra Gruppo A e Gruppo B nei Box Shock Room 1-3. Inizio scenario Shock Room.',
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Fine TCCC & Handover SBAR', subtitle: 'Consegna paziente alle Squadre Shock Room (Gruppo B)', location: 'Shock Room 1, 2, 3 / Area Handover', partnerGroup: 'B', patientIds: [1, 2, 3], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room (T 0)', subtitle: 'Ricezione Handover & Avvio Trattamento ospedaliero (30 min)', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 6, 1, 11 (Intra)', patientIds: [1, 2, 3], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Tecnico Sessione 1 (Completamento)', subtitle: 'Chiusura Workshop', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Sessione 1 (Completamento)', subtitle: 'Chiusura Skills', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna a CHARLIE', location: 'Ambiente Tattico 1 ➔ Box SR', partnerGroup: 'C' },
+      B: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' },
+      C: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da ALPHA', location: 'Box Shock Room 1', partnerGroup: 'A', patientIds: [1, 2, 3] },
+      D: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd2-m-0945',
+    id: 'd2-b1-sr',
     day: 2,
     period: 'mattina',
-    timeRange: '09:45 - 10:00',
-    startMinutes: 585,
-    durationMinutes: 15,
-    title: '09:45 - Debriefing TCCC (Gruppo A) & Shock Room (Gruppo B)',
-    description: 'Gruppo A esegue Debriefing TCCC e pausa. Gruppo B prosegue lo scenario Shock Room fino a T+60.',
+    timeRange: '09:35 - 10:05',
+    startMinutes: 575,
+    durationMinutes: 30,
+    title: 'BLOCCO 1 • Scenario Shock Room & Debrief TCCC',
+    description: 'ABCDE avanzato in Shock Room (Pz 1-3) & Debriefing TCCC Parte 1.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa Ristoro', subtitle: 'Analisi delle performance TCCC (Gruppo A)', location: 'Aula Debriefing Alfa', partnerGroup: 'B', patientIds: [1, 2, 3], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Gestione avanzata in Shock Room 1-3', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 6, 1, 11 (Intra)', patientIds: [1, 2, 3], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Transizione Workshop / Skills', subtitle: 'Rotazione gruppi C e D', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Transizione Skills / Workshop', subtitle: 'Rotazione gruppi C e D', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica e triage', location: 'Aula Debriefing 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 1-3', location: 'Box Shock Room 1', facultyInvolved: ['FAC-07'], patientIds: [1, 2, 3] },
+      D: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-m-1000',
+    id: 'd2-b1-debrief-clinico',
     day: 2,
     period: 'mattina',
-    timeRange: '10:00 - 10:15',
-    startMinutes: 600,
+    timeRange: '10:05 - 10:20',
+    startMinutes: 605,
     durationMinutes: 15,
-    title: '10:00 - Fine Scenario Shock Room (Gruppo B) & Debriefing',
-    description: 'Termine dello scenario Shock Room per Gruppo B (T +60 dal TCCC). Inizio Debriefing Shock Room e pausa.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro & Studio Casi', subtitle: 'Pausa relax Gruppo Alfa', location: 'Area Relax' },
-      B: { activityType: 'debriefing', title: 'Fine Scenario Shock Room & Debriefing', subtitle: 'Analisi trattamenti ospedalieri e debriefing', location: 'Aula Debriefing Bravo', partnerGroup: 'A', patientIds: [1, 2, 3], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_extra', title: 'Pre-allerta T-15 TCCC Turno 2 (Gruppo C)', subtitle: 'Preparazione Pz 4-6', location: 'Settore Scenari Charlie', patientIds: [4, 5, 6], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Pre-allerta Standby Shock Room (Gruppo D)', subtitle: 'Preparazione Box 4-6', location: 'Shock Room 4, 5, 6', patientIds: [4, 5, 6], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' },
+      C: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd2-m-1015',
+    id: 'd2-b1-reset',
     day: 2,
     period: 'mattina',
-    timeRange: '10:15 - 10:30',
-    startMinutes: 615,
+    timeRange: '10:20 - 10:35',
+    startMinutes: 620,
     durationMinutes: 15,
-    title: '10:15 - Transizione & Setup Turno 2 Mattina',
-    description: 'Pausa generale e riallestimento postazioni per il secondo turno della mattinata (Gruppi C & D).',
+    title: 'Reset Tecnico Blocco 1',
+    description: 'Turnaround 15 min: pulizia Box SR, sanificazione e ripristino presidi.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa Ristoro & Debriefing Concluso', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'scenario_extra', title: 'Briefing TCCC Turno 2 (Gruppo C)', subtitle: 'Assegnazione Pz 4, 5, 6 (Scenari 6, 1, 11)', location: 'Settore Scenari Charlie', patientIds: [4, 5, 6], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Standby Shock Room Box 4-6 (Gruppo D)', subtitle: 'Pronti per handover T+30', location: 'Shock Room 4, 5, 6', patientIds: [4, 5, 6], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      B: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      C: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-07/08/09 (Pulizia, fluidi, cute)', location: 'Box Shock Room 1' },
+      D: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd2-m-1030',
+    id: 'd2-pausa-m',
     day: 2,
     period: 'mattina',
-    timeRange: '10:30 - 10:45',
-    startMinutes: 630,
-    durationMinutes: 15,
-    title: '10:30 - Avvio Scenario TCCC Turno 2 (Gruppo C)',
-    description: 'Inizio scenario TCCC per Gruppo C (Sq 7-9) sui Pazienti 4, 5, 6. Gruppo D in standby Shock Room.',
+    timeRange: '10:35 - 11:05',
+    startMinutes: 635,
+    durationMinutes: 30,
+    title: 'Pausa Caffè + Pre-Alert Blocco 2',
+    description: 'Ristoro e transizione alle postazioni.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop Tecnico Mattina Turno 2 (Gruppo A)', subtitle: 'Attività teorico-pratiche', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab Sessione 2 (Gruppo B)', subtitle: 'Procedure avanzate', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_extra', title: 'Avvio Scenario TCCC Turno 2 (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 4, 5, 6', location: 'Settore Scenari Charlie', scenarioRef: 'Scenari 6, 1, 11', patientIds: [4, 5, 6], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Attesa in Box 4-6 per arrivo paziente da TCCC', location: 'Shock Room 4, 5, 6', patientIds: [4, 5, 6], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'pause', title: 'Pausa Caffè ➔ Ingresso WS2', subtitle: 'Ristoro', location: 'Area Ristoro' },
+      B: { activityType: 'pause', title: 'Pausa Caffè ➔ Standby SR', subtitle: 'Check presidi Box 1-3', location: 'Box Shock Room 1' },
+      C: { activityType: 'pause', title: 'Pausa Caffè ➔ Ingresso WS1', subtitle: 'Ristoro', location: 'Area Ristoro' },
+      D: { activityType: 'pause', title: 'Pausa Caffè ➔ Pre-Alert TCCC', subtitle: 'PRE-ALLERTA TCCC', location: 'Ambiente Tattico' }
     }
   },
   {
-    id: 'd2-m-1045',
+    id: 'd2-b2-tccc',
     day: 2,
     period: 'mattina',
-    timeRange: '10:45 - 11:00',
-    startMinutes: 645,
-    durationMinutes: 15,
-    title: '10:45 - Continuazione TCCC Turno 2 & Standby Shock Room',
-    description: 'Fase centrale TCCC Turno 2. Gruppo D in Standby operativo nei Box Shock Room 4-6.',
+    timeRange: '11:05 - 11:35',
+    startMinutes: 665,
+    durationMinutes: 30,
+    title: 'BLOCCO 2 • Scenario TCCC & WS',
+    description: 'Emostasi da scoppio, triage (Pz 4-6) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop Tecnico (Cont.)', subtitle: 'Attività', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Procedure', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Turno 2 (T +15)', subtitle: 'Gestione scenari in corso', location: 'Settore Scenari Charlie', scenarioRef: 'Scenari 6, 1, 11', patientIds: [4, 5, 6], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo (T -15)', subtitle: 'Squadre in Box 4-6 pronte per Handover', location: 'Shock Room 4, 5, 6', patientIds: [4, 5, 6], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-10'] },
+      B: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ingaggio / Triage (Pz 4-6)', location: 'Ambiente Tattico 2', facultyInvolved: ['FAC-10'], patientIds: [4, 5, 6] }
     }
   },
   {
-    id: 'd2-m-1100',
+    id: 'd2-b2-handover',
     day: 2,
     period: 'mattina',
-    timeRange: '11:00 - 11:15',
-    startMinutes: 660,
-    durationMinutes: 15,
-    title: '11:00 - Handover Concomitante TCCC -> Shock Room Turno 2',
-    description: 'Scadenza TCCC Turno 2 (30 min). Handover SBAR tra Gruppo C e Gruppo D nei Box 4-6. Inizio scenario Shock Room.',
+    timeRange: '11:35 - 11:40',
+    startMinutes: 695,
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop Tecnico (Completamento)', subtitle: 'Chiusura', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab (Completamento)', subtitle: 'Chiusura', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'debriefing', title: 'Fine TCCC Turno 2 & Handover SBAR', subtitle: 'Consegna paziente alle Squadre Shock Room (Gruppo D)', location: 'Shock Room 4, 5, 6', partnerGroup: 'D', patientIds: [4, 5, 6], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Turno 2 (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 6, 1, 11 (Intra)', patientIds: [4, 5, 6], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' },
+      B: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da DELTA', location: 'Box Shock Room 1', partnerGroup: 'D', patientIds: [4, 5, 6] },
+      C: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' },
+      D: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna a BRAVO', location: 'Ambiente Tattico 2 ➔ Box SR', partnerGroup: 'B' }
     }
   },
   {
-    id: 'd2-m-1115',
+    id: 'd2-b2-sr',
     day: 2,
     period: 'mattina',
-    timeRange: '11:15 - 11:30',
-    startMinutes: 675,
-    durationMinutes: 15,
-    title: '11:15 - Debriefing TCCC (Gruppo C) & Shock Room (Gruppo D)',
-    description: 'Gruppo C esegue Debriefing TCCC e pausa. Gruppo D prosegue lo scenario Shock Room fino a T+60.',
+    timeRange: '11:40 - 12:10',
+    startMinutes: 700,
+    durationMinutes: 30,
+    title: 'BLOCCO 2 • Scenario Shock Room & Debrief TCCC',
+    description: 'Shock emorragico, MTP (Pz 4-6) & Debriefing TCCC Parte 1.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa (Gruppo C)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Charlie', partnerGroup: 'D', patientIds: [4, 5, 6], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento ospedaliero avanzato in Shock Room', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 6, 1, 11 (Intra)', patientIds: [4, 5, 6], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' },
+      B: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 4-6', location: 'Box Shock Room 1', facultyInvolved: ['FAC-04'], patientIds: [4, 5, 6] },
+      C: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' },
+      D: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 2', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-m-1130',
+    id: 'd2-b2-debrief-clinico',
     day: 2,
     period: 'mattina',
-    timeRange: '11:30 - 11:45',
-    startMinutes: 690,
+    timeRange: '12:10 - 12:25',
+    startMinutes: 730,
     durationMinutes: 15,
-    title: '11:30 - Continuazione Shock Room Turno 2',
-    description: 'Prosecuzione trattamenti in Shock Room Box 4-6 per Gruppo D.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 2.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'pause', title: 'Pausa Ristoro (Gruppo C)', subtitle: 'Relax', location: 'Area Relax' },
-      D: { activityType: 'scenario_intra', title: 'Shock Room (T +30)', subtitle: 'Stabilizzazione finale e preparazione debriefing', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 6, 1, 11 (Intra)', patientIds: [4, 5, 6], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' },
+      B: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' },
+      D: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 2', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-m-1145',
+    id: 'd2-b2-reset',
     day: 2,
     period: 'mattina',
-    timeRange: '11:45 - 12:00',
-    startMinutes: 705,
+    timeRange: '12:25 - 12:40',
+    startMinutes: 745,
     durationMinutes: 15,
-    title: '11:45 - Fine Scenario Shock Room Turno 2 & Debriefing',
-    description: 'Termine scenario Shock Room Gruppo D. Inizio Debriefing Shock Room.',
+    title: 'Reset Tecnico Blocco 2',
+    description: 'Turnaround 15 min: pulizia Box SR e ripristino.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Preparazione Pranzo', subtitle: 'Transizione', location: 'Mensa' },
-      B: { activityType: 'pause', title: 'Preparazione Pranzo', subtitle: 'Transizione', location: 'Mensa' },
-      C: { activityType: 'pause', title: 'Preparazione Pranzo', subtitle: 'Transizione', location: 'Mensa' },
-      D: { activityType: 'debriefing', title: 'Debriefing Shock Room Turno 2 (Gruppo D)', subtitle: 'Analisi finale sessione mattutina', location: 'Aula Debriefing Delta', partnerGroup: 'C', patientIds: [4, 5, 6], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      B: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-04/05/06 (Pulizia, fluidi, cute)', location: 'Box Shock Room 1' },
+      C: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      D: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd2-m-1200',
+    id: 'd2-pranzo',
     day: 2,
     period: 'mattina',
-    timeRange: '12:00 - 12:15',
-    startMinutes: 720,
-    durationMinutes: 15,
-    title: '12:00 - Pausa Pranzo Day 2 (Inizio)',
-    description: 'Pausa pranzo per tutti i partecipanti e faculty.',
+    timeRange: '12:40 - 13:55',
+    startMinutes: 760,
+    durationMinutes: 75,
+    title: 'PAUSA PRANZO PROTETTA',
+    description: 'Pausa protetta 75 min. Nessun allertamento.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' },
-      D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' }
+      A: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' },
+      B: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' },
+      C: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' },
+      D: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' }
     }
   },
   {
-    id: 'd2-m-1215',
-    day: 2,
-    period: 'mattina',
-    timeRange: '12:15 - 12:30',
-    startMinutes: 735,
-    durationMinutes: 15,
-    title: '12:15 - Pausa Pranzo Day 2 (Continuazione)',
-    description: 'Pausa pranzo in corso.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' }
-    }
-  },
-  {
-    id: 'd2-m-1230',
-    day: 2,
-    period: 'mattina',
-    timeRange: '12:30 - 12:45',
-    startMinutes: 750,
-    durationMinutes: 15,
-    title: '12:30 - Pausa Pranzo Day 2 (Continuazione)',
-    description: 'Pausa pranzo in corso.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' }
-    }
-  },
-  {
-    id: 'd2-m-1245',
-    day: 2,
-    period: 'mattina',
-    timeRange: '12:45 - 13:00',
-    startMinutes: 765,
-    durationMinutes: 15,
-    title: '12:45 - Chiusura Mattina & Briefing Pomeridiano',
-    description: 'Rientro in aula e briefing preliminare per le attività pomeridiane.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Rientro in Area Operativa', subtitle: 'Preparazione Pomeriggio', location: 'Settore Scenari' },
-      B: { activityType: 'pause', title: 'Rientro in Area Operativa', subtitle: 'Preparazione Pomeriggio', location: 'Shock Room' },
-      C: { activityType: 'pause', title: 'Rientro in Area Operativa', subtitle: 'Preparazione Pomeriggio', location: 'Area Tattica' },
-      D: { activityType: 'pause', title: 'Rientro in Area Operativa', subtitle: 'Preparazione Pomeriggio', location: 'Skills Lab' }
-    }
-  },
-  {
-    id: 'd2-p-1300',
+    id: 'd2-prealert-3',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:00 - 13:15',
-    startMinutes: 780,
+    timeRange: '13:55 - 14:10',
+    startMinutes: 835,
     durationMinutes: 15,
-    title: '13:00 - Gate Opening Pomeridiano & Briefing',
-    description: 'Riapertura gate pomeridiano e briefing operativo per le squadre del pomeriggio (Gruppo B TCCC, Gruppo A Shock Room).',
+    title: 'Pre-Alert T-15 Blocco 3',
+    description: 'Raduno e PRE-ALLERTA TCCC per Blocco 3.',
     groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Briefing Shock Room Pomeridiano (Gruppo A)', subtitle: 'Preparazione Box per Handover Pz 7-9', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Briefing TCCC Pomeridiano (Gruppo B)', subtitle: 'Assegnazione Pz 7, 8, 9 (Scenari 16, 00, 3)', location: 'Settore Scenari Bravo', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Briefing Workshop Pomeridiano (Gruppo C)', subtitle: 'Setup Attività Pomeridiane', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Briefing Skills Pomeridiano (Gruppo D)', subtitle: 'Setup Skills Lab', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Raduno Aula WS1', subtitle: 'Briefing pomeridiano', location: 'Aula WS1' },
+      B: { activityType: 'workshop', title: 'PRE-ALLERTA TCCC', subtitle: 'Ambienti Tattici', location: 'Ambiente Tattico 2' },
+      C: { activityType: 'workshop', title: 'Raduno Aula WS2', subtitle: 'Briefing pomeridiano', location: 'Aula WS2' },
+      D: { activityType: 'workshop', title: 'Standby SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room 1' }
     }
   },
   {
-    id: 'd2-p-1315',
+    id: 'd2-b3-tccc',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:15 - 13:30',
-    startMinutes: 795,
-    durationMinutes: 15,
-    title: '13:15 - Pre-allerta T-15 Pomeridiano',
-    description: 'Pre-allerta T-15 per TCCC Pomeridiano (Gruppo B, Pz 7-9) e pre-standby Shock Room (Gruppo A).',
+    timeRange: '14:10 - 14:40',
+    startMinutes: 850,
+    durationMinutes: 30,
+    title: 'BLOCCO 3 • Scenario TCCC & WS',
+    description: 'Ferite penetranti complesse (Pz 7-9) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Attesa in Box 1-3 per arrivo pazienti pomeridiani', location: 'Shock Room 1, 2, 3', patientIds: [7, 8, 9], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC Pomeridiano (T -15)', subtitle: 'Vestizione & Briefing Missione Pz 7-9', location: 'Settore Scenari Bravo', patientIds: [7, 8, 9], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Pomeridiano Sessione 1', subtitle: 'Svolgimento', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Pomeridiano Sessione 1', subtitle: 'Svolgimento', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ferite complesse (Pz 7-9)', location: 'Ambiente Tattico 2', facultyInvolved: ['FAC-04'], patientIds: [7, 8, 9] },
+      C: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-p-1330',
+    id: 'd2-b3-handover',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:30 - 13:45',
-    startMinutes: 810,
-    durationMinutes: 15,
-    title: '13:30 - Avvio Scenario TCCC Pomeridiano (T 0)',
-    description: 'Inizio scenario TCCC pomeridiano per Gruppo B (Sq 4-6) sui Pazienti 7, 8, 9. Gruppo A in standby Shock Room.',
+    timeRange: '14:40 - 14:45',
+    startMinutes: 880,
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo', subtitle: 'Box 1-3 pronti per Handover', location: 'Shock Room 1, 2, 3', patientIds: [7, 8, 9], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Avvio Scenario TCCC Pomeridiano (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 7, 8, 9', location: 'Settore Scenari Bravo', scenarioRef: 'Scenari 16, 00, 3', patientIds: [7, 8, 9], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Pomeridiano (Cont.)', subtitle: 'Svolgimento', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Pomeridiano (Cont.)', subtitle: 'Svolgimento', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' },
+      B: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna a DELTA', location: 'Ambiente Tattico 2 ➔ Box SR', partnerGroup: 'D' },
+      C: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' },
+      D: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da BRAVO', location: 'Box Shock Room 1', partnerGroup: 'B', patientIds: [7, 8, 9] }
     }
   },
   {
-    id: 'd2-p-1345',
+    id: 'd2-b3-sr',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '13:45 - 14:00',
-    startMinutes: 825,
-    durationMinutes: 15,
-    title: '13:45 - Continuazione TCCC Pomeridiano (T +15)',
-    description: 'Fase centrale TCCC pomeridiano (T 15-30). Gruppo A in standby operativo nei Box 1-3.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room Standby (T -15)', subtitle: 'Pronti a ricevere handover', location: 'Shock Room 1, 2, 3', patientIds: [7, 8, 9], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Pomeridiano (T +15)', subtitle: 'Gestione emorragie e manovre in corso', location: 'Settore Scenari Bravo', scenarioRef: 'Scenari 16, 00, 3', patientIds: [7, 8, 9], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Pomeridiano (Completamento)', subtitle: 'Chiusura', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Pomeridiano (Completamento)', subtitle: 'Chiusura', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd2-p-1400',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '14:00 - 14:15',
-    startMinutes: 840,
-    durationMinutes: 15,
-    title: '14:00 - Handover Concomitante TCCC -> Shock Room Pomeridiano',
-    description: 'Scadenza TCCC pomeridiano (30 min). Handover SBAR tra Gruppo B e Gruppo A nei Box 1-3. Inizio scenario Shock Room.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Pomeridiano (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 16, 00, 3 (Intra)', patientIds: [7, 8, 9], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'debriefing', title: 'Fine TCCC Pomeridiano & Handover SBAR', subtitle: 'Consegna paziente alle Squadre Shock Room (Gruppo A)', location: 'Shock Room 1, 2, 3', partnerGroup: 'A', patientIds: [7, 8, 9], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'pause', title: 'Transizione Workshop / Skills', subtitle: 'Rotazione', location: 'Area Tattica' },
-      D: { activityType: 'pause', title: 'Transizione Skills / Workshop', subtitle: 'Rotazione', location: 'Skills Lab' }
-    }
-  },
-  {
-    id: 'd2-p-1415',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '14:15 - 14:30',
-    startMinutes: 855,
-    durationMinutes: 15,
-    title: '14:15 - Debriefing TCCC (Gruppo B) & Shock Room (Gruppo A)',
-    description: 'Gruppo B esegue Debriefing TCCC e pausa. Gruppo A prosegue lo scenario Shock Room fino a T+60.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento ospedaliero avanzato in Shock Room 1-3', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 16, 00, 3 (Intra)', patientIds: [7, 8, 9], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'debriefing', title: 'Debriefing TCCC Pomeridiano & Pausa (Gruppo B)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Bravo', partnerGroup: 'A', patientIds: [7, 8, 9], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'skills', title: 'Skills Lab Turno Pomeridiano 2 (Gruppo C)', subtitle: 'Procedure', location: 'Skills Lab', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'workshop', title: 'Workshop Turno Pomeridiano 2 (Gruppo D)', subtitle: 'Teoria applicata', location: 'Area Tattica', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd2-p-1430',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '14:30 - 14:45',
-    startMinutes: 870,
-    durationMinutes: 15,
-    title: '14:30 - Continuazione Shock Room & Pre-allerta Gruppo D',
-    description: 'Prosecuzione Shock Room per Gruppo A (T +30). Pre-allerta T-15 per Gruppo D (Sq 10-12, Pz 10-12) nel settore Delta.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room (T +30)', subtitle: 'Stabilizzazione finale', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 16, 00, 3 (Intra)', patientIds: [7, 8, 9], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Procedure', location: 'Skills Lab', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC Turno 2 Pom (Gruppo D)', subtitle: 'Preparazione Pz 10, 11, 12', location: 'Settore Scenari Delta', patientIds: [10, 11, 12], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd2-p-1445',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '14:45 - 15:00',
+    timeRange: '14:45 - 15:15',
     startMinutes: 885,
-    durationMinutes: 15,
-    title: '14:45 - Fine Shock Room (Gruppo A) & Avvio TCCC Turno 2 Pom',
-    description: 'Termine Shock Room Gruppo A -> Debriefing. Avvio TCCC per Gruppo D (Pz 10-12). Gruppo C in standby Shock Room Box 4-6.',
+    durationMinutes: 30,
+    title: 'BLOCCO 3 • Scenario Shock Room & Debrief TCCC',
+    description: 'Drenaggio toracico, PNX (Pz 7-9) & Debriefing TCCC Parte 1.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Fine Scenario Shock Room & Debriefing (Gruppo A)', subtitle: 'Analisi trattamenti', location: 'Aula Debriefing Alfa', partnerGroup: 'B', patientIds: [7, 8, 9], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Box 4-6 pronti per Gruppo D', location: 'Shock Room 4, 5, 6', patientIds: [10, 11, 12], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_extra', title: 'Avvio Scenario TCCC Turno 2 Pom (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 10, 11, 12', location: 'Settore Scenari Delta', scenarioRef: 'Scenari 16, 00, 3', patientIds: [10, 11, 12], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' },
+      B: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 2', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' },
+      D: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 7-9', location: 'Box Shock Room 1', facultyInvolved: ['FAC-10'], patientIds: [7, 8, 9] }
     }
   },
   {
-    id: 'd2-p-1500',
-    day: 2,
-    period: 'pomeriggio',
-    timeRange: '15:00 - 15:15',
-    startMinutes: 900,
-    durationMinutes: 15,
-    title: '15:00 - Continuazione TCCC Turno 2 Pom & Standby Shock Room',
-    description: 'Fase centrale TCCC Turno 2 Pomeriggio. Gruppo C in Standby operativo nei Box 4-6.',
-    groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop Pomeridiano Turno 2 (Gruppo A)', subtitle: 'Approfondimenti', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab Pomeridiano Turno 2 (Gruppo B)', subtitle: 'Training', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo (T -15)', subtitle: 'Pronti per Handover', location: 'Shock Room 4, 5, 6', patientIds: [10, 11, 12], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Turno 2 Pom (T +15)', subtitle: 'Gestione scenari in corso', location: 'Settore Scenari Delta', scenarioRef: 'Scenari 16, 00, 3', patientIds: [10, 11, 12], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd2-p-1515',
+    id: 'd2-b3-debrief-clinico',
     day: 2,
     period: 'pomeriggio',
     timeRange: '15:15 - 15:30',
     startMinutes: 915,
     durationMinutes: 15,
-    title: '15:15 - Handover Concomitante TCCC -> Shock Room Turno 2 Pom',
-    description: 'Scadenza TCCC Turno 2 Pom (30 min). Handover SBAR tra Gruppo D e Gruppo C nei Box 4-6. Inizio scenario Shock Room.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 3.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop (Cont.)', subtitle: 'Attività', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Attività', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Turno 2 Pom (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 16, 00, 3 (Intra)', patientIds: [10, 11, 12], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'debriefing', title: 'Fine TCCC Turno 2 Pom & Handover SBAR', subtitle: 'Consegna paziente alle Squadre Shock Room (Gruppo C)', location: 'Shock Room 4, 5, 6', partnerGroup: 'C', patientIds: [10, 11, 12], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' },
+      B: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 2', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' },
+      D: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-p-1530',
+    id: 'd2-b3-reset',
     day: 2,
     period: 'pomeriggio',
     timeRange: '15:30 - 15:45',
     startMinutes: 930,
     durationMinutes: 15,
-    title: '15:30 - Debriefing TCCC (Gruppo D) & Shock Room (Gruppo C)',
-    description: 'Gruppo D esegue Debriefing TCCC e pausa. Gruppo C prosegue lo scenario Shock Room fino a T+60.',
+    title: 'Reset Tecnico Blocco 3',
+    description: 'Turnaround 15 min: pulizia Box SR e ripristino.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento ospedaliero in Shock Room 4-6', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 16, 00, 3 (Intra)', patientIds: [10, 11, 12], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa (Gruppo D)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Delta', partnerGroup: 'C', patientIds: [10, 11, 12], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      B: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      C: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      D: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-10/11/12 (Pulizia, fluidi, cute)', location: 'Box Shock Room 1' }
     }
   },
   {
-    id: 'd2-p-1545',
+    id: 'd2-pausa-p',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '15:45 - 16:00',
+    timeRange: '15:45 - 16:10',
     startMinutes: 945,
-    durationMinutes: 15,
-    title: '15:45 - Continuazione Shock Room & Conclusione Pomeriggio',
-    description: 'Ultimi 15 minuti di trattamento in Shock Room per Gruppo C (T +30 -> T +45).',
+    durationMinutes: 25,
+    title: 'Pausa Pomeridiana + Pre-Alert Blocco 4',
+    description: 'Ristoro e transizione (Pre-Alert T-15 alle 15:55).',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Relax', subtitle: 'Area Comune', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Relax', subtitle: 'Area Comune', location: 'Area Relax' },
-      C: { activityType: 'scenario_intra', title: 'Shock Room (T +30)', subtitle: 'Stabilizzazione finale', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 16, 00, 3 (Intra)', patientIds: [10, 11, 12], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'pause', title: 'Relax', subtitle: 'Area Comune', location: 'Area Relax' }
+      A: { activityType: 'pause', title: 'Pausa ➔ Standby SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room 1' },
+      B: { activityType: 'pause', title: 'Pausa ➔ Ingresso WS2', subtitle: 'Ristoro', location: 'Area Ristoro' },
+      C: { activityType: 'pause', title: 'Pausa ➔ Pre-Alert TCCC', subtitle: 'PRE-ALLERTA TCCC', location: 'Ambiente Tattico' },
+      D: { activityType: 'pause', title: 'Pausa ➔ Ingresso WS1', subtitle: 'Ristoro', location: 'Area Ristoro' }
     }
   },
   {
-    id: 'd2-p-1600',
+    id: 'd2-b4-tccc',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '16:00 - 16:15',
-    startMinutes: 960,
-    durationMinutes: 15,
-    title: '16:00 - Fine Shock Room (Gruppo C) & Debriefing Finale',
-    description: 'Termine scenario Shock Room Gruppo C -> Debriefing e chiusura attività Day 2.',
+    timeRange: '16:10 - 16:40',
+    startMinutes: 970,
+    durationMinutes: 30,
+    title: 'BLOCCO 4 • Scenario TCCC & WS',
+    description: 'Politrauma maggiore (Pz 10-12) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Preparazione Chiusura', subtitle: 'Debriefing Plenario', location: 'Aula Magna' },
-      B: { activityType: 'pause', title: 'Preparazione Chiusura', subtitle: 'Debriefing Plenario', location: 'Aula Magna' },
-      C: { activityType: 'debriefing', title: 'Fine Scenario Shock Room & Debriefing (Gruppo C)', subtitle: 'Analisi trattamenti e chiusura giornata', location: 'Aula Debriefing Charlie', partnerGroup: 'D', patientIds: [10, 11, 12], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'pause', title: 'Preparazione Chiusura', subtitle: 'Debriefing Plenario', location: 'Aula Magna' }
+      A: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Politrauma (Pz 10-12)', location: 'Ambiente Tattico 3', facultyInvolved: ['FAC-07'], patientIds: [10, 11, 12] },
+      D: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd2-p-1615',
+    id: 'd2-b4-handover',
     day: 2,
     period: 'pomeriggio',
-    timeRange: '16:15 - 16:30',
-    startMinutes: 975,
-    durationMinutes: 15,
-    title: '16:15 - Chiusura Giornata 2 & Briefing Day 3',
-    description: 'Plenaria di chiusura Day 2, comunicazioni della Direzione e indicazioni per il Day 3.',
+    timeRange: '16:40 - 16:45',
+    startMinutes: 1000,
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Plenaria Chiusura Day 2', subtitle: 'Briefing Serale', location: 'Aula Magna' },
-      B: { activityType: 'pause', title: 'Plenaria Chiusura Day 2', subtitle: 'Briefing Serale', location: 'Aula Magna' },
-      C: { activityType: 'pause', title: 'Plenaria Chiusura Day 2', subtitle: 'Briefing Serale', location: 'Aula Magna' },
-      D: { activityType: 'pause', title: 'Plenaria Chiusura Day 2', subtitle: 'Briefing Serale', location: 'Aula Magna' }
+      A: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da CHARLIE', location: 'Box Shock Room 1', partnerGroup: 'C', patientIds: [10, 11, 12] },
+      B: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' },
+      C: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna ad ALPHA', location: 'Ambiente Tattico 3 ➔ Box SR', partnerGroup: 'A' },
+      D: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' }
+    }
+  },
+  {
+    id: 'd2-b4-sr',
+    day: 2,
+    period: 'pomeriggio',
+    timeRange: '16:45 - 17:15',
+    startMinutes: 1005,
+    durationMinutes: 30,
+    title: 'BLOCCO 4 • Scenario Shock Room & Debrief TCCC',
+    description: 'Arresto traumatico, MTP (Pz 10-12) & Debriefing TCCC Parte 1.',
+    groupActivities: {
+      A: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 10-12', location: 'Box Shock Room 1', facultyInvolved: ['FAC-01'], patientIds: [10, 11, 12] },
+      B: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' },
+      C: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 3', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' }
+    }
+  },
+  {
+    id: 'd2-b4-debrief-clinico',
+    day: 2,
+    period: 'pomeriggio',
+    timeRange: '17:15 - 17:30',
+    startMinutes: 1035,
+    durationMinutes: 15,
+    title: 'Debriefing Clinico SR & TCCC Parte 2',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 4.',
+    groupActivities: {
+      A: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' },
+      C: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 3', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' }
+    }
+  },
+  {
+    id: 'd2-b4-reset',
+    day: 2,
+    period: 'pomeriggio',
+    timeRange: '17:30 - 17:45',
+    startMinutes: 1050,
+    durationMinutes: 15,
+    title: 'Reset Finale Blocco 4',
+    description: 'Turnaround finale: sanificazione e chiusura postazioni.',
+    groupActivities: {
+      A: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-01/02/03 (Sanificazione finale)', location: 'Box Shock Room 1' },
+      B: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      C: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      D: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' }
+    }
+  },
+  {
+    id: 'd2-chiusura',
+    day: 2,
+    period: 'pomeriggio',
+    timeRange: '17:45 - 18:00',
+    startMinutes: 1065,
+    durationMinutes: 15,
+    title: 'Chiusura Plenaria Day 2',
+    description: 'Debriefing collegiale & feedback generale della giornata.',
+    groupActivities: {
+      A: { activityType: 'debriefing', title: 'Debriefing Collegiale', subtitle: 'Restituzione generale', location: 'Aula Plenaria' },
+      B: { activityType: 'debriefing', title: 'Debriefing Collegiale', subtitle: 'Restituzione generale', location: 'Aula Plenaria' },
+      C: { activityType: 'debriefing', title: 'Debriefing Collegiale', subtitle: 'Restituzione generale', location: 'Aula Plenaria' },
+      D: { activityType: 'debriefing', title: 'Debriefing Collegiale', subtitle: 'Restituzione generale', location: 'Aula Plenaria' }
     }
   },
 
-  // ================= DAY 3 MATTINA, POMERIGGIO & NOTTURNO (15-min intervals) =================
+  // ==================== DAY 3 ====================
   {
-    id: 'd3-m-0800',
+    id: 'd3-setup-1',
     day: 3,
     period: 'mattina',
-    timeRange: '08:00 - 08:15',
+    timeRange: '07:30 - 08:00',
+    startMinutes: 450,
+    durationMinutes: 30,
+    title: 'Setup Staff (Fase 1 & 2)',
+    description: 'Briefing Staff, check radio e calibrazione manichini Day 3.',
+    groupActivities: {
+      A: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' },
+      B: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' },
+      C: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' },
+      D: { activityType: 'workshop', title: 'Briefing Staff & Check Radio', subtitle: 'CH1, CH2, CH3', location: 'Regia & Plenaria' }
+    }
+  },
+  {
+    id: 'd3-setup-2',
+    day: 3,
+    period: 'mattina',
+    timeRange: '08:00 - 08:30',
     startMinutes: 480,
-    durationMinutes: 15,
-    title: '08:00 - Gate Opening Faculty & Tecnici (Day 3)',
-    description: 'Apertura anticipata gate Day 3 per Faculty e Tecnici (setup postazioni, briefing tecnico).',
+    durationMinutes: 30,
+    title: 'Setup Staff (Fase 3 & 4)',
+    description: 'Allineamento tutor/regia e verifica finale postazioni Day 3.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Gate Opening Faculty Alfa Day 3', subtitle: 'Setup Settore Scenari Alfa', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Gate Opening Faculty Bravo Day 3', subtitle: 'Setup Shock Room 1-3', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Gate Opening Faculty Charlie Day 3', subtitle: 'Setup Area Tattica', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Gate Opening Faculty Delta Day 3', subtitle: 'Setup Skills Lab', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' },
+      B: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' },
+      C: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' },
+      D: { activityType: 'workshop', title: 'Verifica Finale Postazioni', subtitle: 'Validazione CH1/CH2', location: 'Ambienti Tattici & SR' }
     }
   },
   {
-    id: 'd3-m-0815',
-    day: 3,
-    period: 'mattina',
-    timeRange: '08:15 - 08:30',
-    startMinutes: 495,
-    durationMinutes: 15,
-    title: '08:15 - Briefing Operativo Faculty & Tecnici (Day 3)',
-    description: 'Briefing di coordinamento per la terza giornata.',
-    groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Briefing Faculty Alfa Day 3', subtitle: 'Verifica Pz 13-15 & Moulage', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Briefing Faculty Bravo Day 3', subtitle: 'Checklist Shock Room', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Briefing Faculty Charlie Day 3', subtitle: 'Materiali Workshop', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Briefing Faculty Delta Day 3', subtitle: 'Postazioni Skills', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd3-m-0830',
+    id: 'd3-welcome',
     day: 3,
     period: 'mattina',
     timeRange: '08:30 - 08:45',
     startMinutes: 510,
     durationMinutes: 15,
-    title: '08:30 - Gate Opening Discenti (Day 3)',
-    description: 'Apertura gate discenti Day 3 e accoglienza nelle aree operative.',
+    title: 'Accoglienza Allievi & Briefing Day 3',
+    description: 'Raduno discenti e ricognizione rotazione speculare.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Arrivo Discenti Gruppo Alfa (Day 3)', subtitle: 'Accoglienza & Assegnazione', location: 'Settore Scenari Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Arrivo Discenti Gruppo Bravo (Day 3)', subtitle: 'Accoglienza & Assegnazione', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Arrivo Discenti Gruppo Charlie (Day 3)', subtitle: 'Accoglienza & Assegnazione', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Arrivo Discenti Gruppo Delta (Day 3)', subtitle: 'Accoglienza & Assegnazione', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Raduno Aula WS2', subtitle: 'Briefing Day 3', location: 'Aula WS2' },
+      B: { activityType: 'workshop', title: 'Ricognizione Tattica', subtitle: 'Check postazioni', location: 'Ambiente Tattico' },
+      C: { activityType: 'workshop', title: 'Raduno Aula WS1', subtitle: 'Briefing Day 3', location: 'Aula WS1' },
+      D: { activityType: 'workshop', title: 'Ricognizione SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room' }
     }
   },
   {
-    id: 'd3-m-0845',
+    id: 'd3-prealert-1',
     day: 3,
     period: 'mattina',
     timeRange: '08:45 - 09:00',
     startMinutes: 525,
     durationMinutes: 15,
-    title: '08:45 - Pre-allerta T-15 Day 3',
-    description: 'Pre-allerta T-15 per TCCC (Gruppo A, Pz 13-15) e pre-standby Shock Room (Gruppo B).',
+    title: 'Pre-Alert T-15 Blocco 1 (Day 3)',
+    description: 'Allestimento e PRE-ALLERTA TCCC per rotazione speculare Day 3.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC Day 3 (T -15)', subtitle: 'Briefing Pz 13, 14, 15', location: 'Settore Scenari Alfa', patientIds: [13, 14, 15], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Pre-allerta Shock Room Day 3', subtitle: 'Preparazione Box 1-3', location: 'Shock Room 1, 2, 3', patientIds: [13, 14, 15], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Briefing Workshop Day 3', subtitle: 'Introduzione', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Briefing Skills Day 3', subtitle: 'Introduzione', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Allestimento WS2', subtitle: 'Preparazione materiale', location: 'Aula WS2' },
+      B: { activityType: 'workshop', title: 'PRE-ALLERTA TCCC', subtitle: 'Ambienti Tattici', location: 'Ambiente Tattico' },
+      C: { activityType: 'workshop', title: 'Allestimento WS1', subtitle: 'Preparazione materiale', location: 'Aula WS1' },
+      D: { activityType: 'workshop', title: 'Standby SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room 1' }
     }
   },
   {
-    id: 'd3-m-0900',
+    id: 'd3-b1-tccc',
     day: 3,
     period: 'mattina',
-    timeRange: '09:00 - 09:15',
+    timeRange: '09:00 - 09:30',
     startMinutes: 540,
-    durationMinutes: 15,
-    title: '09:00 - Avvio Scenario TCCC Day 3 (T 0)',
-    description: 'Inizio scenario TCCC per Gruppo A sui Pazienti 13, 14, 15. Gruppo B in standby Shock Room.',
+    durationMinutes: 30,
+    title: 'BLOCCO 1 • Scenario TCCC & WS (Day 3)',
+    description: 'Tamponamento cardiaco, triage (Pz 13-15) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Avvio TCCC Day 3 (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 13, 14, 15', location: 'Settore Scenari Alfa', scenarioRef: 'Scenari 18, 5, 15', patientIds: [13, 14, 15], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Attesa in Box 1-3', location: 'Shock Room 1, 2, 3', patientIds: [13, 14, 15], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Sessione 1 (Day 3)', subtitle: 'Svolgimento', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Sessione 1 (Day 3)', subtitle: 'Svolgimento', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ingaggio / Triage (Pz 13-15)', location: 'Ambiente Tattico 1', facultyInvolved: ['FAC-04'], patientIds: [13, 14, 15] },
+      C: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd3-m-0915',
+    id: 'd3-b1-handover',
     day: 3,
     period: 'mattina',
-    timeRange: '09:15 - 09:30',
-    startMinutes: 555,
-    durationMinutes: 15,
-    title: '09:15 - Continuazione TCCC Day 3 & Standby Shock Room',
-    description: 'Fase centrale TCCC Day 3. Gruppo B in standby operativo nei Box 1-3.',
-    groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Day 3 (T +15)', subtitle: 'Gestione in corso', location: 'Settore Scenari Alfa', scenarioRef: 'Scenari 18, 5, 15', patientIds: [13, 14, 15], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo (T -15)', subtitle: 'Pronti per handover', location: 'Shock Room 1, 2, 3', patientIds: [13, 14, 15], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop (Cont.)', subtitle: 'Attività', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Attività', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd3-m-0930',
-    day: 3,
-    period: 'mattina',
-    timeRange: '09:30 - 09:45',
+    timeRange: '09:30 - 09:35',
     startMinutes: 570,
-    durationMinutes: 15,
-    title: '09:30 - Handover Concomitante TCCC -> Shock Room Day 3',
-    description: 'Scadenza TCCC Day 3 (30 min). Handover SBAR tra Gruppo A e Gruppo B nei Box 1-3. Inizio scenario Shock Room.',
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Fine TCCC Day 3 & Handover SBAR', subtitle: 'Consegna paziente a Gruppo B', location: 'Shock Room 1, 2, 3', partnerGroup: 'B', patientIds: [13, 14, 15], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Day 3 (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 18, 5, 15 (Intra)', patientIds: [13, 14, 15], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop (Completamento)', subtitle: 'Chiusura', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab (Completamento)', subtitle: 'Chiusura', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' },
+      B: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna a DELTA', location: 'Ambiente Tattico 1 ➔ Box SR', partnerGroup: 'D' },
+      C: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' },
+      D: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da BRAVO', location: 'Box Shock Room 1', partnerGroup: 'B', patientIds: [13, 14, 15] }
     }
   },
   {
-    id: 'd3-m-0945',
+    id: 'd3-b1-sr',
     day: 3,
     period: 'mattina',
-    timeRange: '09:45 - 10:00',
-    startMinutes: 585,
-    durationMinutes: 15,
-    title: '09:45 - Debriefing TCCC (Gruppo A) & Shock Room (Gruppo B)',
-    description: 'Gruppo A esegue Debriefing TCCC e pausa. Gruppo B prosegue lo scenario Shock Room fino a T+60.',
+    timeRange: '09:35 - 10:05',
+    startMinutes: 575,
+    durationMinutes: 30,
+    title: 'BLOCCO 1 • Scenario Shock Room & Debrief TCCC (Day 3)',
+    description: 'REBOA Z3, pelvi (Pz 13-15) & Debriefing TCCC Parte 1.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa (Gruppo A)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Alfa', partnerGroup: 'B', patientIds: [13, 14, 15], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento ospedaliero in Shock Room', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 18, 5, 15 (Intra)', patientIds: [13, 14, 15], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Transizione Gruppi C & D', subtitle: 'Rotazione', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Transizione Gruppi C & D', subtitle: 'Rotazione', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' },
+      B: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 2', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' },
+      D: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 13-15', location: 'Box Shock Room 1', facultyInvolved: ['FAC-10'], patientIds: [13, 14, 15] }
     }
   },
   {
-    id: 'd3-m-1000',
+    id: 'd3-b1-debrief-clinico',
     day: 3,
     period: 'mattina',
-    timeRange: '10:00 - 10:15',
-    startMinutes: 600,
+    timeRange: '10:05 - 10:20',
+    startMinutes: 605,
     durationMinutes: 15,
-    title: '10:00 - Fine Scenario Shock Room (Gruppo B) & Debriefing',
-    description: 'Termine scenario Shock Room Gruppo B -> Debriefing e pausa.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2 (Day 3)',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 1.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'debriefing', title: 'Fine Shock Room & Debriefing (Gruppo B)', subtitle: 'Analisi trattamenti', location: 'Aula Debriefing Bravo', partnerGroup: 'A', patientIds: [13, 14, 15], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC Turno 2 (Gruppo C)', subtitle: 'Preparazione Pz 16-18', location: 'Settore Scenari Charlie', patientIds: [16, 17, 18], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Pre-allerta Shock Room (Gruppo D)', subtitle: 'Preparazione Box 4-6', location: 'Shock Room 4, 5, 6', patientIds: [16, 17, 18], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' },
+      B: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 2', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' },
+      D: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd3-m-1015',
+    id: 'd3-b1-reset',
     day: 3,
     period: 'mattina',
-    timeRange: '10:15 - 10:30',
-    startMinutes: 615,
+    timeRange: '10:20 - 10:35',
+    startMinutes: 620,
     durationMinutes: 15,
-    title: '10:15 - Transizione Turno 2 Mattina Day 3',
-    description: 'Preparazione per il secondo turno della mattinata (Gruppi C & D).',
+    title: 'Reset Tecnico Blocco 1 (Day 3)',
+    description: 'Turnaround 15 min: pulizia Box SR e ripristino.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa & Debriefing', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'scenario_extra', title: 'Briefing TCCC Turno 2 (Gruppo C)', subtitle: 'Assegnazione Pz 16-18', location: 'Settore Scenari Charlie', patientIds: [16, 17, 18], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Standby Shock Room Box 4-6 (Gruppo D)', subtitle: 'Pronti per handover T+30', location: 'Shock Room 4, 5, 6', patientIds: [16, 17, 18], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      B: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      C: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      D: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-10/11/12 (Pulizia, fluidi, cute)', location: 'Box Shock Room 1' }
     }
   },
   {
-    id: 'd3-m-1030',
+    id: 'd3-pausa-m',
     day: 3,
     period: 'mattina',
-    timeRange: '10:30 - 10:45',
-    startMinutes: 630,
-    durationMinutes: 15,
-    title: '10:30 - Avvio Scenario TCCC Turno 2 Day 3 (Gruppo C)',
-    description: 'Inizio scenario TCCC per Gruppo C sui Pazienti 16, 17, 18. Gruppo D in standby Shock Room.',
+    timeRange: '10:35 - 11:05',
+    startMinutes: 635,
+    durationMinutes: 30,
+    title: 'Pausa Caffè + Pre-Alert Blocco 2 (Day 3)',
+    description: 'Ristoro e transizione.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop Mattina Turno 2 (Gruppo A)', subtitle: 'Attività', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab Turno 2 (Gruppo B)', subtitle: 'Training', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_extra', title: 'Avvio TCCC Turno 2 Day 3 (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 16, 17, 18', location: 'Settore Scenari Charlie', scenarioRef: 'Scenari 18, 5, 15', patientIds: [16, 17, 18], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Attesa in Box 4-6', location: 'Shock Room 4, 5, 6', patientIds: [16, 17, 18], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'pause', title: 'Pausa Caffè ➔ Standby SR', subtitle: 'Check presidi Box 1-3', location: 'Box Shock Room 1' },
+      B: { activityType: 'pause', title: 'Pausa Caffè ➔ Ingresso WS1', subtitle: 'Ristoro', location: 'Area Ristoro' },
+      C: { activityType: 'pause', title: 'Pausa Caffè ➔ Pre-Alert TCCC', subtitle: 'PRE-ALLERTA TCCC', location: 'Ambiente Tattico' },
+      D: { activityType: 'pause', title: 'Pausa Caffè ➔ Ingresso WS2', subtitle: 'Ristoro', location: 'Area Ristoro' }
     }
   },
   {
-    id: 'd3-m-1045',
+    id: 'd3-b2-tccc',
     day: 3,
     period: 'mattina',
-    timeRange: '10:45 - 11:00',
-    startMinutes: 645,
-    durationMinutes: 15,
-    title: '10:45 - Continuazione TCCC Turno 2 & Standby Shock Room',
-    description: 'Fase centrale TCCC Turno 2 Day 3. Gruppo D in standby operativo nei Box 4-6.',
+    timeRange: '11:05 - 11:35',
+    startMinutes: 665,
+    durationMinutes: 30,
+    title: 'BLOCCO 2 • Scenario TCCC & WS (Day 3)',
+    description: 'Pericardiocentesi, triage (Pz 16-18) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop (Cont.)', subtitle: 'Attività', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Training', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Turno 2 (T +15)', subtitle: 'Gestione in corso', location: 'Settore Scenari Charlie', scenarioRef: 'Scenari 18, 5, 15', patientIds: [16, 17, 18], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo (T -15)', subtitle: 'Pronti per handover', location: 'Shock Room 4, 5, 6', patientIds: [16, 17, 18], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ingaggio / Triage (Pz 16-18)', location: 'Ambiente Tattico 2', facultyInvolved: ['FAC-07'], patientIds: [16, 17, 18] },
+      D: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd3-m-1100',
+    id: 'd3-b2-handover',
     day: 3,
     period: 'mattina',
-    timeRange: '11:00 - 11:15',
-    startMinutes: 660,
-    durationMinutes: 15,
-    title: '11:00 - Handover Concomitante TCCC -> Shock Room Turno 2 Day 3',
-    description: 'Scadenza TCCC Turno 2 (30 min). Handover SBAR tra Gruppo C e Gruppo D nei Box 4-6. Inizio scenario Shock Room.',
+    timeRange: '11:35 - 11:40',
+    startMinutes: 695,
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop (Completamento)', subtitle: 'Chiusura', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab (Completamento)', subtitle: 'Chiusura', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'debriefing', title: 'Fine TCCC Turno 2 & Handover SBAR', subtitle: 'Consegna paziente a Gruppo D', location: 'Shock Room 4, 5, 6', partnerGroup: 'D', patientIds: [16, 17, 18], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Turno 2 (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 18, 5, 15 (Intra)', patientIds: [16, 17, 18], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da CHARLIE', location: 'Box Shock Room 1', partnerGroup: 'C', patientIds: [16, 17, 18] },
+      B: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' },
+      C: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna ad ALPHA', location: 'Ambiente Tattico 2 ➔ Box SR', partnerGroup: 'A' },
+      D: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd3-m-1115',
+    id: 'd3-b2-sr',
     day: 3,
     period: 'mattina',
-    timeRange: '11:15 - 11:30',
-    startMinutes: 675,
-    durationMinutes: 15,
-    title: '11:15 - Debriefing TCCC (Gruppo C) & Shock Room (Gruppo D)',
-    description: 'Gruppo C esegue Debriefing TCCC e pausa. Gruppo D prosegue lo scenario Shock Room fino a T+60.',
+    timeRange: '11:40 - 12:10',
+    startMinutes: 700,
+    durationMinutes: 30,
+    title: 'BLOCCO 2 • Scenario Shock Room & Debrief TCCC (Day 3)',
+    description: 'REBOA Z3, MTP 1:1:1 (Pz 16-18) & Debriefing TCCC Parte 1.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa (Gruppo C)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Charlie', partnerGroup: 'D', patientIds: [16, 17, 18], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento ospedaliero in Shock Room', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 18, 5, 15 (Intra)', patientIds: [16, 17, 18], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 16-18', location: 'Box Shock Room 1', facultyInvolved: ['FAC-01'], patientIds: [16, 17, 18] },
+      B: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' },
+      C: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 3', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd3-m-1130',
+    id: 'd3-b2-debrief-clinico',
     day: 3,
     period: 'mattina',
-    timeRange: '11:30 - 11:45',
-    startMinutes: 690,
+    timeRange: '12:10 - 12:25',
+    startMinutes: 730,
     durationMinutes: 15,
-    title: '11:30 - Continuazione Shock Room Turno 2 Day 3',
-    description: 'Prosecuzione trattamenti in Shock Room Box 4-6 per Gruppo D.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2 (Day 3)',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 2.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Relax', subtitle: 'Area Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Relax', subtitle: 'Area Relax', location: 'Area Relax' },
-      C: { activityType: 'pause', title: 'Pausa Ristoro (Gruppo C)', subtitle: 'Relax', location: 'Area Relax' },
-      D: { activityType: 'scenario_intra', title: 'Shock Room (T +30)', subtitle: 'Stabilizzazione finale', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 18, 5, 15 (Intra)', patientIds: [16, 17, 18], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' },
+      C: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 3', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd3-m-1145',
+    id: 'd3-b2-reset',
     day: 3,
     period: 'mattina',
-    timeRange: '11:45 - 12:00',
-    startMinutes: 705,
+    timeRange: '12:25 - 12:40',
+    startMinutes: 745,
     durationMinutes: 15,
-    title: '11:45 - Fine Scenario Shock Room Turno 2 & Debriefing (Day 3)',
-    description: 'Termine scenario Shock Room Gruppo D -> Debriefing e preparazione pranzo.',
+    title: 'Reset Tecnico Blocco 2 (Day 3)',
+    description: 'Turnaround 15 min: pulizia Box SR e ripristino.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Preparazione Pranzo', subtitle: 'Transizione', location: 'Mensa' },
-      B: { activityType: 'pause', title: 'Preparazione Pranzo', subtitle: 'Transizione', location: 'Mensa' },
-      C: { activityType: 'pause', title: 'Preparazione Pranzo', subtitle: 'Transizione', location: 'Mensa' },
-      D: { activityType: 'debriefing', title: 'Debriefing Shock Room (Gruppo D)', subtitle: 'Analisi finale sessione mattutina', location: 'Aula Debriefing Delta', partnerGroup: 'C', patientIds: [16, 17, 18], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-01/02/03 (Pulizia, fluidi, cute)', location: 'Box Shock Room 1' },
+      B: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      C: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      D: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd3-m-1200',
+    id: 'd3-pranzo',
     day: 3,
     period: 'mattina',
-    timeRange: '12:00 - 12:15',
-    startMinutes: 720,
-    durationMinutes: 15,
-    title: '12:00 - Pausa Pranzo Day 3 (Inizio)',
-    description: 'Pausa pranzo per tutti i partecipanti e faculty.',
+    timeRange: '12:40 - 13:55',
+    startMinutes: 760,
+    durationMinutes: 75,
+    title: 'PAUSA PRANZO PROTETTA (Day 3)',
+    description: 'Pausa protetta 75 min. Nessun allertamento.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' },
-      D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante Centro Simulazione', location: 'Ristorante' }
+      A: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' },
+      B: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' },
+      C: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' },
+      D: { activityType: 'pause', title: 'Pausa Pranzo Protetta', subtitle: 'Ristoro', location: 'Mensa Campus' }
     }
   },
   {
-    id: 'd3-m-1215',
-    day: 3,
-    period: 'mattina',
-    timeRange: '12:15 - 12:30',
-    startMinutes: 735,
-    durationMinutes: 15,
-    title: '12:15 - Pausa Pranzo Day 3 (Continuazione)',
-    description: 'Pausa pranzo in corso.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' }
-    }
-  },
-  {
-    id: 'd3-m-1230',
-    day: 3,
-    period: 'mattina',
-    timeRange: '12:30 - 12:45',
-    startMinutes: 750,
-    durationMinutes: 15,
-    title: '12:30 - Pausa Pranzo Day 3 (Continuazione)',
-    description: 'Pausa pranzo in corso.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      B: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      C: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' },
-      D: { activityType: 'pause', title: 'Pausa Pranzo', subtitle: 'Ristorante', location: 'Ristorante' }
-    }
-  },
-  {
-    id: 'd3-m-1245',
-    day: 3,
-    period: 'mattina',
-    timeRange: '12:45 - 13:00',
-    startMinutes: 765,
-    durationMinutes: 15,
-    title: '12:45 - Chiusura Mattina & Briefing Pomeridiano (Day 3)',
-    description: 'Rientro in aula e briefing preliminare per le attività del pomeriggio.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Rientro in Area', subtitle: 'Preparazione Pomeriggio', location: 'Settore Scenari' },
-      B: { activityType: 'pause', title: 'Rientro in Area', subtitle: 'Preparazione Pomeriggio', location: 'Shock Room' },
-      C: { activityType: 'pause', title: 'Rientro in Area', subtitle: 'Preparazione Pomeriggio', location: 'Area Tattica' },
-      D: { activityType: 'pause', title: 'Rientro in Area', subtitle: 'Preparazione Pomeriggio', location: 'Skills Lab' }
-    }
-  },
-  {
-    id: 'd3-p-1300',
+    id: 'd3-prealert-3',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '13:00 - 13:15',
-    startMinutes: 780,
+    timeRange: '13:55 - 14:10',
+    startMinutes: 835,
     durationMinutes: 15,
-    title: '13:00 - Gate Opening Pomeridiano & Briefing (Day 3)',
-    description: 'Riapertura gate pomeridiano Day 3 e briefing operativo per le squadre (Gruppo B TCCC, Gruppo A Shock Room).',
+    title: 'Pre-Alert T-15 Blocco 3 (Day 3)',
+    description: 'Raduno e PRE-ALLERTA TCCC per Blocco 3.',
     groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Briefing Shock Room Pomeridiano (Gruppo A)', subtitle: 'Preparazione Box per Pz 19-21', location: 'Shock Room 1, 2, 3', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Briefing TCCC Pomeridiano (Gruppo B)', subtitle: 'Assegnazione Pz 19, 20, 21 (Scenari 7, 13, 8)', location: 'Settore Scenari Bravo', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Briefing Workshop Pomeridiano (Gruppo C)', subtitle: 'Setup', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Briefing Skills Pomeridiano (Gruppo D)', subtitle: 'Setup', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'PRE-ALLERTA TCCC', subtitle: 'Ambienti Tattici', location: 'Ambiente Tattico 1' },
+      B: { activityType: 'workshop', title: 'Raduno Aula WS2', subtitle: 'Briefing pomeridiano', location: 'Aula WS2' },
+      C: { activityType: 'workshop', title: 'Standby SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room 1' },
+      D: { activityType: 'workshop', title: 'Raduno Aula WS1', subtitle: 'Briefing pomeridiano', location: 'Aula WS1' }
     }
   },
   {
-    id: 'd3-p-1315',
+    id: 'd3-b3-tccc',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '13:15 - 13:30',
-    startMinutes: 795,
-    durationMinutes: 15,
-    title: '13:15 - Pre-allerta T-15 Pomeridiano (Day 3)',
-    description: 'Pre-allerta T-15 per TCCC Pomeridiano (Gruppo B, Pz 19-21) e pre-standby Shock Room (Gruppo A).',
+    timeRange: '14:10 - 14:40',
+    startMinutes: 850,
+    durationMinutes: 30,
+    title: 'BLOCCO 3 • Scenario TCCC & WS (Day 3)',
+    description: 'Escarotomia, Parkland (Pz 19-21) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Attesa in Box 1-3', location: 'Shock Room 1, 2, 3', patientIds: [19, 20, 21], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC Pomeridiano (T -15)', subtitle: 'Vestizione & Briefing Pz 19-21', location: 'Settore Scenari Bravo', patientIds: [19, 20, 21], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Pomeridiano', subtitle: 'Svolgimento', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Pomeridiano', subtitle: 'Svolgimento', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ingaggio / Triage (Pz 19-21)', location: 'Ambiente Tattico 1', facultyInvolved: ['FAC-01'], patientIds: [19, 20, 21] },
+      B: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd3-p-1330',
+    id: 'd3-b3-handover',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '13:30 - 13:45',
-    startMinutes: 810,
-    durationMinutes: 15,
-    title: '13:30 - Avvio Scenario TCCC Pomeridiano (Day 3 - T 0)',
-    description: 'Inizio scenario TCCC pomeridiano per Gruppo B sui Pazienti 19, 20, 21. Gruppo A in standby Shock Room.',
+    timeRange: '14:40 - 14:45',
+    startMinutes: 880,
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
     groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo', subtitle: 'Box 1-3 pronti per Handover', location: 'Shock Room 1, 2, 3', patientIds: [19, 20, 21], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Avvio TCCC Pomeridiano (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 19, 20, 21', location: 'Settore Scenari Bravo', scenarioRef: 'Scenari 7, 13, 8', patientIds: [19, 20, 21], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Pomeridiano (Cont.)', subtitle: 'Svolgimento', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Pomeridiano (Cont.)', subtitle: 'Svolgimento', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna a CHARLIE', location: 'Ambiente Tattico 1 ➔ Box SR', partnerGroup: 'C' },
+      B: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' },
+      C: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da ALPHA', location: 'Box Shock Room 1', partnerGroup: 'A', patientIds: [19, 20, 21] },
+      D: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' }
     }
   },
   {
-    id: 'd3-p-1345',
+    id: 'd3-b3-sr',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '13:45 - 14:00',
-    startMinutes: 825,
-    durationMinutes: 15,
-    title: '13:45 - Continuazione TCCC Pomeridiano (Day 3 - T +15)',
-    description: 'Fase centrale TCCC pomeridiano (T 15-30). Gruppo A in standby operativo nei Box 1-3.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room Standby (T -15)', subtitle: 'Pronti a ricevere handover', location: 'Shock Room 1, 2, 3', patientIds: [19, 20, 21], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Pomeridiano (T +15)', subtitle: 'Gestione in corso', location: 'Settore Scenari Bravo', scenarioRef: 'Scenari 7, 13, 8', patientIds: [19, 20, 21], partnerGroup: 'A', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'workshop', title: 'Workshop Pomeridiano (Completamento)', subtitle: 'Chiusura', location: 'Area Tattica', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'skills', title: 'Skills Lab Pomeridiano (Completamento)', subtitle: 'Chiusura', location: 'Skills Lab', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd3-p-1400',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '14:00 - 14:15',
-    startMinutes: 840,
-    durationMinutes: 15,
-    title: '14:00 - Handover Concomitante TCCC -> Shock Room Pomeridiano (Day 3)',
-    description: 'Scadenza TCCC pomeridiano (30 min). Handover SBAR tra Gruppo B e Gruppo A nei Box 1-3. Inizio scenario Shock Room.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Pomeridiano (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 7, 13, 8 (Intra)', patientIds: [19, 20, 21], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'debriefing', title: 'Fine TCCC Pomeridiano & Handover SBAR', subtitle: 'Consegna paziente a Gruppo A', location: 'Shock Room 1, 2, 3', partnerGroup: 'A', patientIds: [19, 20, 21], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'pause', title: 'Transizione', subtitle: 'Rotazione', location: 'Area Tattica' },
-      D: { activityType: 'pause', title: 'Transizione', subtitle: 'Rotazione', location: 'Skills Lab' }
-    }
-  },
-  {
-    id: 'd3-p-1415',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '14:15 - 14:30',
-    startMinutes: 855,
-    durationMinutes: 15,
-    title: '14:15 - Debriefing TCCC (Gruppo B) & Shock Room (Gruppo A - Day 3)',
-    description: 'Gruppo B esegue Debriefing TCCC e pausa. Gruppo A prosegue lo scenario Shock Room fino a T+60.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento ospedaliero in Shock Room 1-3', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 7, 13, 8 (Intra)', patientIds: [19, 20, 21], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa (Gruppo B)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Bravo', partnerGroup: 'A', patientIds: [19, 20, 21], facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'skills', title: 'Skills Lab Pomeridiano Turno 2 (Gruppo C)', subtitle: 'Procedure', location: 'Skills Lab', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'workshop', title: 'Workshop Pomeridiano Turno 2 (Gruppo D)', subtitle: 'Teoria', location: 'Area Tattica', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd3-p-1430',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '14:30 - 14:45',
-    startMinutes: 870,
-    durationMinutes: 15,
-    title: '14:30 - Continuazione Shock Room & Pre-allerta Gruppo D (Day 3)',
-    description: 'Prosecuzione Shock Room per Gruppo A (T +30). Pre-allerta T-15 per Gruppo D (Pz 22-24) nel settore Delta.',
-    groupActivities: {
-      A: { activityType: 'scenario_intra', title: 'Shock Room (T +30)', subtitle: 'Stabilizzazione finale', location: 'Shock Room 1, 2, 3', scenarioRef: 'Scenari 7, 13, 8 (Intra)', patientIds: [19, 20, 21], partnerGroup: 'B', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Procedure', location: 'Skills Lab', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_extra', title: 'Pre-allerta TCCC Turno 2 Pom (Gruppo D)', subtitle: 'Preparazione Pz 22-24', location: 'Settore Scenari Delta', patientIds: [22, 23, 24], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd3-p-1445',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '14:45 - 15:00',
+    timeRange: '14:45 - 15:15',
     startMinutes: 885,
-    durationMinutes: 15,
-    title: '14:45 - Fine Shock Room (Gruppo A) & Avvio TCCC Turno 2 Pom (Day 3)',
-    description: 'Termine Shock Room Gruppo A -> Debriefing. Avvio TCCC per Gruppo D (Pz 22-24). Gruppo C in standby Shock Room Box 4-6.',
+    durationMinutes: 30,
+    title: 'BLOCCO 3 • Scenario Shock Room & Debrief TCCC (Day 3)',
+    description: 'REBOA Z1, ustioni (Pz 19-21) & Debriefing TCCC Parte 1.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Fine Scenario Shock Room & Debriefing (Gruppo A)', subtitle: 'Analisi trattamenti', location: 'Aula Debriefing Alfa', partnerGroup: 'B', patientIds: [19, 20, 21], facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'scenario_intra', title: 'Shock Room Standby (Pre-allerta T+15)', subtitle: 'Box 4-6 pronti per Gruppo D', location: 'Shock Room 4, 5, 6', patientIds: [22, 23, 24], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_extra', title: 'Avvio TCCC Turno 2 Pom (T 0)', subtitle: 'Ingresso in Campo Tattico - Pz 22, 23, 24', location: 'Settore Scenari Delta', scenarioRef: 'Scenari 7, 13, 8', patientIds: [22, 23, 24], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' },
+      C: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 19-21', location: 'Box Shock Room 1', facultyInvolved: ['FAC-07'], patientIds: [19, 20, 21] },
+      D: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' }
     }
   },
   {
-    id: 'd3-p-1500',
-    day: 3,
-    period: 'pomeriggio',
-    timeRange: '15:00 - 15:15',
-    startMinutes: 900,
-    durationMinutes: 15,
-    title: '15:00 - Continuazione TCCC Turno 2 Pom & Standby Shock Room (Day 3)',
-    description: 'Fase centrale TCCC Turno 2 Pomeriggio. Gruppo C in Standby operativo nei Box 4-6.',
-    groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop Pomeridiano Turno 2 (Gruppo A)', subtitle: 'Approfondimenti', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab Pomeridiano Turno 2 (Gruppo B)', subtitle: 'Training', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_intra', title: 'Shock Room Standby Operativo (T -15)', subtitle: 'Pronti per Handover', location: 'Shock Room 4, 5, 6', patientIds: [22, 23, 24], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'scenario_extra', title: 'Esecuzione TCCC Turno 2 Pom (T +15)', subtitle: 'Gestione in corso', location: 'Settore Scenari Delta', scenarioRef: 'Scenari 7, 13, 8', patientIds: [22, 23, 24], partnerGroup: 'C', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
-    }
-  },
-  {
-    id: 'd3-p-1515',
+    id: 'd3-b3-debrief-clinico',
     day: 3,
     period: 'pomeriggio',
     timeRange: '15:15 - 15:30',
     startMinutes: 915,
     durationMinutes: 15,
-    title: '15:15 - Handover Concomitante TCCC -> Shock Room Turno 2 Pom (Day 3)',
-    description: 'Scadenza TCCC Turno 2 Pom (30 min). Handover SBAR tra Gruppo D e Gruppo C nei Box 4-6. Inizio scenario Shock Room.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2 (Day 3)',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 3.',
     groupActivities: {
-      A: { activityType: 'workshop', title: 'Workshop (Cont.)', subtitle: 'Attività', location: 'Area Tattica', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'skills', title: 'Skills Lab (Cont.)', subtitle: 'Attività', location: 'Skills Lab', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'scenario_intra', title: 'Inizio Scenario Shock Room Turno 2 Pom (T 0)', subtitle: 'Ricezione Handover & Trattamento (30 min)', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 7, 13, 8 (Intra)', patientIds: [22, 23, 24], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'debriefing', title: 'Fine TCCC Turno 2 Pom & Handover SBAR', subtitle: 'Consegna paziente a Gruppo C', location: 'Shock Room 4, 5, 6', partnerGroup: 'C', patientIds: [22, 23, 24], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' },
+      C: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' }
     }
   },
   {
-    id: 'd3-p-1530',
+    id: 'd3-b3-reset',
     day: 3,
     period: 'pomeriggio',
     timeRange: '15:30 - 15:45',
     startMinutes: 930,
     durationMinutes: 15,
-    title: '15:30 - Debriefing TCCC (Gruppo D) & Shock Room (Gruppo C - Day 3)',
-    description: 'Gruppo D esegue Debriefing TCCC e pausa. Gruppo C prosegue lo scenario Shock Room fino a T+60.',
+    title: 'Reset Tecnico Blocco 3 (Day 3)',
+    description: 'Turnaround 15 min: pulizia Box SR e ripristino.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      B: { activityType: 'pause', title: 'Pausa Ristoro', subtitle: 'Relax', location: 'Area Relax' },
-      C: { activityType: 'scenario_intra', title: 'Esecuzione Scenario Shock Room (T +15)', subtitle: 'Trattamento in Shock Room 4-6', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 7, 13, 8 (Intra)', patientIds: [22, 23, 24], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'debriefing', title: 'Debriefing TCCC & Pausa (Gruppo D)', subtitle: 'Analisi TCCC', location: 'Aula Debriefing Delta', partnerGroup: 'C', patientIds: [22, 23, 24], facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      B: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      C: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-07/08/09 (Pulizia, fluidi, cute)', location: 'Box Shock Room 1' },
+      D: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' }
     }
   },
   {
-    id: 'd3-p-1545',
+    id: 'd3-pausa-p',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '15:45 - 16:00',
+    timeRange: '15:45 - 16:10',
     startMinutes: 945,
-    durationMinutes: 15,
-    title: '15:45 - Continuazione Shock Room & Plenaria Q&A (Day 3)',
-    description: 'Ultimi 15 minuti di trattamento in Shock Room per Gruppo C e avvio sessione plenaria Q&A.',
+    durationMinutes: 25,
+    title: 'Pausa Pomeridiana + Pre-Alert Blocco 4 (Day 3)',
+    description: 'Ristoro e transizione.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Preparazione Plenaria Q&A', subtitle: 'Aula Magna', location: 'Aula Magna' },
-      B: { activityType: 'pause', title: 'Preparazione Plenaria Q&A', subtitle: 'Aula Magna', location: 'Aula Magna' },
-      C: { activityType: 'scenario_intra', title: 'Shock Room (T +30)', subtitle: 'Stabilizzazione finale', location: 'Shock Room 4, 5, 6', scenarioRef: 'Scenari 7, 13, 8 (Intra)', patientIds: [22, 23, 24], partnerGroup: 'D', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'pause', title: 'Preparazione Plenaria Q&A', subtitle: 'Aula Magna', location: 'Aula Magna' }
+      A: { activityType: 'pause', title: 'Pausa ➔ Ingresso WS1', subtitle: 'Ristoro', location: 'Area Ristoro' },
+      B: { activityType: 'pause', title: 'Pausa ➔ Standby SR Box 1-3', subtitle: 'Check presidi', location: 'Box Shock Room 1' },
+      C: { activityType: 'pause', title: 'Pausa ➔ Ingresso WS2', subtitle: 'Ristoro', location: 'Area Ristoro' },
+      D: { activityType: 'pause', title: 'Pausa ➔ Pre-Alert TCCC', subtitle: 'PRE-ALLERTA TCCC', location: 'Ambiente Tattico' }
     }
   },
   {
-    id: 'd3-p-1600',
+    id: 'd3-b4-tccc',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '16:00 - 16:15',
-    startMinutes: 960,
-    durationMinutes: 15,
-    title: '16:00 - Fine Shock Room (Gruppo C) & Sessione Plenaria Q&A',
-    description: 'Termine scenario Shock Room Gruppo C -> Debriefing e sessione plenaria Q&A di fine corso.',
+    timeRange: '16:10 - 16:40',
+    startMinutes: 970,
+    durationMinutes: 30,
+    title: 'BLOCCO 4 • Scenario TCCC & WS (Day 3)',
+    description: 'Amputazioni bilaterali, triage (Pz 22-24) / Workshop clinici.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Sessione Plenaria Q&A', subtitle: 'Discussione casi clinici', location: 'Aula Magna' },
-      B: { activityType: 'pause', title: 'Sessione Plenaria Q&A', subtitle: 'Discussione casi clinici', location: 'Aula Magna' },
-      C: { activityType: 'debriefing', title: 'Fine Shock Room & Debriefing (Gruppo C)', subtitle: 'Analisi trattamenti e transizione a Plenaria', location: 'Aula Debriefing Charlie', partnerGroup: 'D', patientIds: [22, 23, 24], facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'pause', title: 'Sessione Plenaria Q&A', subtitle: 'Discussione casi clinici', location: 'Aula Magna' }
+      A: { activityType: 'workshop', title: 'Skills Workshop 1', subtitle: 'Airway & Bleeding', location: 'Aula WS1', facultyInvolved: ['FAC-01'] },
+      B: { activityType: 'workshop', title: 'Standby SR (Box 1-3)', subtitle: 'Standby attivo pre-handover', location: 'Box Shock Room 1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'Skills Workshop 2', subtitle: 'Eco FAST & IO', location: 'Aula WS2', facultyInvolved: ['FAC-07'] },
+      D: { activityType: 'scenario_extra', title: 'Scenario TCCC', subtitle: 'Ingaggio / Triage (Pz 22-24)', location: 'Ambiente Tattico 3', facultyInvolved: ['FAC-10'], patientIds: [22, 23, 24] }
     }
   },
   {
-    id: 'd3-p-1615',
+    id: 'd3-b4-handover',
     day: 3,
     period: 'pomeriggio',
-    timeRange: '16:15 - 16:30',
-    startMinutes: 975,
+    timeRange: '16:40 - 16:45',
+    startMinutes: 1000,
+    durationMinutes: 5,
+    title: 'HANDOVER 1:1 (Sovrapposto a Standby SR)',
+    description: 'Consegna SBAR barellato (< 5 min) tra TCCC e Shock Room.',
+    groupActivities: {
+      A: { activityType: 'workshop', title: 'WS1 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS1' },
+      B: { activityType: 'scenario_intra', title: 'Ricezione SBAR', subtitle: '➔ Ricezione da DELTA', location: 'Box Shock Room 1', partnerGroup: 'D', patientIds: [22, 23, 24] },
+      C: { activityType: 'workshop', title: 'WS2 (Continua)', subtitle: 'Pratica avanzata', location: 'Aula WS2' },
+      D: { activityType: 'scenario_extra', title: 'Consegna SBAR', subtitle: '➔ Consegna a BRAVO', location: 'Ambiente Tattico 3 ➔ Box SR', partnerGroup: 'B' }
+    }
+  },
+  {
+    id: 'd3-b4-sr',
+    day: 3,
+    period: 'pomeriggio',
+    timeRange: '16:45 - 17:15',
+    startMinutes: 1005,
+    durationMinutes: 30,
+    title: 'BLOCCO 4 • Scenario Shock Room & Debrief TCCC (Day 3)',
+    description: 'Arresto traumatico (Pz 22-24) & Debriefing TCCC Parte 1.',
+    groupActivities: {
+      A: { activityType: 'workshop', title: 'WS1 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS1' },
+      B: { activityType: 'scenario_intra', title: 'Shock Room ABCDE', subtitle: 'Gestione avanzata Pz 22-24', location: 'Box Shock Room 1', facultyInvolved: ['FAC-04'], patientIds: [22, 23, 24] },
+      C: { activityType: 'workshop', title: 'WS2 (Feedback)', subtitle: 'Valutazione tecnica', location: 'Aula WS2' },
+      D: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 1)', subtitle: 'Analisi tattica', location: 'Aula Debriefing 3', facultyInvolved: ['FAC-10'] }
+    }
+  },
+  {
+    id: 'd3-b4-debrief-clinico',
+    day: 3,
+    period: 'pomeriggio',
+    timeRange: '17:15 - 17:30',
+    startMinutes: 1035,
     durationMinutes: 15,
-    title: '16:30 - Chiusura Corso & Consegna Attestati (Day 3)',
-    description: 'Plenaria di chiusura, ringraziamenti della Direzione e consegna attestati di partecipazione.',
+    title: 'Debriefing Clinico SR & TCCC Parte 2 (Day 3)',
+    description: 'Analisi video NTS, Plus/Delta e chiusura blocco 4.',
     groupActivities: {
-      A: { activityType: 'pause', title: 'Chiusura Corso & Attestati', subtitle: 'Cerimonia Finale', location: 'Aula Magna' },
-      B: { activityType: 'pause', title: 'Chiusura Corso & Attestati', subtitle: 'Cerimonia Finale', location: 'Aula Magna' },
-      C: { activityType: 'pause', title: 'Chiusura Corso & Attestati', subtitle: 'Cerimonia Finale', location: 'Aula Magna' },
-      D: { activityType: 'pause', title: 'Chiusura Corso & Attestati', subtitle: 'Cerimonia Finale', location: 'Aula Magna' }
-    }
-  },
-
-  // ================= DAY 3 NOTTURNO =================
-  {
-    id: 'd3-night-1',
-    day: 3,
-    period: 'notturno',
-    timeRange: '20:00 - 20:30',
-    startMinutes: 1200,
-    durationMinutes: 30,
-    title: 'NIGHT: Gate Opening Faculty & Tecnici (20:00)',
-    description: 'Apertura anticipata dei gate alle ore 20:00 per Faculty e Tecnici (allestimento postazioni notturne e briefing tattico).',
-    groupActivities: {
-      A: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Alfa', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Bravo', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Bravo', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Charlie', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Charlie', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'night_scenario', title: 'Gate Opening Faculty & Tecnici Notturno Delta', subtitle: 'Preparazione e Setup (20:00 - 20:30)', location: 'Area Tattica Notturna - Settore Delta', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'WS1 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS1' },
+      B: { activityType: 'debriefing', title: 'Debriefing SR Plus/Delta', subtitle: 'Revisione video NTS ≥ 4', location: 'Box Shock Room 1', facultyInvolved: ['FAC-04'] },
+      C: { activityType: 'workshop', title: 'WS2 Feedback', subtitle: 'Debriefing workshop', location: 'Aula WS2' },
+      D: { activityType: 'debriefing', title: 'Debriefing TCCC (Pt 2)', subtitle: 'Chiusura report tattico', location: 'Aula Debriefing 3', facultyInvolved: ['FAC-10'] }
     }
   },
   {
-    id: 'd3-night-2',
+    id: 'd3-b4-reset',
     day: 3,
-    period: 'notturno',
-    timeRange: '20:30 - 21:00',
-    startMinutes: 1230,
-    durationMinutes: 30,
-    title: 'NIGHT: Gate Opening Discenti & Briefing Tattico (20:30)',
-    description: 'Apertura gate per i discenti alle ore 20:30. Invito per tutti a prendere posizione per il Maxi-Scenario Notturno.',
+    period: 'pomeriggio',
+    timeRange: '17:30 - 17:45',
+    startMinutes: 1050,
+    durationMinutes: 15,
+    title: 'Reset Finale Blocco 4 (Day 3)',
+    description: 'Turnaround finale: sanificazione e chiusura postazioni.',
     groupActivities: {
-      A: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Alfa', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Alfa', facultyInvolved: ['fac-1', 'fac-2', 'fac-3'] },
-      B: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Bravo', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Bravo', facultyInvolved: ['fac-4', 'fac-5', 'fac-6'] },
-      C: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Charlie', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Charlie', facultyInvolved: ['fac-7', 'fac-8', 'fac-9'] },
-      D: { activityType: 'night_scenario', title: 'Arrivo Discenti & Briefing Notturno Delta', subtitle: 'Briefing e Assegnazione Ruoli (20:30 - 21:00)', location: 'Area Tattica Notturna - Settore Delta', facultyInvolved: ['fac-10', 'fac-11', 'fac-12'] }
+      A: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' },
+      B: { activityType: 'workshop', title: 'RESET Box SR', subtitle: 'TECH-04/05/06 (Sanificazione finale)', location: 'Box Shock Room 1' },
+      C: { activityType: 'workshop', title: 'Riordino WS2', subtitle: 'Ripristino materiale', location: 'Aula WS2' },
+      D: { activityType: 'workshop', title: 'Riordino WS1', subtitle: 'Ripristino materiale', location: 'Aula WS1' }
     }
   },
   {
-    id: 'd3-night-3',
+    id: 'd3-chiusura',
     day: 3,
-    period: 'notturno',
-    timeRange: '21:00 - 22:00',
-    startMinutes: 1260,
-    durationMinutes: 60,
-    title: 'NIGHT SCENARIO: Esecuzione Maxi-Scenario Notturno (21:00)',
-    description: 'Maxi-Scenario Notturno ad alta intensità, Triage MCI START/SALT, Airway e gestione traumatologica critica in ambiente tattico notturno.',
+    period: 'pomeriggio',
+    timeRange: '17:45 - 18:00',
+    startMinutes: 1065,
+    durationMinutes: 15,
+    title: 'Chiusura Plenaria & Consegna Attestati',
+    description: 'Debriefing collegiale finale, restituzione clinica e chiusura corso.',
     groupActivities: {
-      A: {
-        activityType: 'night_scenario',
-        title: 'Maxi-Scenario Notturno Alfa (Airway & TBI)',
-        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
-        location: 'Area Tattica Notturna - Settore Alfa',
-        scenarioRef: 'Night Scenario - Airway & TBI',
-        facultyInvolved: ['fac-1', 'fac-2', 'fac-3']
-      },
-      B: {
-        activityType: 'night_scenario',
-        title: 'Maxi-Scenario Notturno Bravo (Emorragia & REBOA)',
-        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
-        location: 'Area Tattica Notturna - Settore Bravo',
-        scenarioRef: 'Night Scenario - Haemorrhage & REBOA',
-        facultyInvolved: ['fac-4', 'fac-5', 'fac-6']
-      },
-      C: {
-        activityType: 'night_scenario',
-        title: 'Maxi-Scenario Notturno Charlie (MCI Triage)',
-        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
-        location: 'Area Tattica Notturna - Settore Charlie',
-        scenarioRef: 'Night Scenario - MCI Triage',
-        facultyInvolved: ['fac-7', 'fac-8', 'fac-9']
-      },
-      D: {
-        activityType: 'night_scenario',
-        title: 'Maxi-Scenario Notturno Delta (Damage Control)',
-        subtitle: 'Esecuzione Scenario Notturno (21:00 - 22:00)',
-        location: 'Area Tattica Notturna - Settore Delta',
-        scenarioRef: 'Night Scenario - Damage Control',
-        facultyInvolved: ['fac-10', 'fac-11', 'fac-12']
-      }
+      A: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' },
+      B: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' },
+      C: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' },
+      D: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' }
     }
   }
 ];
 
-// Night scenario cases for all 12 teams
-export const INITIAL_NIGHT_SCENARIOS: NightScenarioCase[] = [
-  {
-    teamId: 1,
-    teamName: 'Squadra 1 (Alpha 1)',
-    groupId: 'A',
-    title: 'AIRWAY - TBI (Trauma Cranico Grave) & CRIC',
-    category: 'Vie Aeree & Neurotrauma',
-    injuries: [
-      'GCS 4 con trisma severo e sangue nel cavo orale',
-      'Ematoma subdurale acuto con anisocoria destra',
-      'Desaturazione critica (SpO2 65%) refrattaria'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Cricotirotomia chirurgica d\'urgenza', 'Iperventilazione controllata e mannitolo', 'Aspirazione vie aeree'],
-    location: 'Settore Notturno 1 (Ingresso Edificio A)'
-  },
-  {
-    teamId: 2,
-    teamName: 'Squadra 2 (Alpha 2)',
-    groupId: 'A',
-    title: 'AIRWAY - FACIAL INJURY (Lesione Facciale Grave) & CRIC',
-    category: 'Vie Aeree & Trauma Facciale',
-    injuries: [
-      'Frattura complessa Le Fort III con perdita di sostanza del massiccio facciale',
-      'Ostruzione meccanica totale via aerea superiore',
-      'Sanguinamento massivo faringeo'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Cricotirotomia chirurgica con cannula cuffiata', 'Tamponamento emostatico antero-posteriore'],
-    location: 'Settore Notturno 2 (Piazzale Automezzi)'
-  },
-  {
-    teamId: 3,
-    teamName: 'Squadra 3 (Alpha 3)',
-    groupId: 'A',
-    title: 'AIRWAY - NECK INJURY (Lesione al Collo) & CRIC',
-    category: 'Vie Aeree & Trauma Cervicale',
-    injuries: [
-      'Ferita penetrante zona II del collo con enfisema sottocutaneo massivo',
-      'Stridore laringeo ingravescente',
-      'Sanguinamento venoso profondo giugulare'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Cricotirotomia chirurgica sotto lesione tracheale', 'Wound packing cervicale mirato'],
-    location: 'Settore Notturno 3 (Galleria Sotterranea)'
-  },
-  {
-    teamId: 4,
-    teamName: 'Squadra 4 (Bravo 1)',
-    groupId: 'B',
-    title: 'TRAUMA PENETRANTE - Toraco-Addominale',
-    category: 'Trauma Penetrante & Emotorace',
-    injuries: [
-      'Ferite multiple da schegge metalliche torace anteriore e fianco',
-      'Emotorace massivo con deviazione tracheale',
-      'Shock emorragico classe III'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Toracostomia con dito e drenaggio toracico', 'Valvola di Asherman / medicazione a 3 lati'],
-    location: 'Settore Notturno 4 (Bunker Esterno)'
-  },
-  {
-    teamId: 5,
-    teamName: 'Squadra 5 (Bravo 2)',
-    groupId: 'B',
-    title: 'LESIONE DA USTIONE ESTESA (Burn Injury)',
-    category: 'Ustioni Termiche & Inalazione',
-    injuries: [
-      'Ustione di III grado > 45% superficie corporea (TBSA)',
-      'Sospetta inalazione di fumi tossici con fuliggine periorale',
-      'Ipotermia imminente'
-    ],
-    expectedTriageCategory: 'DELAYED',
-    procedures: ['Calcolo fluidico formula Parkland', 'Copertura con teli termici isotermici', 'Accessi venosi / intraosseo'],
-    location: 'Settore Notturno 5 (Deposito Materiali)'
-  },
-  {
-    teamId: 6,
-    teamName: 'Squadra 6 (Bravo 3)',
-    groupId: 'B',
-    title: 'LESIONE DA USTIONE & TRAUMA TORACICO',
-    category: 'Ustioni & Esplosione',
-    injuries: [
-      'Ustione circonferenziale toracica a corazza con ipomobilità respiratoria',
-      'Ustioni arti superiori di II grado profondo'
-    ],
-    expectedTriageCategory: 'DELAYED',
-    procedures: ['Escarotomia decompressiva toracica d\'emergenza', 'Sedazione e analgesia multimodale'],
-    location: 'Settore Notturno 6 (Locale Caldaie)'
-  },
-  {
-    teamId: 7,
-    teamName: 'Squadra 7 (Charlie 1)',
-    groupId: 'C',
-    title: 'LESIONE DA USTIONE & INTOSSICAZIONE CO/CN',
-    category: 'Ustioni & Tossicologia',
-    injuries: [
-      'Paziente incosciente estratto da ambiente chiuso saturo di fumo',
-      'Ustioni di II grado viso e mani',
-      'Carbossiemoglobina stimata elevata'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Ossigenoterapia ad alti flussi 100%', 'Idrossocobalamina (Cyanokit)', 'Intubazione precoce'],
-    location: 'Settore Notturno 7 (Ufficio Tecnico)'
-  },
-  {
-    teamId: 8,
-    teamName: 'Squadra 8 (Charlie 2)',
-    groupId: 'C',
-    title: 'IMPALAMENTO ADDOMINALE & SHOCK',
-    category: 'Impalamento & Trauma Complesso',
-    injuries: [
-      'Barra metallica di 1,5 metri conficcata nel quadrante inferiore destro addome',
-      'Polso radiale assente, polso carotideo tachicardico filiforme',
-      'Impossibilità di posizionamento supino standard'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Stabilizzazione in situ del corpo estraneo', 'Accorciamento controllato barra', 'Accesso intraosseo'],
-    location: 'Settore Notturno 8 (Cantiere Edile)'
-  },
-  {
-    teamId: 9,
-    teamName: 'Squadra 9 (Charlie 3)',
-    groupId: 'C',
-    title: 'AMPUTAZIONE TRAUMATICA SUB-TOTALE',
-    category: 'Blast Injury & Amputazione',
-    injuries: [
-      'Amputazione traumatica braccio sinistro a livello del terzo medio omero',
-      'Emorragia arteriosa massiva zampillante',
-      'Stato di sopore profondo'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Applicazione Tourniquet TQ ad alta efficacia prossimale', 'Impaccamento con garze emostatiche', 'TXA'],
-    location: 'Settore Notturno 9 (Corridoio Est)'
-  },
-  {
-    teamId: 10,
-    teamName: 'Squadra 10 (Delta 1)',
-    groupId: 'D',
-    title: 'AMPUTAZIONE TRAUMATICA BILATERALE',
-    category: 'Blast Injury & Catastrofico',
-    injuries: [
-      'Doppia amputazione traumatica arti inferiori (sotto il ginocchio)',
-      'Sanguinamento combinato massivo',
-      'Shock emorragico classe IV'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Doppio Tourniquet TQ arti inferiori', 'Acido Tranexamico (TXA)', 'Riscaldamento attivo'],
-    location: 'Settore Notturno 10 (Piazzale Centrale)'
-  },
-  {
-    teamId: 11,
-    teamName: 'Squadra 11 (Delta 2)',
-    groupId: 'D',
-    title: 'AMPUTAZIONE TRAUMATICA & FRATTURA BACINO',
-    category: 'Politrauma & Emorragie Giunzionali',
-    injuries: [
-      'Amputazione gamba dx con instabilità e disgiunzione sinfisi pubica',
-      'Sospetta lesione vasi iliaci interni'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Cintura pelvica T-POD', 'Tourniquet giunzionale SAM JETT / REBOA preospedaliero'],
-    location: 'Settore Notturno 11 (Parcheggio Sotterraneo)'
-  },
-  {
-    teamId: 12,
-    teamName: 'Squadra 12 (Delta 3)',
-    groupId: 'D',
-    title: 'EVISCERAZIONE ADDOMINALE DA ESPLOSIONE',
-    category: 'Trauma Addominale & Blast',
-    injuries: [
-      'Lacerazione addominale con estrusione massiva di stomaco e colon',
-      'Contaminazione fecale e detriti da esplosione in situ',
-      'Paziente cosciente con dolore lancinante e dispnea riflessa'
-    ],
-    expectedTriageCategory: 'IMMEDIATE',
-    procedures: ['Copertura protettiva con teli sterili umidificati non aderenti', 'Analgesia oppioide EV', 'Antibioticoterapia'],
-    location: 'Settore Notturno 12 (Hangar Manutenzione)'
-  }
-];
 
-export const INITIAL_BROADCAST_ALERTS = [];
 
 export const INITIAL_COURSE_MESSAGES = [
   {

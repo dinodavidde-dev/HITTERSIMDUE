@@ -84,8 +84,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
     faculty[0];
 
   // Assigned squad
-  const defaultTeam = { id: 1, name: 'Squadra 1', groupId: 'ALPHA' as const, color: '#f97316' };
-  const myAssignedTeam = teams.find((t) => t.id === currentFaculty?.assignedTeamId) || teams[0] || defaultTeam;
+  const myAssignedTeam = teams.find((t) => t.id === currentFaculty.assignedTeamId) || teams[0];
   const [selectedTeamId, setSelectedTeamId] = useState<number>(myAssignedTeam.id);
 
   const team = teams.find((t) => t.id === selectedTeamId) || myAssignedTeam;
@@ -95,7 +94,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
   const [formMode, setFormMode] = useState<'detailed' | 'rapid'>('detailed');
 
   // Scenario Selection (Day 2 Morning, Day 2 Afternoon, Day 3 Night MCI)
-  const [scenarioSlot, setScenarioSlot] = useState<{ day: CourseDay; period: SessionPeriod; phase: 'EXTRA' | 'INTRA' | 'NIGHT'; title: string; scenarioCode: string; patientId: number }>({
+  const [scenarioSlot, setScenarioSlot] = useState<{ day: CourseDay; period: SessionPeriod; phase: 'EXTRA' | 'INTRA'; title: string; scenarioCode: string; patientId: number }>({
     day: (activeDay === 3 ? 3 : 2) as CourseDay,
     period: 'mattina',
     phase: 'EXTRA',
@@ -354,22 +353,13 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   scenarioCode: 'Scenario Intra DEA D2P',
                   patientId: 202,
                 });
-              } else if (val === '3-notturno') {
-                setScenarioSlot({
-                  day: 3,
-                  period: 'notturno',
-                  phase: 'NIGHT',
-                  title: 'Day 3 Notturno • Maxiemergenza MCI Triage',
-                  scenarioCode: 'Scenario Notturno MCI',
-                  patientId: 999,
-                });
               }
+
             }}
             className="bg-neutral-900 border border-neutral-700 text-neutral-200 font-bold text-xs px-3 py-1.5 focus:outline-hidden cursor-pointer"
           >
             <option value="2-mattina">Giorno 2 Mattina (Extra TCCC)</option>
             <option value="2-pomeriggio">Giorno 2 Pomeriggio (Intra Shock Room)</option>
-            <option value="3-notturno">Giorno 3 Notturno (Maxiemergenza MCI)</option>
           </select>
         </div>
 

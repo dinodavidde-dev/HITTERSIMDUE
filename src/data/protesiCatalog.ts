@@ -23,7 +23,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 19, scenarioCode: 'Scenario 7 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 4, teamIntra: 1 },
       { patientId: 22, scenarioCode: 'Scenario 7 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 10, teamIntra: 7 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Cricotirotomia chirurgica (CRIC)',
       'Incisione verticale/orizzontale membrana',
@@ -51,7 +50,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 1, teamIntra: 4 },
       { patientId: 16, scenarioCode: 'Scenario 18 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 10 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Medicazione toracica occlusiva ventilata (Chest Seal)',
       'Toracostomia con dito (Finger Thoracostomy)',
@@ -78,7 +76,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 11, scenarioCode: 'Scenario 00 - Replica', day: 2, period: 'pomeriggio', teamExtra: 11, teamIntra: 8 },
       { patientId: 24, scenarioCode: 'Scenario 8 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Gestione Massive Bleeding Collo (Wound Packing)',
       'Applicazione garza emostatica caolino/chitosano',
@@ -106,7 +103,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 3, teamIntra: 6 },
       { patientId: 18, scenarioCode: 'Scenario 15 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 12 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Copertura con telini umidi sterili e sacca laparotomica',
       'Laparotomia d\'urgenza Damage Control',
@@ -136,7 +132,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 6, teamIntra: 3 },
       { patientId: 24, scenarioCode: 'Scenario 8 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Applicazione Tourniquet CAT o giunzionale SAM-JETT',
       'Posizionamento introduttore femorale ecoguidato',
@@ -163,7 +158,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 1, teamIntra: 4 },
       { patientId: 16, scenarioCode: 'Scenario 18 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 10 }
     ],
-    nightScenarioUsed: false,
     requiredProcedures: [
       'Applicazione Tourniquet arto superiore',
       'Allineamento provvisorio e steccaggio SAM Splint',
@@ -191,7 +185,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 3, teamIntra: 6 },
       { patientId: 18, scenarioCode: 'Scenario 15 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 12 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Aspirazione energica cavo orale con cannula Yankauer rigida',
       'Posizionamento cannula nasofaringea (se non sospetta frattura base cranica)',
@@ -220,7 +213,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 22, scenarioCode: 'Scenario 7 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 10, teamIntra: 7 },
       { patientId: 23, scenarioCode: 'Scenario 13 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 11, teamIntra: 8 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Ispezione cavo orale per fuliggine/eritema e intubazione precoce o CRICO',
       'Escarotomia decompressiva toracica (linee ascellari e sottocostali)',
@@ -245,7 +237,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 6, teamIntra: 3 },
       { patientId: 24, scenarioCode: 'Scenario 8 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 }
     ],
-    nightScenarioUsed: true,
     requiredProcedures: [
       'Stabilizzazione manuale e con rotoli di bende del corpo estraneo (MAI rimuovere)',
       'Posizionamento REBOA per controllo vascolare a monte',
@@ -275,7 +266,6 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
       { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 1, teamIntra: 4 },
       { patientId: 16, scenarioCode: 'Scenario 18 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 10 }
     ],
-    nightScenarioUsed: false,
     requiredProcedures: [
       'Resuscitative Thoracotomy (Clamshell / Anterolaterale sinistra)',
       'Incisione pericardica verticale anteriore al nervo frenico',
@@ -285,40 +275,5 @@ export const PROTESI_CATALOG: ProtesiItem[] = [
     techRequirements: 'Preparazione e conservazione refrigerata tessuti biologici; sostituzione blocchi costali tra una sessione e l\'altra.',
     leadTechnician: 'Roberto Bianchi (Lead Tessuti Biologici & Toraco)',
     consumables: ['Set organi biologici suini freschi', 'Costole in resina epossidica/poliuretano incidibili', 'Divaricatore Finochietto', 'Pinza Satinsky/DeBakey']
-  },
-  {
-    id: 'prot-blast-mci-schegge',
-    code: 'PR-BLAST-11',
-    name: 'Kit Protesico Esplosione di Massa & Lesioni da Blast Notturno (MCI)',
-    district: 'USTIONI_BLAST',
-    description: 'Set multiplo di 12 postazioni per la simulazione notturna: lacerazioni multiple da schegge metalliche, pneumotorace iperteso multiplo, traumi cranici da onda d\'urto, ostruzioni e amputazioni sub-totali da deflagrazione.',
-    activeFeatures: [
-      'Schegge metalliche finte conficcate nei tessuti molli',
-      'Simulazione polmonare con suoni di affanno e cianosi periferica',
-      'Marcatura triage fosforescente per scarsa illuminazione'
-    ],
-    scenariosUsed: [
-      { patientId: 1, scenarioCode: 'Night Scenario Sq 1', day: 3, period: 'notturno', teamExtra: 1, teamIntra: 1 },
-      { patientId: 2, scenarioCode: 'Night Scenario Sq 2', day: 3, period: 'notturno', teamExtra: 2, teamIntra: 2 },
-      { patientId: 3, scenarioCode: 'Night Scenario Sq 3', day: 3, period: 'notturno', teamExtra: 3, teamIntra: 3 },
-      { patientId: 4, scenarioCode: 'Night Scenario Sq 4', day: 3, period: 'notturno', teamExtra: 4, teamIntra: 4 },
-      { patientId: 5, scenarioCode: 'Night Scenario Sq 5', day: 3, period: 'notturno', teamExtra: 5, teamIntra: 5 },
-      { patientId: 6, scenarioCode: 'Night Scenario Sq 6', day: 3, period: 'notturno', teamExtra: 6, teamIntra: 6 },
-      { patientId: 7, scenarioCode: 'Night Scenario Sq 7', day: 3, period: 'notturno', teamExtra: 7, teamIntra: 7 },
-      { patientId: 8, scenarioCode: 'Night Scenario Sq 8', day: 3, period: 'notturno', teamExtra: 8, teamIntra: 8 },
-      { patientId: 9, scenarioCode: 'Night Scenario Sq 9', day: 3, period: 'notturno', teamExtra: 9, teamIntra: 9 },
-      { patientId: 10, scenarioCode: 'Night Scenario Sq 10', day: 3, period: 'notturno', teamExtra: 10, teamIntra: 10 },
-      { patientId: 11, scenarioCode: 'Night Scenario Sq 11', day: 3, period: 'notturno', teamExtra: 11, teamIntra: 11 },
-      { patientId: 12, scenarioCode: 'Night Scenario Sq 12', day: 3, period: 'notturno', teamExtra: 12, teamIntra: 12 }
-    ],
-    nightScenarioUsed: true,
-    requiredProcedures: [
-      'Triage rapido di maxiemergenza START / SALT',
-      'Emostasi rapida con tourniquet tattici e wound packing',
-      'Decompressione toracica e stabilizzazione vie aeree'
-    ],
-    techRequirements: 'Allestimento con torce tattiche, fumo scenico e simulazione suoni esplosione.',
-    leadTechnician: 'Davide Esposito & Silvia Rossi',
-    consumables: ['Braccialetti Triage colorati', 'Chemlight / Glowstick per identificazione', '12 Kit medicazioni trauma rapido']
   }
 ];

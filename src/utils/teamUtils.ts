@@ -1,22 +1,22 @@
 import { Team } from '../types';
 
 export const TEAM_CODE_NAMES: Record<number, string> = {
-  1: 'ALPHA 1',
-  2: 'ALPHA 2',
-  3: 'ALPHA 3',
-  4: 'BRAVO 1',
-  5: 'BRAVO 2',
-  6: 'BRAVO 3',
-  7: 'CHARLIE 1',
-  8: 'CHARLIE 2',
-  9: 'CHARLIE 3',
-  10: 'DELTA 1',
-  11: 'DELTA 2',
-  12: 'DELTA 3',
+  1: 'ALPHA1',
+  2: 'ALPHA2',
+  3: 'ALPHA3',
+  4: 'BETA1',
+  5: 'BETA2',
+  6: 'BETA3',
+  7: 'CHARLIE1',
+  8: 'CHARLIE2',
+  9: 'CHARLIE3',
+  10: 'DELTA1',
+  11: 'DELTA2',
+  12: 'DELTA3',
 };
 
 /**
- * Returns strictly the alphanumeric squad designation (e.g., 'ALPHA 2', 'BRAVO 1', 'CHARLIE 3', 'DELTA 2').
+ * Returns strictly the alphanumeric squad designation (e.g., 'ALPHA1', 'BETA1', 'CHARLIE3', 'DELTA2').
  * Strips legacy prefixes like 'Squadra 2', hex colors like '(#EA580C)', or surrounding parentheticals.
  */
 export function getTeamCodeName(teamOrIdOrName: Team | number | string | undefined | null): string {
@@ -33,10 +33,11 @@ export function getTeamCodeName(teamOrIdOrName: Team | number | string | undefin
     if (!isNaN(num) && TEAM_CODE_NAMES[num] && (/^\d+$/.test(raw) || /^team-?\d+$/i.test(raw))) {
       return TEAM_CODE_NAMES[num];
     }
-    // Match standard NATO phonetic team format (ALPHA 1, BRAVO 2, CHARLIE 3, DELTA 1, etc.)
-    const phoneticMatch = raw.match(/\b(ALPHA|BRAVO|CHARLIE|DELTA)\s*(\d+)\b/i);
+    // Match team format (ALPHA1, BETA 1, BETA1, CHARLIE3, DELTA2, etc.)
+    const phoneticMatch = raw.match(/\b(ALPHA|BETA|BRAVO|CHARLIE|DELTA)\s*(\d+)\b/i);
     if (phoneticMatch) {
-      return `${phoneticMatch[1].toUpperCase()} ${phoneticMatch[2]}`;
+      const prefix = phoneticMatch[1].toUpperCase() === 'BRAVO' ? 'BETA' : phoneticMatch[1].toUpperCase();
+      return `${prefix}${phoneticMatch[2]}`;
     }
     // Match "Squadra 2" or "Team 2"
     const squadNumMatch = raw.match(/\b(?:squadra|team|sq\.?)\s*(\d+)\b/i);
@@ -56,9 +57,10 @@ export function getTeamCodeName(teamOrIdOrName: Team | number | string | undefin
   }
 
   if (teamOrIdOrName.name) {
-    const phoneticMatch = teamOrIdOrName.name.match(/\b(ALPHA|BRAVO|CHARLIE|DELTA)\s*(\d+)\b/i);
+    const phoneticMatch = teamOrIdOrName.name.match(/\b(ALPHA|BETA|BRAVO|CHARLIE|DELTA)\s*(\d+)\b/i);
     if (phoneticMatch) {
-      return `${phoneticMatch[1].toUpperCase()} ${phoneticMatch[2]}`;
+      const prefix = phoneticMatch[1].toUpperCase() === 'BRAVO' ? 'BETA' : phoneticMatch[1].toUpperCase();
+      return `${prefix}${phoneticMatch[2]}`;
     }
     return teamOrIdOrName.name.replace(/\(#[0-9a-fA-F]{3,8}\)/g, '').trim();
   }

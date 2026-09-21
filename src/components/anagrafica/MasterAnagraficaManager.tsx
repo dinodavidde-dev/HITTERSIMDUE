@@ -25,10 +25,9 @@ import {
   X,
 } from 'lucide-react';
 import { Director, Discente, Faculty, Guest, RegiaStaff, Team, Technician } from '../../types';
-import { QRCodeDisplay } from '../QRCodeDisplay';
-import { PersonnelBadgeRegistry } from './PersonnelBadgeRegistry';
-import { TeamAssignmentDragDropBoard } from './TeamAssignmentDragDropBoard';
 import { getTeamCodeName } from '../../utils/teamUtils';
+import { ParticipantQRModal } from './ParticipantQRModal';
+import { PersonnelBadgeRegistry } from './PersonnelBadgeRegistry';
 
 export const getCountryFlag = (nationality: string = ''): string => {
   const norm = nationality.toLowerCase().trim();
@@ -60,7 +59,11 @@ export const NATIONALITY_PRESETS = [
   'Canadese',
 ];
 
-export const MasterAnagraficaManager: React.FC = () => {
+interface MasterAnagraficaManagerProps {
+  initialSection?: 'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti';
+}
+
+export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = ({ initialSection = 'discenti' }) => {
   const {
     language,
     teams,
@@ -93,14 +96,19 @@ export const MasterAnagraficaManager: React.FC = () => {
 
   const isEn = language === 'en';
 
-  const [activeSection, setActiveSection] = useState<'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti' | 'squadre' | 'qr_registry'>('discenti');
+  const [activeSection, setActiveSection] = useState<'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti' | 'badges'>(initialSection);
   const [searchQuery, setSearchQuery] = useState('');
   const [nationalityFilter, setNationalityFilter] = useState('ALL');
   const [groupFilter, setGroupFilter] = useState('ALL');
 
-  // Modals state for editing & QR view
+  // QR Pass Modal state
+  const [selectedPersonForQr, setSelectedPersonForQr] = useState<{
+    person: any;
+    category: 'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti';
+  } | null>(null);
+
+  // Modals state for editing
   const [editingDiscente, setEditingDiscente] = useState<Discente | null>(null);
-  const [viewingQrDiscente, setViewingQrDiscente] = useState<Discente | null>(null);
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
   const [editingTech, setEditingTech] = useState<Technician | null>(null);
   const [editingDir, setEditingDir] = useState<Director | null>(null);
@@ -279,15 +287,6 @@ export const MasterAnagraficaManager: React.FC = () => {
     });
   }, [regiaStaff, searchQuery, nationalityFilter]);
 
-  const handleAutoAssignTeams = () => {
-    discenti.forEach((disc, idx) => {
-      const assignedTeamId = Math.floor(idx / 5) + 1; // Teams 1 to 12
-      if (disc.teamId !== assignedTeamId) {
-        updateDiscente(disc.id, { teamId: assignedTeamId });
-      }
-    });
-  };
-
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
       const matchQ =
@@ -360,15 +359,6 @@ export const MasterAnagraficaManager: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setActiveSection('qr_registry')}
-              className="px-4 py-2.5 bg-orange-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-orange-400 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md"
-              title={isEn ? 'View and print all badge QR code cards for each personnel' : 'Visualizza e stampa tutti i tesserini badge con QR Code per ogni figura'}
-            >
-              <QrCode className="w-4 h-4" />
-              {isEn ? 'PRINT BADGES & QR' : 'STAMPA BADGE & QR'} ({discenti.length + faculty.length + technicians.length + directors.length + guests.length})
-            </button>
-
             <button
               onClick={handleExportCSV}
               className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-100 hover:text-black text-white border-2 border-neutral-700 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
@@ -493,27 +483,15 @@ export const MasterAnagraficaManager: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveSection('squadre')}
+          onClick={() => setActiveSection('badges')}
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
-            activeSection === 'squadre'
-              ? 'bg-neutral-100 text-black border-neutral-100'
-              : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+            activeSection === 'badges'
+              ? 'bg-orange-500 text-black border-orange-400 shadow-md font-black'
+              : 'bg-neutral-900 text-orange-400 border-orange-500/40 hover:text-white hover:border-orange-500'
           }`}
         >
-          <Activity className="w-4 h-4 text-red-400" />
-          6. SQUADRE & DRAG-AND-DROP ({teams.length})
-        </button>
-
-        <button
-          onClick={() => setActiveSection('qr_registry')}
-          className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
-            activeSection === 'qr_registry'
-              ? 'bg-orange-500 text-black border-orange-400 font-black'
-              : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
-          }`}
-        >
-          <QrCode className="w-4 h-4 text-orange-400" />
-          7. BADGE & QR PASS COMPLETO ({discenti.length + faculty.length + technicians.length + directors.length + guests.length})
+          <QrCode className="w-4 h-4" />
+          REGISTRO QR PASS & BADGE ({totalPersonnel})
         </button>
       </div>
 
@@ -621,17 +599,9 @@ export const MasterAnagraficaManager: React.FC = () => {
       {/* SECTION 1: DISCENTI LIST */}
       {activeSection === 'discenti' && (
         <div className="bg-neutral-900 border-2 border-neutral-800 overflow-hidden">
-          <div className="p-3 bg-neutral-950 border-b border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs font-bold text-neutral-400">
+          <div className="p-3 bg-neutral-950 border-b border-neutral-800 flex justify-between items-center text-xs font-bold text-neutral-400">
             <span>Visualizzati {filteredDiscenti.length} discenti su {discenti.length} registrati</span>
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-orange-400 font-mono">5 Operatori per Squadra (12 Squadre)</span>
-              <button
-                onClick={handleAutoAssignTeams}
-                className="px-3 py-1 bg-orange-500 hover:bg-orange-400 text-black font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
-              >
-                ⚡ Assegna Squadre Automaticamente (1-12)
-              </button>
-            </div>
+            <span className="text-orange-400 font-mono">5 Operatori per Squadra (12 Squadre)</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -685,12 +655,13 @@ export const MasterAnagraficaManager: React.FC = () => {
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => setViewingQrDiscente(disc)}
-                            className="px-2.5 py-1 bg-neutral-900 hover:bg-orange-500 hover:text-black text-orange-400 border border-neutral-700 hover:border-orange-500 transition-colors cursor-pointer text-xs font-black uppercase flex items-center gap-1"
-                            title="Visualizza e genera QR Pass per questo partecipante"
+                            type="button"
+                            onClick={() => setSelectedPersonForQr({ person: disc, category: 'discenti' })}
+                            className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 hover:border-cyan-500 transition-colors cursor-pointer text-xs font-black uppercase flex items-center gap-1"
+                            title="Visualizza QR Code Pass univoco e pagina personalizzata"
                           >
-                            <QrCode className="w-3.5 h-3.5" />
-                            <span>QR PASS</span>
+                            <QrCode className="w-3.5 h-3.5 text-cyan-400" />
+                            QR PASS
                           </button>
                           <button
                             onClick={() => setEditingDiscente(disc)}
@@ -744,6 +715,14 @@ export const MasterAnagraficaManager: React.FC = () => {
                     <p className="text-xs text-neutral-400 font-medium">{f.title}</p>
                   </div>
                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPersonForQr({ person: f, category: 'faculty' })}
+                      className="p-1.5 bg-neutral-800 hover:bg-amber-500 hover:text-black text-amber-400 border border-neutral-700 transition-colors cursor-pointer"
+                      title="Visualizza QR Code Pass Faculty"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={() => setEditingFaculty(f)}
                       className="p-1.5 bg-neutral-800 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-neutral-700 transition-colors cursor-pointer"
@@ -817,6 +796,14 @@ export const MasterAnagraficaManager: React.FC = () => {
                   <p className="text-xs text-amber-400 font-bold">{t.specialty}</p>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPersonForQr({ person: t, category: 'tecnici' })}
+                    className="p-1.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-neutral-700 transition-colors cursor-pointer"
+                    title="Visualizza QR Code Pass Tecnico"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={() => setEditingTech(t)}
                     className="p-1.5 bg-neutral-800 hover:bg-amber-500 hover:text-black text-amber-400 border border-neutral-700 transition-colors cursor-pointer"
@@ -896,6 +883,14 @@ export const MasterAnagraficaManager: React.FC = () => {
                   <p className="text-xs text-purple-400 font-bold">{d.title}</p>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPersonForQr({ person: d, category: 'direttori' })}
+                    className="p-1.5 bg-neutral-800 hover:bg-yellow-500 hover:text-black text-yellow-400 border border-neutral-700 transition-colors cursor-pointer"
+                    title="Visualizza QR Code Pass Direttore"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={() => setEditingDir(d)}
                     className="p-1.5 bg-neutral-800 hover:bg-purple-500 hover:text-black text-purple-400 border border-neutral-700 transition-colors cursor-pointer"
@@ -978,6 +973,14 @@ export const MasterAnagraficaManager: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
+                    onClick={() => setSelectedPersonForQr({ person: r, category: 'regia' })}
+                    className="p-1.5 bg-neutral-800 hover:bg-purple-500 hover:text-black text-purple-400 border border-neutral-700 transition-colors cursor-pointer"
+                    title="Visualizza QR Code Pass Regia"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => setEditingRegia(r)}
                     className="p-1.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-neutral-700 transition-colors cursor-pointer"
                     title="Modifica dati regia"
@@ -1051,6 +1054,14 @@ export const MasterAnagraficaManager: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1">
                     <button
+                      type="button"
+                      onClick={() => setSelectedPersonForQr({ person: g, category: 'ospiti' })}
+                      className="p-1.5 bg-neutral-800 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-neutral-700 transition-colors cursor-pointer"
+                      title="Visualizza QR Code Pass Ospite"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => setEditingGuest(g)}
                       className="p-1.5 bg-neutral-800 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-neutral-700 transition-colors cursor-pointer"
                       title="Modifica ospite"
@@ -1111,23 +1122,9 @@ export const MasterAnagraficaManager: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 6: SQUADRE & DRAG AND DROP */}
-      {activeSection === 'squadre' && (
-        <TeamAssignmentDragDropBoard
-          teams={teams}
-          faculty={faculty}
-          discenti={discenti}
-          updateDiscente={updateDiscente}
-          updateFaculty={updateFaculty}
-          updateTeam={updateTeam}
-        />
-      )}
-
-      {/* SECTION 7: BADGE & QR PASS REGISTRY */}
-      {activeSection === 'qr_registry' && (
-        <div className="space-y-4">
-          <PersonnelBadgeRegistry />
-        </div>
+      {/* SECTION 6: BADGES & QR PASS REGISTRY */}
+      {activeSection === 'badges' && (
+        <PersonnelBadgeRegistry />
       )}
 
       {/* ================= MODALS ================= */}
@@ -1156,7 +1153,11 @@ export const MasterAnagraficaManager: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (editingDiscente) {
-                  updateDiscente(editingDiscente.id, editingDiscente);
+                  const updated = { ...editingDiscente, updatedAt: new Date().toISOString() };
+                  updateDiscente(editingDiscente.id, updated);
+                  if (selectedPersonForQr && selectedPersonForQr.person.id === editingDiscente.id) {
+                    setSelectedPersonForQr({ person: updated, category: 'discenti' });
+                  }
                   setEditingDiscente(null);
                 } else {
                   addDiscente(newDiscente);
@@ -1384,7 +1385,11 @@ export const MasterAnagraficaManager: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (editingFaculty) {
-                  updateFaculty(editingFaculty.id, editingFaculty);
+                  const updated = { ...editingFaculty, updatedAt: new Date().toISOString() };
+                  updateFaculty(editingFaculty.id, updated);
+                  if (selectedPersonForQr && selectedPersonForQr.person.id === editingFaculty.id) {
+                    setSelectedPersonForQr({ person: updated, category: 'faculty' });
+                  }
                   setEditingFaculty(null);
                 } else {
                   addFaculty(newFaculty);
@@ -1557,7 +1562,11 @@ export const MasterAnagraficaManager: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (editingTech) {
-                  updateTechnician(editingTech.id, editingTech);
+                  const updated = { ...editingTech, updatedAt: new Date().toISOString() };
+                  updateTechnician(editingTech.id, updated);
+                  if (selectedPersonForQr && selectedPersonForQr.person.id === editingTech.id) {
+                    setSelectedPersonForQr({ person: updated, category: 'tecnici' });
+                  }
                   setEditingTech(null);
                 } else {
                   addTechnician(newTech);
@@ -1723,7 +1732,11 @@ export const MasterAnagraficaManager: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (editingDir) {
-                  updateDirector(editingDir.id, editingDir);
+                  const updated = { ...editingDir, updatedAt: new Date().toISOString() };
+                  updateDirector(editingDir.id, updated);
+                  if (selectedPersonForQr && selectedPersonForQr.person.id === editingDir.id) {
+                    setSelectedPersonForQr({ person: updated, category: 'direttori' });
+                  }
                   setEditingDir(null);
                 } else {
                   addDirector(newDir);
@@ -1892,7 +1905,11 @@ export const MasterAnagraficaManager: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (editingRegia) {
-                  updateRegiaStaff(editingRegia.id, editingRegia);
+                  const updated = { ...editingRegia, updatedAt: new Date().toISOString() };
+                  updateRegiaStaff(editingRegia.id, updated);
+                  if (selectedPersonForQr && selectedPersonForQr.person.id === editingRegia.id) {
+                    setSelectedPersonForQr({ person: updated, category: 'regia' });
+                  }
                   setEditingRegia(null);
                 } else {
                   addRegiaStaff(newRegia);
@@ -2075,7 +2092,11 @@ export const MasterAnagraficaManager: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (editingGuest) {
-                  updateGuest(editingGuest.id, editingGuest);
+                  const updated = { ...editingGuest, updatedAt: new Date().toISOString() };
+                  updateGuest(editingGuest.id, updated);
+                  if (selectedPersonForQr && selectedPersonForQr.person.id === editingGuest.id) {
+                    setSelectedPersonForQr({ person: updated, category: 'ospiti' });
+                  }
                   setEditingGuest(null);
                 } else {
                   addGuest(newGuest);
@@ -2357,26 +2378,23 @@ export const MasterAnagraficaManager: React.FC = () => {
           </div>
         </div>
       )}
-      {/* QR PASS MODAL FOR SELECTED DISCENTE */}
-      {viewingQrDiscente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="relative max-w-md w-full">
-            <button
-              onClick={() => setViewingQrDiscente(null)}
-              className="absolute -top-10 right-0 text-neutral-300 hover:text-white font-black text-xs uppercase px-3 py-1 bg-neutral-900 border border-neutral-700 cursor-pointer flex items-center gap-1"
-            >
-              <X className="w-4 h-4" />
-              <span>CHIUDI BADGE</span>
-            </button>
-            <QRCodeDisplay
-              discente={viewingQrDiscente}
-              team={teams.find((t) => t.id === viewingQrDiscente.teamId)}
-              faculty={faculty.find((f) => f.assignedTeamId === viewingQrDiscente.teamId)}
-              size={220}
-              showCard={true}
-            />
-          </div>
-        </div>
+
+      {/* GLOBAL PARTICIPANT QR MODAL */}
+      {selectedPersonForQr && (
+        <ParticipantQRModal
+          isOpen={!!selectedPersonForQr}
+          onClose={() => setSelectedPersonForQr(null)}
+          person={selectedPersonForQr.person}
+          category={selectedPersonForQr.category}
+          onOpenEdit={(p) => {
+            if (selectedPersonForQr.category === 'discenti') setEditingDiscente(p as Discente);
+            else if (selectedPersonForQr.category === 'faculty') setEditingFaculty(p as Faculty);
+            else if (selectedPersonForQr.category === 'tecnici') setEditingTech(p as Technician);
+            else if (selectedPersonForQr.category === 'direttori') setEditingDir(p as Director);
+            else if (selectedPersonForQr.category === 'regia') setEditingRegia(p as RegiaStaff);
+            else if (selectedPersonForQr.category === 'ospiti') setEditingGuest(p as Guest);
+          }}
+        />
       )}
     </div>
   );

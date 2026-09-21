@@ -1,6 +1,6 @@
 {
-  "name": "Trauma Sim Director - Gestione Corso Day 2 & Day 3",
-  "description": "Simulation management, live control board, and shared interactive display for advanced trauma medical courses (Day 2 & Day 3) with 4 groups, 12 teams, pre-hospital/ED rotations, skills workshops, technician moulage checklists, faculty evaluations, and real-time network broadcast alerts.",
+  "name": "H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM",
+  "description": "Corso Avanzato H.I.T.T.E.R. (High Intensive Training Trauma Emergency Response) - Piattaforma operativa di gestione, regia e sincronizzazione cronoprogrammi, rotazioni cliniche Day 2 & Day 3, faculty e discenti by INTUBATI EM.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

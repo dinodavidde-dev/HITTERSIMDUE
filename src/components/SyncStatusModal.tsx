@@ -98,8 +98,6 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
-      case 'public':
-        return <Eye className="w-4 h-4 text-emerald-400" />;
       case 'discente':
         return <User className="w-4 h-4 text-blue-400" />;
       case 'tecnico':

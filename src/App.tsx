@@ -6,19 +6,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { CourseProvider, useCourse } from './context/CourseContext';
 import { Navbar } from './components/Navbar';
-import { PublicSharedView } from './components/views/PublicSharedView';
-import { DiscenteView } from './components/views/DiscenteView';
-import { TecnicoView } from './components/views/TecnicoView';
-import { FacultyView } from './components/views/FacultyView';
-import { DirettoreView } from './components/views/DirettoreView';
+import { CourseSuspensionBanner } from './components/CourseSuspensionBanner';
+import { DirettoriView } from './components/views/DirettoriView';
 import { RegiaView } from './components/views/RegiaView';
 import { OspiteView } from './components/views/OspiteView';
-import { ScenariCatalogView } from './components/views/ScenariCatalogView';
-import { NightScenarioView } from './components/views/NightScenarioView';
 import { ProtesiCatalogView } from './components/views/ProtesiCatalogView';
-import { CourseScheduleGateCard } from './components/CourseScheduleGateCard';
-import { CoursePreStartCountdown } from './components/CoursePreStartCountdown';
-import { StartupAccessModal } from './components/StartupAccessModal';
+import { ScenariMasterListView } from './components/views/ScenariMasterListView';
+import { PublicTimelineView } from './components/views/PublicTimelineView';
+import { DiscenteView } from './components/views/DiscenteView';
+import { FacultyView } from './components/views/FacultyView';
+import { TecniciView } from './components/views/TecniciView';
+
+import { SimulationQuickFloatingBar } from './components/SimulationQuickFloatingBar';
+
 import { Activity, ShieldCheck, HeartPulse, Clock } from 'lucide-react';
 
 const CourseMainContent: React.FC = () => {
@@ -31,161 +31,174 @@ const CourseMainContent: React.FC = () => {
     directors,
     regiaStaff,
     guests,
+    teams,
     setSelectedDiscenteId,
     setSelectedFacultyId,
     setSelectedTechnicianId,
     setSelectedDirectorId,
     setSelectedRegiaId,
     setSelectedGuestId,
+    setActiveFacultyTeamId,
+    setActiveTechPatientId,
     isCourseStarted,
     setIsSimulationModalOpen,
     timeRemainingMs,
     courseStartSchedule,
     language,
+    currentTab,
+    setCurrentTab,
+    setOpenedByRole,
   } = useCourse();
-  const [currentTab, setCurrentTab] = useState<string>('main');
 
-  const totalSeconds = Math.floor(timeRemainingMs / 1000);
-  const isGateActive = courseStartSchedule.isGateEnabled;
-
-  const isCurrentViewUnlocked = () => {
-    if (userRole === 'direttore' || userRole === 'regia') return true; // Director & Regia always active
-    if (userRole === 'tecnico') {
-      return !isGateActive || isCourseStarted || totalSeconds <= 3600; // Technician active 1 hour before
-    }
-    // Other views active 30 minutes before
-    return !isGateActive || isCourseStarted || totalSeconds <= 1800;
-  };
-
-  const [isStartupModalOpen, setIsStartupModalOpen] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    const params = new URLSearchParams(window.location.search);
-    const badge = params.get('badge') || params.get('qr') || '';
-    const isRegia = params.has('regia') || params.get('role') === 'regia' || badge.toUpperCase().includes('REGIA');
-    if (isRegia) return true;
-
-    const hasQrParams =
-      params.has('discente') ||
-      params.has('faculty') ||
-      params.has('tecnico') ||
-      params.has('technician') ||
-      params.has('direttore') ||
-      params.has('director') ||
-      params.has('ospite') ||
-      params.has('guest') ||
-      params.has('badge') ||
-      params.has('qr') ||
-      (params.has('role') && params.has('id'));
-    // If accessed via QR / badge / specific profile parameter, do NOT show Startup Modal (directly set role & profile)
-    return !hasQrParams;
-  });
-
-  const isRegiaQrStartup = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    const params = new URLSearchParams(window.location.search);
-    const badge = params.get('badge') || params.get('qr') || '';
-    return params.has('regia') || params.get('role') === 'regia' || badge.toUpperCase().includes('REGIA');
-  }, []);
-
-  // Check URL parameters for instant unique QR Code direct navigation (?discente=... , ?faculty=... , ?tecnico=... , ?direttore=... , ?ospite=...)
+  // Check URL parameters for instant unique QR Code direct navigation
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const discenteParam = params.get('discente');
-      const facultyParam = params.get('faculty');
-      const tecnicoParam = params.get('tecnico') || params.get('technician');
+      const fromParam = params.get('from') || params.get('openedBy') || params.get('source');
+      const isFromAdmin = fromParam === 'regia' || fromParam === 'direttore';
+      if (isFromAdmin) {
+        setOpenedByRole(fromParam as 'regia' | 'direttore');
+      }
+
+      const discenteParam = params.get('discente') || params.get('student');
+      const facultyParam = params.get('faculty') || params.get('tutor');
+      const techParam = params.get('tecnico') || params.get('technician') || params.get('tech');
       const direttoreParam = params.get('direttore') || params.get('director');
       const regiaParam = params.get('regia');
-      const ospiteParam = params.get('ospite') || params.get('guest');
+      const guestParam = params.get('ospite') || params.get('guest');
       const idParam = params.get('id');
       const badgeParam = params.get('badge') || params.get('qr');
       const roleParam = params.get('role');
+      const viewParam = params.get('view') || params.get('public');
 
-      if (discenteParam || (roleParam === 'discente' && idParam)) {
-        const targetId = discenteParam || idParam;
-        const found = discenti.find(
-          (d) => d.id === targetId || d.badgeCode?.toLowerCase() === targetId?.toLowerCase()
-        );
-        if (found) {
-          setSelectedDiscenteId(found.id);
-          setUserRole('discente');
+      // 1. Check explicit view or role parameter
+      if (viewParam === 'public' || viewParam === 'true') {
+        setCurrentTab('public');
+      } else if (!viewParam && !roleParam && !discenteParam && !facultyParam && !techParam && !direttoreParam && !regiaParam && !guestParam && !idParam && !badgeParam) {
+        // Default directly to Public View
+        setCurrentTab('public');
+      } else if (viewParam === 'discente' || viewParam === 'student' || roleParam === 'discente' || discenteParam) {
+        setCurrentTab('discente');
+        setUserRole(isFromAdmin ? (fromParam as any) : 'discente');
+        const target = discenteParam || idParam || badgeParam;
+        if (target) {
+          const found = discenti.find(
+            (d) => d.id.toLowerCase() === target.toLowerCase() || d.badgeCode?.toLowerCase() === target.toLowerCase()
+          );
+          if (found) setSelectedDiscenteId(found.id);
         }
-      } else if (facultyParam || (roleParam === 'faculty' && idParam)) {
-        const targetId = facultyParam || idParam;
-        const found = faculty.find(
-          (f) => f.id === targetId || f.badgeCode?.toLowerCase() === targetId?.toLowerCase()
-        );
-        if (found) {
-          setSelectedFacultyId(found.id);
-          setUserRole('faculty');
+      } else if (viewParam === 'faculty' || viewParam === 'tutor' || roleParam === 'faculty' || facultyParam) {
+        setCurrentTab('faculty');
+        setUserRole(isFromAdmin ? (fromParam as any) : 'faculty');
+        const target = facultyParam || idParam || badgeParam;
+        if (target) {
+          const found = faculty.find(
+            (f) => f.id.toLowerCase() === target.toLowerCase() || f.badgeCode?.toLowerCase() === target.toLowerCase()
+          );
+          if (found) {
+            setSelectedFacultyId(found.id);
+            if (found.assignedTeamId) setActiveFacultyTeamId(found.assignedTeamId);
+          }
         }
-      } else if (tecnicoParam || (roleParam === 'tecnico' && idParam)) {
-        const targetId = tecnicoParam || idParam;
-        const found = technicians.find(
-          (t) => t.id === targetId || t.badgeCode?.toLowerCase() === targetId?.toLowerCase()
-        );
-        if (found) {
-          setSelectedTechnicianId(found.id);
-          setUserRole('tecnico');
+      } else if (viewParam === 'tecnici' || viewParam === 'tech' || roleParam === 'tecnico' || techParam) {
+        setCurrentTab('tecnici');
+        setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
+        const target = techParam || idParam || badgeParam;
+        if (target) {
+          const found = technicians.find(
+            (t) => t.id.toLowerCase() === target.toLowerCase() || t.badgeCode?.toLowerCase() === target.toLowerCase()
+          );
+          if (found) setSelectedTechnicianId(found.id);
         }
-      } else if (direttoreParam || (roleParam === 'direttore' && idParam)) {
-        const targetId = direttoreParam || idParam;
-        const found = directors.find(
-          (d) => d.id === targetId || d.badgeCode?.toLowerCase() === targetId?.toLowerCase()
-        );
-        if (found) {
-          setSelectedDirectorId(found.id);
-          setUserRole('direttore');
+      } else if (viewParam === 'direttori' || viewParam === 'director' || roleParam === 'direttore' || direttoreParam) {
+        setCurrentTab('direttori');
+        setUserRole('direttore');
+        const target = direttoreParam || idParam || badgeParam;
+        if (target) {
+          const found = directors.find(
+            (d) => d.id.toLowerCase() === target.toLowerCase() || d.badgeCode?.toLowerCase() === target.toLowerCase()
+          );
+          if (found) setSelectedDirectorId(found.id);
         }
-      } else if (regiaParam || (roleParam === 'regia' && idParam)) {
-        const targetId = regiaParam || idParam;
-        const found = regiaStaff.find(
-          (r) => r.id === targetId || r.badgeCode?.toLowerCase() === targetId?.toLowerCase()
-        );
-        if (found) {
-          setSelectedRegiaId(found.id);
-          setUserRole('regia');
+      } else if (viewParam === 'regia' || roleParam === 'regia' || regiaParam) {
+        setCurrentTab('regia');
+        setUserRole('regia');
+        const target = regiaParam || idParam || badgeParam;
+        if (target) {
+          const found = regiaStaff.find(
+            (r) => r.id.toLowerCase() === target.toLowerCase() || r.badgeCode?.toLowerCase() === target.toLowerCase()
+          );
+          if (found) setSelectedRegiaId(found.id);
         }
-      } else if (ospiteParam || (roleParam === 'ospite' && idParam)) {
-        const targetId = ospiteParam || idParam;
-        const found = guests.find(
-          (g) => g.id === targetId || g.badgeCode?.toLowerCase() === targetId?.toLowerCase()
-        );
-        if (found) {
-          setSelectedGuestId(found.id);
-          setUserRole('ospite');
+      } else if (viewParam === 'ospite' || viewParam === 'guest' || roleParam === 'ospite' || guestParam) {
+        setCurrentTab('ospite');
+        setUserRole(isFromAdmin ? (fromParam as any) : 'ospite');
+        const target = guestParam || idParam || badgeParam;
+        if (target) {
+          const found = guests.find(
+            (g) => g.id.toLowerCase() === target.toLowerCase() || g.badgeCode?.toLowerCase() === target.toLowerCase()
+          );
+          if (found) setSelectedGuestId(found.id);
         }
-      } else if (badgeParam) {
-        // Search across all lists by badgeCode
-        const foundDisc = discenti.find((d) => d.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
-        const foundFac = faculty.find((f) => f.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
-        const foundTech = technicians.find((t) => t.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
-        const foundDir = directors.find((d) => d.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
-        const foundRegia = regiaStaff.find((r) => r.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
-        const foundGuest = guests.find((g) => g.badgeCode?.toLowerCase() === badgeParam.toLowerCase());
+      }
 
+      // 2. If badgeParam or idParam was supplied without viewParam, resolve participant automatically
+      if (!viewParam && (badgeParam || idParam)) {
+        const query = (badgeParam || idParam)!.toLowerCase();
+
+        // Check Discenti
+        const foundDisc = discenti.find((d) => d.badgeCode?.toLowerCase() === query || d.id.toLowerCase() === query);
         if (foundDisc) {
           setSelectedDiscenteId(foundDisc.id);
+          setCurrentTab('discente');
           setUserRole('discente');
-        } else if (foundFac) {
-          setSelectedFacultyId(foundFac.id);
-          setUserRole('faculty');
-        } else if (foundTech) {
-          setSelectedTechnicianId(foundTech.id);
-          setUserRole('tecnico');
-        } else if (foundDir) {
-          setSelectedDirectorId(foundDir.id);
-          setUserRole('direttore');
-        } else if (foundRegia) {
-          setSelectedRegiaId(foundRegia.id);
-          setUserRole('regia');
-        } else if (foundGuest) {
-          setSelectedGuestId(foundGuest.id);
-          setUserRole('ospite');
+          return;
         }
-      } else if (roleParam) {
-        if (['discente', 'faculty', 'tecnico', 'direttore', 'regia', 'ospite', 'public'].includes(roleParam)) {
-          setUserRole(roleParam as any);
+
+        // Check Faculty
+        const foundFac = faculty.find((f) => f.badgeCode?.toLowerCase() === query || f.id.toLowerCase() === query);
+        if (foundFac) {
+          setSelectedFacultyId(foundFac.id);
+          if (foundFac.assignedTeamId) setActiveFacultyTeamId(foundFac.assignedTeamId);
+          setCurrentTab('faculty');
+          setUserRole('faculty');
+          return;
+        }
+
+        // Check Technicians
+        const foundTech = technicians.find((t) => t.badgeCode?.toLowerCase() === query || t.id.toLowerCase() === query);
+        if (foundTech) {
+          setSelectedTechnicianId(foundTech.id);
+          setCurrentTab('tecnici');
+          setUserRole('tecnico');
+          return;
+        }
+
+        // Check Directors
+        const foundDir = directors.find((d) => d.badgeCode?.toLowerCase() === query || d.id.toLowerCase() === query);
+        if (foundDir) {
+          setSelectedDirectorId(foundDir.id);
+          setCurrentTab('direttori');
+          setUserRole('direttore');
+          return;
+        }
+
+        // Check Regia
+        const foundReg = regiaStaff.find((r) => r.badgeCode?.toLowerCase() === query || r.id.toLowerCase() === query);
+        if (foundReg) {
+          setSelectedRegiaId(foundReg.id);
+          setCurrentTab('regia');
+          setUserRole('regia');
+          return;
+        }
+
+        // Check Guests
+        const foundGuest = guests.find((g) => g.badgeCode?.toLowerCase() === query || g.id.toLowerCase() === query);
+        if (foundGuest) {
+          setSelectedGuestId(foundGuest.id);
+          setCurrentTab('ospite');
+          setUserRole('ospite');
+          return;
         }
       }
     }
@@ -202,81 +215,54 @@ const CourseMainContent: React.FC = () => {
     setSelectedDirectorId,
     setSelectedRegiaId,
     setSelectedGuestId,
+    setActiveFacultyTeamId,
     setUserRole,
+    setCurrentTab,
   ]);
 
   const renderActiveView = () => {
-    if (currentTab === 'schedule_gate') {
-      return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between bg-neutral-900 border border-neutral-800 p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-400" />
-              <h2 className="text-lg font-black text-white uppercase">
-                {language === 'en' ? 'Sync & Start Countdown Control' : 'Sincronizzazione Start & Countdown'}
-              </h2>
-            </div>
-            <button
-              onClick={() => setCurrentTab('main')}
-              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-mono uppercase rounded cursor-pointer"
-            >
-              {language === 'en' ? '← Back to Dashboard' : '← Torna alla Dashboard'}
-            </button>
-          </div>
-          <CourseScheduleGateCard />
-        </div>
-      );
-    }
-
-    if (!isCurrentViewUnlocked()) {
-      return <CoursePreStartCountdown />;
-    }
-
-    if (userRole === 'tecnico') {
-      if (currentTab === 'catalog') {
-        return <ScenariCatalogView onOpenProtesi={() => setCurrentTab('protesi')} />;
-      }
-      if (currentTab === 'protesi') {
-        return <ProtesiCatalogView />;
-      }
-      if (currentTab === 'night') {
-        return <NightScenarioView />;
-      }
-    }
+    if (currentTab === 'public') return <PublicTimelineView />;
+    if (currentTab === 'discente') return <DiscenteView />;
+    if (currentTab === 'faculty') return <FacultyView />;
+    if (currentTab === 'tecnici') return <TecniciView />;
+    if (currentTab === 'regia') return <RegiaView />;
+    if (currentTab === 'direttori') return <DirettoriView />;
+    if (currentTab === 'ospite') return <OspiteView />;
+    if (currentTab === 'scenari' || currentTab === 'catalog') return <ScenariMasterListView />;
+    if (currentTab === 'protesi') return <ProtesiCatalogView />;
 
     // Main Role-based View
     switch (userRole) {
-      case 'discente':
-        return <DiscenteView />;
-      case 'tecnico':
-        return <TecnicoView />;
-      case 'faculty':
-        return <FacultyView />;
-      case 'direttore':
-        return <DirettoreView />;
       case 'regia':
         return <RegiaView />;
       case 'ospite':
         return <OspiteView />;
-      case 'public':
+      case 'direttore':
       default:
-        return <PublicSharedView />;
+        return <DirettoriView />;
     }
   };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
+      {/* Real-time Suspension Emergency Banner (Highest Priority) */}
+      <CourseSuspensionBanner />
+
+
       {/* Main Simulation Navigation & Control Bar */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       {/* Dynamic Content Body - Fluid & Adaptive across Mobile, Tablet, and Desktop */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-6 pb-12 transition-all">
+      <main className="flex-1 w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4 pb-12 transition-all">
         {renderActiveView()}
       </main>
 
+      {/* Floating Simulation Quick Bar when acceleration is active */}
+      <SimulationQuickFloatingBar onOpenFullModal={() => setIsSimulationModalOpen(true)} />
+
       {/* Trauma Center Footer - Responsive on all screen sizes */}
-      <footer className="border-t-4 border-neutral-900 bg-neutral-950 py-5 sm:py-6 text-xs text-neutral-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+      <footer className="border-t-4 border-neutral-900 bg-neutral-950 py-4 sm:py-6 text-xs text-neutral-500 mt-auto">
+        <div className="max-w-[1920px] mx-auto px-3 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 bg-orange-500 text-black flex items-center justify-center font-black">
               <Activity className="w-4 h-4" />
@@ -299,41 +285,7 @@ const CourseMainContent: React.FC = () => {
         </div>
       </footer>
 
-      {/* Startup Access Gateway Modal */}
-      <StartupAccessModal
-        isOpen={isStartupModalOpen}
-        directors={directors}
-        regiaStaff={regiaStaff}
-        initialMode={isRegiaQrStartup ? 'master_or_regia_select' : 'choice'}
-        onSelectPublic={() => {
-          setUserRole('public');
-          setIsStartupModalOpen(false);
-        }}
-        onSelectDirector={(directorId) => {
-          if (directorId) {
-            setSelectedDirectorId(directorId);
-          }
-          setUserRole('direttore');
-          setIsStartupModalOpen(false);
-        }}
-        onSelectMaster={() => {
-          const masterDir = directors.find((d) => d.isMaster) || directors[0];
-          if (masterDir) {
-            setSelectedDirectorId(masterDir.id);
-          }
-          setUserRole('direttore');
-          setIsStartupModalOpen(false);
-        }}
-        onSelectRegia={(regiaId) => {
-          if (regiaId) {
-            setSelectedRegiaId(regiaId);
-          } else if (regiaStaff[0]) {
-            setSelectedRegiaId(regiaStaff[0].id);
-          }
-          setUserRole('regia');
-          setIsStartupModalOpen(false);
-        }}
-      />
+
     </div>
   );
 };

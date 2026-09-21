@@ -1,4 +1,4 @@
-export type UserRole = 'public' | 'discente' | 'tecnico' | 'faculty' | 'direttore' | 'ospite' | 'regia';
+export type UserRole = 'discente' | 'tecnico' | 'faculty' | 'direttore' | 'ospite' | 'regia';
 
 export type CourseDay = 2 | 3;
 export type SessionPeriod = 'mattina' | 'pomeriggio' | 'notturno';
@@ -113,8 +113,11 @@ export interface SimulatorPatient {
   teamExtraAssigned: number;
   teamIntraAssigned: number;
   lesioni: string[];
+  dinamicaDelleLesioni?: string;
   procedureExtra: string[];
   procedureIntra: string[];
+  procedureSpecifiche?: string[];
+  approccioTcccVsShockRoom?: string;
   moulageProtesi: string; // Lab / Silvia
   simulatori: string; // Manichini / Hardware
   attoriCount: number; // 1 o 2
@@ -139,7 +142,6 @@ export type ActivityType =
   | 'skills'
   | 'debriefing'
   | 'pause'
-  | 'night_scenario'
   | 'plenary';
 
 export interface GroupActivitySlot {
@@ -184,9 +186,8 @@ export interface CourseStartSchedule {
   location: string;
   isGatePaused?: boolean;
   pausedRemainingMs?: number;
-  gateMode?: 'start' | 'lunch' | 'night';
+  gateMode?: 'start' | 'lunch';
   lunchTime?: string;
-  nightTime?: string;
 }
 
 export interface CourseMessage {
@@ -205,18 +206,6 @@ export interface CourseMessage {
   acknowledgedAt?: string;
 }
 
-export interface BroadcastAlert {
-  id: string;
-  timestamp: string;
-  senderRole: UserRole;
-  senderName: string;
-  type: AlertType;
-  title: string;
-  message: string;
-  targetGroups: ('ALL' | GroupType)[];
-  active: boolean;
-  priority: 'normal' | 'high' | 'critical';
-}
 
 export interface TeamEvaluationScores {
   abcdeApproach: number;       // 1 - 5
@@ -234,7 +223,7 @@ export interface TeamEvaluation {
   period: SessionPeriod;
   patientId: number;
   scenarioCode: string;
-  phase: 'EXTRA' | 'INTRA' | 'NIGHT' | 'WORKSHOP';
+  phase: 'EXTRA' | 'INTRA' | 'WORKSHOP';
   scores: TeamEvaluationScores;
   proceduresCompleted: string[];
   strengths: string;
@@ -243,18 +232,7 @@ export interface TeamEvaluation {
   timestamp: string;
 }
 
-export interface NightScenarioCase {
-  teamId: number;
-  teamName: string;
-  groupId: GroupType;
-  title: string;
-  category: string;
-  injuries: string[];
-  expectedTriageCategory: 'IMMEDIATE' | 'DELAYED' | 'MINOR' | 'EXPECTANT_DEAD';
-  procedures: string[];
-  location: string;
-  triageAssigned?: TriageCategory;
-}
+
 
 export interface ProtesiItem {
   id: string;
@@ -271,7 +249,6 @@ export interface ProtesiItem {
     teamExtra: number;
     teamIntra: number;
   }[];
-  nightScenarioUsed?: boolean;
   requiredProcedures: string[];
   techRequirements: string;
   leadTechnician: string;
