@@ -462,7 +462,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       scheduledTime: timeStr,
       isoTimestamp: `${dateStr}T${timeStr}:00`,
       isGateEnabled: true,
-      title: 'H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM',
+      title: 'HITTER • High Intensive Training Trauma Emergency Response • INTUBATI EM',
       location: 'Centro di Simulazione Avanzata e Medicina Tattica',
     };
   };
@@ -1653,7 +1653,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         location = 'Ristorante Centro Simulazione / Mensa (12:00 - 13:00)';
       } else {
         tTime = customTime || '08:30';
-        title = 'H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM';
+        title = 'HITTER • High Intensive Training Trauma Emergency Response • INTUBATI EM';
         location = 'Centro di Simulazione Avanzata e Medicina Tattica';
       }
       const today = new Date();

@@ -286,7 +286,7 @@ export const DiscenteView: React.FC = () => {
               <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
                 <div className="space-y-1">
                   <span className="inline-block px-3 py-1 bg-cyan-600 text-black font-black text-xs uppercase tracking-widest rounded shadow-sm">
-                    {isEn ? `H.I.T.T.E.R. High Intensive Training Trauma Emergency Response • INTUBATI EM • TEAM ${currentDiscente.teamId}` : `H.I.T.T.E.R. High Intensive Training Trauma Emergency Response • INTUBATI EM • SQUADRA ${currentDiscente.teamId}`}
+                    {isEn ? `HITTER High Intensive Training Trauma Emergency Response • INTUBATI EM • TEAM ${currentDiscente.teamId}` : `H.I.T.T.E.R. High Intensive Training Trauma Emergency Response • INTUBATI EM • SQUADRA ${currentDiscente.teamId}`}
                   </span>
                   <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight leading-tight pt-1">
                     {isEn ? 'AWAITING LEARNER COURSE OPENING' : 'ATTESA APERTURA CORSO DISCENTI'}

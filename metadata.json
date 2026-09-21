@@ -1,6 +1,6 @@
 {
-  "name": "H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM",
-  "description": "Corso Avanzato H.I.T.T.E.R. (High Intensive Training Trauma Emergency Response) - Piattaforma operativa di gestione, regia e sincronizzazione cronoprogrammi, rotazioni cliniche Day 2 & Day 3, faculty e discenti by INTUBATI EM.",
+  "name": "HITTER • High Intensive Training Trauma Emergency Response • INTUBATI EM",
+  "description": "Corso Avanzato HITTER (High Intensive Training Trauma Emergency Response) - Piattaforma operativa di gestione, regia e sincronizzazione cronoprogrammi, rotazioni cliniche Day 2 & Day 3, faculty e discenti by INTUBATI EM.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

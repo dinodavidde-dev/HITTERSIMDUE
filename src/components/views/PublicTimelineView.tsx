@@ -484,7 +484,7 @@ export const PublicTimelineView: React.FC = () => {
                   
                   <div className="space-y-1">
                     <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                      H.I.T.T.E.R.
+                      HITTER
                     </h1>
                     <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
                       High Intensive Training Trauma Emergency Response

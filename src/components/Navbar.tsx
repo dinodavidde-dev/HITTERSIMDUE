@@ -142,13 +142,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           >
             <div className="flex items-center justify-between gap-2.5 sm:gap-3.5 min-w-max">
               
-              {/* BLOCK 1: Logo & Home Trigger (H.I.T.T.E.R. • INTUBATI EM) */}
+              {/* BLOCK 1: Logo & Home Trigger (HITTER • INTUBATI EM) */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setCurrentTab('public')}
                   className="flex items-center gap-2 group cursor-pointer focus:outline-hidden"
-                  title="H.I.T.T.E.R. • High Intensive Training Trauma Emergency Response • INTUBATI EM"
+                  title="HITTER. • High Intensive Training Trauma Emergency Response • INTUBATI EM"
                 >
                   <div className="w-8 h-8 bg-red-600 text-white flex items-center justify-center font-black rounded shadow-md group-hover:bg-red-500 transition-colors">
                     <Activity className="w-4 h-4 stroke-[3]" />
@@ -156,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   <div className="flex flex-col text-left">
                     <div className="flex items-center gap-1.5">
                       <span className="font-black text-sm sm:text-base tracking-tight text-white uppercase group-hover:text-red-400 transition-colors">
-                        H.I.T.T.E.R.
+                        HITTER
                       </span>
                       <span className="text-[8px] font-black uppercase tracking-widest px-1 py-0.2 bg-red-600 text-white rounded">
                         INTUBATI EM
