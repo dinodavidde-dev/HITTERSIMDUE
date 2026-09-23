@@ -81,12 +81,35 @@ import { EvaluationSummaryModal } from './EvaluationSummaryModal';
 import { RegiaRadioCoordinationPanel } from './RegiaRadioCoordinationPanel';
 import { INITIAL_TIMELINE_SLOTS, INITIAL_TEAMS, INITIAL_FACULTY } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
+import { translateSlot, translateMedicalText } from '../../utils/courseTranslation';
 
 const GROUP_THEMES: Record<GroupType, { label: string; name: string; border: string; bg: string; text: string; badgeBg: string }> = {
   A: { label: 'ROSSO', name: 'Triage & TCCC', border: '#ef4444', bg: 'bg-red-950/30', text: 'text-red-400', badgeBg: 'bg-red-600' },
   B: { label: 'BLU', name: 'Airway & Shock', border: '#3b82f6', bg: 'bg-blue-950/30', text: 'text-blue-400', badgeBg: 'bg-blue-600' },
   C: { label: 'VERDE', name: 'Torace & Drenaggi', border: '#22c55e', bg: 'bg-green-950/30', text: 'text-green-400', badgeBg: 'bg-green-600' },
   D: { label: 'GIALLO', name: 'Shock Room & REBOA', border: '#eab308', bg: 'bg-yellow-950/30', text: 'text-yellow-400', badgeBg: 'bg-yellow-600' },
+};
+
+const getGroupTheme = (grp: GroupType, isEn: boolean) => {
+  const base = GROUP_THEMES[grp] || GROUP_THEMES.A;
+  if (!isEn) return base;
+  const nameEnMap: Record<GroupType, string> = {
+    A: 'Triage & TCCC',
+    B: 'Airway & Shock',
+    C: 'Chest & Drains',
+    D: 'Shock Room & REBOA',
+  };
+  const labelEnMap: Record<GroupType, string> = {
+    A: 'RED',
+    B: 'BLUE',
+    C: 'GREEN',
+    D: 'YELLOW',
+  };
+  return {
+    ...base,
+    name: nameEnMap[grp] || base.name,
+    label: labelEnMap[grp] || base.label,
+  };
 };
 
 interface RegiaVisualTimelineBoardProps {
@@ -99,8 +122,8 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
   const {
     activeDay,
     setActiveDay,
-    currentSlot,
-    filteredSlots,
+    currentSlot: rawCurrentSlot,
+    filteredSlots: rawFilteredSlots,
     activeSlotIndex,
     setActiveSlotIndex,
     nextSlot,
@@ -134,6 +157,9 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
   } = useCourse();
 
   const isEn = language === 'en';
+
+  const currentSlot = useMemo(() => translateSlot(rawCurrentSlot, language), [rawCurrentSlot, language]);
+  const filteredSlots = useMemo(() => rawFilteredSlots.map((s) => translateSlot(s, language)), [rawFilteredSlots, language]);
 
   const currentFilteredIndex = useMemo(() => {
     const idx = filteredSlots.findIndex((s) => s.id === currentSlot.id);
@@ -289,9 +315,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         const p = patientsList.find((pt) => pt.id === pId);
         return p?.procedureExtra || [];
       });
-      return procs.length > 0
+      const resolved = procs.length > 0
         ? Array.from(new Set(procs))
-        : ['Cricotirotomia CRIC', 'Tourniquet TQ', 'Needle Decompression ND'];
+        : (isEn ? ['CRIC Cricothyroidotomy', 'Tourniquet TQ', 'Needle Decompression ND'] : ['Cricotirotomia CRIC', 'Tourniquet TQ', 'Needle Decompression ND']);
+      return resolved.map(p => translateMedicalText(p, language));
     }
 
     if (activity.activityType === 'scenario_intra') {
@@ -300,33 +327,33 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         const p = patientsList.find((pt) => pt.id === pId);
         return p?.procedureIntra || [];
       });
-      return procs.length > 0
+      const resolved = procs.length > 0
         ? Array.from(new Set(procs))
-        : ['Toracotomia di Resuscitazione', 'REBOA Zone 1/3', 'Drenaggio Bulau', 'Packing PPP'];
+        : (isEn ? ['Resuscitative Thoracotomy', 'REBOA Zone 1/3', 'Chest Tube Insertion', 'PPP Pelvic Packing'] : ['Toracotomia di Resuscitazione', 'REBOA Zone 1/3', 'Drenaggio Bulau', 'Packing PPP']);
+      return resolved.map(p => translateMedicalText(p, language));
     }
 
     if (activity.activityType === 'workshop') {
-      return [
-        'Trascinamento Ferito',
-        'Estrazione Sked',
-        'Cura sotto fuoco (CUF)',
-      ];
+      return isEn
+        ? ['Casualty Drag', 'Sked Stretcher Extraction', 'Care Under Fire (CUF)']
+        : ['Trascinamento Ferito', 'Estrazione Sked', 'Cura sotto fuoco (CUF)'];
     }
 
     if (activity.activityType === 'skills') {
-      return [
-        'Vie Aeree & Cricotirotomia',
-        'Accessi IO FAST1/EZ-IO',
-      ];
+      return isEn
+        ? ['Airway & Cricothyroidotomy', 'IO Access FAST1/EZ-IO']
+        : ['Vie Aeree & Cricotirotomia', 'Accessi IO FAST1/EZ-IO'];
     }
 
     if (activity.activityType === 'debriefing') {
-      return ['Handover SBAR', 'Analisi ABCDE', 'Gestione Errori'];
+      return isEn
+        ? ['SBAR Handover', 'ABCDE Analysis', 'Error Management']
+        : ['Handover SBAR', 'Analisi ABCDE', 'Gestione Errori'];
     }
 
-
-
-    return ['Briefing Tecnico', 'Coordinamento Squadra'];
+    return isEn
+      ? ['Technical Briefing', 'Team Coordination']
+      : ['Briefing Tecnico', 'Coordinamento Squadra'];
   };
 
   // Helper: Activity Badge styling & label
@@ -334,7 +361,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     switch (type) {
       case 'scenario_extra':
         return {
-          label: 'SCENARIO EXTRA (TCCC)',
+          label: isEn ? 'EXTRA SCENARIO (TCCC)' : 'SCENARIO EXTRA (TCCC)',
           shortLabel: 'EXTRA TCCC',
           bg: 'bg-blue-950/90 text-blue-300 border-blue-500/60',
           chip: 'bg-cyan-500 text-black',
@@ -342,7 +369,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         };
       case 'scenario_intra':
         return {
-          label: 'SCENARIO INTRA (SHOCK ROOM)',
+          label: isEn ? 'INTRA SCENARIO (SHOCK ROOM)' : 'SCENARIO INTRA (SHOCK ROOM)',
           shortLabel: 'INTRA ED',
           bg: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/60',
           chip: 'bg-emerald-500 text-black',
@@ -350,8 +377,8 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         };
       case 'workshop':
         return {
-          label: 'SESSIONE PRATICA',
-          shortLabel: 'PRATICA',
+          label: isEn ? 'PRACTICAL SESSION' : 'SESSIONE PRATICA',
+          shortLabel: isEn ? 'PRACTICE' : 'PRATICA',
           bg: 'bg-neutral-800 text-neutral-300 border-neutral-700',
           chip: 'bg-neutral-600 text-white',
           icon: <Wrench className="w-3 h-3 text-neutral-400" />,
@@ -376,8 +403,8 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
       case 'pause':
       default:
         return {
-          label: 'PAUSA / RESET',
-          shortLabel: 'PAUSA',
+          label: isEn ? 'BREAK / RESET' : 'PAUSA / RESET',
+          shortLabel: isEn ? 'BREAK' : 'PAUSA',
           bg: 'bg-neutral-900 text-neutral-400 border-neutral-700',
           chip: 'bg-neutral-700 text-white',
           icon: <Clock className="w-3 h-3 text-neutral-400" />,
@@ -488,7 +515,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2 py-0.5 bg-yellow-500 text-black font-black font-mono text-[11px] uppercase tracking-wider flex items-center gap-1">
                 <Radio className="w-3 h-3 animate-pulse" />
-                REGIA MASTER • TIMELINE COMPATTA 4 GRUPPI
+                {isEn ? 'MASTER CONTROL • 4-GROUP COMPACT TIMELINE' : 'REGIA MASTER • TIMELINE COMPATTA 4 GRUPPI'}
               </span>
 
               {/* Day Switcher Component */}
@@ -503,10 +530,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     ? 'bg-emerald-950 border-emerald-600 text-emerald-300'
                     : 'bg-neutral-950 border-neutral-700 text-neutral-400'
                 }`}
-                title="Avanzamento automatico delle fasi del corso al termine del timer"
+                title={isEn ? 'Automatic course phase advancement upon timer completion' : 'Avanzamento automatico delle fasi del corso al termine del timer'}
               >
                 <Zap className={`w-3 h-3 ${autoAdvancePhases ? 'text-emerald-400 animate-pulse' : 'text-neutral-500'}`} />
-                <span>{autoAdvancePhases ? 'AUTO-AVANZAMENTO ON' : 'AVANZAMENTO MANUALE'}</span>
+                <span>{autoAdvancePhases ? (isEn ? 'AUTO-ADVANCE ON' : 'AUTO-AVANZAMENTO ON') : (isEn ? 'MANUAL ADVANCE' : 'AVANZAMENTO MANUALE')}</span>
               </button>
 
               {timeMultiplier && timeMultiplier > 1 && (
@@ -530,7 +557,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           <div className={`flex items-center gap-2 self-stretch sm:self-auto ${isMaster ? 'justify-between sm:justify-end' : 'justify-end lg:ml-auto w-full lg:w-auto'}`}>
             <div className="bg-neutral-950 border border-yellow-500/80 px-4 py-1.5 text-center min-w-[130px] shadow-md">
               <span className="text-[10px] font-mono text-yellow-400 font-black uppercase block tracking-wider">
-                {isTimerRunning ? 'TIMER FASE (ATTIVO)' : 'TIMER FASE (PAUSA)'}
+                {isTimerRunning ? (isEn ? 'PHASE TIMER (ACTIVE)' : 'TIMER FASE (ATTIVO)') : (isEn ? 'PHASE TIMER (PAUSED)' : 'TIMER FASE (PAUSA)')}
               </span>
               <span className="text-2xl font-black font-mono text-yellow-300 leading-none">
                 {formatTimer(timerSeconds)}
@@ -543,7 +570,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   type="button"
                   onClick={toggleTimer}
                   className="p-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer transition-colors shadow"
-                  title={isTimerRunning ? 'Pausa Timer' : 'Avvia Timer'}
+                  title={isTimerRunning ? (isEn ? 'Pause Timer' : 'Pausa Timer') : (isEn ? 'Start Timer' : 'Avvia Timer')}
                 >
                   {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                 </button>
@@ -552,7 +579,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   type="button"
                   onClick={() => resetTimer()}
                   className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase cursor-pointer border border-neutral-700"
-                  title="Reset Timer Slot"
+                  title={isEn ? 'Reset Slot Timer' : 'Reset Timer Slot'}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                 </button>
@@ -562,7 +589,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     type="button"
                     onClick={() => adjustTimer(-60)}
                     className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
-                    title="-1 minuto"
+                    title={isEn ? '-1 minute' : '-1 minuto'}
                   >
                     -1m
                   </button>
@@ -570,7 +597,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     type="button"
                     onClick={() => adjustTimer(60)}
                     className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
-                    title="+1 minuto"
+                    title={isEn ? '+1 minute' : '+1 minuto'}
                   >
                     +1m
                   </button>
@@ -697,14 +724,14 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   >
                     {filteredSlots.map((s, idx) => (
                       <option key={s.id} value={idx}>
-                        Fase {idx + 1} ({s.timeRange}): {s.title}
+                        {isEn ? 'Phase' : 'Fase'} {idx + 1} ({s.timeRange}): {s.title}
                       </option>
                     ))}
                   </select>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 bg-neutral-950 px-3 py-1.5 border border-yellow-500/40 font-mono text-xs">
-                  <span className="text-yellow-400 font-bold uppercase">SYNC REGIA ATTIVO:</span>
+                  <span className="text-yellow-400 font-bold uppercase">{isEn ? 'CONTROL SYNC ACTIVE:' : 'SYNC REGIA ATTIVO:'}</span>
                   <span className="text-white font-black truncate">{currentSlot.title} ({currentSlot.timeRange})</span>
                 </div>
               )}
@@ -738,16 +765,16 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
             <div className="flex items-center gap-1.5 font-black uppercase text-neutral-300">
               <Clock className="w-3.5 h-3.5 text-yellow-400" />
-              <span>TIMELINE SCROLLER GIORNO {activeDay} ({filteredSlots.length} FASI TOTALI)</span>
+              <span>{isEn ? `TIMELINE SCROLLER DAY ${activeDay} (${filteredSlots.length} TOTAL PHASES)` : `TIMELINE SCROLLER GIORNO ${activeDay} (${filteredSlots.length} FASI TOTALI)`}</span>
             </div>
             {isMaster && (
               <div className="flex items-center gap-1">
-                <span className="text-[9px] text-neutral-500 hidden sm:inline">Scorri per navigare tra gli slot:</span>
+                <span className="text-[9px] text-neutral-500 hidden sm:inline">{isEn ? 'Scroll to navigate slots:' : 'Scorri per navigare tra gli slot:'}</span>
                 <button
                   type="button"
                   onClick={() => scrollTimeline('left')}
                   className="p-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 cursor-pointer"
-                  title="Scorri indietro nella timeline"
+                  title={isEn ? 'Scroll back in timeline' : 'Scorri indietro nella timeline'}
                 >
                   <ChevronLeft className="w-3 h-3" />
                 </button>
@@ -755,7 +782,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   type="button"
                   onClick={() => scrollTimeline('right')}
                   className="p-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 cursor-pointer"
-                  title="Scorri avanti nella timeline"
+                  title={isEn ? 'Scroll forward in timeline' : 'Scorri avanti nella timeline'}
                 >
                   <ChevronRight className="w-3 h-3" />
                 </button>
@@ -788,12 +815,12 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                       ? 'bg-neutral-950/60 border-neutral-800 opacity-70 ' + (isMaster ? 'hover:opacity-100 hover:border-neutral-700' : '')
                       : 'bg-neutral-950 border-neutral-800 ' + (isMaster ? 'hover:border-neutral-600' : '')
                   }`}
-                  title={isMaster ? `Clicca per passare a ${slot.title} (${slot.timeRange})` : `${slot.title} (${slot.timeRange})`}
+                  title={isMaster ? (isEn ? `Click to go to ${slot.title} (${slot.timeRange})` : `Clicca per passare a ${slot.title} (${slot.timeRange})`) : `${slot.title} (${slot.timeRange})`}
                 >
                   {/* Status Banner */}
                   <div className="flex items-center justify-between text-[9px] font-mono mb-1">
                     <span className="px-1 py-0.2 bg-neutral-800 text-neutral-300 font-bold">
-                      Fase {sIdx + 1}/{filteredSlots.length}
+                      {isEn ? 'Phase' : 'Fase'} {sIdx + 1}/{filteredSlots.length}
                     </span>
                     {isCurrent ? (
                       <span className="px-1 py-0.2 bg-yellow-500 text-black font-black font-mono animate-pulse">
@@ -801,7 +828,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                       </span>
                     ) : isNext ? (
                       <span className="px-1 py-0.2 bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 font-mono">
-                        T+1 PROSSIMO
+                        {isEn ? 'T+1 NEXT' : 'T+1 PROSSIMO'}
                       </span>
                     ) : (
                       <span className="text-neutral-500 font-mono">{slot.durationMinutes}m</span>
@@ -822,7 +849,6 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <div className="grid grid-cols-4 gap-0.5 pt-1 border-t border-neutral-800 text-[8px] font-mono text-center">
                     {(['A', 'B', 'C', 'D'] as const).map((grp) => {
                       const act = slot.groupActivities[grp];
-                      const badge = getActivityBadge(act.activityType);
                       return (
                         <div
                           key={grp}
@@ -837,7 +863,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                               ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
                               : 'bg-neutral-900 text-neutral-400 border-neutral-800'
                           }`}
-                          title={`Gruppo ${grp}: ${act.title}`}
+                          title={isEn ? `Group ${grp}: ${act.title}` : `Gruppo ${grp}: ${act.title}`}
                         >
                           <strong>{grp}</strong>:{' '}
                           {act.activityType === 'scenario_extra'
@@ -871,12 +897,12 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                 className="px-2.5 py-1 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 font-bold text-[11px] uppercase border border-neutral-800 flex items-center gap-1 cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                <span>PREC</span>
+                <span>{isEn ? 'PREV' : 'PREC'}</span>
               </button>
             )}
 
             <span className="text-[11px] font-mono text-yellow-400 font-bold px-2.5 py-1 bg-neutral-950 border border-yellow-500/40 flex items-center gap-1.5">
-              <span>FASE {currentFilteredIndex + 1} / {filteredSlots.length}</span>
+              <span>{isEn ? 'PHASE' : 'FASE'} {currentFilteredIndex + 1} / {filteredSlots.length}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-ping" />
             </span>
 
@@ -887,7 +913,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                 disabled={activeSlotIndex >= INITIAL_TIMELINE_SLOTS.length - 1}
                 className="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-[11px] uppercase flex items-center gap-1 cursor-pointer"
               >
-                <span>SUCC</span>
+                <span>{isEn ? 'NEXT' : 'SUCC'}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             )}
@@ -898,24 +924,24 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
             {totalCriticalities > 0 ? (
               <span className="px-2 py-0.5 bg-amber-500 text-black text-[10px] font-mono font-black animate-pulse flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
-                <span>{totalCriticalities} CRITICITÀ POSTAZIONI</span>
+                <span>{totalCriticalities} {isEn ? 'STATION ISSUES' : 'CRITICITÀ POSTAZIONI'}</span>
               </span>
             ) : (
               <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1">
                 <Check className="w-3 h-3 text-emerald-400" />
-                <span>POSTAZIONI 100% OK</span>
+                <span>{isEn ? 'STATIONS 100% OK' : 'POSTAZIONI 100% OK'}</span>
               </span>
             )}
 
             {totalPendingEvals > 0 ? (
               <span className="px-2 py-0.5 bg-amber-950 border border-amber-600/70 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1">
                 <AlertOctagon className="w-3 h-3 text-amber-400" />
-                <span>{totalPendingEvals} EVAL PENDING</span>
+                <span>{totalPendingEvals} {isEn ? 'PENDING EVALS' : 'EVAL PENDING'}</span>
               </span>
             ) : (
               <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>VALUTAZIONI OK</span>
+                <span>{isEn ? 'EVALUATIONS OK' : 'VALUTAZIONI OK'}</span>
               </span>
             )}
           </div>
@@ -926,17 +952,17 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               type="button"
               onClick={() => toggleAllGroups(!areAllExpanded)}
               className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-bold text-[11px] uppercase flex items-center gap-1 cursor-pointer transition-colors"
-              title="Apri o chiudi tutti i menu a tendina con i dettagli delle timeline"
+              title={isEn ? 'Expand or collapse all dropdowns with timeline details' : 'Apri o chiudi tutti i menu a tendina con i dettagli delle timeline'}
             >
               {areAllExpanded ? (
                 <>
                   <ChevronUp className="w-3.5 h-3.5 text-yellow-400" />
-                  <span>COMPRIMI TUTTI</span>
+                  <span>{isEn ? 'COLLAPSE ALL' : 'COMPRIMI TUTTI'}</span>
                 </>
               ) : (
                 <>
                   <ChevronDown className="w-3.5 h-3.5 text-yellow-400" />
-                  <span>ESPANDI TUTTI I DETTAGLI</span>
+                  <span>{isEn ? 'EXPAND ALL DETAILS' : 'ESPANDI TUTTI I DETTAGLI'}</span>
                 </>
               )}
             </button>
@@ -954,7 +980,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                       : 'text-neutral-400 hover:text-white'
                   }`}
                 >
-                  {grp === 'ALL' ? 'TUTTI' : grp}
+                  {grp === 'ALL' ? (isEn ? 'ALL' : 'TUTTI') : grp}
                 </button>
               ))}
             </div>
@@ -965,7 +991,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
       {/* 2. COMPACT 4-GROUPS TIMELINE BOARD (ALL 4 GROUPS SIMULTANEOUSLY VISIBLE ON SCREEN) */}
       <div className="space-y-2">
         {groupsToDisplay.map((grpId) => {
-          const groupTheme = GROUP_THEMES[grpId as GroupType] || GROUP_THEMES.A;
+          const groupTheme = getGroupTheme(grpId as GroupType, isEn);
           const assignedTeams = getGroupTeams(grpId as GroupType);
           const activeActivity = currentSlot.groupActivities[grpId];
           const nextActivity = nextSlotObj ? nextSlotObj.groupActivities[grpId] : null;
@@ -995,7 +1021,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               <div
                 onClick={() => toggleGroupDropdown(grpId)}
                 className="p-2 sm:p-3 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 sm:gap-2.5 bg-neutral-900 cursor-pointer hover:bg-neutral-850/80 transition-colors"
-                title="Clicca per espandere/comprimere le specifiche del modulo"
+                title={isEn ? 'Click to expand/collapse module specifications' : 'Clicca per espandere/comprimere le specifiche del modulo'}
               >
                 {/* 1. Group Badge & Squads */}
                 <div className="flex items-center gap-2.5 w-full sm:w-auto min-w-0 sm:min-w-[180px] flex-shrink-0">
@@ -1049,7 +1075,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="px-1.5 py-0.2 bg-red-600 text-white font-mono font-black text-[9px] uppercase tracking-wider">
-                        T0 ATTIVO
+                        {isEn ? 'T0 ACTIVE' : 'T0 ATTIVO'}
                       </span>
                       <span
                         className={`px-1.5 py-0.2 border text-[9px] font-bold font-mono uppercase flex items-center gap-1 ${activeBadge.bg}`}
@@ -1109,10 +1135,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                                 )
                               }
                               className="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-[9px] uppercase font-mono flex items-center gap-1 animate-pulse border border-amber-300 cursor-pointer shadow"
-                              title="Criticità segnalata! Clicca per visualizzare e risolvere"
+                              title={isEn ? 'Critical issue reported! Click to view and resolve' : 'Criticità segnalata! Clicca per visualizzare e risolvere'}
                             >
                               <AlertTriangle className="w-3 h-3" />
-                              <span>CRITICITÀ ⚠️</span>
+                              <span>{isEn ? 'CRITICAL ⚠️' : 'CRITICITÀ ⚠️'}</span>
                             </button>
                           ) : activeReadiness.status === 'ready' ? (
                             <button
@@ -1124,11 +1150,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                               className="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-600 font-bold text-[9px] uppercase font-mono flex items-center gap-1 cursor-pointer hover:bg-emerald-900"
                             >
                               <Check className="w-3 h-3 text-emerald-400" />
-                              <span>PRONTO</span>
+                              <span>{isEn ? 'READY' : 'PRONTO'}</span>
                             </button>
                           ) : (
                             <span className="px-1.5 py-0.5 bg-neutral-900 border border-neutral-700 text-neutral-400 font-mono text-[9px] uppercase">
-                              IN PREP
+                              {isEn ? 'IN PREP' : 'IN PREP'}
                             </span>
                           )}
                         </>
@@ -1147,10 +1173,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                               })
                             }
                             className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-600 text-cyan-300 font-bold text-[10px] uppercase font-mono flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
-                            title="Apri registro protesi, trucco attori e tecnici assegnati"
+                            title={isEn ? 'Open prosthetics, actor makeup and assigned tech registry' : 'Apri registro protesi, trucco attori e tecnici assegnati'}
                           >
                             <Package className="w-3 h-3 text-cyan-400" />
-                            <span>PROTESI</span>
+                            <span>{isEn ? 'PROSTHETICS' : 'PROTESI'}</span>
                           </button>
 
                           {assignedTeams.length > 0 && (
@@ -1171,10 +1197,10 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                                   ? 'bg-emerald-900 hover:bg-emerald-800 text-white border-emerald-500'
                                   : 'bg-amber-500 hover:bg-amber-400 text-black border-amber-300 font-black animate-pulse'
                               }`}
-                              title="Valutazioni e debriefing squadre"
+                              title={isEn ? 'Team evaluations and debriefing' : 'Valutazioni e debriefing squadre'}
                             >
                               <ClipboardCheck className="w-3 h-3" />
-                              <span>{evalSummary.allEvaluated ? 'VALUTAZIONE OK' : 'VALUTAZIONE ⚠️'}</span>
+                              <span>{evalSummary.allEvaluated ? (isEn ? 'EVALUATION OK' : 'VALUTAZIONE OK') : (isEn ? 'EVALUATION ⚠️' : 'VALUTAZIONE ⚠️')}</span>
                             </button>
                           )}
                         </>
@@ -1188,7 +1214,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   {nextActivity && nextSlotObj ? (
                     <div className="space-y-0.5">
                       <div className="flex items-center justify-between text-[9px] font-mono text-neutral-400">
-                        <span className="font-bold text-neutral-300">T+1 PROSSIMO</span>
+                        <span className="font-bold text-neutral-300">{isEn ? 'T+1 NEXT' : 'T+1 PROSSIMO'}</span>
                         <span>{nextSlotObj.timeRange}</span>
                       </div>
                       <div
@@ -1206,7 +1232,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     </div>
                   ) : (
                     <div className="text-[10px] font-mono text-neutral-500 text-center py-1">
-                      Chiusura Sessione
+                      {isEn ? 'Session Closing' : 'Chiusura Sessione'}
                     </div>
                   )}
                 </div>
@@ -1218,23 +1244,23 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   {/* SHARED TOP BOX: Teams & Tutors (Faculty) */}
                   <div className="w-full text-xs">
                     <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1">
-                      <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">Squadre & Tutor (Faculty) Associati:</span>
+                      <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">{isEn ? 'Associated Teams & Tutors (Faculty):' : 'Squadre & Tutor (Faculty) Associati:'}</span>
                       {assignedTeams.length > 0 ? (
                         assignedTeams.map(tm => {
                           const evalItem = evalSummary.evals.find(e => e.team.id === tm.id);
-                          const facName = evalItem?.faculty?.name || 'Faculty da assegnare';
+                          const facName = evalItem?.faculty?.name || (isEn ? 'Faculty to assign' : 'Faculty da assegnare');
                           return (
                             <div key={tm.id} className="flex items-center justify-between text-neutral-200 font-mono text-[11px]">
                               <span className="flex items-center gap-1.5 font-bold">
                                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tm.color }} />
                                 {tm.name}
                               </span>
-                              <span className="text-yellow-400 font-medium">Tutor: {facName}</span>
+                              <span className="text-yellow-400 font-medium">{isEn ? 'Tutor:' : 'Tutor:'} {facName}</span>
                             </div>
                           );
                         })
                       ) : (
-                        <span className="text-neutral-500 font-mono text-[11px]">Nessuna squadra assegnata</span>
+                        <span className="text-neutral-500 font-mono text-[11px]">{isEn ? 'No team assigned' : 'Nessuna squadra assegnata'}</span>
                       )}
                     </div>
                   </div>
@@ -1251,11 +1277,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                               {activeActivity.title}
                             </h4>
                             <div className="text-xs font-mono text-purple-400 bg-purple-950/60 px-2 py-1 border border-purple-800">
-                              📍 Postazione: <strong>{activeActivity.location}</strong>
+                              📍 {isEn ? 'Station:' : 'Postazione:'} <strong>{activeActivity.location}</strong>
                             </div>
                           </div>
                           <p className="text-xs text-neutral-300 leading-relaxed font-medium pt-1">
-                            {activeActivity.subtitle || 'Sessione pratica intensiva di addestramento tecnico sulle manovre salvavita e presidi dedicati, con supervisione costante del tutor di postazione.'}
+                            {activeActivity.subtitle || (isEn ? 'Intensive hands-on practical technical training session on lifesaving maneuvers and dedicated devices, with constant station tutor supervision.' : 'Sessione pratica intensiva di addestramento tecnico sulle manovre salvavita e presidi dedicati, con supervisione costante del tutor di postazione.')}
                           </p>
                         </div>
                       );
@@ -1265,21 +1291,21 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 pb-2">
                             <div>
                               <span className="px-2 py-0.5 bg-blue-950 text-blue-300 font-mono text-[10px] font-black uppercase border border-blue-700">
-                                SCENARIO CLINICO / TATTICO
+                                {isEn ? 'CLINICAL / TACTICAL SCENARIO' : 'SCENARIO CLINICO / TATTICO'}
                               </span>
                               <h4 className="text-white font-black text-sm uppercase tracking-wide mt-1">
                                 {activeActivity.title}
                               </h4>
                             </div>
                             <div className="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2 py-1 border border-cyan-800">
-                              📍 Postazione: <strong>{activeActivity.location}</strong>
+                              📍 {isEn ? 'Station:' : 'Postazione:'} <strong>{activeActivity.location}</strong>
                             </div>
                           </div>
 
                           <div className="space-y-1.5 pt-1">
                             <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 font-bold">
                               <Stethoscope className="w-3.5 h-3.5" />
-                              <span>PROCEDURE ATTESE NEL MODULO</span>
+                              <span>{isEn ? 'EXPECTED PROCEDURES IN MODULE' : 'PROCEDURE ATTESE NEL MODULO'}</span>
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {activeExpectedProcs.map((proc, pIdx) => (
@@ -1299,7 +1325,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                         </div>
                       );
                     } else {
-                      const badgeLabel = activeActivity.activityType === 'debriefing' ? 'DEBRIEFING & REVISIONE' : isStandby ? 'STANDBY ATTIVO SHOCK ROOM' : 'FASE DI TRANSIZIONE / ATTESA';
+                      const badgeLabel = activeActivity.activityType === 'debriefing'
+                        ? (isEn ? 'DEBRIEFING & REVIEW' : 'DEBRIEFING & REVISIONE')
+                        : isStandby
+                        ? (isEn ? 'ACTIVE SHOCK ROOM STANDBY' : 'STANDBY ATTIVO SHOCK ROOM')
+                        : (isEn ? 'TRANSITION / WAITING PHASE' : 'FASE DI TRANSIZIONE / ATTESA');
                       const badgeColor = activeActivity.activityType === 'debriefing' ? 'bg-amber-950 text-amber-300 border-amber-700' : 'bg-cyan-950 text-cyan-300 border-cyan-700';
 
                       return (
@@ -1314,11 +1344,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                               </h4>
                             </div>
                             <div className="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2 py-1 border border-cyan-800">
-                              📍 Postazione: <strong>{activeActivity.location}</strong>
+                              📍 {isEn ? 'Station:' : 'Postazione:'} <strong>{activeActivity.location}</strong>
                             </div>
                           </div>
                           <p className="text-xs text-neutral-300 leading-relaxed font-medium pt-1">
-                            {activeActivity.subtitle || 'Fase operativa di coordinamento, transizione o debriefing collegiale guidata dalla faculty.'}
+                            {activeActivity.subtitle || (isEn ? 'Operational coordination, transition or collegial debriefing phase led by faculty.' : 'Fase operativa di coordinamento, transizione o debriefing collegiale guidata dalla faculty.')}
                           </p>
                         </div>
                       );
@@ -1343,43 +1373,43 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
                           <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wide flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" />
-                            <span>Simulatori, Pazienti & Tecnici di Postazione:</span>
+                            <span>{isEn ? 'Simulators, Patients & Station Technicians:' : 'Simulatori, Pazienti & Tecnici di Postazione:'}</span>
                           </span>
                           <button
                             onClick={() => setSelectedProtesiModal({ groupId: grpId, groupActivity: activeActivity })}
                             className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-mono text-[10px] uppercase font-bold flex items-center gap-1 cursor-pointer transition-colors"
                           >
                             <ClipboardList className="w-3 h-3" />
-                            <span>Registro Risorse & Protesi</span>
+                            <span>{isEn ? 'Resource & Prosthetics Registry' : 'Registro Risorse & Protesi'}</span>
                           </button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {/* Patients / Simulatori */}
                           <div className="bg-neutral-950 p-2 border border-neutral-800 space-y-1">
-                            <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">Pazienti / Manichini / Moulage:</span>
+                            <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">{isEn ? 'Patients / Manikins / Moulage:' : 'Pazienti / Manichini / Moulage:'}</span>
                             {relevantPatients.length > 0 ? (
                               relevantPatients.map(pat => (
                                 <div key={pat.id} className="text-neutral-200 font-mono text-[11px] space-y-0.5">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-yellow-400 font-bold">Pz #{pat.id}: {pat.scenarioCode || pat.title || 'Scenario Clinico'}</span>
+                                    <span className="text-yellow-400 font-bold">Pz #{pat.id}: {pat.scenarioCode || pat.title || (isEn ? 'Clinical Scenario' : 'Scenario Clinico')}</span>
                                     <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase border ${pat.readinessStatus === 'ready' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-red-950 text-red-300 border-red-700'}`}>
-                                      {pat.readinessStatus === 'ready' ? 'PRONTO' : 'CRITICO / RESET'}
+                                      {pat.readinessStatus === 'ready' ? (isEn ? 'READY' : 'PRONTO') : (isEn ? 'CRITICAL / RESET' : 'CRITICO / RESET')}
                                     </span>
                                   </div>
                                   <div className="text-[10px] text-neutral-400">
-                                    💄 Protesi: <strong className="text-neutral-300">{pat.moulageProtesi}</strong> | Attore: <strong className="text-neutral-300">{pat.attoreDettagli || 'Presente'}</strong>
+                                    💄 {isEn ? 'Prosthetics:' : 'Protesi:'} <strong className="text-neutral-300">{pat.moulageProtesi}</strong> | {isEn ? 'Actor:' : 'Attore:'} <strong className="text-neutral-300">{pat.attoreDettagli || (isEn ? 'Present' : 'Presente')}</strong>
                                   </div>
                                 </div>
                               ))
                             ) : (
-                              <span className="text-neutral-500 font-mono text-[11px]">Nessun paziente associato a questo modulo (Sessione Pratica / Transizione)</span>
+                              <span className="text-neutral-500 font-mono text-[11px]">{isEn ? 'No patient associated with this module (Practical Session / Transition)' : 'Nessun paziente associato a questo modulo (Sessione Pratica / Transizione)'}</span>
                             )}
                           </div>
 
                           {/* Assigned Technicians */}
                           <div className="bg-neutral-950 p-2 border border-neutral-800 space-y-1">
-                            <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">Tecnico di Postazione (TECH):</span>
+                            <span className="text-[10px] font-mono text-neutral-400 font-bold uppercase block">{isEn ? 'Station Technician (TECH):' : 'Tecnico di Postazione (TECH):'}</span>
                             {associatedTechs.length > 0 ? (
                               associatedTechs.map(tech => (
                                 <div key={tech.id} className="flex items-center justify-between text-neutral-200 font-mono text-[11px]">
@@ -1387,11 +1417,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                                     <Wrench className="w-3 h-3 text-cyan-400" />
                                     <span>{tech.name} ({tech.specialty})</span>
                                   </span>
-                                  <span className="text-cyan-300 font-medium">{tech.phone || 'Regia Audio/Video'}</span>
+                                  <span className="text-cyan-300 font-medium">{tech.phone || (isEn ? 'Audio/Video Control' : 'Regia Audio/Video')}</span>
                                 </div>
                               ))
                             ) : (
-                              <span className="text-neutral-500 font-mono text-[11px]">TECH-01 / TECH-02 (Presidio Standard)</span>
+                              <span className="text-neutral-500 font-mono text-[11px]">{isEn ? 'TECH-01 / TECH-02 (Standard Post)' : 'TECH-01 / TECH-02 (Presidio Standard)'}</span>
                             )}
                           </div>
                         </div>

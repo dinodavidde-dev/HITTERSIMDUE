@@ -19,7 +19,6 @@ import {
   Maximize2,
   Info,
   ShieldAlert,
-  Smartphone,
   Search,
   ChevronDown,
   ChevronUp,
@@ -33,6 +32,7 @@ import { useCourse } from '../../context/CourseContext';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { getGroupPhaseDetails, GroupPhaseEnrichedDetails } from '../../utils/groupPhaseDetails';
+import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 
 // Metadata for the 4 macro-groups
 const GROUP_META: Record<
@@ -89,7 +89,7 @@ interface HandoverInfo {
 }
 
 // Helper to determine delivering and receiving groups during handover
-const extractHandoverInfo = (slot: any, day: number): HandoverInfo | null => {
+const extractHandoverInfo = (slot: any, day: number, isEn: boolean = false): HandoverInfo | null => {
   if (!slot) return null;
 
   const slotTitle = (slot.title || '').toLowerCase();
@@ -215,11 +215,11 @@ const extractHandoverInfo = (slot: any, day: number): HandoverInfo | null => {
     receivingRange: recMeta.range,
     deliveringSquads: delMeta.squads,
     receivingSquads: recMeta.squads,
-    deliveringLocation: delAct?.location || delMeta.defaultTcccLoc,
-    receivingLocation: recAct?.location || recMeta.defaultSrLoc,
+    deliveringLocation: delAct?.location ? translateLocation(delAct.location, isEn ? 'en' : 'it') : delMeta.defaultTcccLoc,
+    receivingLocation: recAct?.location ? translateLocation(recAct.location, isEn ? 'en' : 'it') : delMeta.defaultSrLoc,
     patientIds,
-    deliveringSubtitle: delAct?.subtitle || `Consegna barellata feriti a Gruppo ${recMeta.name}`,
-    receivingSubtitle: recAct?.subtitle || `Ricezione barellata da Gruppo ${delMeta.name} e avvio Shock Room`,
+    deliveringSubtitle: delAct?.subtitle || (isEn ? `Casualty stretcher handover to Group ${recMeta.name}` : `Consegna barellata feriti a Gruppo ${recMeta.name}`),
+    receivingSubtitle: recAct?.subtitle || (isEn ? `Receiving stretcher from Group ${delMeta.name} and initiating Shock Room` : `Ricezione barellata da Gruppo ${delMeta.name} e avvio Shock Room`),
   };
 };
 
@@ -228,13 +228,14 @@ const GroupScrollingTicker: React.FC<{
   group: GroupType;
   phaseDetails: GroupPhaseEnrichedDetails;
   onOpenDetails?: () => void;
-}> = ({ group, phaseDetails, onOpenDetails }) => {
+  isEn?: boolean;
+}> = ({ group, phaseDetails, onOpenDetails, isEn = false }) => {
   const tickerItems: { icon: string; label: string; text: string; highlight?: boolean }[] = [];
 
   if (phaseDetails.protocolTimingNote) {
     tickerItems.push({
       icon: '⏱️',
-      label: 'TIMING CRITICO',
+      label: isEn ? 'CRITICAL TIMING' : 'TIMING CRITICO',
       text: phaseDetails.protocolTimingNote,
       highlight: true,
     });
@@ -243,7 +244,7 @@ const GroupScrollingTicker: React.FC<{
   if (phaseDetails.phaseTypeLabel) {
     tickerItems.push({
       icon: '⚡',
-      label: 'FASE',
+      label: isEn ? 'PHASE' : 'FASE',
       text: phaseDetails.phaseTypeLabel,
     });
   }
@@ -251,7 +252,7 @@ const GroupScrollingTicker: React.FC<{
   if (phaseDetails.operationalDescription) {
     tickerItems.push({
       icon: '📋',
-      label: 'INQUADRAMENTO',
+      label: isEn ? 'OVERVIEW' : 'INQUADRAMENTO',
       text: phaseDetails.operationalDescription,
     });
   }
@@ -259,7 +260,7 @@ const GroupScrollingTicker: React.FC<{
   if (phaseDetails.didacticObjectives && phaseDetails.didacticObjectives.length > 0) {
     tickerItems.push({
       icon: '🎯',
-      label: 'OBIETTIVI',
+      label: isEn ? 'OBJECTIVES' : 'OBIETTIVI',
       text: phaseDetails.didacticObjectives.join(' • '),
     });
   }
@@ -267,7 +268,7 @@ const GroupScrollingTicker: React.FC<{
   if (phaseDetails.simulatorData.scenarioCode) {
     tickerItems.push({
       icon: '🫀',
-      label: 'SIMULATORE',
+      label: isEn ? 'SIMULATOR' : 'SIMULATORE',
       text: `${phaseDetails.simulatorData.scenarioCode}${
         phaseDetails.simulatorData.simulatorHardware ? ` (${phaseDetails.simulatorData.simulatorHardware})` : ''
       }`,
@@ -277,9 +278,9 @@ const GroupScrollingTicker: React.FC<{
   if (phaseDetails.technicianData.hasTech) {
     tickerItems.push({
       icon: '🔧',
-      label: 'PRESIDIO TECH',
+      label: isEn ? 'TECH POST' : 'PRESIDIO TECH',
       text: `${phaseDetails.technicianData.techName} [${phaseDetails.technicianData.techBadge}]${
-        phaseDetails.technicianData.techPhone ? ` • Tel: ${phaseDetails.technicianData.techPhone}` : ''
+        phaseDetails.technicianData.techPhone ? ` • ${isEn ? 'Phone:' : 'Tel:'} ${phaseDetails.technicianData.techPhone}` : ''
       }`,
     });
   }
@@ -313,7 +314,7 @@ const GroupScrollingTicker: React.FC<{
   return (
     <div
       className="bg-neutral-950/95 border border-neutral-800 rounded px-2 sm:px-2.5 py-1.5 overflow-hidden relative group/ticker shadow-inner w-full max-w-full"
-      title="Banner scorrevole dettagli fase (tocca per aprire la scheda dettagli)"
+      title={isEn ? 'Scrolling phase details banner (tap to open details sheet)' : 'Banner scorrevole dettagli fase (tocca per aprire la scheda dettagli)'}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
@@ -322,10 +323,10 @@ const GroupScrollingTicker: React.FC<{
           type="button"
           onClick={onOpenDetails}
           className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-orange-950 hover:bg-orange-900 active:bg-orange-800 text-orange-300 border border-orange-700/80 rounded text-[9px] sm:text-[10px] font-mono font-black uppercase transition-colors cursor-pointer min-h-[30px]"
-          title="Apri scheda dettagli operativi e didattici"
+          title={isEn ? 'Open operational and training details sheet' : 'Apri scheda dettagli operativi e didattici'}
         >
           <Radio className="w-2.5 h-2.5 text-orange-500 animate-pulse" />
-          <span>INFO FASE</span>
+          <span>{isEn ? 'PHASE INFO' : 'INFO FASE'}</span>
           <Info className="w-2.5 h-2.5 text-orange-400" />
         </button>
 
@@ -363,7 +364,10 @@ export const PublicTimelineView: React.FC = () => {
     courseStartSchedule,
     timeRemainingMs,
     isCourseStarted,
+    language,
   } = useCourse();
+
+  const isEn = language === 'en';
 
   // Overlay state for Handover alert: by default it is open/expanded overlaying the 4 groups
   const [isOverlayMinimized, setIsOverlayMinimized] = useState<boolean>(false);
@@ -380,21 +384,23 @@ export const PublicTimelineView: React.FC = () => {
 
   const isCurrentUnlocked = true;
 
-  const dayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
-  const publicSlots = dayMasterSlots.filter((s) => !s.id.includes('setup'));
+  const rawDayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
+  const dayMasterSlots = useMemo(() => rawDayMasterSlots.map((s) => translateSlot(s, language)), [rawDayMasterSlots, language]);
+  const publicSlots = useMemo(() => dayMasterSlots.filter((s) => !s.id.includes('setup')), [dayMasterSlots]);
 
-  const masterCurrentSlot = INITIAL_TIMELINE_SLOTS[activeSlotIndex] || dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
-  const slotIdxInDay = dayMasterSlots.findIndex((s) => s.id === masterCurrentSlot?.id);
+  const rawMasterCurrentSlot = INITIAL_TIMELINE_SLOTS[activeSlotIndex] || rawDayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+  const slotIdxInDay = rawDayMasterSlots.findIndex((s) => s.id === rawMasterCurrentSlot?.id);
+  const masterCurrentSlot = useMemo(() => translateSlot(rawMasterCurrentSlot, language), [rawMasterCurrentSlot, language]);
   let currentSlot = publicSlots.find((s) => s.id === masterCurrentSlot?.id);
   if (!currentSlot && publicSlots.length > 0) {
     currentSlot = publicSlots[0];
   }
-  if (!currentSlot) currentSlot = dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+  if (!currentSlot) currentSlot = dayMasterSlots[0] || translateSlot(INITIAL_TIMELINE_SLOTS[0], language);
 
   // Handover Info Extraction
   const handoverInfo = useMemo(() => {
-    return extractHandoverInfo(currentSlot, activeDay);
-  }, [currentSlot, activeDay]);
+    return extractHandoverInfo(currentSlot, activeDay, isEn);
+  }, [currentSlot, activeDay, isEn]);
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -420,7 +426,7 @@ export const PublicTimelineView: React.FC = () => {
     const secs = totalSec % 60;
 
     if (days > 0) {
-      return `${days}g ${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+      return `${days}${isEn ? 'd' : 'g'} ${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
     }
     if (hours > 0) {
       return `${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
@@ -477,9 +483,14 @@ export const PublicTimelineView: React.FC = () => {
               <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
                 {/* Course Name in First Plane / Primo Piano */}
                 <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
-                    <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                    <span>CORSO UFFICIALE • INTUBATI EM</span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                      <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                      <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DaySelectorToggle variant="public" />
+                    </div>
                   </div>
                   
                   <div className="space-y-1">
@@ -495,29 +506,29 @@ export const PublicTimelineView: React.FC = () => {
                 {/* Event Phase: Countdown Apertura Gate */}
                 <div className="space-y-1">
                   <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                    STATO ACCESSO: PRE-CORSO
+                    {isEn ? 'ACCESS STATUS: PRE-COURSE' : 'STATO ACCESSO: PRE-CORSO'}
                   </span>
                   <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                    COUNTDOWN APERTURA GATE
+                    {isEn ? 'GATE OPENING COUNTDOWN' : 'COUNTDOWN APERTURA GATE'}
                   </h2>
                 </div>
 
                 <div className="bg-amber-950/80 border-2 border-amber-500 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
                   <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 uppercase tracking-widest block mb-1.5 flex items-center justify-center gap-1.5">
                     <Lock className="w-4 h-4 text-amber-400" />
-                    <span>AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA</span>
+                    <span>{isEn ? 'OFFICIAL CONTROL ROOM NOTICE • SCHEDULED OPENING' : 'AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA'}</span>
                   </span>
                   <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
-                    IL GATE DISCENTI APRE ALLE ORE {courseStartSchedule.scheduledTime}
+                    {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule.scheduledTime}` : `IL GATE DISCENTI APRE ALLE ORE ${courseStartSchedule.scheduledTime}`}
                   </p>
                   <p className="text-[11px] sm:text-xs font-mono text-amber-200 mt-1.5">
-                    Data prevista: {courseStartSchedule.scheduledDate} • Accesso riservato ai team assegnati
+                    {isEn ? `Scheduled date: ${courseStartSchedule.scheduledDate} • Access reserved for assigned teams` : `Data prevista: ${courseStartSchedule.scheduledDate} • Accesso riservato ai team assegnati`}
                   </p>
                 </div>
 
                 <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
                   <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
-                    TEMPO RIMANENTE ALL'APERTURA DEL GATE
+                    {isEn ? 'TIME REMAINING UNTIL GATE OPENING' : "TEMPO RIMANENTE ALL'APERTURA DEL GATE"}
                   </span>
                   <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
                     {formatGateCountdown(timeRemainingMs)}
@@ -526,10 +537,10 @@ export const PublicTimelineView: React.FC = () => {
 
                 <div className="pt-1 sm:pt-2 space-y-2">
                   <p className="text-base sm:text-xl md:text-2xl font-black text-amber-300 uppercase tracking-wider italic">
-                    "Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."
+                    {isEn ? '"Verify individual equipment, contact Faculty and align Teams."' : '"Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."'}
                   </p>
                   <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
-                    Sincronizzazione oraria centralizzata dalla Regia Operativa
+                    {isEn ? 'Centralized time synchronization from Control Room' : 'Sincronizzazione oraria centralizzata dalla Regia Operativa'}
                   </p>
                 </div>
               </div>
@@ -549,14 +560,19 @@ export const PublicTimelineView: React.FC = () => {
               <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
                 {/* Course Name in First Plane */}
                 <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
-                    <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                    <span>CORSO UFFICIALE • INTUBATI EM</span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                      <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                      <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DaySelectorToggle variant="public" />
+                    </div>
                   </div>
                   
                   <div className="space-y-1">
                     <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                      H.I.T.T.E.R.
+                      HITTER
                     </h1>
                     <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
                       High Intensive Training Trauma Emergency Response
@@ -566,28 +582,28 @@ export const PublicTimelineView: React.FC = () => {
 
                 <div className="space-y-1">
                   <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                    STATO OPERATIVO: PRE-APERTURA
+                    {isEn ? 'OPERATIONAL STATUS: PRE-OPENING' : 'STATO OPERATIVO: PRE-APERTURA'}
                   </span>
                   <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                    ATTESA APERTURA CORSO
+                    {isEn ? 'AWAITING COURSE OPENING' : 'ATTESA APERTURA CORSO'}
                   </h2>
                 </div>
 
                 <div className="bg-red-950/80 border-2 border-red-600 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
                   <span className="text-[10px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-1.5">
-                    AVVISO UFFICIALE REGIA • DAY 0{activeDay}
+                    {isEn ? `OFFICIAL CONTROL ROOM NOTICE • DAY 0${activeDay}` : `AVVISO UFFICIALE REGIA • DAY 0${activeDay}`}
                   </span>
                   <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
-                    IL GATE DISCENTI APRE ALLE {courseStartSchedule?.scheduledTime || '08:30'}
+                    {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ${courseStartSchedule?.scheduledTime || '08:30'}`}
                   </p>
                 </div>
 
                 <div className="pt-1 sm:pt-2 space-y-2">
                   <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
-                    "Preparazione postazioni e briefing faculty in corso. Tenetevi pronti."
+                    {isEn ? '"Station setup and faculty briefing in progress. Stand by."' : '"Preparazione postazioni e briefing faculty in corso. Tenetevi pronti."'}
                   </p>
                   <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
-                    Day {activeDay} • Attesa apertura ufficiale ore {courseStartSchedule?.scheduledTime || '08:30'}
+                    {isEn ? `Day ${activeDay} • Awaiting official opening at ${courseStartSchedule?.scheduledTime || '08:30'}` : `Day ${activeDay} • Attesa apertura ufficiale ore ${courseStartSchedule?.scheduledTime || '08:30'}`}
                   </p>
                 </div>
               </div>
@@ -602,14 +618,19 @@ export const PublicTimelineView: React.FC = () => {
               <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
                 {/* Course Name in First Plane */}
                 <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
-                    <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                    <span>CORSO UFFICIALE • INTUBATI EM</span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                      <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                      <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DaySelectorToggle variant="public" />
+                    </div>
                   </div>
                   
                   <div className="space-y-1">
                     <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                      H.I.T.T.E.R.
+                      HITTER
                     </h1>
                     <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
                       High Intensive Training Trauma Emergency Response
@@ -619,27 +640,27 @@ export const PublicTimelineView: React.FC = () => {
 
                 <div className="space-y-1">
                   <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                    STATO OPERATIVO: DEPLOYMENT SQUADRE
+                    {isEn ? 'OPERATIONAL STATUS: TEAM DEPLOYMENT' : 'STATO OPERATIVO: DEPLOYMENT SQUADRE'}
                   </span>
                   <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                    {isMorningCountdown ? `COUNTDOWN VERSO APERTURA (${courseStartSchedule?.scheduledTime || '08:30'})` : 'ATTIVITÀ IN ARRIVO'}
+                    {isMorningCountdown ? (isEn ? `COUNTDOWN TO OPENING (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN VERSO APERTURA (${courseStartSchedule?.scheduledTime || '08:30'})`) : (isEn ? 'UPCOMING ACTIVITY' : 'ATTIVITÀ IN ARRIVO')}
                   </h2>
                 </div>
 
                 {isMorningCountdown && (
                   <div className="bg-orange-950/80 border-2 border-orange-500 p-4 sm:p-5 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
                     <span className="text-[10px] sm:text-xs font-mono font-bold text-orange-300 uppercase tracking-widest block mb-1">
-                      DISPOSIZIONE UFFICIALE REGIA
+                      {isEn ? 'OFFICIAL CONTROL ROOM DIRECTIVE' : 'DISPOSIZIONE UFFICIALE REGIA'}
                     </span>
                     <p className="text-xs sm:text-base font-black text-white uppercase tracking-wide leading-snug">
-                      Ogni squadra è invitata a raggrupparsi ed a raggiungere il proprio Faculty assegnato.
+                      {isEn ? 'Each team is requested to assemble and reach their assigned Faculty.' : 'Ogni squadra è invitata a raggrupparsi ed a raggiungere il proprio Faculty assegnato.'}
                     </p>
                   </div>
                 )}
 
                 <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-orange-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
                   <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
-                    {isMorningCountdown ? 'TEMPO RIMANENTE ALL\'AVVIO' : 'COUNTDOWN BLOCCO'}
+                    {isMorningCountdown ? (isEn ? 'TIME REMAINING UNTIL START' : "TEMPO RIMANENTE ALL'AVVIO") : (isEn ? 'BLOCK COUNTDOWN' : 'COUNTDOWN BLOCCO')}
                   </span>
                   <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-orange-400 animate-pulse tracking-wider break-words">
                     {courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0
@@ -650,11 +671,11 @@ export const PublicTimelineView: React.FC = () => {
 
                 <div className="pt-1 sm:pt-2 space-y-2">
                   <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
-                    "{isMorningCountdown ? 'Raggruppamento squadre e contatto Faculty in corso' : 'Avvio Blocco'}"
+                    "{isMorningCountdown ? (isEn ? 'Team assembly and Faculty contact in progress' : 'Raggruppamento squadre e contatto Faculty in corso') : (isEn ? 'Block Start' : 'Avvio Blocco')}"
                   </p>
                   <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
-                    {isMorningCountdown && `Day ${activeDay} • Countdown verso l'apertura delle ore ${courseStartSchedule?.scheduledTime || '08:30'}`}
-                    {isNightToMorningCountdown && `Transizione Day 2 ➔ Day 3 (Scadenza ore ${courseStartSchedule?.scheduledTime || '08:30'})`}
+                    {isMorningCountdown && (isEn ? `Day ${activeDay} • Countdown to opening at ${courseStartSchedule?.scheduledTime || '08:30'}` : `Day ${activeDay} • Countdown verso l'apertura delle ore ${courseStartSchedule?.scheduledTime || '08:30'}`)}
+                    {isNightToMorningCountdown && (isEn ? `Transition Day 2 ➔ Day 3 (Deadline ${courseStartSchedule?.scheduledTime || '08:30'})` : `Transizione Day 2 ➔ Day 3 (Scadenza ore ${courseStartSchedule?.scheduledTime || '08:30'})`)}
                   </p>
                 </div>
               </div>
@@ -669,15 +690,15 @@ export const PublicTimelineView: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 bg-red-950 border border-red-600/70 text-red-300 font-mono text-[10px] font-black uppercase tracking-wider rounded">
-                    H.I.T.T.E.R. • INTUBATI EM
+                    HITTER • INTUBATI EM
                   </span>
                   <span className="text-xs font-mono font-bold text-orange-400 uppercase tracking-widest">
-                    ORARIO FASE: {currentSlot?.timeRange || '08:30 - 08:45'}
+                    {isEn ? 'PHASE TIME:' : 'ORARIO FASE:'} {currentSlot?.timeRange || '08:30 - 08:45'}
                   </span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
                   <Activity className="w-5 h-5 text-orange-500 animate-pulse" />
-                  {currentSlot?.title || 'ATTIVITÀ IN CORSO DELLE SQUADRE'}
+                  {currentSlot?.title || (isEn ? 'TEAMS ONGOING ACTIVITIES' : 'ATTIVITÀ IN CORSO DELLE SQUADRE')}
                 </h2>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -688,7 +709,7 @@ export const PublicTimelineView: React.FC = () => {
                   </span>
                 )}
                 <div className="px-3 py-1 bg-neutral-950 border border-neutral-800 text-xs font-mono text-neutral-300 flex items-center gap-2">
-                  <span>Fase Master:</span>
+                  <span>{isEn ? 'Master Phase:' : 'Fase Master:'}</span>
                   <span className="font-black text-orange-400 uppercase">DAY 0{activeDay}</span>
                 </div>
               </div>
@@ -702,8 +723,8 @@ export const PublicTimelineView: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
                   <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1 flex-shrink-0 mr-0.5">
-                    <Smartphone className="w-3.5 h-3.5 text-orange-400" />
-                    <span className="hidden xs:inline">VISUALE:</span>
+                    <Layers className="w-3.5 h-3.5 text-orange-400" />
+                    <span className="hidden xs:inline">{isEn ? 'GROUPS:' : 'GRUPPI:'}</span>
                   </span>
 
                   <button
@@ -716,7 +737,7 @@ export const PublicTimelineView: React.FC = () => {
                     }`}
                   >
                     <Layers className="w-3.5 h-3.5" />
-                    <span>TUTTI (4)</span>
+                    <span>{isEn ? 'ALL (4)' : 'TUTTI (4)'}</span>
                   </button>
 
                   {ALL_GROUPS.map((grp) => {
@@ -749,10 +770,10 @@ export const PublicTimelineView: React.FC = () => {
                       ? 'bg-amber-950/80 text-amber-300 border-amber-500'
                       : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-800'
                   }`}
-                  title="Cerca per matricola studente o nome"
+                  title={isEn ? 'Search by student ID or name' : 'Cerca per matricola studente o nome'}
                 >
                   <Search className="w-3.5 h-3.5 text-orange-400" />
-                  <span>TROVA TUA MATRICOLA (DISC)</span>
+                  <span>{isEn ? 'FIND YOUR ID (DISC)' : 'TROVA TUA MATRICOLA (DISC)'}</span>
                   {isFinderOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
               </div>
@@ -767,7 +788,7 @@ export const PublicTimelineView: React.FC = () => {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Digita matricola o cognome (es. DISC-12 o 12 o Rossi)..."
+                        placeholder={isEn ? 'Type student ID or surname (e.g. DISC-12 or 12 or Rossi)...' : 'Digita matricola o cognome (es. DISC-12 o 12 o Rossi)...'}
                         className="w-full min-h-[38px] bg-neutral-950 border border-neutral-700 rounded pl-8 pr-8 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500 font-mono"
                       />
                       {searchQuery && (
@@ -782,7 +803,7 @@ export const PublicTimelineView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1 overflow-x-auto text-[10px] font-mono text-neutral-400 flex-shrink-0">
-                      <span>Rapidi:</span>
+                      <span>{isEn ? 'Quick:' : 'Rapidi:'}</span>
                       {(['DISC-01', 'DISC-16', 'DISC-31', 'DISC-46'] as const).map((code) => (
                         <button
                           key={code}
@@ -800,7 +821,7 @@ export const PublicTimelineView: React.FC = () => {
                   {searchQuery.trim() && (
                     <div className="space-y-1.5 pt-1">
                       {searchedDiscenti.length === 0 ? (
-                        <p className="text-xs text-neutral-400 italic">Nessun discente trovato con "{searchQuery}"</p>
+                        <p className="text-xs text-neutral-400 italic">{isEn ? `No student found with "${searchQuery}"` : `Nessun discente trovato con "${searchQuery}"`}</p>
                       ) : (
                         searchedDiscenti.map((disc) => {
                           const discGrp = getDiscenteGroup(disc.teamId);
@@ -820,15 +841,15 @@ export const PublicTimelineView: React.FC = () => {
                                   </span>
                                   <span className="font-bold text-white">{disc.name}</span>
                                   <span className="text-[10px] font-mono text-neutral-300">
-                                    • Sq {disc.teamId} ({isLeader ? 'Team Leader' : 'Operatore'})
+                                    • {isEn ? 'Team' : 'Sq'} {disc.teamId} ({isLeader ? 'Team Leader' : (isEn ? 'Operator' : 'Operatore')})
                                   </span>
                                   <span className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-700 text-orange-400 text-[10px] font-mono font-bold rounded">
-                                    GRUPPO {discGrp} ({GROUP_META[discGrp].name})
+                                    {isEn ? 'GROUP' : 'GRUPPO'} {discGrp} ({GROUP_META[discGrp].name})
                                   </span>
                                 </div>
                                 <div className="text-[11px] text-neutral-400 flex items-center gap-2 flex-wrap pt-0.5">
                                   <span>Tutor: <strong className="text-neutral-200">{facMatch?.badgeCode || `FAC-${disc.teamId}`} ({facMatch?.name || 'Faculty'})</strong></span>
-                                  <span>• Postazione ora: <strong className="text-orange-300">{discAct?.location || 'Stazione'}</strong></span>
+                                  <span>• {isEn ? 'Current Station:' : 'Postazione ora:'} <strong className="text-orange-300">{discAct?.location || (isEn ? 'Station' : 'Stazione')}</strong></span>
                                 </div>
                               </div>
 
@@ -840,7 +861,7 @@ export const PublicTimelineView: React.FC = () => {
                                 }}
                                 className="min-h-[34px] px-3 py-1 bg-orange-500 hover:bg-orange-400 text-black font-mono font-black rounded text-xs flex items-center justify-center gap-1 cursor-pointer self-start sm:self-auto flex-shrink-0"
                               >
-                                <span>VAI AL GRUPPO {discGrp}</span>
+                                <span>{isEn ? `GO TO GROUP ${discGrp}` : `VAI AL GRUPPO ${discGrp}`}</span>
                                 <ArrowRight className="w-3 h-3" />
                               </button>
                             </div>
@@ -859,7 +880,7 @@ export const PublicTimelineView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
                   <span className="text-neutral-300 font-mono">
-                    Visualizzazione isolata: <strong className="text-white">GRUPPO {selectedMobileGroup} ({GROUP_META[selectedMobileGroup].name})</strong>
+                    {isEn ? 'Isolated view:' : 'Visualizzazione isolata:'} <strong className="text-white">{isEn ? 'GROUP' : 'GRUPPO'} {selectedMobileGroup} ({GROUP_META[selectedMobileGroup].name})</strong>
                   </span>
                 </div>
                 <button
@@ -867,7 +888,7 @@ export const PublicTimelineView: React.FC = () => {
                   onClick={() => setSelectedMobileGroup('ALL')}
                   className="text-orange-400 hover:text-orange-300 font-mono font-bold uppercase underline text-[11px] cursor-pointer min-h-[32px] flex items-center"
                 >
-                  Mostra tutti e 4 i gruppi
+                  {isEn ? 'Show all 4 groups' : 'Mostra tutti e 4 i gruppi'}
                 </button>
               </div>
             )}
@@ -900,7 +921,7 @@ export const PublicTimelineView: React.FC = () => {
                     border: 'border-cyan-500/80',
                     bg: 'bg-cyan-950/15',
                     badge: 'bg-cyan-400 text-black font-black',
-                    label: 'ATTIVITÀ',
+                    label: isEn ? 'ACTIVITY' : 'ATTIVITÀ',
                     isBlinking: false,
                   };
 
@@ -918,7 +939,7 @@ export const PublicTimelineView: React.FC = () => {
                       border: 'border-yellow-400 animate-pulse',
                       bg: 'bg-yellow-950/20',
                       badge: 'bg-yellow-400 text-black font-black animate-pulse',
-                      label: 'STANDBY BOX (T -15)',
+                      label: isEn ? 'STANDBY BAY (T -15)' : 'STANDBY BOX (T -15)',
                       isBlinking: true,
                     };
                   }
@@ -936,7 +957,7 @@ export const PublicTimelineView: React.FC = () => {
                       border: 'border-emerald-500/80',
                       bg: 'bg-emerald-950/15',
                       badge: 'bg-emerald-500 text-black font-black',
-                      label: 'SKILLS WORKSHOP',
+                      label: isEn ? 'SKILL WORKSHOP' : 'SKILLS WORKSHOP',
                       isBlinking: false,
                     };
                   }
@@ -957,7 +978,7 @@ export const PublicTimelineView: React.FC = () => {
                       border: 'border-red-500 animate-pulse',
                       bg: 'bg-red-950/25',
                       badge: 'bg-red-600 text-white font-black animate-pulse',
-                      label: 'SCENARIO CLINICO',
+                      label: isEn ? 'CLINICAL SCENARIO' : 'SCENARIO CLINICO',
                       isBlinking: true,
                     };
                   }
@@ -972,7 +993,7 @@ export const PublicTimelineView: React.FC = () => {
                       border: 'border-cyan-400 animate-pulse',
                       bg: 'bg-cyan-950/20',
                       badge: 'bg-cyan-400 text-black font-black animate-pulse',
-                      label: 'PAUSA & RISTORO',
+                      label: isEn ? 'BREAK & REFRESHMENT' : 'PAUSA & RISTORO',
                       isBlinking: true,
                     };
                   }
@@ -986,7 +1007,7 @@ export const PublicTimelineView: React.FC = () => {
                       border: 'border-purple-500/80',
                       bg: 'bg-purple-950/20',
                       badge: 'bg-purple-600 text-white font-black',
-                      label: 'DEBRIEFING',
+                      label: isEn ? 'DEBRIEFING' : 'DEBRIEFING',
                       isBlinking: false,
                     };
                   }
@@ -1018,7 +1039,7 @@ export const PublicTimelineView: React.FC = () => {
                           <span
                             className={`px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded ${groupBadgeColors[g].bg} ${groupBadgeColors[g].text}`}
                           >
-                            GRUPPO {g}
+                            {isEn ? 'GROUP' : 'GRUPPO'} {g}
                           </span>
                           <span className="text-[10px] sm:text-[11px] font-mono font-bold text-neutral-300">
                             {GROUP_META[g].name}
@@ -1037,7 +1058,7 @@ export const PublicTimelineView: React.FC = () => {
                       {/* Matricole range and Squads */}
                       <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-neutral-400 bg-neutral-900/60 px-2 py-1 rounded border border-neutral-850">
                         <span className="text-orange-400 font-bold">{GROUP_META[g].range}</span>
-                        <span>Squadre {squadNumbers[0]}-{squadNumbers[2]}</span>
+                        <span>{isEn ? 'Teams' : 'Squadre'} {squadNumbers[0]}-{squadNumbers[2]}</span>
                       </div>
 
                       {/* Core Activity Title & Subtitle */}
@@ -1057,7 +1078,7 @@ export const PublicTimelineView: React.FC = () => {
                       {/* Squadre & Faculty 1:1 Compact Rows */}
                       <div className="space-y-1 bg-neutral-900/80 p-2 rounded border border-neutral-850 text-[9px] sm:text-[10px] font-mono">
                         <span className="text-[8px] sm:text-[9px] text-neutral-400 uppercase tracking-widest block font-bold mb-0.5">
-                          Squadre & Faculty (1:1):
+                          {isEn ? 'Teams & Faculty (1:1):' : 'Squadre & Faculty (1:1):'}
                         </span>
                         <div className="space-y-1">
                           {squadNumbers.map((sqNum) => {
@@ -1070,7 +1091,7 @@ export const PublicTimelineView: React.FC = () => {
                                 key={sqNum}
                                 className="flex items-center justify-between gap-1 text-[9px] sm:text-[10px] border-b border-neutral-850/60 last:border-b-0 pb-0.5"
                               >
-                                <span className="text-orange-400 font-black flex-shrink-0">Sq {sqNum}</span>
+                                <span className="text-orange-400 font-black flex-shrink-0">{isEn ? 'Team' : 'Sq'} {sqNum}</span>
                                 <span className="text-white truncate font-medium max-w-[100px] sm:max-w-[130px] md:max-w-[150px]" title={facName}>
                                   {facName}
                                 </span>
@@ -1086,6 +1107,7 @@ export const PublicTimelineView: React.FC = () => {
                         group={g}
                         phaseDetails={phaseDetails}
                         onOpenDetails={() => setDetailedGroupModal(g)}
+                        isEn={isEn}
                       />
 
                       {/* Pulsante rapido dedicato per aprire la scheda dettagli operativi completa */}
@@ -1093,10 +1115,10 @@ export const PublicTimelineView: React.FC = () => {
                         type="button"
                         onClick={() => setDetailedGroupModal(g)}
                         className="w-full min-h-[38px] py-1.5 px-2.5 bg-neutral-900 hover:bg-neutral-850 active:bg-neutral-800 border border-neutral-700 hover:border-orange-500/70 text-neutral-200 hover:text-white rounded text-[11px] font-mono font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        title="Visualizza scheda didattica e logistica completa"
+                        title={isEn ? 'View full didactic and logistical sheet' : 'Visualizza scheda didattica e logistica completa'}
                       >
                         <FileText className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-                        <span className="truncate">SCHEDA OPERATIVA {g}</span>
+                        <span className="truncate">{isEn ? `OPERATIONAL SHEET ${g}` : `SCHEDA OPERATIVA ${g}`}</span>
                         <Info className="w-3 h-3 text-neutral-400 flex-shrink-0" />
                       </button>
                     </div>
@@ -1129,15 +1151,15 @@ export const PublicTimelineView: React.FC = () => {
                         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                           <span className="px-2.5 sm:px-3 py-1 bg-red-600 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded flex items-center gap-1.5 shadow animate-pulse">
                             <AlertTriangle className="w-4 h-4 text-white animate-bounce flex-shrink-0" />
-                            ALLARME TATTICO CLINICO • FASE DI HANDOVER SBAR IN CORSO
+                            {isEn ? 'TACTICAL CLINICAL ALERT • SBAR HANDOVER PHASE IN PROGRESS' : 'ALLARME TATTICO CLINICO • FASE DI HANDOVER SBAR IN CORSO'}
                           </span>
                           <span className="px-2 py-0.5 bg-neutral-950 text-red-300 border border-red-800 text-[10px] sm:text-[11px] font-mono font-black rounded">
-                            TASSATIVO ORE :30 • DURATA 5 MINUTI (:30 - :35)
+                            {isEn ? 'MANDATORY AT :30 • DURATION 5 MINUTES (:30 - :35)' : 'TASSATIVO ORE :30 • DURATA 5 MINUTI (:30 - :35)'}
                           </span>
                         </div>
                         {!isOverlayMinimized && (
                           <p className="text-xs text-red-200 font-medium pt-0.5">
-                            Passaggio del ferito barellato 1:1 tra Team Leader TCCC ed Équipe Shock Room. Silenzio operativo e report SBAR.
+                            {isEn ? '1:1 litter patient transfer between TCCC Team Leader and Shock Room Team. Operational silence and SBAR report.' : 'Passaggio del ferito barellato 1:1 tra Team Leader TCCC ed Équipe Shock Room. Silenzio operativo e report SBAR.'}
                           </p>
                         )}
                       </div>
@@ -1241,7 +1263,7 @@ export const PublicTimelineView: React.FC = () => {
                             <ArrowRight className="w-6 h-6 hidden md:block" />
                           </div>
                           <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase text-yellow-300 tracking-wider block">
-                            REPORT SBAR 1:1
+                            {isEn ? '1:1 SBAR REPORT' : 'REPORT SBAR 1:1'}
                           </span>
                           <span className="text-[8px] sm:text-[9px] font-mono text-neutral-400 block">
                             Max 5 min (:30–:35)
@@ -1324,7 +1346,7 @@ export const PublicTimelineView: React.FC = () => {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2.5 py-0.5 font-mono text-xs font-black rounded ${groupBadgeColors[g].bg} ${groupBadgeColors[g].text}`}>
-                      GRUPPO {g}
+                      {isEn ? 'GROUP' : 'GRUPPO'} {g}
                     </span>
                     <span className="text-white font-black text-base sm:text-lg uppercase tracking-wide">
                       {meta.name} ({meta.range})
@@ -1334,7 +1356,7 @@ export const PublicTimelineView: React.FC = () => {
                     </span>
                   </div>
                   <h3 className="text-lg sm:text-xl font-black text-orange-400 uppercase tracking-tight">
-                    {act?.title || 'Fase Operativa'}
+                    {act?.title || (isEn ? 'Operational Phase' : 'Fase Operativa')}
                   </h3>
                   <p className="text-xs sm:text-sm text-neutral-300 font-medium">
                     {act?.subtitle}
@@ -1345,7 +1367,7 @@ export const PublicTimelineView: React.FC = () => {
                   type="button"
                   onClick={() => setDetailedGroupModal(null)}
                   className="min-w-[44px] min-h-[44px] p-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white rounded-lg flex items-center justify-center cursor-pointer transition-colors flex-shrink-0"
-                  aria-label="Chiudi scheda dettagli"
+                  aria-label={isEn ? 'Close details sheet' : 'Chiudi scheda dettagli'}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1467,7 +1489,7 @@ export const PublicTimelineView: React.FC = () => {
                     <strong className="text-neutral-200 block">:15 - :30</strong> {isEn ? 'Stabilization / Practice' : 'Stabilizzazione / Pratica'}
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded border border-red-800/60">
-                    <strong className="text-red-400 block">:30 - :35</strong> Handover SBAR 1:1
+                    <strong className="text-red-400 block">:30 - :35</strong> {isEn ? '1:1 SBAR Handover' : 'Handover SBAR 1:1'}
                   </div>
                   <div className="bg-neutral-900/80 p-1.5 rounded">
                     <strong className="text-neutral-200 block">:35 - :60</strong> {isEn ? 'ABCDE Approach / Workshop' : 'Approccio ABCDE / Workshop'}

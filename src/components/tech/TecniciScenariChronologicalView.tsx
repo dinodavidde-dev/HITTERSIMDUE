@@ -164,6 +164,21 @@ export const COURSE_TIMELINE_BLOCKS: CourseTimelineBlock[] = [
   },
 ];
 
+export const getCourseBlockTitle = (block: CourseTimelineBlock, isEn: boolean): string => {
+  if (!isEn) return block.title;
+  const titlesEn: Record<string, string> = {
+    '2-1': 'Block 1 Morning • TCCC Engagement & Shock Room Entries',
+    '2-2': 'Block 2 Morning • TCCC Penetrating Trauma & Shock Room FAST/REBOA',
+    '2-3': 'Block 3 Afternoon • TCCC Blast Injury & Shock Room Thoracotomy',
+    '2-4': 'Block 4 Afternoon • TCCC Mass Casualty & Shock Room Damage Control',
+    '3-1': 'Block 1 Morning Day 3 • Specular • High-Impact Shock Room & TCCC',
+    '3-2': 'Block 2 Morning Day 3 • Specular • Advanced Thoraco-Abdominal Trauma Management',
+    '3-3': 'Block 3 Afternoon Day 3 • Specular • Traumatic Amputations & Hemodynamics',
+    '3-4': 'Block 4 Afternoon Day 3 • Full-Scale Integrated Final Exercise',
+  };
+  return titlesEn[`${block.day}-${block.blockNumber}`] || block.title;
+};
+
 interface TecniciScenariChronologicalViewProps {
   filteredPatients: SimulatorPatient[];
   filterDay: string;
@@ -247,7 +262,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                     {isEn ? 'BLOCK' : 'BLOCCO'} {block.blockNumber}
                   </span>
                   <span className="text-white font-black text-sm uppercase tracking-wide">
-                    {block.title}
+                    {getCourseBlockTitle(block, isEn)}
                   </span>
                 </div>
 
@@ -271,7 +286,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                       {isEn ? 'TCCC Pre-Hosp Phase' : 'Fase TCCC Extra-Osp'} ({block.timeTCCC})
                     </div>
                     <div className="text-xs text-emerald-200 font-semibold truncate">
-                      {isEn ? 'Tactical Env.' : 'Amb. Tattici'} 1-3 • Grp {block.groupExtra}
+                      {isEn ? 'Tactical Env.' : 'Amb. Tattici'} 1-3 • {isEn ? 'Grp' : 'Grp'} {block.groupExtra}
                     </div>
                   </div>
                 </div>
@@ -283,7 +298,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                   </span>
                   <div className="min-w-0">
                     <div className="text-[10px] text-amber-400 font-bold uppercase">
-                      Handover 1:1 SBAR ({block.timeHandover})
+                      Handover 1:1 SBAR ({isEn ? block.timeHandover.replace('Minuto', 'Minute') : block.timeHandover})
                     </div>
                     <div className="text-xs text-amber-200 font-semibold truncate">
                       {isEn ? 'Mandatory :30 • Handover 5 min' : 'Tassativo :30 • Consegna 5 min'}
@@ -301,7 +316,7 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
                       {isEn ? 'Shock Room Phase' : 'Fase Shock Room'} ({block.timeShockRoom})
                     </div>
                     <div className="text-xs text-indigo-200 font-semibold truncate">
-                      Box 1-3 • Grp {block.groupIntra}
+                      Box 1-3 • {isEn ? 'Grp' : 'Grp'} {block.groupIntra}
                     </div>
                   </div>
                 </div>
@@ -325,7 +340,10 @@ export const TecniciScenariChronologicalView: React.FC<TecniciScenariChronologic
               {/* Rotazione didattica del blocco */}
               <div className="text-[11px] text-neutral-400 font-mono bg-neutral-950 px-3 py-1.5 rounded border border-neutral-800 flex items-center justify-between flex-wrap gap-2">
                 <span>
-                  <strong className="text-neutral-300 uppercase">{isEn ? 'Group Rotation:' : 'Rotazione Gruppi:'}</strong> {block.partnerHandoverNote}
+                  <strong className="text-neutral-300 uppercase">{isEn ? 'Group Rotation:' : 'Rotazione Gruppi:'}</strong>{' '}
+                  {isEn
+                    ? `1:1 Litter Handover from Group ${block.groupExtra} (Pre-Hospital TCCC) to Group ${block.groupIntra} (In-Hospital Shock Room)`
+                    : block.partnerHandoverNote}
                 </span>
                 <span className="text-cyan-400 font-bold">
                   {blockPatients.length} {isEn ? 'active Scenarios in this Block' : 'Scenari attivi in questo Blocco'}

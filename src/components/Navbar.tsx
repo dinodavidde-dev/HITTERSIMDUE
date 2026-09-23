@@ -112,6 +112,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
   ];
 
   const handleRoleSelection = (targetRole: UserRole) => {
+    if (targetRole === 'regia' || targetRole === 'direttore') {
+      setIsKeypadModalOpen(true);
+      return;
+    }
     setUserRole(targetRole);
     setCurrentTab('main');
   };
@@ -167,11 +171,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     </span>
                   </div>
                 </button>
-              </div>
-
-              {/* BLOCK 1B: Language Switcher IT / EN */}
-              <div className="flex items-center flex-shrink-0">
-                <LanguageSwitcher variant="badge" />
               </div>
 
               {/* Visuale Pubblica Indicator */}
@@ -301,6 +300,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
               </div>
 
 
+              {/* BLOCK 5.5: Language Selector */}
+              <LanguageSwitcher variant="badge" />
+
               {/* BLOCK 6: Real-Time Connectivity & Client Sync Indicator */}
               <button
                 id="open-sync-status-btn"
@@ -334,22 +336,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 </span>
               </button>
 
-              {/* BLOCK 7: Top Right INTUBATI EM Header Button (PIN Keypad Trigger) */}
+              {/* BLOCK 7: Top Right Reserved Area Header Button (PIN Keypad Trigger) */}
               <button
                 type="button"
                 id="header-right-intubati-em-btn"
                 onClick={() => setIsKeypadModalOpen(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1 bg-red-950/90 hover:bg-red-900 text-white font-black text-xs uppercase tracking-wider rounded border border-red-600 hover:border-red-400 transition-all cursor-pointer shadow-md group flex-shrink-0"
-                title="Accesso Regia protetto da PIN • INTUBATI EM"
+                title={language === 'en' ? 'Protected Area Access • PIN 9438 (Control Room) / 0118 (Direction)' : 'Accesso Area Riservata • PIN 9438 (Regia) / 0118 (Direzione)'}
               >
                 <div className="w-5 h-5 bg-red-600 text-white flex items-center justify-center font-black rounded group-hover:bg-red-500 transition-colors shadow-xs">
-                  <Activity className="w-3.5 h-3.5 stroke-[3]" />
+                  <Lock className="w-3.5 h-3.5 stroke-[2.5]" />
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span className="font-black text-xs sm:text-sm text-white tracking-tight group-hover:text-red-300 transition-colors">
+                    {language === 'en' ? 'RESTRICTED AREA' : 'AREA RISERVATA'}
+                  </span>
+                  <span className="text-[8px] font-black uppercase tracking-widest px-1 py-0.2 bg-red-600 text-white rounded">
                     INTUBATI EM
                   </span>
-                  <Lock className="w-3.5 h-3.5 text-red-400 group-hover:text-white transition-colors" />
                 </div>
               </button>
             </div>
@@ -403,10 +407,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       <button
                         id="subnav-discente-btn"
                         onClick={() => {
-                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
-                          window.open(`${window.location.origin}${window.location.pathname}?view=discente${fromParam}`, '_blank');
+                          setCurrentTab('discente');
                         }}
-                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500"
+                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                          currentTab === 'discente'
+                            ? 'text-white bg-cyan-600 border-cyan-500 shadow-xs'
+                            : 'text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500'
+                        }`}
                       >
                         <GraduationCap className="w-3 h-3 text-cyan-400" />
                         <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
@@ -415,10 +422,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       <button
                         id="subnav-faculty-btn"
                         onClick={() => {
-                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
-                          window.open(`${window.location.origin}${window.location.pathname}?view=faculty${fromParam}`, '_blank');
+                          setCurrentTab('faculty');
                         }}
-                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-amber-300 hover:text-white bg-neutral-900 border-amber-600/40 hover:border-amber-500"
+                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                          currentTab === 'faculty'
+                            ? 'text-white bg-amber-600 border-amber-500 shadow-xs'
+                            : 'text-amber-300 hover:text-white bg-neutral-900 border-amber-600/40 hover:border-amber-500'
+                        }`}
                       >
                         <Award className="w-3 h-3 text-amber-400" />
                         <span>{language === 'en' ? 'FACULTY VIEW' : 'VISUALE FACULTY'}</span>
@@ -427,10 +437,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       <button
                         id="subnav-tecnici-btn"
                         onClick={() => {
-                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
-                          window.open(`${window.location.origin}${window.location.pathname}?view=tecnici${fromParam}`, '_blank');
+                          setCurrentTab('tecnici');
                         }}
-                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-pink-300 hover:text-white bg-neutral-900 border-pink-600/40 hover:border-pink-500"
+                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                          currentTab === 'tecnici'
+                            ? 'text-white bg-pink-600 border-pink-500 shadow-xs'
+                            : 'text-pink-300 hover:text-white bg-neutral-900 border-pink-600/40 hover:border-pink-500'
+                        }`}
                       >
                         <Wrench className="w-3 h-3 text-pink-400" />
                         <span>{language === 'en' ? 'TECH VIEW' : 'VISUALE TECNICI'}</span>
@@ -441,9 +454,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                           <button
                             id="subnav-regia-btn"
                             onClick={() => {
-                              window.open(`${window.location.origin}${window.location.pathname}?view=regia`, '_blank');
+                              setCurrentTab('regia');
                             }}
-                            className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-pink-300 hover:text-white bg-neutral-900 border-pink-600/40 hover:border-pink-500"
+                            className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                              currentTab === 'regia'
+                                ? 'text-white bg-pink-600 border-pink-500 shadow-xs'
+                                : 'text-pink-300 hover:text-white bg-neutral-900 border-pink-600/40 hover:border-pink-500'
+                            }`}
                           >
                             <Radio className="w-3 h-3 text-pink-400" />
                             <span>{language === 'en' ? 'REGIA VIEW' : 'VISUALE REGIA'}</span>
@@ -452,10 +469,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                           <button
                             id="subnav-direttori-btn"
                             onClick={() => {
-                              const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
-                              window.open(`${window.location.origin}${window.location.pathname}?view=direttori${fromParam}`, '_blank');
+                              setCurrentTab('direttori');
                             }}
-                            className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-yellow-300 hover:text-white bg-neutral-900 border-yellow-600/40 hover:border-yellow-500"
+                            className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                              currentTab === 'direttori'
+                                ? 'text-white bg-yellow-600 border-yellow-500 shadow-xs'
+                                : 'text-yellow-300 hover:text-white bg-neutral-900 border-yellow-600/40 hover:border-yellow-500'
+                            }`}
                           >
                             <ShieldCheck className="w-3 h-3 text-yellow-400" />
                             <span>{language === 'en' ? 'DIRECTORS VIEW' : 'VISUALE DIRETTORI'}</span>
@@ -466,10 +486,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       <button
                         id="subnav-ospiti-btn"
                         onClick={() => {
-                          const fromParam = ['regia', 'direttore'].includes(userRole) ? `&from=${userRole}` : '';
-                          window.open(`${window.location.origin}${window.location.pathname}?view=ospite${fromParam}`, '_blank');
+                          setCurrentTab('ospite');
                         }}
-                        className="flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/40 hover:border-emerald-500"
+                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                          currentTab === 'ospite'
+                            ? 'text-white bg-emerald-600 border-emerald-500 shadow-xs'
+                            : 'text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/40 hover:border-emerald-500'
+                        }`}
                       >
                         <UserCheck className="w-3 h-3 text-emerald-400" />
                         <span>{language === 'en' ? 'GUEST VIEW' : 'VISUALE OSPITI'}</span>
@@ -488,7 +511,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     }`}
                   >
                     <BookOpen className="w-3 h-3 text-orange-400" />
-                    <span>{language === 'en' ? 'SCENARI (24)' : 'SCENARI (24)'}</span>
+                    <span>{language === 'en' ? 'SCENARIOS (24)' : 'SCENARI (24)'}</span>
                   </button>
 
                   <button
@@ -501,7 +524,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     }`}
                   >
                     <Package className="w-3 h-3 text-cyan-400" />
-                    <span>{language === 'en' ? 'PROTESI' : 'PROTESI'}</span>
+                    <span>{language === 'en' ? 'PROSTHETICS' : 'PROTESI'}</span>
                   </button>
 
                   {!isCurrentUnlocked && (
@@ -561,14 +584,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
         onClose={() => setIsEmailAccessModalOpen(false)}
       />
 
-      {/* Protected Regia Access Keypad Modal (PIN: 9438) */}
+      {/* Protected Reserved Area Access Keypad Modal (PIN: 9438 = Regia, 0118 = Direzione) */}
       <RegiaKeypadModal
         isOpen={isKeypadModalOpen}
         onClose={() => setIsKeypadModalOpen(false)}
-        onSuccess={() => {
-          setCurrentTab('regia');
-          setUserRole('regia');
-        }}
       />
     </>
   );

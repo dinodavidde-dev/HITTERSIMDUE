@@ -129,7 +129,7 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
       <div className="bg-neutral-950/90 border border-neutral-800 px-3 py-2.5 rounded flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs font-mono">
         <div className="flex items-center gap-2 text-neutral-300 flex-wrap">
           <span className="px-2 py-0.5 bg-cyan-950 border border-cyan-700 text-cyan-300 font-bold rounded text-[11px]">
-            {isEn ? `GROUP ${groupLabel} (SQ ${discente.teamId})` : `GRUPPO ${groupLabel} (SQ ${discente.teamId})`}
+            {isEn ? `GROUP ${groupLabel} (TEAM ${discente.teamId})` : `GRUPPO ${groupLabel} (SQ ${discente.teamId})`}
           </span>
           <span className="text-neutral-400 text-[11px]">{isEn ? `Day ${selectedDay} Rotation:` : `Rotazione Day ${selectedDay}:`}</span>
         </div>

@@ -272,7 +272,7 @@ const CourseMainContent: React.FC = () => {
                 TRAUMA SIM DIRECTOR
               </span>
               <span className="text-neutral-500 ml-2 font-mono">
-                // ADVANCED TRAUMA MANAGEMENT DAY 02 & DAY 03
+                {language === 'en' ? '// ADVANCED TRAUMA MANAGEMENT DAY 02 & DAY 03' : '// GESTIONE AVANZATA TRAUMA DAY 02 & DAY 03'}
               </span>
             </div>
           </div>
@@ -282,7 +282,9 @@ const CourseMainContent: React.FC = () => {
               {language === 'en' ? '60 TRAINEES • 12 TEAMS • 4 GROUPS' : '60 DISCENTI • 12 SQUADRE • 4 GRUPPI'}
             </span>
             <span>|</span>
-            <span className="text-orange-400 font-bold uppercase tracking-wider">REAL-TIME MULTI-SCREEN SYNC</span>
+            <span className="text-orange-400 font-bold uppercase tracking-wider">
+              {language === 'en' ? 'REAL-TIME MULTI-SCREEN SYNC' : 'SINCRONIZZAZIONE SCHERMI REAL-TIME'}
+            </span>
           </div>
         </div>
       </footer>

@@ -172,7 +172,11 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
                   type="text"
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value)}
-                  placeholder="Incolla URL QR, oppure digita DISC-01, FAC-01, TECH-01..."
+                  placeholder={
+                    isEn
+                      ? 'Paste QR URL, or type DISC-01, FAC-01, TECH-01...'
+                      : 'Incolla URL QR, oppure digita DISC-01, FAC-01, TECH-01...'
+                  }
                   className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-sm px-3 py-2.5 outline-none focus:border-orange-500 font-bold"
                   autoFocus
                 />
@@ -223,7 +227,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
               <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                 <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-600 text-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1 uppercase">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  {resolvedResult.category.toUpperCase()} IDENTIFICATO
+                  {resolvedResult.category.toUpperCase()} {isEn ? 'IDENTIFIED' : 'IDENTIFICATO'}
                 </span>
                 <span className="text-sm font-mono text-orange-400 font-black">
                   {(resolvedResult.person as any).badgeCode || resolvedResult.person.id}
@@ -236,15 +240,18 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
                   {(resolvedResult.person as any).role ||
                     (resolvedResult.person as any).title ||
                     (resolvedResult.person as any).specialty ||
-                    'Operatore'}
+                    (isEn ? 'Operator' : 'Operatore')}
                 </p>
                 {resolvedResult.team && (
                   <p className="text-xs text-neutral-300 font-mono">
-                    Squadra: <span className="font-bold text-white">{resolvedResult.team.name} (Sq. {resolvedResult.team.id})</span>
+                    {isEn ? 'Team:' : 'Squadra:'}{' '}
+                    <span className="font-bold text-white">
+                      {resolvedResult.team.name} ({isEn ? 'Tm.' : 'Sq.'} {resolvedResult.team.id})
+                    </span>
                   </p>
                 )}
                 <p className="text-xs text-neutral-400 font-mono">
-                  Ente: {(resolvedResult.person as any).organization || 'Tactical Emergency & Trauma Team'}
+                  {isEn ? 'Organization:' : 'Ente:'} {(resolvedResult.person as any).organization || 'Tactical Emergency & Trauma Team'}
                 </p>
               </div>
 

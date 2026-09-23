@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCourse } from '../context/CourseContext';
 import { GroupPhaseEnrichedDetails } from '../utils/groupPhaseDetails';
 import {
   Activity,
@@ -30,6 +31,8 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
   defaultExpanded = false,
   compact = false,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const {
@@ -51,7 +54,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
       >
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <span className="px-2 py-0.5 bg-orange-600/30 text-orange-400 border border-orange-500/50 text-[10px] font-black uppercase tracking-wider">
-            DETTAGLI FASE & RISORSE
+            {isEn ? 'PHASE DETAILS & RESOURCES' : 'DETTAGLI FASE & RISORSE'}
           </span>
           <span className="text-white font-bold text-[11px] truncate">
             {phaseTypeLabel}
@@ -60,7 +63,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
 
         <div className="flex items-center gap-1.5 text-neutral-400 text-[10px] flex-shrink-0">
           <span className="hidden sm:inline">
-            {isExpanded ? 'Comprimi' : 'Mostra simulatori & tecnici'}
+            {isExpanded ? (isEn ? 'Collapse' : 'Comprimi') : (isEn ? 'Show simulators & technicians' : 'Mostra simulatori & tecnici')}
           </span>
           {isExpanded ? (
             <ChevronUp className="w-3.5 h-3.5 text-orange-400" />
@@ -83,7 +86,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
               <span className="truncate">
                 {simulatorData.hasSimulators
                   ? simulatorData.simulatorHardware
-                  : 'Sessione standard'}
+                  : (isEn ? 'Standard session' : 'Sessione standard')}
               </span>
             </span>
 
@@ -104,7 +107,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
           <div className="space-y-1.5 bg-neutral-900/70 p-2.5 border border-neutral-800 rounded">
             <div className="flex items-center gap-1.5 text-orange-400 font-bold uppercase text-[10px] tracking-wider">
               <Info className="w-3.5 h-3.5" />
-              <span>Descrizione Operativa Fase in Corso</span>
+              <span>{isEn ? 'Current Phase Operational Description' : 'Descrizione Operativa Fase in Corso'}</span>
             </div>
             <p className="text-neutral-200 text-xs leading-relaxed">
               {operationalDescription}
@@ -114,7 +117,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
               <div className="flex items-start gap-1.5 p-1.5 bg-yellow-950/40 border border-yellow-700/60 text-yellow-300 text-[10px] rounded mt-1.5">
                 <Clock className="w-3 h-3 flex-shrink-0 mt-0.5 text-yellow-400" />
                 <span>
-                  <strong>Direttiva Timing:</strong> {protocolTimingNote}
+                  <strong>{isEn ? 'Timing Directive:' : 'Direttiva Timing:'}</strong> {protocolTimingNote}
                 </span>
               </div>
             )}
@@ -123,7 +126,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
             {didacticObjectives.length > 0 && (
               <div className="pt-2 border-t border-neutral-800 space-y-1">
                 <span className="text-[10px] uppercase text-neutral-400 font-bold block">
-                  Obiettivi di Postazione (Gruppo {groupId}):
+                  {isEn ? `Station Objectives (Group ${groupId}):` : `Obiettivi di Postazione (Gruppo ${groupId}):`}
                 </span>
                 <ul className="space-y-0.5 text-[11px] text-neutral-300 list-disc pl-4">
                   {didacticObjectives.map((obj, oIdx) => (
@@ -139,11 +142,11 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
             <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
               <div className="flex items-center gap-1.5 text-cyan-400 font-bold uppercase text-[10px] tracking-wider">
                 <Stethoscope className="w-3.5 h-3.5" />
-                <span>Simulatori, Protesi & Attori</span>
+                <span>{isEn ? 'Simulators, Prosthetics & Actors' : 'Simulatori, Protesi & Attori'}</span>
               </div>
               {simulatorData.patientId && (
                 <span className="px-1.5 py-0.2 bg-cyan-950 text-cyan-300 border border-cyan-700 text-[9px] font-black uppercase">
-                  Paziente #{simulatorData.patientId}
+                  {isEn ? `Patient #${simulatorData.patientId}` : `Paziente #${simulatorData.patientId}`}
                 </span>
               )}
             </div>
@@ -151,27 +154,37 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
             <div className="space-y-1.5 text-[11px]">
               {simulatorData.scenarioCode && (
                 <div>
-                  <span className="text-neutral-400 text-[10px] uppercase block">Scenario Clinico:</span>
+                  <span className="text-neutral-400 text-[10px] uppercase block">
+                    {isEn ? 'Clinical Scenario:' : 'Scenario Clinico:'}
+                  </span>
                   <span className="text-white font-bold">{simulatorData.scenarioCode}</span>
                 </div>
               )}
 
               <div>
-                <span className="text-neutral-400 text-[10px] uppercase block">Hardware Simulatore:</span>
+                <span className="text-neutral-400 text-[10px] uppercase block">
+                  {isEn ? 'Simulator Hardware:' : 'Hardware Simulatore:'}
+                </span>
                 <span className="text-neutral-200">{simulatorData.simulatorHardware}</span>
               </div>
 
               <div>
-                <span className="text-neutral-400 text-[10px] uppercase block">Moulage & Protesi:</span>
+                <span className="text-neutral-400 text-[10px] uppercase block">
+                  {isEn ? 'Moulage & Prosthetics:' : 'Moulage & Protesi:'}
+                </span>
                 <span className="text-neutral-200">{simulatorData.moulageProtesi}</span>
               </div>
 
               <div className="flex items-center justify-between pt-1 border-t border-neutral-850">
-                <span className="text-neutral-400 text-[10px] uppercase">Presenza Attori:</span>
+                <span className="text-neutral-400 text-[10px] uppercase">
+                  {isEn ? 'Actor Presence:' : 'Presenza Attori:'}
+                </span>
                 <span className="text-cyan-300 font-bold">
                   {simulatorData.attoriCount > 0
-                    ? `Presenti (${simulatorData.attoriCount}) - ${simulatorData.attoreDettagli}`
-                    : 'Nessun attore vivente (Manichino ad alta fedeltà)'}
+                    ? (isEn
+                        ? `Present (${simulatorData.attoriCount}) - ${simulatorData.attoreDettagli}`
+                        : `Presenti (${simulatorData.attoriCount}) - ${simulatorData.attoreDettagli}`)
+                    : (isEn ? 'No live actor (High-fidelity manikin)' : 'Nessun attore vivente (Manichino ad alta fedeltà)')}
                 </span>
               </div>
             </div>
@@ -183,7 +196,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
               <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
                 <div className="flex items-center gap-1.5 text-orange-400 font-bold uppercase text-[10px] tracking-wider">
                   <Wrench className="w-3.5 h-3.5" />
-                  <span>Tecnico di Postazione Assegnato</span>
+                  <span>{isEn ? 'Assigned Station Technician' : 'Tecnico di Postazione Assegnato'}</span>
                 </div>
                 <span className="px-1.5 py-0.2 bg-orange-950 text-orange-300 border border-orange-700 text-[9px] font-black uppercase">
                   {technicianData.techBadge}
@@ -192,11 +205,15 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-0.5">
                 <div>
-                  <span className="text-neutral-400 text-[10px] uppercase block">Nominativo:</span>
+                  <span className="text-neutral-400 text-[10px] uppercase block">
+                    {isEn ? 'Name:' : 'Nominativo:'}
+                  </span>
                   <span className="text-white font-bold">{technicianData.techName}</span>
                 </div>
                 <div>
-                  <span className="text-neutral-400 text-[10px] uppercase block">Specialità & Compito:</span>
+                  <span className="text-neutral-400 text-[10px] uppercase block">
+                    {isEn ? 'Specialty & Role:' : 'Specialità & Compito:'}
+                  </span>
                   <span className="text-neutral-200 truncate block" title={technicianData.techSpecialty}>
                     {technicianData.techSpecialty}
                   </span>
@@ -204,7 +221,7 @@ export const GroupPhaseDetailCard: React.FC<GroupPhaseDetailCardProps> = ({
               </div>
 
               <div className="flex items-center justify-between pt-1 text-[10px] border-t border-neutral-850 text-neutral-400">
-                <span>Canale Regia / Presidio Audio-Video</span>
+                <span>{isEn ? 'Control Channel / Audio-Video Monitoring' : 'Canale Regia / Presidio Audio-Video'}</span>
                 <span className="text-orange-300 font-mono font-bold flex items-center gap-1">
                   <Phone className="w-3 h-3" />
                   <span>{technicianData.techPhone}</span>

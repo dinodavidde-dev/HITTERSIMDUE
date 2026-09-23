@@ -207,8 +207,10 @@ export function getGroupPhaseDetails(
           'Idratazione e verifica DPI personali in vista della rotazione successiva',
         ];
   } else {
-    phaseTypeLabel = activity.title.toUpperCase();
-    operationalDescription = activity.subtitle || (isEn ? 'Operational training activity per Course master schedule.' : 'Attività didattico-operativa di programma secondo il cronoprogramma generale del Corso.');
+    phaseTypeLabel = isEn ? (activity.title ? translateMedicalText(activity.title, 'en').toUpperCase() : 'OPERATIONAL PHASE') : (activity.title || 'FASE OPERATIVA').toUpperCase();
+    operationalDescription = isEn
+      ? (activity.subtitle ? translateMedicalText(activity.subtitle, 'en') : 'Operational training activity per Course master schedule.')
+      : (activity.subtitle || 'Attività didattico-operativa di programma secondo il cronoprogramma generale del Corso.');
     didacticObjectives = [isEn ? 'Execute station tasks per Regia directives' : 'Esecuzione compiti di postazione secondo disposizioni della Regia'];
   }
 

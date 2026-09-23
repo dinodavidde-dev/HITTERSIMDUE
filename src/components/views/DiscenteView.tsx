@@ -764,7 +764,7 @@ export const DiscenteView: React.FC = () => {
       <OperatorUnlockModal
         isOpen={showUnlockModal}
         onClose={() => setShowUnlockModal(false)}
-        roleLabel="Discente"
+        roleLabel={isEn ? 'Learner' : 'Discente'}
       />
     </div>
   );

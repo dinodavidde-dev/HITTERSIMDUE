@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import { useCourse } from '../context/CourseContext';
 import { Discente, Team, Faculty, Technician, Director, Guest } from '../types';
 import { Award, Building2, Mail, Phone, Shield, User, Globe, Download, Printer } from 'lucide-react';
 
@@ -26,6 +27,8 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   size = 160,
   showCard = false,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   // Determine target link or value
@@ -38,18 +41,21 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     return 'https://trauma-sim.med';
   })();
 
-  const title = discente?.name || faculty?.name || technician?.name || director?.name || guest?.name || 'Tactical Trauma Pass';
+  const title = discente?.name || faculty?.name || technician?.name || director?.name || guest?.name || (isEn ? 'Tactical Trauma Pass' : 'Pass Trauma Tattico');
+  const studentRole = isEn ? (discente?.role === 'Operatore' ? 'Operator' : discente?.role) : discente?.role;
+  const teamName = team?.name ? (isEn ? team.name.replace('Squadra', 'Team') : team.name) : (isEn ? 'Team' : 'Squadra');
+  const techRole = isEn ? (technician?.role === 'Tecnico' ? 'Technician' : technician?.role) : technician?.role;
   const subtitle = discente 
-    ? `${discente.group} • ${team?.name || 'Squadra'} • ${discente.role}`
+    ? `${discente.group} • ${teamName} • ${studentRole}`
     : faculty 
-    ? `Faculty Tutor • ${faculty.specialty || 'TCCC & Trauma'}`
+    ? (isEn ? `Faculty Tutor • ${faculty.specialty || 'TCCC & Trauma'}` : `Tutor Didattico • ${faculty.specialty || 'TCCC & Trauma'}`)
     : technician
-    ? `Technical Staff • ${technician.role}`
+    ? (isEn ? `Technical Staff • ${techRole}` : `Staff Tecnico • ${techRole}`)
     : director
-    ? `Course Director`
+    ? (isEn ? 'Course Director' : 'Direttore Corso')
     : guest
-    ? `Official Guest • ${guest.organization}`
-    : 'Authorized Personnel';
+    ? (isEn ? `Official Guest • ${guest.organization}` : `Ospite Ufficiale • ${guest.organization}`)
+    : (isEn ? 'Authorized Personnel' : 'Personale Autorizzato');
 
   const badgeCode = discente?.badgeCode || faculty?.badgeCode || technician?.badgeCode || director?.badgeCode || guest?.badgeCode || 'PASS-01';
 
@@ -87,7 +93,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           <img src={qrDataUrl} alt="QR Code" style={{ width: size, height: size }} className="object-contain" />
         ) : (
           <div style={{ width: size, height: size }} className="flex items-center justify-center text-xs text-neutral-400 font-mono">
-            Generating QR...
+            {isEn ? 'Generating QR...' : 'Generazione QR...'}
           </div>
         )}
         <span className="text-[10px] font-mono text-neutral-600 mt-1 font-bold">{badgeCode}</span>
@@ -115,7 +121,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
             <img src={qrDataUrl} alt={title} style={{ width: size, height: size }} className="object-contain" />
           ) : (
             <div style={{ width: size, height: size }} className="flex items-center justify-center text-xs text-neutral-400 font-mono">
-              Loading...
+              {isEn ? 'Loading...' : 'Caricamento...'}
             </div>
           )}
         </div>
@@ -131,14 +137,14 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           className="py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-xs font-bold uppercase rounded flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
         >
           <Download className="w-3.5 h-3.5 text-orange-400" />
-          <span>Save PNG</span>
+          <span>{isEn ? 'Save PNG' : 'Salva PNG'}</span>
         </button>
         <button
           onClick={() => window.print()}
           className="py-2 bg-orange-500 hover:bg-orange-400 text-black font-mono text-xs font-black uppercase rounded flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
         >
           <Printer className="w-3.5 h-3.5" />
-          <span>Print Pass</span>
+          <span>{isEn ? 'Print Pass' : 'Stampa Pass'}</span>
         </button>
       </div>
     </div>

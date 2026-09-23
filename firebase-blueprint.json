@@ -32,6 +32,7 @@
             "location": { "type": "string", "maxLength": 200 }
           }
         },
+        "language": { "type": "string", "enum": ["it", "en"] },
         "updatedAt": { "type": "string" },
         "updatedBy": { "type": "string" }
       },

@@ -127,12 +127,12 @@ export const RegiaView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1 text-xs font-mono">
               <span className="text-pink-200/90 font-medium">
-                Ruolo: <strong className="text-white">{currentRegia.role || currentRegia.title}</strong>
+                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentRegia.role || currentRegia.title}</strong>
               </span>
               {currentRegia.organization && (
                 <>
                   <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-300">Ente: <strong className="text-white">{currentRegia.organization}</strong></span>
+                  <span className="text-neutral-300">{isEn ? 'Org:' : 'Ente:'} <strong className="text-white">{currentRegia.organization}</strong></span>
                 </>
               )}
               {currentRegia.email && (
@@ -147,7 +147,7 @@ export const RegiaView: React.FC = () => {
 
             {regiaStaff.length > 0 && (
               <div className="flex items-center gap-2 pt-2">
-                <span className="text-[11px] font-mono text-pink-400 uppercase font-bold">Seleziona Operatore Regia:</span>
+                <span className="text-[11px] font-mono text-pink-400 uppercase font-bold">{isEn ? 'Select Regia Operator:' : 'Seleziona Operatore Regia:'}</span>
                 <select
                   value={currentRegia.id}
                   onChange={(e) => setSelectedRegiaId(e.target.value)}
@@ -172,7 +172,7 @@ export const RegiaView: React.FC = () => {
               className="px-3 py-1.5 bg-yellow-950 hover:bg-yellow-900 text-yellow-300 font-black text-xs uppercase tracking-wider border border-yellow-600 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
             >
               <Users className="w-3 h-3 text-yellow-400" />
-              <span>DIRETTORI</span>
+              <span>{isEn ? 'DIRECTORS' : 'DIRETTORI'}</span>
             </button>
 
             <button
@@ -180,7 +180,7 @@ export const RegiaView: React.FC = () => {
               className="px-3 py-1.5 bg-orange-950 hover:bg-orange-900 text-orange-300 font-bold text-xs uppercase border border-orange-600 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
             >
               {copiedPublicLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Globe className="w-3.5 h-3.5 text-orange-400" />}
-              <span>{copiedPublicLink ? 'Link Copiato!' : 'Link Pubblico'}</span>
+              <span>{copiedPublicLink ? (isEn ? 'Link Copied!' : 'Link Copiato!') : (isEn ? 'Public Link' : 'Link Pubblico')}</span>
             </button>
           </div>
         </div>
@@ -200,7 +200,7 @@ export const RegiaView: React.FC = () => {
             <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                REGIA & TIMELINE
+                {isEn ? 'CONTROL & TIMELINE' : 'REGIA & TIMELINE'}
               </span>
             </div>
           </button>
@@ -216,7 +216,7 @@ export const RegiaView: React.FC = () => {
             <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                SCENARI MASTER
+                {isEn ? 'MASTER SCENARIOS' : 'SCENARI MASTER'}
               </span>
             </div>
           </button>
@@ -232,7 +232,7 @@ export const RegiaView: React.FC = () => {
             <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                START & STOP
+                {isEn ? 'START & STOP' : 'START & STOP'}
               </span>
             </div>
           </button>
@@ -248,7 +248,7 @@ export const RegiaView: React.FC = () => {
             <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-pink-400" />
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                ANAGRAFICA REGIA
+                {isEn ? 'REGIA ROSTER' : 'ANAGRAFICA REGIA'}
               </span>
             </div>
           </button>
@@ -278,13 +278,15 @@ export const RegiaView: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest font-mono">
-                    CONTROLLO ACCESSO DISCENTI & COUNTDOWN SINCRONIZZATO
+                    {isEn ? 'LEARNER ACCESS CONTROL & SYNCED COUNTDOWN' : 'CONTROLLO ACCESSO DISCENTI & COUNTDOWN SINCRONIZZATO'}
                   </span>
                   <h3 className="text-xl sm:text-2xl font-black text-white uppercase flex items-center gap-2">
-                    <span>DATA E ORA APERTURA GATE</span>
+                    <span>{isEn ? 'GATE OPENING DATE & TIME' : 'DATA E ORA APERTURA GATE'}</span>
                   </h3>
                   <p className="text-xs text-neutral-400 font-mono mt-0.5">
-                    Imposta le date del corso e l'ora esatta di sblocco/apertura del gate discenti.
+                    {isEn
+                      ? 'Set course dates and exact time for learner gate unlocking.'
+                      : 'Imposta le date del corso e l\'ora esatta di sblocco/apertura del gate discenti.'}
                   </p>
                 </div>
               </div>
@@ -300,12 +302,12 @@ export const RegiaView: React.FC = () => {
                   {courseStartSchedule.isGateEnabled ? (
                     <>
                       <Lock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>GATE BLOCCATO (COUNTDOWN ATTIVO)</span>
+                      <span>{isEn ? 'GATE LOCKED (COUNTDOWN ACTIVE)' : 'GATE BLOCCATO (COUNTDOWN ATTIVO)'}</span>
                     </>
                   ) : (
                     <>
                       <Unlock className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>GATE APERTO / CORSO ATTIVO</span>
+                      <span>{isEn ? 'GATE OPEN / COURSE ACTIVE' : 'GATE APERTO / CORSO ATTIVO'}</span>
                     </>
                   )}
                 </span>
@@ -317,7 +319,7 @@ export const RegiaView: React.FC = () => {
               <div>
                 <label className="text-[10px] font-mono text-neutral-400 uppercase block font-bold mb-1.5 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                  <span>DATA INIZIO CORSO</span>
+                  <span>{isEn ? 'COURSE START DATE' : 'DATA INIZIO CORSO'}</span>
                 </label>
                 <input
                   type="date"
@@ -326,14 +328,14 @@ export const RegiaView: React.FC = () => {
                   className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-sm px-3 py-2 focus:outline-hidden focus:border-amber-400"
                 />
                 <span className="text-[10px] text-neutral-500 font-mono mt-1 block">
-                  Data programmata per il corso
+                  {isEn ? 'Scheduled course date' : 'Data programmata per il corso'}
                 </span>
               </div>
 
               <div>
                 <label className="text-[10px] font-mono text-neutral-400 uppercase block font-bold mb-1.5 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>ORA APERTURA GATE</span>
+                  <span>{isEn ? 'GATE OPENING TIME' : 'ORA APERTURA GATE'}</span>
                 </label>
                 <input
                   type="time"
@@ -342,24 +344,24 @@ export const RegiaView: React.FC = () => {
                   className="w-full bg-neutral-900 border border-neutral-700 text-white font-mono text-sm px-3 py-2 focus:outline-hidden focus:border-amber-400 font-bold"
                 />
                 <span className="text-[10px] text-neutral-500 font-mono mt-1 block">
-                  Orario ufficiale di apertura discenti
+                  {isEn ? 'Official learner opening time' : 'Orario ufficiale di apertura discenti'}
                 </span>
               </div>
 
               <div>
                 <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold mb-1.5">
-                  TEMPO RIMANENTE AL GATE
+                  {isEn ? 'TIME REMAINING TO GATE' : 'TEMPO RIMANENTE AL GATE'}
                 </span>
                 <div className="bg-neutral-900 border border-neutral-700 px-3 py-2 font-mono font-black text-amber-400 text-lg flex items-center justify-between">
                   <span>
                     {(() => {
-                      if (!courseStartSchedule.isGateEnabled) return 'GATE APERTO';
+                      if (!courseStartSchedule.isGateEnabled) return isEn ? 'GATE OPEN' : 'GATE APERTO';
                       const totalSec = Math.floor(timeRemainingMs / 1000);
                       const d = Math.floor(totalSec / 86400);
                       const h = Math.floor((totalSec % 86400) / 3600);
                       const m = Math.floor((totalSec % 3600) / 60);
                       const s = totalSec % 60;
-                      if (d > 0) return `${d}g ${h}h ${m}m ${s}s`;
+                      if (d > 0) return `${d}${isEn ? 'd' : 'g'} ${h}h ${m}m ${s}s`;
                       if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
                       return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
                     })()}
@@ -367,7 +369,7 @@ export const RegiaView: React.FC = () => {
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
                 </div>
                 <span className="text-[10px] text-neutral-400 font-mono mt-1 block truncate">
-                  Target: {courseStartSchedule.scheduledDate} ore {courseStartSchedule.scheduledTime}
+                  Target: {courseStartSchedule.scheduledDate} {isEn ? 'at' : 'ore'} {courseStartSchedule.scheduledTime}
                 </span>
               </div>
 
@@ -383,12 +385,12 @@ export const RegiaView: React.FC = () => {
                   {courseStartSchedule.isGateEnabled ? (
                     <>
                       <Lock className="w-3.5 h-3.5" />
-                      <span>DISATTIVA GATE</span>
+                      <span>{isEn ? 'DISABLE GATE' : 'DISATTIVA GATE'}</span>
                     </>
                   ) : (
                     <>
                       <Unlock className="w-3.5 h-3.5" />
-                      <span>ATTIVA BLOCCO GATE</span>
+                      <span>{isEn ? 'ENABLE GATE LOCK' : 'ATTIVA BLOCCO GATE'}</span>
                     </>
                   )}
                 </button>
@@ -397,15 +399,15 @@ export const RegiaView: React.FC = () => {
                   <button
                     onClick={startCourseImmediately}
                     className="py-1.5 px-2 bg-emerald-700 hover:bg-emerald-600 text-white font-mono text-[10px] font-bold uppercase border border-emerald-500 cursor-pointer flex items-center justify-center gap-1"
-                    title="Apre istantaneamente il gate sbloccando la visuale pubblica"
+                    title={isEn ? 'Instantly open gate, unlocking public view' : 'Apre istantaneamente il gate sbloccando la visuale pubblica'}
                   >
                     <DoorOpen className="w-3 h-3" />
-                    <span>APRI ORA</span>
+                    <span>{isEn ? 'OPEN NOW' : 'APRI ORA'}</span>
                   </button>
                   <button
                     onClick={() => resetCourseScheduleToFuture(30)}
                     className="py-1.5 px-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-mono text-[10px] font-bold uppercase border border-neutral-600 cursor-pointer flex items-center justify-center gap-1"
-                    title="Imposta il countdown a +30 minuti da adesso"
+                    title={isEn ? 'Set countdown to +30 minutes from now' : 'Imposta il countdown a +30 minuti da adesso'}
                   >
                     <Clock className="w-3 h-3 text-amber-400" />
                     <span>+30 MIN</span>
@@ -418,7 +420,7 @@ export const RegiaView: React.FC = () => {
             <div className="p-3 bg-neutral-950 border border-neutral-800/80 flex flex-wrap items-center justify-between gap-2">
               <span className="text-[11px] font-mono text-neutral-400 uppercase font-bold flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
-                <span>PRESET RAPIDI ORARIO GATE:</span>
+                <span>{isEn ? 'QUICK GATE TIME PRESETS:' : 'PRESET RAPIDI ORARIO GATE:'}</span>
               </span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {['08:00', '08:30', '09:00', '13:00', '14:00'].map((presetTime) => (
@@ -431,7 +433,7 @@ export const RegiaView: React.FC = () => {
                         : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-amber-400'
                     }`}
                   >
-                    ORE {presetTime}
+                    {isEn ? 'AT ' : 'ORE '}{presetTime}
                   </button>
                 ))}
               </div>
@@ -442,11 +444,11 @@ export const RegiaView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4 flex-wrap gap-4">
               <div>
                 <span className="text-[10px] font-black text-red-500 uppercase tracking-widest font-mono">
-                  SISTEMA DI BLOCCO E RIPARTENZA
+                  {isEn ? 'LOCK & RESUME SYSTEM' : 'SISTEMA DI BLOCCO E RIPARTENZA'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-white uppercase flex items-center gap-2">
                   <AlertOctagon className="w-6 h-6 text-red-600 animate-pulse" />
-                  <span>CONTROLLO START & STOP & SEGNALE EMERGENZA GLOBALE</span>
+                  <span>{isEn ? 'START & STOP CONTROL & GLOBAL EMERGENCY SIGNAL' : 'CONTROLLO START & STOP & SEGNALE EMERGENZA GLOBALE'}</span>
                 </h3>
               </div>
 
@@ -455,15 +457,15 @@ export const RegiaView: React.FC = () => {
                 className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider border-2 border-white shadow-xl transition-all cursor-pointer flex items-center gap-2"
               >
                 <AlertOctagon className="w-4 h-4" />
-                <span>APRI MODALE SOSPENSIONE</span>
+                <span>{isEn ? 'OPEN SUSPENSION MODAL' : 'APRI MODALE SOSPENSIONE'}</span>
               </button>
             </div>
 
             <div className="p-5 bg-neutral-950 border-2 border-neutral-800 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-xs font-black text-neutral-400 uppercase">STATO ATTUALE CORSO:</span>
+                <span className="text-xs font-black text-neutral-400 uppercase">{isEn ? 'CURRENT COURSE STATUS:' : 'STATO ATTUALE CORSO:'}</span>
                 <span className={`text-xs font-black uppercase px-3 py-1 ${suspensionInfo.isSuspended ? 'bg-red-600 text-white animate-pulse' : 'bg-emerald-600 text-white'}`}>
-                  {suspensionInfo.isSuspended ? '🔴 CORSO SOSPESO' : '🟢 CORSO IN ESECUZIONE REGOLARE'}
+                  {suspensionInfo.isSuspended ? (isEn ? '🔴 COURSE SUSPENDED' : '🔴 CORSO SOSPESO') : (isEn ? '🟢 COURSE RUNNING NORMALLY' : '🟢 CORSO IN ESECUZIONE REGOLARE')}
                 </span>
               </div>
             </div>
@@ -477,30 +479,38 @@ export const RegiaView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-black uppercase text-white tracking-wide">
-                    STRUMENTO DI AUTOMAZIONE CORSO & ACCELERATORE TEMPO
+                    {isEn ? 'COURSE AUTOMATION TOOL & TIME ACCELERATOR' : 'STRUMENTO DI AUTOMAZIONE CORSO & ACCELERATORE TEMPO'}
                   </h3>
-                  <p className="text-xs text-neutral-400 font-mono">Motore di stress test per simulazione timeline, moltiplicatori velocità e salti temporali</p>
+                  <p className="text-xs text-neutral-400 font-mono">
+                    {isEn
+                      ? 'Stress test engine for timeline simulation, speed multipliers and time jumps'
+                      : 'Motore di stress test per simulazione timeline, moltiplicatori velocità e salti temporali'}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="bg-neutral-950 border border-neutral-800 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">GIORNO & FASE CORRENTE</span>
+                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
+                  {isEn ? 'CURRENT DAY & PHASE' : 'GIORNO & FASE CORRENTE'}
+                </span>
                 <div className="font-mono font-black text-sm text-orange-400 mt-0.5">
-                  GIORNO {activeDay} • FASE {activeSlotIndex + 1}/{INITIAL_TIMELINE_SLOTS.length}
+                  {isEn ? 'DAY' : 'GIORNO'} {activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{INITIAL_TIMELINE_SLOTS.length}
                 </div>
                 <div className="text-xs text-neutral-300 font-mono truncate">{currentSlot?.title}</div>
               </div>
 
               <div>
-                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">TIMER & STATO</span>
+                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
+                  {isEn ? 'TIMER & STATUS' : 'TIMER & STATO'}
+                </span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="font-mono text-base font-black px-2 py-0.5 bg-black text-white border border-neutral-700">
                     {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
                   </span>
                   <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border ${isTimerRunning ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-pulse' : 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
-                    {isTimerRunning ? 'RUNNING' : 'PAUSA'}
+                    {isTimerRunning ? 'RUNNING' : (isEn ? 'PAUSED' : 'PAUSA')}
                   </span>
                 </div>
               </div>
@@ -513,7 +523,7 @@ export const RegiaView: React.FC = () => {
                   }`}
                 >
                   {isTimerRunning ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                  <span>{isTimerRunning ? 'PAUSA' : 'AVVIA'}</span>
+                  <span>{isTimerRunning ? (isEn ? 'PAUSE' : 'PAUSA') : (isEn ? 'START' : 'AVVIA')}</span>
                 </button>
                 <button
                   onClick={() => resetTimer()}
@@ -526,7 +536,9 @@ export const RegiaView: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-black uppercase text-neutral-300 tracking-wider">SELEZIONA MOLTIPLICATORE VELOCITÀ</h4>
+              <h4 className="text-xs font-black uppercase text-neutral-300 tracking-wider">
+                {isEn ? 'SELECT SPEED MULTIPLIER' : 'SELEZIONA MOLTIPLICATORE VELOCITÀ'}
+              </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
                 {[1, 5, 15, 30, 60, 120, 300].map((spd) => {
                   const isSelected = timeMultiplier === spd;
@@ -539,7 +551,7 @@ export const RegiaView: React.FC = () => {
                       }`}
                     >
                       <div className="font-mono font-black text-sm">{spd}x</div>
-                      <div className="text-[9px] text-neutral-400 font-mono mt-0.5">{spd === 1 ? '1:1 Reale' : `${spd}x`}</div>
+                      <div className="text-[9px] text-neutral-400 font-mono mt-0.5">{spd === 1 ? (isEn ? '1:1 Real' : '1:1 Reale') : `${spd}x`}</div>
                     </button>
                   );
                 })}
@@ -547,7 +559,9 @@ export const RegiaView: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-black uppercase text-neutral-300 tracking-wider">SALTO RAPIDO AI PUNTI CRITICI</h4>
+              <h4 className="text-xs font-black uppercase text-neutral-300 tracking-wider">
+                {isEn ? 'QUICK JUMP TO CRITICAL POINTS' : 'SALTO RAPIDO AI PUNTI CRITICI'}
+              </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <button
                   onClick={() => jumpToTimelinePoint('pre_start_15m')}
@@ -555,9 +569,11 @@ export const RegiaView: React.FC = () => {
                 >
                   <div className="font-mono font-black text-xs text-amber-300 flex items-center gap-1.5">
                     <Bell className="w-3.5 h-3.5 text-amber-400" />
-                    <span>TEST AVVISO 15 MIN</span>
+                    <span>{isEn ? 'TEST 15 MIN ALERT' : 'TEST AVVISO 15 MIN'}</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-1">Imposta countdown a 15 minuti per testare banner raduno</p>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    {isEn ? 'Set countdown to 15 min to test assembly banner' : 'Imposta countdown a 15 minuti per testare banner raduno'}
+                  </p>
                 </button>
 
                 <button
@@ -566,9 +582,11 @@ export const RegiaView: React.FC = () => {
                 >
                   <div className="font-mono font-black text-xs text-red-300 flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                    <span>TEST ALLERTA 5 MIN</span>
+                    <span>{isEn ? 'TEST 5 MIN ALERT' : 'TEST ALLERTA 5 MIN'}</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-1">Imposta countdown a 5 minuti per testare urgenza rossa</p>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    {isEn ? 'Set countdown to 5 min to test red urgency' : 'Imposta countdown a 5 minuti per testare urgenza rossa'}
+                  </p>
                 </button>
               </div>
             </div>

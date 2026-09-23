@@ -76,7 +76,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: d.name,
       badgeCode: d.badgeCode || d.id,
       category: 'discenti' as const,
-      roleTitle: d.role || 'Operatore Trauma Team',
+      roleTitle: d.role || (isEn ? 'Trauma Team Operator' : 'Operatore Trauma Team'),
       email: d.email,
       phone: d.phone,
       teamId: d.teamId,
@@ -87,7 +87,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: f.name,
       badgeCode: f.badgeCode || f.id,
       category: 'faculty' as const,
-      roleTitle: f.title || f.specialty || 'Faculty Tutor',
+      roleTitle: f.title || f.specialty || (isEn ? 'Faculty Instructor' : 'Faculty Tutor'),
       email: f.email,
       phone: f.phone,
       teamId: f.assignedTeamId,
@@ -98,7 +98,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: t.name,
       badgeCode: t.badgeCode || t.id,
       category: 'tecnici' as const,
-      roleTitle: t.specialty || 'Tecnico Simulazione',
+      roleTitle: t.specialty || (isEn ? 'Simulation Technician' : 'Tecnico Simulazione'),
       email: t.phone,
       phone: t.phone,
       raw: t,
@@ -108,7 +108,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: dir.name,
       badgeCode: dir.badgeCode || dir.id,
       category: 'direttori' as const,
-      roleTitle: dir.title || 'Direttore Corso',
+      roleTitle: dir.title || (isEn ? 'Course Director' : 'Direttore Corso'),
       phone: dir.phone,
       raw: dir,
     })),
@@ -126,7 +126,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: g.name,
       badgeCode: g.badgeCode || g.id,
       category: 'ospiti' as const,
-      roleTitle: g.title || 'Ospite / VIP Observer',
+      roleTitle: g.title || (isEn ? 'Guest / VIP Observer' : 'Ospite / VIP Observer'),
       email: g.email,
       phone: g.phone,
       raw: g,
@@ -268,13 +268,13 @@ export const PersonnelBadgeRegistry: React.FC = () => {
         <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
           {(
             [
-              { key: 'all', label: 'TUTTI (96)', icon: Users },
-              { key: 'discenti', label: `DISCENTI (${discenti.length})`, icon: Users },
+              { key: 'all', label: isEn ? `ALL (${allPersonnel.length})` : `TUTTI (${allPersonnel.length})`, icon: Users },
+              { key: 'discenti', label: isEn ? `LEARNERS (${discenti.length})` : `DISCENTI (${discenti.length})`, icon: Users },
               { key: 'faculty', label: `FACULTY (${faculty.length})`, icon: Award },
-              { key: 'tecnici', label: `TECNICI (${technicians.length})`, icon: Wrench },
-              { key: 'direttori', label: `DIREZ. (${directors.length})`, icon: Shield },
-              { key: 'regia', label: `REGIA (${regiaStaff.length})`, icon: Radio },
-              { key: 'ospiti', label: `OSPITI (${guests.length})`, icon: UserCheck },
+              { key: 'tecnici', label: isEn ? `TECH (${technicians.length})` : `TECNICI (${technicians.length})`, icon: Wrench },
+              { key: 'direttori', label: isEn ? `DIRECT. (${directors.length})` : `DIREZ. (${directors.length})`, icon: Shield },
+              { key: 'regia', label: isEn ? `CONTROL (${regiaStaff.length})` : `REGIA (${regiaStaff.length})`, icon: Radio },
+              { key: 'ospiti', label: isEn ? `GUESTS (${guests.length})` : `OSPITI (${guests.length})`, icon: UserCheck },
             ] as const
           ).map((tab) => {
             const Icon = tab.icon;
@@ -353,7 +353,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
               <div
                 onClick={() => setSelectedPersonForModal({ person: p.raw, category: p.category })}
                 className="flex flex-col items-center justify-center p-2.5 bg-white rounded border border-neutral-300 cursor-pointer group relative shadow-inner"
-                title="Clicca per ingrandire il QR Pass e le opzioni avanzate"
+                title={isEn ? 'Click to view full QR Pass and options' : 'Clicca per ingrandire il QR Pass e le opzioni avanzate'}
               >
                 {qrInfo?.dataUrl ? (
                   <img
@@ -364,7 +364,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
                 ) : (
                   <div className="w-28 h-28 flex flex-col items-center justify-center text-[10px] text-neutral-600 font-mono gap-1">
                     <RefreshCw className="w-4 h-4 animate-spin text-orange-500" />
-                    <span>Generazione...</span>
+                    <span>{isEn ? 'Generating...' : 'Generazione...'}</span>
                   </div>
                 )}
 
@@ -392,7 +392,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
                     className="py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-[10px] font-mono font-bold uppercase flex items-center justify-center gap-1 rounded transition-colors cursor-pointer"
                   >
                     <QrCode className="w-3 h-3 text-orange-400" />
-                    <span>Dettagli Pass</span>
+                    <span>{isEn ? 'Pass Details' : 'Dettagli Pass'}</span>
                   </button>
 
                   <button
@@ -401,7 +401,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
                     className="py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-[10px] font-mono font-bold uppercase flex items-center justify-center gap-1 rounded transition-colors cursor-pointer"
                   >
                     {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{isCopied ? 'Copiato!' : 'Copia Link'}</span>
+                    <span>{isCopied ? (isEn ? 'Copied!' : 'Copiato!') : (isEn ? 'Copy Link' : 'Copia Link')}</span>
                   </button>
                 </div>
               </div>

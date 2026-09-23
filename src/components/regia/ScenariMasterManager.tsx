@@ -251,7 +251,7 @@ export const ScenariMasterManager: React.FC = () => {
   };
 
   const handleResetDefault = () => {
-    if (window.confirm('Ripristinare tutti gli scenari ai valori predefiniti?')) {
+    if (window.confirm(isEn ? 'Reset all scenarios to default values?' : 'Ripristinare tutti gli scenari ai valori predefiniti?')) {
       setScenarios(MASTER_SCENARIOS_LIST);
       localStorage.removeItem('master_scenarios_custom');
     }
@@ -300,7 +300,7 @@ export const ScenariMasterManager: React.FC = () => {
       try {
         const lines = text.split('\n').filter(l => l.trim().length > 0);
         if (lines.length < 2) {
-          alert('File CSV non valido o vuoto.');
+          alert(isEn ? 'Invalid or empty CSV file.' : 'File CSV non valido o vuoto.');
           return;
         }
 
@@ -332,13 +332,13 @@ export const ScenariMasterManager: React.FC = () => {
 
         if (newScenarios.length > 0) {
           setScenarios(newScenarios);
-          alert(`Importati con successo ${newScenarios.length} scenari dal CSV!`);
+          alert(isEn ? `Successfully imported ${newScenarios.length} scenarios from CSV!` : `Importati con successo ${newScenarios.length} scenari dal CSV!`);
         } else {
-          alert('Nessuno scenario valido trovato nel CSV.');
+          alert(isEn ? 'No valid scenarios found in CSV.' : 'Nessuno scenario valido trovato nel CSV.');
         }
       } catch (err) {
         console.error(err);
-        alert('Errore durante il parsing del file CSV.');
+        alert(isEn ? 'Error parsing CSV file.' : 'Errore durante il parsing del file CSV.');
       }
     };
     reader.readAsText(file);
@@ -382,7 +382,7 @@ export const ScenariMasterManager: React.FC = () => {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              DAY 02 (Sq. 1-6)
+              DAY 02 ({isEn ? 'Teams 1-6' : 'Sq. 1-6'})
             </button>
             <button
               onClick={() => setSelectedDay(3)}
@@ -392,7 +392,7 @@ export const ScenariMasterManager: React.FC = () => {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              DAY 03 (Sq. 7-12)
+              DAY 03 ({isEn ? 'Teams 7-12' : 'Sq. 7-12'})
             </button>
           </div>
 
@@ -411,22 +411,22 @@ export const ScenariMasterManager: React.FC = () => {
             <button
               onClick={handleExportCSV}
               className="px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-pink-400 border border-pink-500/50 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow"
-              title="Esporta in CSV"
+              title={isEn ? 'Export to CSV' : 'Esporta in CSV'}
             >
-              <Download className="w-3.5 h-3.5" /> Esporta CSV
+              <Download className="w-3.5 h-3.5" /> {isEn ? 'Export CSV' : 'Esporta CSV'}
             </button>
 
             <label className="px-3 py-2 bg-pink-600 hover:bg-pink-500 text-black font-black text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-all shadow">
-              <Upload className="w-3.5 h-3.5" /> Importa CSV
+              <Upload className="w-3.5 h-3.5" /> {isEn ? 'Import CSV' : 'Importa CSV'}
               <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
             </label>
 
             <button
               onClick={handleResetDefault}
               className="px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 text-xs font-mono flex items-center gap-1.5 transition-all"
-              title="Ripristina default"
+              title={isEn ? 'Reset defaults' : 'Ripristina default'}
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Reset
+              <RotateCcw className="w-3.5 h-3.5" /> {isEn ? 'Reset' : 'Reset'}
             </button>
           </div>
         </div>
@@ -435,10 +435,10 @@ export const ScenariMasterManager: React.FC = () => {
       {/* Summary Info Bar */}
       <div className="bg-neutral-900 border border-neutral-800 p-4 flex items-center justify-between text-xs text-neutral-300">
         <div>
-          <span>Visualizzazione Cronologica • <strong className="text-white">Day 0{selectedDay}</strong> • Totale Scenari in Programma: <strong className="text-pink-400">{filteredScenarios.length}</strong></span>
+          <span>{isEn ? 'Chronological View' : 'Visualizzazione Cronologica'} • <strong className="text-white">Day 0{selectedDay}</strong> • {isEn ? 'Total Scheduled Scenarios:' : 'Totale Scenari in Programma:'} <strong className="text-pink-400">{filteredScenarios.length}</strong></span>
         </div>
         <span className="text-neutral-400">
-          Coordinamento Regia Tecnica & Master Clinico
+          {isEn ? 'Technical Control & Clinical Master Coordination' : 'Coordinamento Regia Tecnica & Master Clinico'}
         </span>
       </div>
 
@@ -446,7 +446,7 @@ export const ScenariMasterManager: React.FC = () => {
       <div className="space-y-4">
         {filteredScenarios.map((scen, index) => {
           const availableTechs = technicians && technicians.length > 0 ? technicians : [
-            { name: 'Tecnico di Supporto', phone: '+39 333 000000', badgeCode: scen.assignedTechCode, specialty: 'Simulazione' }
+            { name: isEn ? 'Support Technician' : 'Tecnico di Supporto', phone: '+39 333 000000', badgeCode: scen.assignedTechCode, specialty: isEn ? 'Simulation' : 'Simulazione' }
           ];
           const tech = availableTechs[(scen.teamNumber - 1) % availableTechs.length] || availableTechs[0];
 
@@ -460,7 +460,7 @@ export const ScenariMasterManager: React.FC = () => {
                     #{index + 1} • {scen.code}
                   </span>
                   <span className="px-2.5 py-1 bg-neutral-900 text-orange-400 border border-neutral-700 font-mono text-xs font-bold rounded">
-                    Squadra {scen.teamNumber} (Gruppo {scen.group})
+                    {isEn ? 'Team' : 'Squadra'} {scen.teamNumber} ({isEn ? 'Group' : 'Gruppo'} {scen.group})
                   </span>
                   <span className="px-2.5 py-1 bg-neutral-900 text-cyan-300 border border-neutral-700 font-mono text-xs font-bold rounded flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" /> Day 0{scen.day} • {scen.period}
@@ -478,19 +478,19 @@ export const ScenariMasterManager: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
                   <div className="bg-neutral-900 p-2.5 border border-neutral-800 rounded">
-                    <span className="text-neutral-400 text-[10px] uppercase block">Ubicazione / Postazione:</span>
+                    <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Location / Station:' : 'Ubicazione / Postazione:'}</span>
                     <strong className="text-amber-400 flex items-center gap-1 pt-0.5">
                       <MapPin className="w-3.5 h-3.5" /> {scen.location}
                     </strong>
                   </div>
 
                   <div className="bg-neutral-900 p-2.5 border border-neutral-800 rounded">
-                    <span className="text-neutral-400 text-[10px] uppercase block">Modello Simulatore:</span>
+                    <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Simulator Model:' : 'Modello Simulatore:'}</span>
                     <strong className="text-cyan-300 block pt-0.5 truncate" title={scen.simulatorModel}>{scen.simulatorModel}</strong>
                   </div>
 
                   <div className="bg-neutral-900 p-2.5 border border-neutral-800 rounded">
-                    <span className="text-neutral-400 text-[10px] uppercase block">Specifiche Moulage:</span>
+                    <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Moulage Specifications:' : 'Specifiche Moulage:'}</span>
                     <strong className="text-pink-300 block pt-0.5 truncate" title={scen.moulageSpecs}>{scen.moulageSpecs}</strong>
                   </div>
                 </div>
@@ -505,7 +505,7 @@ export const ScenariMasterManager: React.FC = () => {
 
                 {scen.notes && (
                   <div className="bg-amber-950/30 border border-amber-600/50 p-2.5 text-amber-200 text-xs rounded">
-                    <span className="font-bold uppercase text-[10px] block text-amber-400">Note Regia / Tecniche:</span>
+                    <span className="font-bold uppercase text-[10px] block text-amber-400">{isEn ? 'Control / Technical Notes:' : 'Note Regia / Tecniche:'}</span>
                     <p className="mt-0.5">{scen.notes}</p>
                   </div>
                 )}
@@ -519,7 +519,7 @@ export const ScenariMasterManager: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[10px] font-mono text-pink-400 uppercase tracking-widest block">
-                      TECNICO ASSEGNATO ({tech.badgeCode || scen.assignedTechCode})
+                      {isEn ? 'ASSIGNED TECHNICIAN' : 'TECNICO ASSEGNATO'} ({tech.badgeCode || scen.assignedTechCode})
                     </span>
                     <span className="text-xs font-black text-white">{tech.name}</span>
                     <span className="text-[10px] font-mono text-neutral-400 block">{tech.phone}</span>
@@ -527,12 +527,12 @@ export const ScenariMasterManager: React.FC = () => {
                 </div>
 
                 <div className="pt-2 border-t border-neutral-800 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-emerald-400 font-bold uppercase">✓ Pronto Regia</span>
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase">✓ {isEn ? 'Control Ready' : 'Pronto Regia'}</span>
                   <button
                     onClick={() => setEditingScenario({ ...scen })}
                     className="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-black text-xs font-black uppercase tracking-wider rounded shadow transition-all flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Edit3 className="w-3.5 h-3.5" /> Modifica Scenario
+                    <Edit3 className="w-3.5 h-3.5" /> {isEn ? 'Edit Scenario' : 'Modifica Scenario'}
                   </button>
                 </div>
               </div>
@@ -548,7 +548,7 @@ export const ScenariMasterManager: React.FC = () => {
           <div className="bg-neutral-950 border-2 border-pink-500 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div>
-                <span className="text-[10px] font-mono text-pink-400 uppercase tracking-widest block">MODIFICA SCENARIO MASTER</span>
+                <span className="text-[10px] font-mono text-pink-400 uppercase tracking-widest block">{isEn ? 'EDIT MASTER SCENARIO' : 'MODIFICA SCENARIO MASTER'}</span>
                 <h3 className="text-xl font-black text-white uppercase">{editingScenario.code} - {editingScenario.title}</h3>
               </div>
               <button
@@ -562,7 +562,7 @@ export const ScenariMasterManager: React.FC = () => {
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Codice Scenario</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Scenario Code' : 'Codice Scenario'}</label>
                   <input
                     type="text"
                     value={editingScenario.code}
@@ -572,7 +572,7 @@ export const ScenariMasterManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Titolo Scenario</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Scenario Title' : 'Titolo Scenario'}</label>
                   <input
                     type="text"
                     value={editingScenario.title}
@@ -585,7 +585,7 @@ export const ScenariMasterManager: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Squadra N° (1-12)</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Team No. (1-12)' : 'Squadra N° (1-12)'}</label>
                   <input
                     type="number"
                     min="1"
@@ -597,20 +597,20 @@ export const ScenariMasterManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Gruppo (A/B/C/D)</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Group (A/B/C/D)' : 'Gruppo (A/B/C/D)'}</label>
                   <select
                     value={editingScenario.group}
                     onChange={(e) => setEditingScenario({ ...editingScenario, group: e.target.value as any })}
                     className="w-full bg-neutral-900 border border-neutral-700 p-2.5 text-white font-mono rounded"
                   >
-                    <option value="A">Gruppo A</option>
-                    <option value="B">Gruppo B</option>
-                    <option value="C">Gruppo C</option>
-                    <option value="D">Gruppo D</option>
+                    <option value="A">{isEn ? 'Group A' : 'Gruppo A'}</option>
+                    <option value="B">{isEn ? 'Group B' : 'Gruppo B'}</option>
+                    <option value="C">{isEn ? 'Group C' : 'Gruppo C'}</option>
+                    <option value="D">{isEn ? 'Group D' : 'Gruppo D'}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Giorno (Day)</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Day' : 'Giorno (Day)'}</label>
                   <input
                     type="number"
                     min="2"
@@ -625,7 +625,7 @@ export const ScenariMasterManager: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Postazione / Location</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Station / Location' : 'Postazione / Location'}</label>
                   <input
                     type="text"
                     value={editingScenario.location}
@@ -635,7 +635,7 @@ export const ScenariMasterManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Tecnico Assegnato (es. TECH-01)</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Assigned Tech (e.g. TECH-01)' : 'Tecnico Assegnato (es. TECH-01)'}</label>
                   <input
                     type="text"
                     value={editingScenario.assignedTechCode}
@@ -647,7 +647,7 @@ export const ScenariMasterManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-mono mb-1">Focus Clinico / Descrizione</label>
+                <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Clinical Focus / Description' : 'Focus Clinico / Descrizione'}</label>
                 <textarea
                   rows={2}
                   value={editingScenario.clinicalFocus}
@@ -659,7 +659,7 @@ export const ScenariMasterManager: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Specifiche Moulage</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Moulage Specifications' : 'Specifiche Moulage'}</label>
                   <input
                     type="text"
                     value={editingScenario.moulageSpecs}
@@ -668,7 +668,7 @@ export const ScenariMasterManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-400 font-mono mb-1">Modello Simulatore</label>
+                  <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Simulator Model' : 'Modello Simulatore'}</label>
                   <input
                     type="text"
                     value={editingScenario.simulatorModel}
@@ -679,7 +679,7 @@ export const ScenariMasterManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-mono mb-1">Procedure (separate da virgola o punto e virgola)</label>
+                <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Procedures (comma or semicolon separated)' : 'Procedure (separate da virgola o punto e virgola)'}</label>
                 <input
                   type="text"
                   value={editingScenario.procedures.join(', ')}
@@ -689,7 +689,7 @@ export const ScenariMasterManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-mono mb-1">Note Regia / Tecniche</label>
+                <label className="block text-neutral-400 font-mono mb-1">{isEn ? 'Control / Technical Notes' : 'Note Regia / Tecniche'}</label>
                 <input
                   type="text"
                   value={editingScenario.notes}
@@ -704,13 +704,13 @@ export const ScenariMasterManager: React.FC = () => {
                   onClick={() => setEditingScenario(null)}
                   className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-mono text-xs cursor-pointer rounded"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 bg-pink-600 hover:bg-pink-500 text-black font-black font-mono text-xs flex items-center gap-1.5 shadow cursor-pointer rounded"
                 >
-                  <Save className="w-4 h-4" /> Salva Modifiche
+                  <Save className="w-4 h-4" /> {isEn ? 'Save Changes' : 'Salva Modifiche'}
                 </button>
               </div>
             </form>

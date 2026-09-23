@@ -34,6 +34,7 @@ interface SimulationEngineModalProps {
 
 export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ isOpen, onClose }) => {
   const {
+    language,
     activeDay,
     activeSlotIndex,
     currentSlot,
@@ -57,18 +58,19 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
     technicians,
   } = useCourse();
 
+  const isEn = language === 'en';
   const [activeTab, setActiveTab] = useState<'speed' | 'jumps' | 'events' | 'overview'>('speed');
 
   if (!isOpen) return null;
 
   const speedPresets = [
-    { multiplier: 1, label: '1x (Normale)', sub: '1s reale = 1s corso', icon: '⏱️', color: 'border-neutral-600 bg-neutral-800 text-neutral-200' },
-    { multiplier: 5, label: '5x (Rapido)', sub: '1 min corso = 12s reali', icon: '⏩', color: 'border-blue-500 bg-blue-950/40 text-blue-300' },
-    { multiplier: 15, label: '15x (Accelerato)', sub: '1 min corso = 4s reali', icon: '🚀', color: 'border-cyan-500 bg-cyan-950/40 text-cyan-300' },
-    { multiplier: 30, label: '30x (Molto Veloce)', sub: '1 min corso = 2s reali', icon: '⚡', color: 'border-amber-500 bg-amber-950/40 text-amber-300' },
-    { multiplier: 60, label: '60x (Turbo)', sub: '1s reale = 1 MINUTO CORSO!', icon: '🔥', color: 'border-orange-500 bg-orange-950/40 text-orange-300' },
-    { multiplier: 120, label: '120x (Super Turbo)', sub: '1s reale = 2 MINUTI CORSO!', icon: '⚡', color: 'border-red-500 bg-red-950/40 text-red-300' },
-    { multiplier: 300, label: '300x (Hyper Speed)', sub: '1s reale = 5 MINUTI CORSO!', icon: '💫', color: 'border-purple-500 bg-purple-950/40 text-purple-300' },
+    { multiplier: 1, label: isEn ? '1x (Normal)' : '1x (Normale)', sub: isEn ? '1s real = 1s course' : '1s reale = 1s corso', icon: '⏱️', color: 'border-neutral-600 bg-neutral-800 text-neutral-200' },
+    { multiplier: 5, label: isEn ? '5x (Fast)' : '5x (Rapido)', sub: isEn ? '1 min course = 12s real' : '1 min corso = 12s reali', icon: '⏩', color: 'border-blue-500 bg-blue-950/40 text-blue-300' },
+    { multiplier: 15, label: isEn ? '15x (Accelerated)' : '15x (Accelerato)', sub: isEn ? '1 min course = 4s real' : '1 min corso = 4s reali', icon: '🚀', color: 'border-cyan-500 bg-cyan-950/40 text-cyan-300' },
+    { multiplier: 30, label: isEn ? '30x (Very Fast)' : '30x (Molto Veloce)', sub: isEn ? '1 min course = 2s real' : '1 min corso = 2s reali', icon: '⚡', color: 'border-amber-500 bg-amber-950/40 text-amber-300' },
+    { multiplier: 60, label: isEn ? '60x (Turbo)' : '60x (Turbo)', sub: isEn ? '1s real = 1 MINUTE COURSE!' : '1s reale = 1 MINUTO CORSO!', icon: '🔥', color: 'border-orange-500 bg-orange-950/40 text-orange-300' },
+    { multiplier: 120, label: isEn ? '120x (Super Turbo)' : '120x (Super Turbo)', sub: isEn ? '1s real = 2 MINUTES COURSE!' : '1s reale = 2 MINUTI CORSO!', icon: '⚡', color: 'border-red-500 bg-red-950/40 text-red-300' },
+    { multiplier: 300, label: isEn ? '300x (Hyper Speed)' : '300x (Hyper Speed)', sub: isEn ? '1s real = 5 MINUTES COURSE!' : '1s reale = 5 MINUTI CORSO!', icon: '💫', color: 'border-purple-500 bg-purple-950/40 text-purple-300' },
   ];
 
   const formatTimer = (totalSec: number) => {
@@ -100,14 +102,14 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-black uppercase text-white tracking-wide">
-                  SIMULATORE DI REGIA & ACCELERATORE TEMPO
+                  {isEn ? 'CONTROL ROOM SIMULATOR & TIME ACCELERATOR' : 'SIMULATORE DI REGIA & ACCELERATORE TEMPO'}
                 </h2>
                 <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/50">
-                  {timeMultiplier > 1 ? `⚡ ACCELERATO ${timeMultiplier}x` : '⏱️ 1:1 TEMPO REALE'}
+                  {timeMultiplier > 1 ? (isEn ? `⚡ ACCELERATED ${timeMultiplier}x` : `⚡ ACCELERATO ${timeMultiplier}x`) : (isEn ? '⏱️ 1:1 REAL TIME' : '⏱️ 1:1 TEMPO REALE')}
                 </span>
               </div>
               <p className="text-xs text-neutral-400 font-mono">
-                Strumento di stress test per verificare timeline, rotazioni, avvisi discenti e scenari clinici
+                {isEn ? 'Stress-test tool to verify timeline, rotations, student callouts and clinical scenarios' : 'Strumento di stress test per verificare timeline, rotazioni, avvisi discenti e scenari clinici'}
               </p>
             </div>
           </div>
@@ -125,16 +127,20 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
         <div className="bg-neutral-950/70 border-b border-neutral-800 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Day & Phase */}
           <div className="bg-neutral-900 border border-neutral-800 p-2.5">
-            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">GIORNO & FASE</span>
+            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
+              {isEn ? 'DAY & PHASE' : 'GIORNO & FASE'}
+            </span>
             <div className="font-mono font-black text-sm text-orange-400 mt-0.5">
-              GIORNO {activeDay} • FASE {activeSlotIndex + 1}/{totalSlotsCount}
+              {isEn ? `DAY ${activeDay} • PHASE ${activeSlotIndex + 1}/${totalSlotsCount}` : `GIORNO ${activeDay} • FASE ${activeSlotIndex + 1}/${totalSlotsCount}`}
             </div>
             <div className="text-[10px] text-neutral-400 font-mono truncate">{currentSlot?.title}</div>
           </div>
 
           {/* Countdown & Status */}
           <div className="bg-neutral-900 border border-neutral-800 p-2.5">
-            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">COUNTDOWN FASE</span>
+            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
+              {isEn ? 'PHASE COUNTDOWN' : 'COUNTDOWN FASE'}
+            </span>
             <div className="flex items-center gap-2 mt-0.5">
               <span
                 className={`font-mono text-lg font-black px-2 py-0.2 ${
@@ -152,29 +158,33 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                     : 'bg-neutral-800 text-neutral-400 border-neutral-700'
                 }`}
               >
-                {isTimerRunning ? 'RUNNING' : 'PAUSA'}
+                {isTimerRunning ? 'RUNNING' : (isEn ? 'PAUSED' : 'PAUSA')}
               </span>
             </div>
           </div>
 
           {/* Active Speed */}
           <div className="bg-neutral-900 border border-neutral-800 p-2.5">
-            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">VELOCITÀ ATTIVA</span>
+            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
+              {isEn ? 'ACTIVE SPEED' : 'VELOCITÀ ATTIVA'}
+            </span>
             <div className="font-mono font-black text-base text-cyan-400 mt-0.5 flex items-center gap-1.5">
               <Gauge className="w-4 h-4 text-cyan-400" />
               <span>{timeMultiplier}x</span>
               <span className="text-[10px] font-normal text-neutral-400">
-                {timeMultiplier >= 60 ? '⚡ TURBO' : timeMultiplier > 1 ? 'RAPIDO' : '1:1'}
+                {timeMultiplier >= 60 ? '⚡ TURBO' : timeMultiplier > 1 ? (isEn ? 'FAST' : 'RAPIDO') : '1:1'}
               </span>
             </div>
           </div>
 
           {/* Auto-Advance Setting */}
           <div className="bg-neutral-900 border border-neutral-800 p-2.5 flex flex-col justify-between">
-            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">AVANZAMENTO AUTOMATICO</span>
+            <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
+              {isEn ? 'AUTO ADVANCE' : 'AVANZAMENTO AUTOMATICO'}
+            </span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs font-mono font-bold text-neutral-300">
-                {autoAdvancePhases ? 'ATTIVO (Continuo)' : 'DISATTIVO (Manuale)'}
+                {autoAdvancePhases ? (isEn ? 'ACTIVE (Continuous)' : 'ATTIVO (Continuo)') : (isEn ? 'OFF (Manual)' : 'DISATTIVO (Manuale)')}
               </span>
               <button
                 id="toggle-auto-advance-btn"
@@ -205,33 +215,33 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
               }`}
             >
               {isTimerRunning ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-              <span>{isTimerRunning ? 'PAUSA SIMULAZIONE' : 'AVVIA SIMULAZIONE'}</span>
+              <span>{isTimerRunning ? (isEn ? 'PAUSE SIMULATION' : 'PAUSA SIMULAZIONE') : (isEn ? 'START SIMULATION' : 'AVVIA SIMULAZIONE')}</span>
             </button>
 
             <button
               id="sim-reset-timer-btn"
               onClick={() => resetTimer()}
               className="flex items-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs uppercase border border-neutral-700 cursor-pointer"
-              title="Reimposta timer fase al valore di default"
+              title={isEn ? "Reset phase timer to default value" : "Reimposta timer fase al valore di default"}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>RESET FASE</span>
+              <span>{isEn ? 'RESET PHASE' : 'RESET FASE'}</span>
             </button>
 
             <div className="flex items-center gap-1">
               <button
                 id="sim-prev-slot-btn"
                 onClick={prevSlot}
-                className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 cursor-pointer"
-                title="Fase Precedente"
+                className="p-2 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white border border-neutral-700 cursor-pointer"
+                title={isEn ? "Previous Phase" : "Fase Precedente"}
               >
                 <SkipBack className="w-3.5 h-3.5" />
               </button>
               <button
                 id="sim-next-slot-btn"
                 onClick={nextSlot}
-                className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 cursor-pointer"
-                title="Fase Successiva"
+                className="p-2 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white border border-neutral-700 cursor-pointer"
+                title={isEn ? "Next Phase" : "Fase Successiva"}
               >
                 <SkipForward className="w-3.5 h-3.5" />
               </button>
@@ -241,8 +251,10 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
           {/* Timeline Overall Progress bar */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="text-right">
-              <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold block">AVANZAMENTO TOTALE</span>
-              <span className="text-xs font-mono font-black text-orange-400">{progressPercent}% CORSO</span>
+              <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold block">
+                {isEn ? 'TOTAL PROGRESS' : 'AVANZAMENTO TOTALE'}
+              </span>
+              <span className="text-xs font-mono font-black text-orange-400">{progressPercent}% {isEn ? 'COURSE' : 'CORSO'}</span>
             </div>
             <div className="w-24 sm:w-32 bg-neutral-950 h-2.5 border border-neutral-700 overflow-hidden">
               <div
@@ -263,7 +275,7 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 : 'border-transparent text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            ⚡ Moltiplicatore Velocità
+            ⚡ {isEn ? 'Speed Multiplier' : 'Moltiplicatore Velocità'}
           </button>
           <button
             onClick={() => setActiveTab('jumps')}
@@ -273,7 +285,7 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 : 'border-transparent text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            🎯 Salti Temporali & Test Chiave
+            🎯 {isEn ? 'Time Jumps & Key Tests' : 'Salti Temporali & Test Chiave'}
           </button>
           <button
             onClick={() => setActiveTab('events')}
@@ -283,7 +295,7 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 : 'border-transparent text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            💥 Iniezione Eventi Clinici
+            💥 {isEn ? 'Clinical Events Injection' : 'Iniezione Eventi Clinici'}
           </button>
           <button
             onClick={() => setActiveTab('overview')}
@@ -293,7 +305,7 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 : 'border-transparent text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            📊 Tabellone 60 Discenti & 12 Squadre
+            📊 {isEn ? '60 Students & 12 Teams Board' : 'Tabellone 60 Discenti & 12 Squadre'}
           </button>
         </div>
 
@@ -305,10 +317,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-black uppercase text-white">
-                    SELEZIONA VELOCITÀ DI ACCELERAZIONE TEMPORALE
+                    {isEn ? 'SELECT TIME ACCELERATION SPEED' : 'SELEZIONA VELOCITÀ DI ACCELERAZIONE TEMPORALE'}
                   </h3>
                   <p className="text-xs text-neutral-400">
-                    Aumenta il fattore di accelerazione per simulare rapidamente il passaggio dei moduli e il cambio fase.
+                    {isEn
+                      ? 'Increase acceleration factor to quickly simulate module transitions and phase changes.'
+                      : 'Aumenta il fattore di accelerazione per simulare rapidamente il passaggio dei moduli e il cambio fase.'}
                   </p>
                 </div>
               </div>
@@ -349,13 +363,24 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
               <div className="p-4 bg-black/60 border border-neutral-800 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-mono font-black text-orange-400 uppercase">
                   <Sparkles className="w-4 h-4 text-orange-500" />
-                  <span>CONSIGLIO PER LA VERIFICA COMPLETA DEL CORSO:</span>
+                  <span>{isEn ? 'COMPLETE COURSE VERIFICATION TIP:' : 'CONSIGLIO PER LA VERIFICA COMPLETA DEL CORSO:'}</span>
                 </div>
                 <p className="text-xs text-neutral-300 leading-relaxed">
-                  Imposta la velocità a <strong>60x (Turbo)</strong> o <strong>120x (Super Turbo)</strong> e lascia attivo{' '}
-                  <strong>l'Avanzamento Continuo</strong>. Potrai osservare l'intero corso di 3 giorni procedere in pochi minuti,
-                  con l'attivazione in sequenza di tutti i banner di raduno, i passaggi consegne SBAR, le rotazioni dei 60 discenti
-                  e l'ingresso nella Maxiemergenza Notturna!
+                  {isEn ? (
+                    <>
+                      Set speed to <strong>60x (Turbo)</strong> or <strong>120x (Super Turbo)</strong> and keep{' '}
+                      <strong>Continuous Advance</strong> active. You can observe the entire 3-day course in a few minutes,
+                      with sequential activation of muster banners, SBAR handovers, 60 students rotations
+                      and entrance into the Night MCI!
+                    </>
+                  ) : (
+                    <>
+                      Imposta la velocità a <strong>60x (Turbo)</strong> o <strong>120x (Super Turbo)</strong> e lascia attivo{' '}
+                      <strong>l'Avanzamento Continuo</strong>. Potrai osservare l'intero corso di 3 giorni procedere in pochi minuti,
+                      con l'attivazione in sequenza di tutti i banner di raduno, i passaggi consegne SBAR, le rotazioni dei 60 discenti
+                      e l'ingresso nella Maxiemergenza Notturna!
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -366,10 +391,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-black uppercase text-white">
-                  SALTO RAPIDO AI PUNTI CRITICI DELLA SIMULAZIONE
+                  {isEn ? 'QUICK JUMP TO CRITICAL SIMULATION POINTS' : 'SALTO RAPIDO AI PUNTI CRITICI DELLA SIMULAZIONE'}
                 </h3>
                 <p className="text-xs text-neutral-400">
-                  Posiziona istantaneamente il corso in momenti specifici per verificare comportamenti, allarmi e schermate.
+                  {isEn
+                    ? 'Instantly place the course at specific moments to verify behaviors, alarms and screens.'
+                    : 'Posiziona istantaneamente il corso in momenti specifici per verificare comportamenti, allarmi e schermate.'}
                 </p>
               </div>
 
@@ -385,10 +412,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-amber-300">
                     <Bell className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                    <span>TEST AVVISO 15 MINUTI AL MODULO</span>
+                    <span>{isEn ? 'TEST 15-MINUTE MODULE NOTICE' : 'TEST AVVISO 15 MINUTI AL MODULO'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Imposta il timer a 15:00 per testare il Banner di Raduno Squadre/Moduli, l'invito operativo e il segnale acustico.
+                    {isEn
+                      ? 'Sets the timer to 15:00 to test the Teams/Modules Muster Banner, operational callout, and sound alert.'
+                      : 'Imposta il timer a 15:00 per testare il Banner di Raduno Squadre/Moduli, l\'invito operativo e il segnale acustico.'}
                   </p>
                 </button>
 
@@ -403,10 +432,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-red-300">
                     <AlertTriangle className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform" />
-                    <span>TEST ALLERTA URGENTE (5 MINUTI)</span>
+                    <span>{isEn ? 'TEST URGENT ALERT (5 MINUTES)' : 'TEST ALLERTA URGENTE (5 MINUTI)'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Imposta il timer a 05:00 per verificare lo stato di urgenza rosso e l'invito al rapido posizionamento.
+                    {isEn
+                      ? 'Sets the timer to 05:00 to verify urgent red state and prompt positioning request.'
+                      : 'Imposta il timer a 05:00 per verificare lo stato di urgenza rosso e l\'invito al rapido posizionamento.'}
                   </p>
                 </button>
 
@@ -421,10 +452,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-neutral-200">
                     <Clock className="w-4 h-4 text-neutral-300 group-hover:scale-110 transition-transform" />
-                    <span>TEST CAMBIO FASE RAPIDO (30 SECONDI)</span>
+                    <span>{isEn ? 'TEST RAPID PHASE SWITCH (30 SECONDS)' : 'TEST CAMBIO FASE RAPIDO (30 SECONDI)'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Imposta il timer a 00:30 per verificare la transizione automatica alla fase e rotazione successiva.
+                    {isEn
+                      ? 'Sets timer to 00:30 to verify automatic transition to the next phase and rotation.'
+                      : 'Imposta il timer a 00:30 per verificare la transizione automatica alla fase e rotazione successiva.'}
                   </p>
                 </button>
 
@@ -439,10 +472,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-blue-300">
                     <Calendar className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                    <span>GIORNO 1: APERTURA & BRIEFING PLENARIO</span>
+                    <span>{isEn ? 'DAY 1: OPENING & PLENARY BRIEFING' : 'GIORNO 1: APERTURA & BRIEFING PLENARIO'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Salta alla prima sessione teorica e plenaria con benvenuto della Direzione.
+                    {isEn
+                      ? 'Jump to the first plenary theory session with Course Direction welcome.'
+                      : 'Salta alla prima sessione teorica e plenaria con benvenuto della Direzione.'}
                   </p>
                 </button>
 
@@ -457,10 +492,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-orange-300">
                     <Activity className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
-                    <span>GIORNO 2 MATTINA: SCENARI 1, 6, 11 (PAZIENTI 1-6)</span>
+                    <span>{isEn ? 'DAY 2 MORNING: SCENARIOS 1, 6, 11 (PATIENTS 1-6)' : 'GIORNO 2 MATTINA: SCENARI 1, 6, 11 (PAZIENTI 1-6)'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Fase Extra Gruppo A, Shock Room Gruppo B, Workshop TCCC Militare Gruppi C e D.
+                    {isEn
+                      ? 'Pre-Hospital Phase Group A, Shock Room Group B, Military TCCC Workshop Groups C and D.'
+                      : 'Fase Extra Gruppo A, Shock Room Gruppo B, Workshop TCCC Militare Gruppi C e D.'}
                   </p>
                 </button>
 
@@ -475,14 +512,14 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-amber-300">
                     <Flame className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                    <span>GIORNO 2 POMERIGGIO: SCENARI 7, 8, 12, 13 (PAZIENTI 7-12)</span>
+                    <span>{isEn ? 'DAY 2 AFTERNOON: SCENARIOS 7, 8, 12, 13 (PATIENTS 7-12)' : 'GIORNO 2 POMERIGGIO: SCENARI 7, 8, 12, 13 (PAZIENTI 7-12)'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Fase ad alta complessità chirurgica: REBOA, Toracotomie rianimative e Packing pelvico.
+                    {isEn
+                      ? 'High surgical complexity phase: REBOA, Resuscitative Thoracotomy and Pelvic Packing.'
+                      : 'Fase ad alta complessità chirurgica: REBOA, Toracotomie rianimative e Packing pelvico.'}
                   </p>
                 </button>
-
-
 
                 {/* Day 3 Final Exams */}
                 <button
@@ -495,10 +532,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-emerald-300">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                    <span>GIORNO 3: ESAMI PRATICI & DEBRIEFING PLENARIO FINALE</span>
+                    <span>{isEn ? 'DAY 3: PRACTICAL EXAMS & FINAL PLENARY DEBRIEFING' : 'GIORNO 3: ESAMI PRATICI & DEBRIEFING PLENARIO FINALE'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Sessione di certificazione e consegna attestati per tutti i 60 discenti.
+                    {isEn
+                      ? 'Certification session and certificate awards for all 60 students.'
+                      : 'Sessione di certificazione e consegna attestati per tutti i 60 discenti.'}
                   </p>
                 </button>
               </div>
@@ -510,10 +549,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-black uppercase text-white">
-                  INIETTORE EVENTI CLINICI & STRESS TEST LOGISTICO
+                  {isEn ? 'CLINICAL EVENT INJECTOR & LOGISTIC STRESS TEST' : 'INIETTORE EVENTI CLINICI & STRESS TEST LOGISTICO'}
                 </h3>
                 <p className="text-xs text-neutral-400">
-                  Simula deterioramenti clinici improvvisi e allarmi radio per verificare la risposta dei discenti e della Faculty.
+                  {isEn
+                    ? 'Simulate sudden clinical deteriorations and radio alarms to verify response from students and Faculty.'
+                    : 'Simula deterioramenti clinici improvvisi e allarmi radio per verificare la risposta dei discenti e della Faculty.'}
                 </p>
               </div>
 
@@ -527,10 +568,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-red-300">
                     <Flame className="w-5 h-5 text-red-400 group-hover:animate-bounce" />
-                    <span>INIETTA DETERIORAMENTO CLINICO A SORPRESA</span>
+                    <span>{isEn ? 'INJECT SURPRISE CLINICAL DETERIORATION' : 'INIETTA DETERIORAMENTO CLINICO A SORPRESA'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Genera un'emergenza acuta (Arresto cardiaco shockabile, pneumotorace iperteso, dislocazione tourniquet, emorragia massiva).
+                    {isEn
+                      ? 'Generates an acute emergency (Shockable cardiac arrest, tension pneumothorax, tourniquet slippage, massive hemorrhage).'
+                      : 'Genera un\'emergenza acuta (Arresto cardiaco shockabile, pneumotorace iperteso, dislocazione tourniquet, emorragia massiva).'}
                   </p>
                 </button>
 
@@ -543,10 +586,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 >
                   <div className="flex items-center gap-2 font-mono font-black text-sm text-amber-300">
                     <Radio className="w-5 h-5 text-amber-400 group-hover:scale-110" />
-                    <span>ALLARME COMUNICAZIONE RADIO GENERALE</span>
+                    <span>{isEn ? 'GENERAL RADIO COMMUNICATION ALARM' : 'ALLARME COMUNICAZIONE RADIO GENERALE'}</span>
                   </div>
                   <p className="text-xs text-neutral-300 mt-1">
-                    Invia un broadcast a tutte le squadre per verificare la notifica sui monitor e sui dispositivi dei partecipanti.
+                    {isEn
+                      ? 'Sends a broadcast to all teams to check notification on monitors and participant devices.'
+                      : 'Invia un broadcast a tutte le squadre per verificare la notifica sui monitor e sui dispositivi dei partecipanti.'}
                   </p>
                 </button>
               </div>
@@ -558,10 +603,12 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-black uppercase text-white">
-                  TABELLONE STRUTTURALE 60 DISCENTI & 12 SQUADRE
+                  {isEn ? 'STRUCTURAL BOARD 60 STUDENTS & 12 TEAMS' : 'TABELLONE STRUTTURALE 60 DISCENTI & 12 SQUADRE'}
                 </h3>
                 <p className="text-xs text-neutral-400">
-                  Riepilogo delle 4 rotazioni in corso su tutte le postazioni del centro di simulazione.
+                  {isEn
+                    ? 'Summary of 4 ongoing rotations across all simulation center stations.'
+                    : 'Riepilogo delle 4 rotazioni in corso su tutte le postazioni del centro di simulazione.'}
                 </p>
               </div>
 
@@ -569,64 +616,64 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
                 {/* Gruppo A */}
                 <div className="bg-black/60 border-2 border-red-500/80 p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-sm text-red-400">GRUPPO A</span>
+                    <span className="font-mono font-black text-sm text-red-400">{isEn ? 'GROUP' : 'GRUPPO'} A</span>
                     <span className="text-[10px] font-mono bg-red-950 px-1.5 py-0.5 text-red-300 border border-red-500/40">
-                      15 Discenti
+                      15 {isEn ? 'Students' : 'Discenti'}
                     </span>
                   </div>
                   <div className="text-xs text-neutral-200 font-medium">
-                    Squadre 1, 2, 3 (Alpha 1, 2, 3)
+                    {isEn ? 'Teams' : 'Squadre'} 1, 2, 3 (Alpha 1, 2, 3)
                   </div>
                   <div className="text-[11px] font-mono text-neutral-400 border-t border-neutral-800 pt-1">
-                    Attività Attuale: {currentSlot?.groupActivities?.A?.title || 'Fase Assegnata'}
+                    {isEn ? 'Current Activity: ' : 'Attività Attuale: '}{currentSlot?.groupActivities?.A?.title || (isEn ? 'Assigned Phase' : 'Fase Assegnata')}
                   </div>
                 </div>
 
                 {/* Gruppo B */}
                 <div className="bg-black/60 border-2 border-blue-500/80 p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-sm text-blue-400">GRUPPO B</span>
+                    <span className="font-mono font-black text-sm text-blue-400">{isEn ? 'GROUP' : 'GRUPPO'} B</span>
                     <span className="text-[10px] font-mono bg-blue-950 px-1.5 py-0.5 text-blue-300 border border-blue-500/40">
-                      15 Discenti
+                      15 {isEn ? 'Students' : 'Discenti'}
                     </span>
                   </div>
                   <div className="text-xs text-neutral-200 font-medium">
-                    Squadre 4, 5, 6 (Bravo 1, 2, 3)
+                    {isEn ? 'Teams' : 'Squadre'} 4, 5, 6 (Bravo 1, 2, 3)
                   </div>
                   <div className="text-[11px] font-mono text-neutral-400 border-t border-neutral-800 pt-1">
-                    Attività Attuale: {currentSlot?.groupActivities?.B?.title || 'Fase Assegnata'}
+                    {isEn ? 'Current Activity: ' : 'Attività Attuale: '}{currentSlot?.groupActivities?.B?.title || (isEn ? 'Assigned Phase' : 'Fase Assegnata')}
                   </div>
                 </div>
 
                 {/* Gruppo C */}
                 <div className="bg-black/60 border-2 border-green-500/80 p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-sm text-green-400">GRUPPO C</span>
+                    <span className="font-mono font-black text-sm text-green-400">{isEn ? 'GROUP' : 'GRUPPO'} C</span>
                     <span className="text-[10px] font-mono bg-green-950 px-1.5 py-0.5 text-green-300 border border-green-500/40">
-                      15 Discenti
+                      15 {isEn ? 'Students' : 'Discenti'}
                     </span>
                   </div>
                   <div className="text-xs text-neutral-200 font-medium">
-                    Squadre 7, 8, 9 (Charlie 1, 2, 3)
+                    {isEn ? 'Teams' : 'Squadre'} 7, 8, 9 (Charlie 1, 2, 3)
                   </div>
                   <div className="text-[11px] font-mono text-neutral-400 border-t border-neutral-800 pt-1">
-                    Attività Attuale: {currentSlot?.groupActivities?.C?.title || 'Fase Assegnata'}
+                    {isEn ? 'Current Activity: ' : 'Attività Attuale: '}{currentSlot?.groupActivities?.C?.title || (isEn ? 'Assigned Phase' : 'Fase Assegnata')}
                   </div>
                 </div>
 
                 {/* Gruppo D */}
                 <div className="bg-black/60 border-2 border-purple-500/80 p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-sm text-purple-400">GRUPPO D</span>
+                    <span className="font-mono font-black text-sm text-purple-400">{isEn ? 'GROUP' : 'GRUPPO'} D</span>
                     <span className="text-[10px] font-mono bg-purple-950 px-1.5 py-0.5 text-purple-300 border border-purple-500/40">
-                      15 Discenti
+                      15 {isEn ? 'Students' : 'Discenti'}
                     </span>
                   </div>
                   <div className="text-xs text-neutral-200 font-medium">
-                    Squadre 10, 11, 12 (Delta 1, 2, 3)
+                    {isEn ? 'Teams' : 'Squadre'} 10, 11, 12 (Delta 1, 2, 3)
                   </div>
                   <div className="text-[11px] font-mono text-neutral-400 border-t border-neutral-800 pt-1">
-                    Attività Attuale: {currentSlot?.groupActivities?.D?.title || 'Fase Assegnata'}
+                    {isEn ? 'Current Activity: ' : 'Attività Attuale: '}{currentSlot?.groupActivities?.D?.title || (isEn ? 'Assigned Phase' : 'Fase Assegnata')}
                   </div>
                 </div>
               </div>
@@ -638,7 +685,9 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
         <div className="bg-neutral-950 border-t border-neutral-800 px-5 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 font-mono text-xs text-neutral-400">
             <Gauge className="w-4 h-4 text-orange-400" />
-            <span>Stato: {timeMultiplier > 1 ? `Accelerazione Attiva (${timeMultiplier}x)` : 'Velocità 1:1'}</span>
+            <span>
+              {isEn ? 'Status:' : 'Stato:'} {timeMultiplier > 1 ? (isEn ? `Active Acceleration (${timeMultiplier}x)` : `Accelerazione Attiva (${timeMultiplier}x)`) : (isEn ? '1:1 Speed' : 'Velocità 1:1')}
+            </span>
           </div>
 
           <button
@@ -646,7 +695,7 @@ export const SimulationEngineModal: React.FC<SimulationEngineModalProps> = ({ is
             onClick={onClose}
             className="px-4 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs uppercase border border-neutral-600 transition-colors cursor-pointer"
           >
-            Chiudi Pannello
+            {isEn ? 'Close Panel' : 'Chiudi Pannello'}
           </button>
         </div>
       </div>

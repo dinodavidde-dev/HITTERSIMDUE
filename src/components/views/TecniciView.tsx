@@ -230,7 +230,7 @@ export const TecniciView: React.FC = () => {
                 senderName: currentTech.name,
                 senderRole: 'tecnico',
                 type: 'info',
-                subject: isEn ? 'Radio Dispatch CH3 Tech' : 'Dispaccio Radio CH3 Tecnico',
+                subject: isEn ? 'Radio Status CH3 Tech' : 'Stato Radio CH3 Tecnico',
                 content: msg,
               });
             }
@@ -323,7 +323,9 @@ export const TecniciView: React.FC = () => {
               senderName: `${currentTech.name} (${currentTech.badgeCode})`,
               senderRole: 'tecnico',
               type: 'warning',
-              subject: `[TECNICI] Presidio / Risorse: ${currentTech.badgeCode} -> ${tech.name}`,
+              subject: isEn
+                ? `[TECH] Duty / Resources: ${currentTech.badgeCode} -> ${tech.name}`
+                : `[TECNICI] Presidio / Risorse: ${currentTech.badgeCode} -> ${tech.name}`,
               content: msg,
             });
           }}

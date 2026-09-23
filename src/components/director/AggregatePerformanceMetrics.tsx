@@ -292,7 +292,7 @@ export const AggregatePerformanceMetrics: React.FC = () => {
               type="button"
               onClick={triggerManualSync}
               className="px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-emerald-400 border border-neutral-700 text-xs font-mono font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title="Aggiorna dati da Firestore"
+              title={isEn ? 'Sync data from Firestore' : 'Aggiorna dati da Firestore'}
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>{isEn ? 'SYNC FIRESTORE' : 'SYNC CLOUD'}</span>
@@ -315,7 +315,9 @@ export const AggregatePerformanceMetrics: React.FC = () => {
           {/* Global Average */}
           <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
             <div className="flex items-center justify-between text-neutral-400">
-              <span className="text-[10px] font-mono uppercase font-bold">Punteggio Medio Globale</span>
+              <span className="text-[10px] font-mono uppercase font-bold">
+                {isEn ? 'Global Average Score' : 'Punteggio Medio Globale'}
+              </span>
               <Award className="w-4 h-4 text-amber-400" />
             </div>
             <div className="flex items-baseline gap-2">
@@ -325,21 +327,23 @@ export const AggregatePerformanceMetrics: React.FC = () => {
               <span className="text-xs font-mono text-neutral-500">/ 5.0</span>
             </div>
             <p className="text-[10px] text-emerald-400 font-mono">
-              Su 12 squadre e 5 dimensioni
+              {isEn ? 'Across 12 teams and 5 dimensions' : 'Su 12 squadre e 5 dimensioni'}
             </p>
           </div>
 
           {/* Evaluations Registered */}
           <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
             <div className="flex items-center justify-between text-neutral-400">
-              <span className="text-[10px] font-mono uppercase font-bold">Valutazioni Registrate</span>
+              <span className="text-[10px] font-mono uppercase font-bold">
+                {isEn ? 'Recorded Evaluations' : 'Valutazioni Registrate'}
+              </span>
               <FileText className="w-4 h-4 text-cyan-400" />
             </div>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl sm:text-3xl font-black font-mono text-white">
                 {globalStats.totalEvalsCount}
               </p>
-              <span className="text-xs font-mono text-neutral-500">/ 36 totali</span>
+              <span className="text-xs font-mono text-neutral-500">{isEn ? '/ 36 total' : '/ 36 totali'}</span>
             </div>
             <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden mt-1">
               <div
@@ -352,28 +356,32 @@ export const AggregatePerformanceMetrics: React.FC = () => {
           {/* Strongest Dimension */}
           <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
             <div className="flex items-center justify-between text-neutral-400">
-              <span className="text-[10px] font-mono uppercase font-bold">Dimensione Più Forte</span>
+              <span className="text-[10px] font-mono uppercase font-bold">
+                {isEn ? 'Strongest Dimension' : 'Dimensione Più Forte'}
+              </span>
               <TrendingUp className="w-4 h-4 text-emerald-400" />
             </div>
             <p className="text-sm sm:text-base font-black text-emerald-300 truncate">
               {globalStats.topDimension}
             </p>
             <p className="text-[10px] font-mono text-neutral-400">
-              Media: {globalStats.dimensionAverages.abcde} / 5.0
+              {isEn ? 'Avg:' : 'Media:'} {globalStats.dimensionAverages.abcde} / 5.0
             </p>
           </div>
 
           {/* Focus Area */}
           <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
             <div className="flex items-center justify-between text-neutral-400">
-              <span className="text-[10px] font-mono uppercase font-bold">Area Focus Debriefing</span>
+              <span className="text-[10px] font-mono uppercase font-bold">
+                {isEn ? 'Debriefing Focus Area' : 'Area Focus Debriefing'}
+              </span>
               <AlertTriangle className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-sm sm:text-base font-black text-amber-300 truncate">
               {globalStats.lowestDimension}
             </p>
             <p className="text-[10px] font-mono text-neutral-400">
-              Raccomandata enfasi in plenaria
+              {isEn ? 'Recommended emphasis in plenary' : 'Raccomandata enfasi in plenaria'}
             </p>
           </div>
         </div>
@@ -405,7 +413,9 @@ export const AggregatePerformanceMetrics: React.FC = () => {
             {/* Tech */}
             <div className="space-y-1 bg-neutral-900/60 p-2.5 border border-neutral-850">
               <div className="flex justify-between text-[11px] font-mono">
-                <span className="text-neutral-300 font-bold">2. Abilità Tecniche</span>
+                <span className="text-neutral-300 font-bold">
+                  {isEn ? '2. Technical Skills' : '2. Abilità Tecniche'}
+                </span>
                 <span className="text-white font-black">{globalStats.dimensionAverages.tech}</span>
               </div>
               <div className="w-full bg-neutral-800 h-2">
@@ -447,7 +457,9 @@ export const AggregatePerformanceMetrics: React.FC = () => {
             {/* Safety */}
             <div className="space-y-1 bg-neutral-900/60 p-2.5 border border-neutral-850">
               <div className="flex justify-between text-[11px] font-mono">
-                <span className="text-neutral-300 font-bold">5. Sicurezza & Tempi</span>
+                <span className="text-neutral-300 font-bold">
+                  {isEn ? '5. Safety & Timing' : '5. Sicurezza & Tempi'}
+                </span>
                 <span className="text-white font-black">{globalStats.dimensionAverages.safety}</span>
               </div>
               <div className="w-full bg-neutral-800 h-2">
@@ -531,7 +543,7 @@ export const AggregatePerformanceMetrics: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-[11px] text-neutral-400 truncate">
-                        Tutor: <span className="text-emerald-400 font-semibold">{m.tutor?.name || 'Tutor non assegnato'}</span>
+                        Tutor: <span className="text-emerald-400 font-semibold">{m.tutor?.name || (isEn ? 'Unassigned tutor' : 'Tutor non assegnato')}</span>
                       </p>
                     </div>
                   </div>
@@ -539,7 +551,9 @@ export const AggregatePerformanceMetrics: React.FC = () => {
                   {/* Composite Score Pill */}
                   <div className="text-right flex-shrink-0">
                     <div className="px-2.5 py-1 bg-neutral-950 border border-neutral-700 text-right">
-                      <span className="text-[9px] font-mono uppercase text-neutral-400 block">Scoring Medio</span>
+                      <span className="text-[9px] font-mono uppercase text-neutral-400 block">
+                        {isEn ? 'Average Score' : 'Scoring Medio'}
+                      </span>
                       <span className="text-base font-black font-mono text-amber-400">
                         {m.avgComposite > 0 ? `${m.avgComposite}` : '--'} <span className="text-[10px] text-neutral-500">/ 5</span>
                       </span>
@@ -568,7 +582,7 @@ export const AggregatePerformanceMetrics: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
-                    <span>2. Tecniche & Procedure</span>
+                    <span>{isEn ? '2. Tech & Procedures' : '2. Tecniche & Procedure'}</span>
                     <span className="font-bold text-white">{m.scores.tech > 0 ? m.scores.tech : '--'}</span>
                   </div>
                   <div className="w-full bg-neutral-950 h-1.5 overflow-hidden">
@@ -592,7 +606,7 @@ export const AggregatePerformanceMetrics: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
-                    <span>5. Sicurezza & Tempi</span>
+                    <span>{isEn ? '5. Safety & Timing' : '5. Sicurezza & Tempi'}</span>
                     <span className="font-bold text-white">{m.scores.safety > 0 ? m.scores.safety : '--'}</span>
                   </div>
                   <div className="w-full bg-neutral-950 h-1.5 overflow-hidden">
@@ -618,7 +632,9 @@ export const AggregatePerformanceMetrics: React.FC = () => {
                 <div className="bg-neutral-950 p-3 border border-orange-500/50 space-y-2.5 mt-1 text-xs animate-in fade-in">
                   <div className="font-black text-orange-400 uppercase font-mono text-[11px] flex items-center gap-1">
                     <MessageSquare className="w-3.5 h-3.5" />
-                    <span>OSSERVAZIONI FACULTY PER LA SQUADRA {m.team.id}:</span>
+                    <span>
+                      {isEn ? `FACULTY OBSERVATIONS FOR SQUAD ${m.team.id}:` : `OSSERVAZIONI FACULTY PER LA SQUADRA ${m.team.id}:`}
+                    </span>
                   </div>
 
                   {m.evaluations.length > 0 ? (
@@ -634,25 +650,25 @@ export const AggregatePerformanceMetrics: React.FC = () => {
 
                           {ev.strengths && (
                             <p className="text-emerald-300 text-[11px] leading-tight">
-                              <strong>Punti di Forza:</strong> {ev.strengths}
+                              <strong>{isEn ? 'Strengths:' : 'Punti di Forza:'}</strong> {ev.strengths}
                             </p>
                           )}
 
                           {ev.criticalIssues && (
                             <p className="text-amber-300 text-[11px] leading-tight">
-                              <strong>Criticità:</strong> {ev.criticalIssues}
+                              <strong>{isEn ? 'Critical Issues:' : 'Criticità:'}</strong> {ev.criticalIssues}
                             </p>
                           )}
 
                           {ev.debriefingActionItems && (
                             <p className="text-cyan-300 text-[11px] leading-tight">
-                              <strong>Focus Debriefing:</strong> {ev.debriefingActionItems}
+                              <strong>{isEn ? 'Debriefing Focus:' : 'Focus Debriefing:'}</strong> {ev.debriefingActionItems}
                             </p>
                           )}
 
                           {ev.proceduresCompleted && ev.proceduresCompleted.length > 0 && (
                             <div className="pt-1 text-[10px] text-neutral-400 font-mono">
-                              Procedure ({ev.proceduresCompleted.length}): {ev.proceduresCompleted.join(', ')}
+                              {isEn ? 'Procedures' : 'Procedure'} ({ev.proceduresCompleted.length}): {ev.proceduresCompleted.join(', ')}
                             </div>
                           )}
                         </div>
@@ -660,7 +676,7 @@ export const AggregatePerformanceMetrics: React.FC = () => {
                     </div>
                   ) : (
                     <p className="text-neutral-500 italic text-[11px] py-1">
-                      Nessuna osservazione scritta registrata finora.
+                      {isEn ? 'No written observations recorded yet.' : 'Nessuna osservazione scritta registrata finora.'}
                     </p>
                   )}
                 </div>

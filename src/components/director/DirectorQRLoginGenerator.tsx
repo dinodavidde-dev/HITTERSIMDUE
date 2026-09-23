@@ -23,19 +23,28 @@ export const DirectorQRLoginGenerator: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {(['discenti', 'faculty', 'tecnici', 'direttori', 'ospiti'] as const).map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 text-xs font-mono font-black uppercase transition-colors cursor-pointer ${
-                selectedCategory === cat
-                  ? 'bg-yellow-500 text-black'
-                  : 'bg-neutral-950 text-neutral-300 border border-neutral-700 hover:text-white'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {(['discenti', 'faculty', 'tecnici', 'direttori', 'ospiti'] as const).map(cat => {
+            const labelMap: Record<string, string> = {
+              discenti: isEn ? 'Participants' : 'Discenti',
+              faculty: 'Faculty',
+              tecnici: isEn ? 'Technicians' : 'Tecnici',
+              direttori: isEn ? 'Directors' : 'Direttori',
+              ospiti: isEn ? 'Guests' : 'Ospiti',
+            };
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 text-xs font-mono font-black uppercase transition-colors cursor-pointer ${
+                  selectedCategory === cat
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-neutral-950 text-neutral-300 border border-neutral-700 hover:text-white'
+                }`}
+              >
+                {labelMap[cat] || cat}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -54,8 +63,6 @@ export const DirectorQRLoginGenerator: React.FC = () => {
               </div>
               <a
                 href={`?role=faculty&id=${f.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -72,8 +79,6 @@ export const DirectorQRLoginGenerator: React.FC = () => {
               </div>
               <a
                 href={`?role=discente&id=${d.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-2 bg-orange-500 hover:bg-orange-400 text-black font-black text-xs flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -90,8 +95,6 @@ export const DirectorQRLoginGenerator: React.FC = () => {
               </div>
               <a
                 href={`?role=tecnico&id=${t.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-2 bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -108,8 +111,6 @@ export const DirectorQRLoginGenerator: React.FC = () => {
               </div>
               <a
                 href={`?role=direttore&id=${dir.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-2 bg-red-500 hover:bg-red-400 text-white font-black text-xs flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -126,8 +127,6 @@ export const DirectorQRLoginGenerator: React.FC = () => {
               </div>
               <a
                 href={`?role=ospite&id=${g.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

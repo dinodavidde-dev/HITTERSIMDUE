@@ -25,6 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import { GroupActivitySlot, GroupType, SimulatorPatient, Technician, Team } from '../../types';
+import { useCourse } from '../../context/CourseContext';
 
 interface ProtesiAttoriTecniciModalProps {
   isOpen: boolean;
@@ -49,6 +50,9 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
   technicians,
   onSendMessageToTech,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
+
   const [activeTab, setActiveTab] = useState<'protesi' | 'attori' | 'tecnici'>('protesi');
   const [quickPingTech, setQuickPingTech] = useState<string | null>(null);
   const [quickMsg, setQuickMsg] = useState('');
@@ -129,12 +133,12 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase font-mono tracking-widest px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700">
-                  REGISTRO RISORSE TECNICHE • GRUPPO {groupId}
+                  {isEn ? 'TECHNICAL RESOURCE REGISTRY' : 'REGISTRO RISORSE TECNICHE'} • {isEn ? `GROUP ${groupId}` : `GRUPPO ${groupId}`}
                 </span>
                 <span className="text-[10px] font-mono text-neutral-400 font-bold">{timeRange}</span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-white uppercase mt-0.5 truncate">
-                Protesi, Attori & Tecnici Associati
+                {isEn ? 'Prosthetics, Actors & Assigned Techs' : 'Protesi, Attori & Tecnici Associati'}
               </h3>
             </div>
           </div>
@@ -142,7 +146,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer bg-neutral-900 border border-neutral-800"
-            aria-label="Chiudi finestra"
+            aria-label={isEn ? 'Close modal' : 'Chiudi finestra'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -160,7 +164,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>1. Protesi & Moulage ({displayedPatients.length})</span>
+            <span>1. {isEn ? 'Prosthetics & Moulage' : 'Protesi & Moulage'} ({displayedPatients.length})</span>
           </button>
 
           <button
@@ -174,7 +178,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
           >
             <Users className="w-4 h-4" />
             <span>
-              2. Attori Simulati (
+              2. {isEn ? 'Simulated Actors' : 'Attori Simulati'} (
               {displayedPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)})
             </span>
           </button>
@@ -189,7 +193,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
             }`}
           >
             <HardHat className="w-4 h-4" />
-            <span>3. Tecnici Assegnati ({finalTechnicians.length})</span>
+            <span>3. {isEn ? 'Assigned Techs' : 'Tecnici Assegnati'} ({finalTechnicians.length})</span>
           </button>
         </div>
 
@@ -201,12 +205,12 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
               <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-cyan-400 uppercase font-black block">
-                    MODULO ATTIVO: {groupActivity.title}
+                    {isEn ? 'ACTIVE MODULE:' : 'MODULO ATTIVO:'} {groupActivity.title}
                   </span>
                   <span className="text-white font-bold text-xs">{groupActivity.location}</span>
                 </div>
                 <span className="px-2.5 py-1 bg-cyan-950 text-cyan-300 border border-cyan-800 text-[10px] font-mono font-bold">
-                  {displayedPatients.length} Postazioni con Protesi
+                  {displayedPatients.length} {isEn ? 'Stations with Prosthetics' : 'Postazioni con Protesi'}
                 </span>
               </div>
 
@@ -219,7 +223,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-cyan-500 text-black font-black font-mono text-xs">
-                          POSTAZIONE #{patient.id}
+                          {isEn ? 'STATION' : 'POSTAZIONE'} #{patient.id}
                         </span>
                         <span className="font-black text-white text-sm uppercase">
                           {patient.scenarioCode}
@@ -228,7 +232,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
 
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-mono text-neutral-300">
-                          Sq. Extra: <strong className="text-white">Sq.{patient.teamExtraAssigned}</strong> | Sq. Intra: <strong className="text-white">Sq.{patient.teamIntraAssigned}</strong>
+                          {isEn ? 'Extrahospital Team:' : 'Sq. Extra:'} <strong className="text-white">{isEn ? 'Team ' : 'Sq.'}{patient.teamExtraAssigned}</strong> | {isEn ? 'Shock Room Team:' : 'Sq. Intra:'} <strong className="text-white">{isEn ? 'Team ' : 'Sq.'}{patient.teamIntraAssigned}</strong>
                         </span>
                       </div>
                     </div>
@@ -237,7 +241,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-2">
                       <span className="text-[10px] font-mono text-amber-400 uppercase font-black flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        PROTESI IN SILICONE & MOULAGE AD ALTA FEDELTÀ (Lab Silvia Rossi):
+                        {isEn ? 'SILICONE PROSTHETICS & HIGH-FIDELITY MOULAGE (Silvia Rossi Lab):' : 'PROTESI IN SILICONE & MOULAGE AD ALTA FEDELTÀ (Lab Silvia Rossi):'}
                       </span>
                       <p className="text-neutral-200 text-xs font-semibold leading-relaxed">
                         {patient.moulageProtesi}
@@ -248,7 +252,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-1">
                       <span className="text-[10px] font-mono text-cyan-400 uppercase font-black flex items-center gap-1.5">
                         <HardHat className="w-3.5 h-3.5 text-cyan-400" />
-                        SIMULATORI HARDWARE / BIOMODELLI:
+                        {isEn ? 'HARDWARE SIMULATORS / BIOMODELS:' : 'SIMULATORI HARDWARE / BIOMODELLI:'}
                       </span>
                       <p className="text-neutral-200 text-xs font-medium">
                         {patient.simulatori}
@@ -259,7 +263,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     {patient.techNotes && (
                       <div className="bg-amber-950/20 border border-amber-500/30 p-2.5 text-[11px] text-amber-200 space-y-1">
                         <span className="font-mono font-bold uppercase text-amber-400 block">
-                          NOTE TECNICHE REGIA:
+                          {isEn ? 'CONTROL ROOM TECH NOTES:' : 'NOTE TECNICHE REGIA:'}
                         </span>
                         <span>{patient.techNotes}</span>
                       </div>
@@ -276,14 +280,14 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
               <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-amber-400 uppercase font-black block">
-                    ATTORI PROFESSIONISTI & RUOLI SIMULATI
+                    {isEn ? 'PROFESSIONAL ACTORS & SIMULATED ROLES' : 'ATTORI PROFESSIONISTI & RUOLI SIMULATI'}
                   </span>
                   <span className="text-white font-bold text-xs">
-                    Istruzioni di recitazione e gestione shock/dolore
+                    {isEn ? 'Acting cues and shock/pain management instructions' : 'Istruzioni di recitazione e gestione shock/dolore'}
                   </span>
                 </div>
                 <span className="px-2.5 py-1 bg-amber-950 text-amber-300 border border-amber-800 text-[10px] font-mono font-bold">
-                  {displayedPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)} Attori Assegnati
+                  {displayedPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)} {isEn ? 'Assigned Actors' : 'Attori Assegnati'}
                 </span>
               </div>
 
@@ -296,7 +300,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-amber-500 text-black font-black font-mono text-xs">
-                          PAZIENTE #{patient.id}
+                          {isEn ? 'PATIENT' : 'PAZIENTE'} #{patient.id}
                         </span>
                         <span className="font-black text-white text-sm uppercase">
                           {patient.scenarioCode}
@@ -304,37 +308,41 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                       </div>
 
                       <span className="px-2 py-0.5 bg-neutral-800 text-amber-300 border border-neutral-700 font-mono text-xs font-bold">
-                        {patient.attoriCount || 1} Attore/i Assegnato/i
+                        {patient.attoriCount || 1} {isEn ? 'Assigned Actor(s)' : 'Attore/i Assegnato/i'}
                       </span>
                     </div>
 
                     <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-2">
                       <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold block">
-                        CANOVACCIO & PROFILO RECITATIVO DELL'ATTORE:
+                        {isEn ? 'ACTOR SCRIPT & BEHAVIORAL PROFILE:' : "CANOVACCIO & PROFILO RECITATIVO DELL'ATTORE:"}
                       </span>
                       <p className="text-neutral-200 text-xs font-medium leading-relaxed">
                         {patient.attoreDettagli ||
-                          'Attore nel ruolo di paziente traumatizzato. Inizia cosciente e agitato; reagisce alle manovre di immobilizzazione; simula progressivo deterioramento neurologico se non decompresso.'}
+                          (isEn
+                            ? 'Actor playing traumatized patient. Starts conscious and agitated; reacts to immobilization maneuvers; simulates gradual neurological deterioration if not decompressed.'
+                            : 'Attore nel ruolo di paziente traumatizzato. Inizia cosciente e agitato; reagisce alle manovre di immobilizzazione; simula progressivo deterioramento neurologico se non decompresso.')}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                       <div className="bg-neutral-950 p-2.5 border border-neutral-800">
                         <span className="text-red-400 font-mono font-bold uppercase block">
-                          Reazione al Dolore / Emorragie:
+                          {isEn ? 'Reaction to Pain / Hemorrhage:' : 'Reazione al Dolore / Emorragie:'}
                         </span>
                         <span className="text-neutral-300">
-                          Urla e agitazione motoria su applicazione Tourniquet; gemiti respiratori su
-                          posizionamento cannula e crico.
+                          {isEn
+                            ? 'Screaming and motor agitation upon Tourniquet placement; respiratory groaning on cannula and cricothyrotomy.'
+                            : 'Urla e agitazione motoria su applicazione Tourniquet; gemiti respiratori su posizionamento cannula e crico.'}
                         </span>
                       </div>
                       <div className="bg-neutral-950 p-2.5 border border-neutral-800">
                         <span className="text-cyan-400 font-mono font-bold uppercase block">
-                          Cues per Handover SBAR:
+                          {isEn ? 'SBAR Handover Cues:' : 'Cues per Handover SBAR:'}
                         </span>
                         <span className="text-neutral-300">
-                          Fornisce anamnesi sintetica (ora dell'evento, allergie) se interrogato prima
-                          del collasso.
+                          {isEn
+                            ? 'Provides concise medical history (time of incident, allergies) if questioned before collapse.'
+                            : "Fornisce anamnesi sintetica (ora dell'evento, allergie) se interrogato prima del collasso."}
                         </span>
                       </div>
                     </div>
@@ -350,14 +358,14 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
               <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-emerald-400 uppercase font-black block">
-                    STAFF TECNICO DI POSTAZIONE & CONTATTO DIRETTO
+                    {isEn ? 'STATION TECH STAFF & DIRECT CONTACT' : 'STAFF TECNICO DI POSTAZIONE & CONTATTO DIRETTO'}
                   </span>
                   <span className="text-white font-bold text-xs">
-                    Specialisti Moulage, Biomodelli e Simulatori
+                    {isEn ? 'Moulage, Biomodel and Simulator Specialists' : 'Specialisti Moulage, Biomodelli e Simulatori'}
                   </span>
                 </div>
                 <span className="px-2.5 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-mono font-bold">
-                  {finalTechnicians.length} Tecnici di Presidio
+                  {finalTechnicians.length} {isEn ? 'Assigned Techs' : 'Tecnici di Presidio'}
                 </span>
               </div>
 
@@ -388,14 +396,14 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     <div className="space-y-1.5">
                       <div className="text-[11px] text-neutral-300">
                         <strong className="text-neutral-400 font-mono uppercase block text-[10px]">
-                          SPECIALIZZAZIONE:
+                          {isEn ? 'SPECIALIZATION:' : 'SPECIALIZZAZIONE:'}
                         </strong>
                         {tech.specialty}
                       </div>
 
                       <div className="text-[11px] text-neutral-300">
                         <strong className="text-neutral-400 font-mono uppercase block text-[10px]">
-                          POSTAZIONI COPERTE:
+                          {isEn ? 'COVERED STATIONS:' : 'POSTAZIONI COPERTE:'}
                         </strong>
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {tech.assignedStations.map((st, sIdx) => (
@@ -424,7 +432,7 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                             className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-cyan-300 border border-neutral-700 font-black text-[10px] uppercase flex items-center gap-1 cursor-pointer"
                           >
                             <MessageSquare className="w-3 h-3" />
-                            <span>PING REGIA</span>
+                            <span>{isEn ? 'CONTROL PING' : 'PING REGIA'}</span>
                           </button>
                         </div>
                       )}
@@ -434,14 +442,14 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                     {quickPingTech === tech.id && (
                       <div className="mt-3 pt-3 border-t border-neutral-700 bg-neutral-950 p-3 space-y-2">
                         <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase block">
-                          Messaggio Radio Diretto a {tech.name}:
+                          {isEn ? `Direct Radio Message to ${tech.name}:` : `Messaggio Radio Diretto a ${tech.name}:`}
                         </span>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={quickMsg}
                             onChange={(e) => setQuickMsg(e.target.value)}
-                            placeholder="Es. Richiesta fornitura sangue extra su postazione 2..."
+                            placeholder={isEn ? 'e.g. Extra synthetic blood supply requested at station 2...' : 'Es. Richiesta fornitura sangue extra su postazione 2...'}
                             className="flex-1 bg-neutral-900 border border-neutral-700 px-2 py-1 text-xs text-white placeholder-neutral-500 focus:outline-hidden focus:border-cyan-400"
                           />
                           <button
@@ -454,7 +462,8 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
                         </div>
                         {pingSentSuccess === tech.id && (
                           <span className="text-emerald-400 font-bold text-[10px] flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Messaggio inviato alla radio del tecnico!
+                            <Check className="w-3 h-3" />
+                            <span>{isEn ? 'Message sent to technician radio!' : 'Messaggio inviato alla radio del tecnico!'}</span>
                           </span>
                         )}
                       </div>
@@ -469,14 +478,14 @@ export const ProtesiAttoriTecniciModal: React.FC<ProtesiAttoriTecniciModalProps>
         {/* Modal Footer */}
         <div className="bg-neutral-900 border-t border-neutral-800 p-4 flex items-center justify-between">
           <span className="text-[11px] font-mono text-neutral-400">
-            Regia Master • Scheda Tecnica & Logistica
+            {isEn ? 'Master Control • Tech & Logistics Sheet' : 'Regia Master • Scheda Tecnica & Logistica'}
           </span>
           <button
             type="button"
             onClick={onClose}
             className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer"
           >
-            CHIUDI REGISTRO
+            {isEn ? 'CLOSE REGISTRY' : 'CHIUDI REGISTRO'}
           </button>
         </div>
       </div>

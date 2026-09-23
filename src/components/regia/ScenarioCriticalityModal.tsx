@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { SimulatorPatient, Technician } from '../../types';
+import { useCourse } from '../../context/CourseContext';
 
 interface ScenarioCriticalityModalProps {
   isOpen: boolean;
@@ -37,6 +38,9 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
   onUpdatePatient,
   onSendRadioAlert,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
+
   const [editedNotes, setEditedNotes] = useState('');
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [radioMsg, setRadioMsg] = useState('');
@@ -73,7 +77,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
     onUpdatePatient(patient.id, {
       readinessStatus: 'critical',
       criticalityNotes: notes,
-      criticalityReportedBy: 'Regia Master (Direzione Corso)',
+      criticalityReportedBy: isEn ? 'Control Room (Course Direction)' : 'Regia Master (Direzione Corso)',
       criticalityTimestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
     setIsEditingNotes(false);
@@ -83,7 +87,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
     if (!editedNotes.trim()) return;
     onUpdatePatient(patient.id, {
       criticalityNotes: editedNotes.trim(),
-      criticalityReportedBy: patient.criticalityReportedBy || 'Regia Master',
+      criticalityReportedBy: patient.criticalityReportedBy || (isEn ? 'Control Room' : 'Regia Master'),
       criticalityTimestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
     setIsEditingNotes(false);
@@ -92,7 +96,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
   const handleSendRadio = () => {
     if (!radioMsg.trim()) return;
     if (onSendRadioAlert) {
-      onSendRadioAlert(`[ALLERTA POSTAZIONE ${patient.id}] ${radioMsg.trim()}`);
+      onSendRadioAlert(`[${isEn ? 'STATION ALERT' : 'ALLERTA POSTAZIONE'} ${patient.id}] ${radioMsg.trim()}`);
     }
     setRadioSent(true);
     setRadioMsg('');
@@ -119,11 +123,13 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase font-mono tracking-widest px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-600">
-                  MONITORAGGIO READINESS PRE-SCENARIO (T-30m)
+                  {isEn ? 'PRE-SCENARIO READINESS MONITORING (T-30m)' : 'MONITORAGGIO READINESS PRE-SCENARIO (T-30m)'}
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-white uppercase mt-0.5">
-                {isCritical ? '⚠️ Pronto con Criticità Segnalata' : '✅ Scenario Pronto & Verificato'}
+                {isCritical
+                  ? (isEn ? '⚠️ Ready with Reported Criticality' : '⚠️ Pronto con Criticità Segnalata')
+                  : (isEn ? '✅ Scenario Ready & Verified' : '✅ Scenario Pronto & Verificato')}
               </h3>
             </div>
           </div>
@@ -131,7 +137,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer bg-neutral-900 border border-neutral-800"
-            aria-label="Chiudi finestra"
+            aria-label={isEn ? 'Close modal' : 'Chiudi finestra'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -144,7 +150,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-2">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700 font-mono font-black text-xs">
-                  POSTAZIONE #{patient.id}
+                  {isEn ? 'STATION' : 'POSTAZIONE'} #{patient.id}
                 </span>
                 <span className="font-black text-white text-sm uppercase">
                   {patient.scenarioCode}
@@ -152,21 +158,21 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
               </div>
 
               <span className="text-neutral-300 font-mono text-xs">
-                Squadre: <strong className="text-white">Sq.{patient.teamExtraAssigned}</strong> (Extra) &{' '}
-                <strong className="text-white">Sq.{patient.teamIntraAssigned}</strong> (Intra)
+                {isEn ? 'Teams:' : 'Squadre:'} <strong className="text-white">{isEn ? 'Team ' : 'Sq.'}{patient.teamExtraAssigned}</strong> ({isEn ? 'Extra' : 'Extra'}) &{' '}
+                <strong className="text-white">{isEn ? 'Team ' : 'Sq.'}{patient.teamIntraAssigned}</strong> ({isEn ? 'Shock Room' : 'Intra'})
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px]">
               <div>
                 <span className="text-neutral-400 font-mono uppercase block font-bold">
-                  Protesi & Moulage:
+                  {isEn ? 'Prosthetics & Moulage:' : 'Protesi & Moulage:'}
                 </span>
                 <span className="text-neutral-200">{patient.moulageProtesi}</span>
               </div>
               <div>
                 <span className="text-neutral-400 font-mono uppercase block font-bold">
-                  Simulatore / Manichino:
+                  {isEn ? 'Simulator / Mannequin:' : 'Simulatore / Manichino:'}
                 </span>
                 <span className="text-neutral-200">{patient.simulatori}</span>
               </div>
@@ -179,11 +185,11 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase text-amber-400 font-mono flex items-center gap-1.5">
                   <AlertTriangle className="w-4 h-4 text-amber-400" />
-                  DETTAGLIO CRITICITÀ SEGNALATA DALLA POSTAZIONE:
+                  {isEn ? 'CRITICALITY DETAILS REPORTED FROM STATION:' : 'DETTAGLIO CRITICITÀ SEGNALATA DALLA POSTAZIONE:'}
                 </span>
                 {patient.criticalityTimestamp && (
                   <span className="text-[10px] font-mono text-neutral-400">
-                    Ore {patient.criticalityTimestamp} • {patient.criticalityReportedBy || 'Tecnico'}
+                    {isEn ? 'At' : 'Ore'} {patient.criticalityTimestamp} • {patient.criticalityReportedBy || (isEn ? 'Technician' : 'Tecnico')}
                   </span>
                 )}
               </div>
@@ -194,7 +200,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                     value={editedNotes}
                     onChange={(e) => setEditedNotes(e.target.value)}
                     rows={3}
-                    placeholder="Descrivi la criticità riscontrata..."
+                    placeholder={isEn ? 'Describe observed criticality...' : 'Descrivi la criticità riscontrata...'}
                     className="w-full bg-neutral-900 border border-amber-500 p-2 text-xs text-white placeholder-neutral-500 focus:outline-hidden"
                   />
                   <div className="flex justify-end gap-2">
@@ -203,14 +209,14 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                       onClick={() => setIsEditingNotes(false)}
                       className="px-3 py-1 bg-neutral-800 text-neutral-300 font-bold text-xs"
                     >
-                      Annulla
+                      {isEn ? 'Cancel' : 'Annulla'}
                     </button>
                     <button
                       type="button"
                       onClick={handleSaveNotes}
                       className="px-3 py-1 bg-amber-500 text-black font-black text-xs uppercase"
                     >
-                      Salva Modifiche
+                      {isEn ? 'Save Changes' : 'Salva Modifiche'}
                     </button>
                   </div>
                 </div>
@@ -218,7 +224,9 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                 <div className="bg-neutral-950 p-3 border border-amber-500/40 space-y-2">
                   <p className="text-amber-100 text-sm font-semibold leading-relaxed">
                     {patient.criticalityNotes ||
-                      'Attenzione: Verificare serbatoio sangue e raccordo protesi prima dello start.'}
+                      (isEn
+                        ? 'Caution: Verify blood reservoir and prosthetic connector before launch.'
+                        : 'Attenzione: Verificare serbatoio sangue e raccordo protesi prima dello start.')}
                   </p>
                   <div className="flex justify-end">
                     <button
@@ -229,7 +237,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                       }}
                       className="text-[10px] font-mono text-amber-400 hover:underline uppercase font-bold"
                     >
-                      Modifica / Aggiorna Nota ✎
+                      {isEn ? 'Edit / Update Note ✎' : 'Modifica / Aggiorna Nota ✎'}
                     </button>
                   </div>
                 </div>
@@ -239,11 +247,12 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
             <div className="bg-emerald-950/40 border-2 border-emerald-500 p-4 space-y-2">
               <span className="text-xs font-black uppercase text-emerald-400 font-mono flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                POSTAZIONE VERIFICATA AL 100% - NESSUNA CRITICITÀ ATTIVA
+                {isEn ? 'STATION 100% VERIFIED - NO ACTIVE CRITICALITIES' : 'POSTAZIONE VERIFICATA AL 100% - NESSUNA CRITICITÀ ATTIVA'}
               </span>
               <p className="text-neutral-300 text-xs">
-                Tutti i presidi, manichini biologici, protesi in silicone e circuiti sangue pulsante
-                risultano allestiti e collaudati secondo la checklist tecnica di regia.
+                {isEn
+                  ? 'All devices, biological mannequins, silicone prosthetics and pulsatile blood circuits are set up and tested per control room technical checklist.'
+                  : 'Tutti i presidi, manichini biologici, protesi in silicone e circuiti sangue pulsante risultano allestiti e collaudati secondo la checklist tecnica di regia.'}
               </p>
             </div>
           )}
@@ -255,7 +264,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                 <div className="flex items-center gap-2">
                   <HardHat className="w-4 h-4 text-cyan-400" />
                   <span className="text-xs font-black text-white uppercase">
-                    Tecnico Referente: {assignedTech.name}
+                    {isEn ? 'Station Technician:' : 'Tecnico Referente:'} {assignedTech.name}
                   </span>
                   <span className="px-1.5 py-0.2 bg-neutral-800 text-cyan-300 font-mono text-[10px]">
                     {assignedTech.badgeCode || 'TECH'}
@@ -279,14 +288,14 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
           <div className="bg-neutral-900 border border-neutral-800 p-3 space-y-2">
             <span className="text-[10px] font-mono text-cyan-400 uppercase font-black flex items-center gap-1">
               <Radio className="w-3.5 h-3.5 text-cyan-400" />
-              INVIA NOTIFICA / ORDINE RADIO AL TECNICO DI POSTAZIONE:
+              {isEn ? 'SEND NOTIFICATION / RADIO ORDER TO STATION TECHNICIAN:' : 'INVIA NOTIFICA / ORDINE RADIO AL TECNICO DI POSTAZIONE:'}
             </span>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={radioMsg}
                 onChange={(e) => setRadioMsg(e.target.value)}
-                placeholder="Es. Richiesta sostituzione guarnizione pompa sangue entro 5 min..."
+                placeholder={isEn ? 'e.g. Request blood pump gasket replacement within 5 min...' : 'Es. Richiesta sostituzione guarnizione pompa sangue entro 5 min...'}
                 className="flex-1 bg-neutral-950 border border-neutral-700 px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-hidden focus:border-cyan-400"
               />
               <button
@@ -295,12 +304,13 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                 className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs uppercase flex items-center gap-1 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>INVIA</span>
+                <span>{isEn ? 'SEND' : 'INVIA'}</span>
               </button>
             </div>
             {radioSent && (
               <span className="text-emerald-400 font-bold text-[10px] flex items-center gap-1">
-                <Check className="w-3 h-3" /> Notifica inviata sui canali audio/video e radio regia!
+                <Check className="w-3 h-3" />
+                <span>{isEn ? 'Notification sent on audio/video channels and control radio!' : 'Notifica inviata sui canali audio/video e radio regia!'}</span>
               </span>
             )}
           </div>
@@ -316,18 +326,18 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase flex items-center gap-1.5 cursor-pointer shadow-lg"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>RISOLVI & SEGNA SCENARIO PRONTO</span>
+                <span>{isEn ? 'RESOLVE & MARK SCENARIO READY' : 'RISOLVI & SEGNA SCENARIO PRONTO'}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() =>
-                  handleMarkCritical('Segnalata criticità di allestimento dalla Regia Master.')
+                  handleMarkCritical(isEn ? 'Setup warning reported from Control Room.' : 'Segnalata criticità di allestimento dalla Regia Master.')
                 }
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-black font-black text-xs uppercase flex items-center gap-1.5 cursor-pointer"
               >
                 <AlertTriangle className="w-4 h-4" />
-                <span>SEGNALA CRITICITÀ DA REGIA</span>
+                <span>{isEn ? 'REPORT WARNING FROM CONTROL' : 'SEGNALA CRITICITÀ DA REGIA'}</span>
               </button>
             )}
           </div>
@@ -337,7 +347,7 @@ export const ScenarioCriticalityModal: React.FC<ScenarioCriticalityModalProps> =
             onClick={onClose}
             className="w-full sm:w-auto px-5 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs uppercase cursor-pointer"
           >
-            CHIUDI
+            {isEn ? 'CLOSE' : 'CHIUDI'}
           </button>
         </div>
       </div>

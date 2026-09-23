@@ -28,7 +28,6 @@ import {
   Lock,
   FileText
 } from 'lucide-react';
-import { LanguageSwitcher } from '../LanguageSwitcher';
 
 export const ProtesiCatalogView: React.FC = () => {
   const { language, userRole } = useCourse();
@@ -72,19 +71,19 @@ export const ProtesiCatalogView: React.FC = () => {
   const getDistrictBadge = (district: ProtesiItem['district']) => {
     switch (district) {
       case 'VIE_AEREE':
-        return <span className="px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700 text-[10px] font-black uppercase tracking-wider">VIE AEREE / CRICO</span>;
+        return <span className="px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'AIRWAY / CRIC' : 'VIE AEREE / CRICO'}</span>;
       case 'TORACE_CUORE':
-        return <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-700 text-[10px] font-black uppercase tracking-wider">TORACE & TORACOTOMIA</span>;
+        return <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'CHEST & THORACOTOMY' : 'TORACE & TORACOTOMIA'}</span>;
       case 'COLLO_VASCOLARE':
-        return <span className="px-2.5 py-0.5 bg-rose-950 text-rose-300 border border-rose-700 text-[10px] font-black uppercase tracking-wider">COLLO / GIUNZIONALE</span>;
+        return <span className="px-2.5 py-0.5 bg-rose-950 text-rose-300 border border-rose-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'NECK / JUNCTIONAL' : 'COLLO / GIUNZIONALE'}</span>;
       case 'ADDOME_PELVI':
-        return <span className="px-2.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-black uppercase tracking-wider">ADDOME & PELVI</span>;
+        return <span className="px-2.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'ABDOMEN & PELVIS' : 'ADDOME & PELVI'}</span>;
       case 'ARTI_AMPUTAZIONI':
-        return <span className="px-2.5 py-0.5 bg-orange-950 text-orange-300 border border-orange-700 text-[10px] font-black uppercase tracking-wider">ARTI & AMPUTAZIONI</span>;
+        return <span className="px-2.5 py-0.5 bg-orange-950 text-orange-300 border border-orange-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'LIMBS & AMPUTATIONS' : 'ARTI & AMPUTAZIONI'}</span>;
       case 'MAXILLO_FACCIALE':
-        return <span className="px-2.5 py-0.5 bg-purple-950 text-purple-300 border border-purple-700 text-[10px] font-black uppercase tracking-wider">MAXILLO-FACCIALE</span>;
+        return <span className="px-2.5 py-0.5 bg-purple-950 text-purple-300 border border-purple-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'MAXILLOFACIAL' : 'MAXILLO-FACCIALE'}</span>;
       case 'USTIONI_BLAST':
-        return <span className="px-2.5 py-0.5 bg-yellow-950 text-yellow-300 border border-yellow-700 text-[10px] font-black uppercase tracking-wider">USTIONI & BLAST</span>;
+        return <span className="px-2.5 py-0.5 bg-yellow-950 text-yellow-300 border border-yellow-700 text-[10px] font-black uppercase tracking-wider">{isEn ? 'BURNS & BLAST' : 'USTIONI & BLAST'}</span>;
       default:
         return <span className="px-2 py-0.5 bg-neutral-900 text-neutral-300 border border-neutral-700 text-[10px] font-black uppercase tracking-wider">{district}</span>;
     }
@@ -114,7 +113,7 @@ export const ProtesiCatalogView: React.FC = () => {
                 {isEn ? 'PROSTHETICS & MOULAGE' : 'PROTESI & MOULAGE'}
               </span>
               <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">
-                {PROTESI_CATALOG.length} DISPOSITIVI ATTIVI
+                {PROTESI_CATALOG.length} {isEn ? 'ACTIVE DEVICES' : 'DISPOSITIVI ATTIVI'}
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 sm:gap-3">
@@ -128,7 +127,6 @@ export const ProtesiCatalogView: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <LanguageSwitcher variant="badge" />
             <button
               onClick={handleExportProsthetics}
               className="w-full sm:w-auto min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
@@ -225,16 +223,16 @@ export const ProtesiCatalogView: React.FC = () => {
 
             <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1.5 text-xs">
               <div>
-                <span className="text-neutral-400 text-[10px] uppercase block">Procedura Guidata:</span>
-                <span className="text-orange-400 font-bold text-xs">{item.requiredProcedures[0] || 'Procedura Guidata'}</span>
+                <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Guided Procedure:' : 'Procedura Guidata:'}</span>
+                <span className="text-orange-400 font-bold text-xs">{item.requiredProcedures[0] || (isEn ? 'Guided Procedure' : 'Procedura Guidata')}</span>
               </div>
               <div>
-                <span className="text-neutral-400 text-[10px] uppercase block">Funzione / Feature:</span>
+                <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Function / Feature:' : 'Funzione / Feature:'}</span>
                 <span className="text-neutral-200 text-xs">{item.activeFeatures[0]}</span>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-neutral-800 text-[11px]">
                 <span className="text-neutral-400">Lead Tech: <strong className="text-amber-300">{item.leadTechnician}</strong></span>
-                <span className="text-neutral-400 font-mono">{item.consumables.length} consumabili</span>
+                <span className="text-neutral-400 font-mono">{item.consumables.length} {isEn ? 'consumables' : 'consumabili'}</span>
               </div>
             </div>
 
@@ -244,7 +242,7 @@ export const ProtesiCatalogView: React.FC = () => {
               className="w-full min-h-[40px] py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-neutral-700"
             >
               <FileText className="w-3.5 h-3.5 text-orange-400" />
-              <span>Visualizza Scheda Protesi</span>
+              <span>{isEn ? 'View Prosthesis Sheet' : 'Visualizza Scheda Protesi'}</span>
             </button>
           </div>
         ))}
@@ -255,12 +253,12 @@ export const ProtesiCatalogView: React.FC = () => {
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="bg-neutral-950 text-neutral-400 text-[11px] font-mono uppercase tracking-wider border-b border-neutral-800">
-              <th className="p-3">Codice & Nome Protesi</th>
-              <th className="p-3">Distretto Anatomico</th>
-              <th className="p-3">Funzionalità & Procedure</th>
-              <th className="p-3">Scenari di Impiego</th>
-              <th className="p-3">Tecnico Responsabile</th>
-              <th className="p-3 text-right">Azioni</th>
+              <th className="p-3">{isEn ? 'Code & Prosthesis Name' : 'Codice & Nome Protesi'}</th>
+              <th className="p-3">{isEn ? 'Anatomical District' : 'Distretto Anatomico'}</th>
+              <th className="p-3">{isEn ? 'Features & Procedures' : 'Funzionalità & Procedure'}</th>
+              <th className="p-3">{isEn ? 'Scenarios of Use' : 'Scenari di Impiego'}</th>
+              <th className="p-3">{isEn ? 'Lead Technician' : 'Tecnico Responsabile'}</th>
+              <th className="p-3 text-right">{isEn ? 'Actions' : 'Azioni'}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800 text-xs">
@@ -285,7 +283,7 @@ export const ProtesiCatalogView: React.FC = () => {
                   </td>
                   <td className="p-3 max-w-xs">
                     <div className="text-orange-400 font-bold text-[11px] mb-0.5">
-                      {item.requiredProcedures[0] || 'Procedura Guidata'}
+                      {item.requiredProcedures[0] || (isEn ? 'Guided Procedure' : 'Procedura Guidata')}
                     </div>
                     <div className="text-neutral-300 text-[10px] line-clamp-2">
                       {item.activeFeatures[0]}
@@ -313,7 +311,7 @@ export const ProtesiCatalogView: React.FC = () => {
                       className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1"
                     >
                       <FileText className="w-3 h-3 text-orange-400" />
-                      Scheda
+                      {isEn ? 'Sheet' : 'Scheda'}
                     </button>
                   </td>
                 </tr>
@@ -355,7 +353,7 @@ export const ProtesiCatalogView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                   <h4 className="text-orange-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                    <Droplet className="w-4 h-4" /> Funzionalità Circolatorie
+                    <Droplet className="w-4 h-4" /> {isEn ? 'Circulatory Features' : 'Funzionalità Circolatorie'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
                     {selectedModalItem.activeFeatures.map((f, idx) => (
@@ -365,7 +363,7 @@ export const ProtesiCatalogView: React.FC = () => {
                 </div>
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                   <h4 className="text-cyan-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                    <Wrench className="w-4 h-4" /> Procedure Guidate
+                    <Wrench className="w-4 h-4" /> {isEn ? 'Guided Procedures' : 'Procedure Guidate'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
                     {selectedModalItem.requiredProcedures.map((p, idx) => (
@@ -378,7 +376,7 @@ export const ProtesiCatalogView: React.FC = () => {
               {/* Scenari di impiego */}
               <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                 <h4 className="text-neutral-300 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-orange-400" /> Scenari di Impiego ({selectedModalItem.scenariosUsed.length})
+                  <ClipboardList className="w-4 h-4 text-orange-400" /> {isEn ? `Scenarios of Use (${selectedModalItem.scenariosUsed.length})` : `Scenari di Impiego (${selectedModalItem.scenariosUsed.length})`}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {selectedModalItem.scenariosUsed.map((scen, idx) => (
@@ -393,12 +391,12 @@ export const ProtesiCatalogView: React.FC = () => {
               {/* Setup tecnico & consumabili */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
-                  <span className="text-neutral-400 font-bold uppercase text-[10px]">Setup Tecnico & Manutenzione:</span>
+                  <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Technical Setup & Maintenance:' : 'Setup Tecnico & Manutenzione:'}</span>
                   <p className="text-white text-xs font-mono">{selectedModalItem.techRequirements}</p>
                   <p className="text-orange-400 font-bold text-[11px] mt-2">Lead Tech: {selectedModalItem.leadTechnician}</p>
                 </div>
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
-                  <span className="text-neutral-400 font-bold uppercase text-[10px]">Consumabili Necessari:</span>
+                  <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Required Consumables:' : 'Consumabili Necessari:'}</span>
                   <ul className="list-disc pl-4 space-y-0.5 text-neutral-200 text-xs font-mono">
                     {selectedModalItem.consumables.map((c, idx) => (
                       <li key={idx}>{c}</li>
@@ -413,7 +411,7 @@ export const ProtesiCatalogView: React.FC = () => {
                 onClick={() => setSelectedModalItem(null)}
                 className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider cursor-pointer"
               >
-                Chiudi Scheda
+                {isEn ? 'Close Sheet' : 'Chiudi Scheda'}
               </button>
             </div>
           </div>

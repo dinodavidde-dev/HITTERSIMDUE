@@ -144,11 +144,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   const block90MinutePhases = [
     {
       id: 'sub-01',
-      timeWindow: 'Min 00–15',
+      timeWindow: isEn ? 'Min 00–15' : 'Min 00–15',
       durationMinutes: 15,
-      phaseTitle: 'Ingaggio TCCC / WS Inquadramento / Standby SR',
-      description: 'Avvio scenari tattici sotto fuoco, Stop the Bleed nei 3 Ambienti Tattici. Inquadramento WS. Standby attivo Box SR.',
-      techFocus: 'Presidio carrelli infusione, erogazione emorragia pulsante simulatori TCCC, test radio CH3.',
+      phaseTitle: isEn ? 'TCCC Engagement / WS Framing / SR Standby' : 'Ingaggio TCCC / WS Inquadramento / Standby SR',
+      description: isEn
+        ? 'Under-fire tactical scenarios start, Stop the Bleed in 3 Tactical Environments. WS framing. Active standby in SR Boxes.'
+        : 'Avvio scenari tattici sotto fuoco, Stop the Bleed nei 3 Ambienti Tattici. Inquadramento WS. Standby attivo Box SR.',
+      techFocus: isEn
+        ? 'Manning infusion carts, pulsed hemorrhage delivery on TCCC simulators, radio CH3 test.'
+        : 'Presidio carrelli infusione, erogazione emorragia pulsante simulatori TCCC, test radio CH3.',
       isHandover: false,
       isReset: false,
       isActive: (currentSlot.id.includes('tccc') || currentSlot.id.includes('b1-tccc')) && slotElapsedMinutes < 15,
@@ -156,11 +160,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     },
     {
       id: 'sub-02',
-      timeWindow: 'Min 15–30',
+      timeWindow: isEn ? 'Min 15–30' : 'Min 15–30',
       durationMinutes: 15,
-      phaseTitle: 'Stabilizzazione TCCC & Estrazione / Standby Attivo SR (T -15)',
-      description: 'Wound packing e barellamento in TCCC. STANDBY ATTIVO Box Shock Room (T -15 min da Handover :30).',
-      techFocus: 'STANDBY ATTIVO BOX SR: Collaudo ventilatori, monitor ECG multiparametrici, sonde e-FAST pronte per barella.',
+      phaseTitle: isEn ? 'TCCC Stabilization & Extraction / SR Active Standby (T -15)' : 'Stabilizzazione TCCC & Estrazione / Standby Attivo SR (T -15)',
+      description: isEn
+        ? 'Wound packing and litter packaging in TCCC. ACTIVE STANDBY in Shock Room Boxes (T -15 min from :30 Handover).'
+        : 'Wound packing e barellamento in TCCC. STANDBY ATTIVO Box Shock Room (T -15 min da Handover :30).',
+      techFocus: isEn
+        ? 'ACTIVE STANDBY BOX SR: Ventilator check, multiparameter ECG monitors, e-FAST probes ready for litter.'
+        : 'STANDBY ATTIVO BOX SR: Collaudo ventilatori, monitor ECG multiparametrici, sonde e-FAST pronte per barella.',
       isHandover: false,
       isReset: false,
       isActive: (currentSlot.id.includes('tccc') || currentSlot.id.includes('b1-tccc')) && slotElapsedMinutes >= 15,
@@ -168,11 +176,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     },
     {
       id: 'sub-03',
-      timeWindow: 'Min 30–35 (ORE :30)',
+      timeWindow: isEn ? 'Min 30–35 (AT :30)' : 'Min 30–35 (ORE :30)',
       durationMinutes: 5,
-      phaseTitle: 'TASSATIVO ORE :30 HANDOVER 1:1 BARELLATO (SBAR)',
-      description: 'Trasferimento fisico barellato da TCCC a Box Shock Room con report SBAR (5 min, :30–:35). Dalle :35 ABCDE SR e Debrief TCCC Pt 1.',
-      techFocus: 'CRITICO: Guida barella nei Box Shock Room, connessione monitor portatili a schermi a parete, assistenza linee vascolari.',
+      phaseTitle: isEn ? 'MANDATORY :30 1:1 LITTER HANDOVER (SBAR)' : 'TASSATIVO ORE :30 HANDOVER 1:1 BARELLATO (SBAR)',
+      description: isEn
+        ? 'Physical litter transfer from TCCC to Shock Room Box with SBAR structured report (5 min, :30–:35). From :35 SR ABCDE and TCCC Debrief Pt 1.'
+        : 'Trasferimento fisico barellato da TCCC a Box Shock Room con report SBAR (5 min, :30–:35). Dalle :35 ABCDE SR e Debrief TCCC Pt 1.',
+      techFocus: isEn
+        ? 'CRITICAL: Guide litter into Shock Room Boxes, connect portable monitors to wall displays, assist vascular lines.'
+        : 'CRITICO: Guida barella nei Box Shock Room, connessione monitor portatili a schermi a parete, assistenza linee vascolari.',
       isHandover: true,
       isReset: false,
       isActive: currentSlot.id.includes('handover'),
@@ -180,11 +192,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     },
     {
       id: 'sub-04',
-      timeWindow: 'Min 35–60',
+      timeWindow: isEn ? 'Min 35–60' : 'Min 35–60',
       durationMinutes: 25,
-      phaseTitle: 'Shock Room Alta Fedeltà / Debriefing TCCC Pt 1',
-      description: 'Gestione emodinamica avanzata ABCDE, eco FAST, drenaggi in Shock Room. Debriefing TCCC con FAC 1-3.',
-      techFocus: 'Regia parametri vitali dinamici su simulatori HALO/SimMan, modulazione crisi emodinamica, erogazione referti.',
+      phaseTitle: isEn ? 'High-Fidelity Shock Room / TCCC Debriefing Pt 1' : 'Shock Room Alta Fedeltà / Debriefing TCCC Pt 1',
+      description: isEn
+        ? 'Advanced hemodynamic ABCDE management, FAST ultrasound, chest tubes in Shock Room. TCCC debriefing with FAC 1-3.'
+        : 'Gestione emodinamica avanzata ABCDE, eco FAST, drenaggi in Shock Room. Debriefing TCCC con FAC 1-3.',
+      techFocus: isEn
+        ? 'Dynamic vital signs control on HALO/SimMan simulators, hemodynamic crisis modulation, delivering diagnostic reports.'
+        : 'Regia parametri vitali dinamici su simulatori HALO/SimMan, modulazione crisi emodinamica, erogazione referti.',
       isHandover: false,
       isReset: false,
       isActive: currentSlot.id.includes('sr'),
@@ -192,11 +208,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     },
     {
       id: 'sub-05',
-      timeWindow: 'Min 60–75',
+      timeWindow: isEn ? 'Min 60–75' : 'Min 60–75',
       durationMinutes: 15,
-      phaseTitle: 'Debriefing Clinico SR Parte 1 (Video NTS) / Ristoro TCCC',
-      description: 'Revisione video collegiale con Faculty della gestione clinica e leadership NTS. Pausa idratazione per squadra TCCC.',
-      techFocus: 'Playback telecamere PTZ per FAC, salvataggio telemetria, controllo carrelli farmaci e inventario.',
+      phaseTitle: isEn ? 'SR Clinical Debriefing Part 1 (NTS Video) / TCCC Rest' : 'Debriefing Clinico SR Parte 1 (Video NTS) / Ristoro TCCC',
+      description: isEn
+        ? 'Collegial video review with Faculty of clinical management and NTS leadership. Hydration break for TCCC team.'
+        : 'Revisione video collegiale con Faculty della gestione clinica e leadership NTS. Pausa idratazione per squadra TCCC.',
+      techFocus: isEn
+        ? 'PTZ camera playback for FAC, telemetry export, medication cart and inventory check.'
+        : 'Playback telecamere PTZ per FAC, salvataggio telemetria, controllo carrelli farmaci e inventario.',
       isHandover: false,
       isReset: false,
       isActive: currentSlot.id.includes('debrief'),
@@ -204,11 +224,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     },
     {
       id: 'sub-06',
-      timeWindow: 'Min 75–90',
+      timeWindow: isEn ? 'Min 75–90' : 'Min 75–90',
       durationMinutes: 15,
-      phaseTitle: 'Debriefing SR Pt 2 & Reset Tecnico Rapido 15 Min Box (Turnaround)',
-      description: 'Debriefing conclusivo del blocco e RESET TASSATIVO 15 MINUTI dei 3 Box a cura dei TECH prima del blocco successivo.',
-      techFocus: 'RESET RAPIDO 15 MINUTI: Sanificazione cute, rabbocco sangue sintetico, sostituzione trachee e aghi, ricarica batterie.',
+      phaseTitle: isEn ? 'SR Debriefing Pt 2 & 15-Min Quick Box Tech Reset (Turnaround)' : 'Debriefing SR Pt 2 & Reset Tecnico Rapido 15 Min Box (Turnaround)',
+      description: isEn
+        ? 'Conclusive block debriefing and MANDATORY 15-MINUTE RESET of the 3 Boxes by TECHs before the next block.'
+        : 'Debriefing conclusivo del blocco e RESET TASSATIVO 15 MINUTI dei 3 Box a cura dei TECH prima del blocco successivo.',
+      techFocus: isEn
+        ? '15-MIN QUICK RESET: Skin disinfection, synthetic blood top-up, airway/needle replacements, battery recharge.'
+        : 'RESET RAPIDO 15 MINUTI: Sanificazione cute, rabbocco sangue sintetico, sostituzione trachee e aghi, ricarica batterie.',
       isHandover: false,
       isReset: true,
       isActive: currentSlot.id.includes('reset'),
@@ -220,25 +244,25 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   const nonTacticalCheckpoints = [
     {
       id: 'nt-1',
-      timeWindow: 'Fase Iniziale (Min 00–15)',
-      title: 'Inizio Slot & Allineamento Staff',
-      focus: 'Presidio postazioni, sincronizzazione radio CH3/CH1 e prima verifica hardware.',
+      timeWindow: isEn ? 'Initial Phase (Min 00–15)' : 'Fase Iniziale (Min 00–15)',
+      title: isEn ? 'Slot Start & Staff Alignment' : 'Inizio Slot & Allineamento Staff',
+      focus: isEn ? 'Station manning, radio CH3/CH1 synchronization and first hardware check.' : 'Presidio postazioni, sincronizzazione radio CH3/CH1 e prima verifica hardware.',
       isActive: slotProgressPercent < 33,
       isCompleted: slotProgressPercent >= 33,
     },
     {
       id: 'nt-2',
-      timeWindow: 'Fase Centrale (Min 15–30+)',
-      title: 'Esecuzione Attività & Monitoraggio',
-      focus: 'Assistenza continua, monitoraggio carichi e gestione materiali di consumo.',
+      timeWindow: isEn ? 'Central Phase (Min 15–30+)' : 'Fase Centrale (Min 15–30+)',
+      title: isEn ? 'Activity Execution & Monitoring' : 'Esecuzione Attività & Monitoraggio',
+      focus: isEn ? 'Continuous assistance, load monitoring and consumables management.' : 'Assistenza continua, monitoraggio carichi e gestione materiali di consumo.',
       isActive: slotProgressPercent >= 33 && slotProgressPercent < 75,
       isCompleted: slotProgressPercent >= 75,
     },
     {
       id: 'nt-3',
-      timeWindow: 'Fase Conclusiva (Ultimi 10 Min)',
-      title: 'Pre-Allerta & Chiusura Fase',
-      focus: 'Preavviso al gruppo discenti e preparazione logistica per il blocco successivo.',
+      timeWindow: isEn ? 'Conclusive Phase (Last 10 Min)' : 'Fase Conclusiva (Ultimi 10 Min)',
+      title: isEn ? 'Pre-Alert & Phase Closing' : 'Pre-Allerta & Chiusura Fase',
+      focus: isEn ? 'Student group notification and logistical preparation for next block.' : 'Preavviso al gruppo discenti e preparazione logistica per il blocco successivo.',
       isActive: slotProgressPercent >= 75,
       isCompleted: slotRemainingSeconds === 0,
     },
@@ -301,10 +325,10 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
     // Identify visiting group and station location
     let visitingGroup: GroupType | null = null;
-    let stationLocation = currentTech.assignedStations?.[0] || 'Postazione Trauma';
+    let stationLocation = currentTech.assignedStations?.[0] || (isEn ? 'Trauma Station' : 'Postazione Trauma');
 
     if (techNum === 7 || currentTech.specialty?.toLowerCase().includes('ws1')) {
-      stationLocation = 'Aula WS1 (Airway & Bleeding)';
+      stationLocation = isEn ? 'Room WS1 (Airway & Bleeding)' : 'Aula WS1 (Airway & Bleeding)';
       const match = allActs.find(
         (a) =>
           a.act?.location.includes('WS1') ||
@@ -313,7 +337,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       );
       if (match) visitingGroup = match.group;
     } else if (techNum === 8 || currentTech.specialty?.toLowerCase().includes('ws2')) {
-      stationLocation = 'Aula WS2 (Eco FAST & IO)';
+      stationLocation = isEn ? 'Room WS2 (FAST Echo & IO)' : 'Aula WS2 (Eco FAST & IO)';
       const match = allActs.find(
         (a) =>
           a.act?.location.includes('WS2') ||
@@ -322,20 +346,20 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       );
       if (match) visitingGroup = match.group;
     } else if (techNum === 9 || currentTech.specialty?.toLowerCase().includes('reset')) {
-      stationLocation = 'Box Shock Room 1-3 (Reset Rapido)';
+      stationLocation = isEn ? 'Box Shock Room 1-3 (Quick Reset)' : 'Box Shock Room 1-3 (Reset Rapido)';
       const match = allActs.find(
         (a) => a.act?.location.includes('Shock Room') || a.act?.title.toLowerCase().includes('shock room')
       );
       if (match) visitingGroup = match.group;
     } else if (techNum === 10) {
-      stationLocation = 'Ambienti Tattici 1-3 (Logistica)';
+      stationLocation = isEn ? 'Tactical Environments 1-3 (Logistics)' : 'Ambienti Tattici 1-3 (Logistica)';
       const match = allActs.find(
         (a) => a.act?.location.includes('Tattico') || a.act?.title.toLowerCase().includes('tccc')
       );
       if (match) visitingGroup = match.group;
     } else {
       if (isTccc || isPreAllerta) {
-        stationLocation = `Ambiente Tattico ${postazioneNum}`;
+        stationLocation = isEn ? `Tactical Environment ${postazioneNum}` : `Ambiente Tattico ${postazioneNum}`;
         const match = allActs.find(
           (a) => a.act?.location.includes('Tattico') || a.act?.title.toLowerCase().includes('tccc')
         );
@@ -355,137 +379,249 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     let techDuties: string[] = [];
 
     if (isSetup) {
-      techActivityTitle = 'Briefing Tecnico, Verifica Canali Radio CH1/CH3 e Collaudo Pompe';
-      techBadge = 'SETUP & COLLAUDO IMPIANTI';
+      techActivityTitle = isEn
+        ? 'Technical Briefing, Radio Channels CH1/CH3 Check & Pump Testing'
+        : 'Briefing Tecnico, Verifica Canali Radio CH1/CH3 e Collaudo Pompe';
+      techBadge = isEn ? 'SETUP & SYSTEM TESTING' : 'SETUP & COLLAUDO IMPIANTI';
       techBadgeColor = 'bg-cyan-950 text-cyan-300 border-cyan-700';
-      techDuties = [
-        'Ispezione serbatoi sangue artificiale (2000ml) e controllo tenuta raccordi idraulici',
-        'Verifica apparati radio: canale di lavoro CH3 (Tecnici) e canale Master CH1 (Regia)',
-        'Controllo dotazione barelle tattiche, lacci emostatici TQ e forbici taglia-abiti',
-      ];
+      techDuties = isEn
+        ? [
+            'Artificial blood reservoirs inspection (2000ml) and fluid connector tightness check',
+            'Radio devices check: operating channel CH3 (Tech) and Master channel CH1 (Direction)',
+            'Tactical litters, TQ tourniquets, and trauma shears gear inventory verification',
+          ]
+        : [
+            'Ispezione serbatoi sangue artificiale (2000ml) e controllo tenuta raccordi idraulici',
+            'Verifica apparati radio: canale di lavoro CH3 (Tecnici) e canale Master CH1 (Regia)',
+            'Controllo dotazione barelle tattiche, lacci emostatici TQ e forbici taglia-abiti',
+          ];
     } else if (
       fullText.includes('accoglienza') ||
       fullText.includes('welcome') ||
       fullText.includes('briefing')
     ) {
-      techActivityTitle = 'Presidio Postazioni, Verifica Biomodelli e Standby Operativo Regia';
-      techBadge = 'PRESIDIO OPERATIVO';
+      techActivityTitle = isEn
+        ? 'Station Manning, Biomodel Check & Control Room Operational Standby'
+        : 'Presidio Postazioni, Verifica Biomodelli e Standby Operativo Regia';
+      techBadge = isEn ? 'OPERATIONAL PRESENCE' : 'PRESIDIO OPERATIVO';
       techBadgeColor = 'bg-neutral-950 text-neutral-300 border-neutral-700';
-      techDuties = [
-        'Presidio fisso della postazione assegnata e controllo materiali monouso di scorta',
-        'Check di conformità dei manichini e delle protesi con la Faculty di riferimento',
-        'Standby in ascolto su radio CH3 in attesa del via libera operativo dalla Regia',
-      ];
+      techDuties = isEn
+        ? [
+            'Fixed manning of assigned station and check of backup consumable items',
+            'Manikin and prosthesis compliance check with assigned Faculty',
+            'Standby monitoring on radio CH3 awaiting operational green light from Control Room',
+          ]
+        : [
+            'Presidio fisso della postazione assegnata e controllo materiali monouso di scorta',
+            'Check di conformità dei manichini e delle protesi con la Faculty di riferimento',
+            'Standby in ascolto su radio CH3 in attesa del via libera operativo dalla Regia',
+          ];
     } else if (isReset) {
-      techActivityTitle = 'RESET TECNICO RAPIDO 15 MIN: Sanificazione Manichini & Reintegro Consumabili';
-      techBadge = 'RESET RAPIDO (TURNAROUND)';
+      techActivityTitle = isEn
+        ? '15-MIN QUICK TECH RESET: Manikin Disinfection & Consumables Restock'
+        : 'RESET TECNICO RAPIDO 15 MIN: Sanificazione Manichini & Reintegro Consumabili';
+      techBadge = isEn ? 'QUICK RESET (TURNAROUND)' : 'RESET RAPIDO (TURNAROUND)';
       techBadgeColor = 'bg-yellow-950 text-yellow-300 border-yellow-600 animate-pulse';
-      techDuties = [
-        'Lavaggio e spurgo circuiti di sanguinamento, riempimento sacche sangue sintetico',
-        'Sostituzione inserti cricotiroidotomia, drenaggio toracico e cute chirurgica incisa',
-        'Reintegro garze caolino, teli sterili e invio "LUCE VERDE POSTAZIONE" via radio CH3',
-      ];
+      techDuties = isEn
+        ? [
+            'Flushing and bleeding lines purge, refilling synthetic blood pouches',
+            'Replacement of cricothyroidotomy inserts, chest drains, and incised surgical skin',
+            'Replenish kaolin gauze, sterile drapes, and transmit "STATION GREEN LIGHT" on radio CH3',
+          ]
+        : [
+            'Lavaggio e spurgo circuiti di sanguinamento, riempimento sacche sangue sintetico',
+            'Sostituzione inserti cricotiroidotomia, drenaggio toracico e cute chirurgica incisa',
+            'Reintegro garze caolino, teli sterili e invio "LUCE VERDE POSTAZIONE" via radio CH3',
+          ];
     } else if (isHandover) {
-      techActivityTitle = 'Assistenza Tecnica Handover 1:1: Trasferimento Barellato TCCC ➔ Shock Room';
-      techBadge = 'ASSISTENZA TRASPORTO SBAR';
+      techActivityTitle = isEn
+        ? '1:1 Handover Tech Support: Litter Transfer TCCC ➔ Shock Room'
+        : 'Assistenza Tecnica Handover 1:1: Trasferimento Barellato TCCC ➔ Shock Room';
+      techBadge = isEn ? 'SBAR TRANSPORT ASSISTANCE' : 'ASSISTENZA TRASPORTO SBAR';
       techBadgeColor = 'bg-amber-950 text-amber-300 border-amber-600';
-      techDuties = [
-        'Assistenza al trasbordo rapido della barella tattica dal campo al Box Shock Room',
-        'Commutazione telemetria portatile sul monitor multiparametrico fisso a parete',
-        'Supervisione sicurezza del manichino/attore durante il briefing SBAR (:30-:35)',
-      ];
+      techDuties = isEn
+        ? [
+            'Support rapid tactical litter transfer from field to Shock Room Box',
+            'Switch portable telemetry over to fixed wall multiparameter monitor',
+            'Safety supervision of manikin/actor during SBAR briefing (:30-:35)',
+          ]
+        : [
+            'Assistenza al trasbordo rapido della barella tattica dal campo al Box Shock Room',
+            'Commutazione telemetria portatile sul monitor multiparametrico fisso a parete',
+            'Supervisione sicurezza del manichino/attore durante il briefing SBAR (:30-:35)',
+          ];
     } else if (isPreAllerta) {
-      techActivityTitle = 'Pre-Allerta T-15: Innesco Pompe Sanguinamento e Standby Operativo';
-      techBadge = 'PRE-ALLERTA T -15 MIN';
+      techActivityTitle = isEn
+        ? 'Pre-Alert T-15: Bleeding Pumps Priming and Operational Standby'
+        : 'Pre-Allerta T-15: Innesco Pompe Sanguinamento e Standby Operativo';
+      techBadge = isEn ? 'PRE-ALERT T -15 MIN' : 'PRE-ALLERTA T -15 MIN';
       techBadgeColor = 'bg-pink-950 text-pink-300 border-pink-700 animate-pulse';
-      techDuties = [
-        'Attivazione telecomando flussi emorragici e prova getto pulsatile a pressione',
-        'Posizionamento barelle spinali e controllo scorte lacci emostatici TQ sul campo',
-        'Briefing di sicurezza con l\'attore figurante e test parola d\'ordine d\'arresto',
-      ];
+      techDuties = isEn
+        ? [
+            'Activate hemorrhage remote control and pressure pulse stream check',
+            'Position spinal litters and check tactical TQ tourniquets supply in the field',
+            'Safety briefing with the actor/simulant and abort safe-word test',
+          ]
+        : [
+            'Attivazione telecomando flussi emorragici e prova getto pulsatile a pressione',
+            'Posizionamento barelle spinali e controllo scorte lacci emostatici TQ sul campo',
+            'Briefing di sicurezza con l\'attore figurante e test parola d\'ordine d\'arresto',
+          ];
     } else if (isStandbySR) {
-      techActivityTitle = 'Standby Attivo Box Shock Room (T -15): Check Monitor, Ventilatori & Kit REBOA';
-      techBadge = 'STANDBY ATTIVO BOX SR';
+      techActivityTitle = isEn
+        ? 'Active Standby Shock Room Box (T -15): Check Monitors, Ventilators & REBOA Kit'
+        : 'Standby Attivo Box Shock Room (T -15): Check Monitor, Ventilatori & Kit REBOA';
+      techBadge = isEn ? 'ACTIVE STANDBY BOX SR' : 'STANDBY ATTIVO BOX SR';
       techBadgeColor = 'bg-indigo-950 text-indigo-300 border-indigo-700';
-      techDuties = [
-        'Accensione monitor multiparametrici, test traccia ECG, NIBP e curva capnografica',
-        'Verifica kit toracotomia di rianimazione, clamp aortico e introduttore REBOA 7 Fr',
-        'Controllo riscaldatore liquidi e disponibilità sacche infusionali artificiali',
-      ];
+      techDuties = isEn
+        ? [
+            'Power on multiparameter monitors, test ECG trace, NIBP and capnography curve',
+            'Verify resuscitation thoracotomy kit, aortic clamp and 7 Fr REBOA introducer',
+            'Check fluid warmer readiness and artificial infusion bags availability',
+          ]
+        : [
+            'Accensione monitor multiparametrici, test traccia ECG, NIBP e curva capnografica',
+            'Verifica kit toracotomia di rianimazione, clamp aortico e introduttore REBOA 7 Fr',
+            'Controllo riscaldatore liquidi e disponibilità sacche infusionali artificiali',
+          ];
     } else if (isTccc) {
-      techActivityTitle = 'Presidio Tecnico Ambiente Tattico: Erogazione Flussi & Assistenza Barellamento';
-      techBadge = 'PRESIDIO TATTICO TCCC';
+      techActivityTitle = isEn
+        ? 'Tactical Environment Tech Presence: Flow Delivery & Litter Assistance'
+        : 'Presidio Tecnico Ambiente Tattico: Erogazione Flussi & Assistenza Barellamento';
+      techBadge = isEn ? 'TCCC TACTICAL PRESENCE' : 'PRESIDIO TATTICO TCCC';
       techBadgeColor = 'bg-emerald-950 text-emerald-300 border-emerald-700';
-      techDuties = [
-        'Regolazione remota emorragia massiva in funzione dell\'applicazione del tourniquet',
-        'Monitoraggio wound packing giunzionale ed estrazione rapida sotto stress audio',
-        'Supporto logistico continuo alla squadra discenti e al tutor FAC designato',
-      ];
+      techDuties = isEn
+        ? [
+            'Remote adjustment of massive bleeding according to tourniquet application',
+            'Monitor junctional wound packing and rapid litter extraction under audio stress',
+            'Continuous logistical support to student team and assigned FAC tutor',
+          ]
+        : [
+            'Regolazione remota emorragia massiva in funzione dell\'applicazione del tourniquet',
+            'Monitoraggio wound packing giunzionale ed estrazione rapida sotto stress audio',
+            'Supporto logistico continuo alla squadra discenti e al tutor FAC designato',
+          ];
     } else if (isShockRoom) {
-      techActivityTitle = 'Presidio Avanzato Box Shock Room: Telemetria, Supporto Toracotomia & REBOA';
-      techBadge = 'PRESIDIO SHOCK ROOM ABCDE';
+      techActivityTitle = isEn
+        ? 'Shock Room Box Advanced Presence: Telemetry, Thoracotomy Support & REBOA'
+        : 'Presidio Avanzato Box Shock Room: Telemetria, Supporto Toracotomia & REBOA';
+      techBadge = isEn ? 'PRESENCE SHOCK ROOM ABCDE' : 'PRESIDIO SHOCK ROOM ABCDE';
       techBadgeColor = 'bg-indigo-950 text-indigo-300 border-indigo-600';
-      techDuties = [
-        'Regolazione dinamica parametri vitali (SpO2, FC, PA) secondo copione didattico FAC',
-        'Assistenza strumentale alle procedure invasive (drenaggio pleurico, REBOA, crico)',
-        'Avvio contestuale della bonifica preliminare dell\'area tattica di provenienza',
-      ];
+      techDuties = isEn
+        ? [
+            'Dynamic vital signs tuning (SpO2, HR, BP) following FAC script requirements',
+            'Instrument support for invasive procedures (chest tube, REBOA, cricothyroidotomy)',
+            'Concurrent start of preliminary clearing of the tactical origin area',
+          ]
+        : [
+            'Regolazione dinamica parametri vitali (SpO2, FC, PA) secondo copione didattico FAC',
+            'Assistenza strumentale alle procedure invasive (drenaggio pleurico, REBOA, crico)',
+            'Avvio contestuale della bonifica preliminare dell\'area tattica di provenienza',
+          ];
     } else if (isWorkshop) {
       if (techNum === 7 || currentTech.specialty?.toLowerCase().includes('ws1')) {
-        techActivityTitle = 'Presidio Skills Lab WS1: Manichini Cricotiroidotomia & Sostituzione Inserti';
-        techBadge = 'SKILLS LAB WS1 (AIRWAY)';
+        techActivityTitle = isEn
+          ? 'Skills Lab WS1 Presence: Cricothyroidotomy Manikins & Insert Replacement'
+          : 'Presidio Skills Lab WS1: Manichini Cricotiroidotomia & Sostituzione Inserti';
+        techBadge = isEn ? 'SKILLS LAB WS1 (AIRWAY)' : 'SKILLS LAB WS1 (AIRWAY)';
         techBadgeColor = 'bg-purple-950 text-purple-300 border-purple-700';
-        techDuties = [
-          'Sostituzione rapida membrane tracheali e cute sintetica per cricotiroidotomia',
-          'Rifornimento tubi endotracheali, lame bisturi, bougie e set wound packing',
-          'Ricarica sangue sintetico nel formatore per emorragie giunzionali inguinali',
-        ];
+        techDuties = isEn
+          ? [
+              'Rapid replacement of tracheal membranes and synthetic skin for cricothyroidotomy',
+              'Restock endotracheal tubes, scalpel blades, bougies, and wound packing sets',
+              'Synthetic blood refill in junctional groin hemorrhage trainer',
+            ]
+          : [
+              'Sostituzione rapida membrane tracheali e cute sintetica per cricotiroidotomia',
+              'Rifornimento tubi endotracheali, lame bisturi, bougie e set wound packing',
+              'Ricarica sangue sintetico nel formatore per emorragie giunzionali inguinali',
+            ];
       } else if (techNum === 8 || currentTech.specialty?.toLowerCase().includes('ws2')) {
-        techActivityTitle = 'Presidio Skills Lab WS2: Calibrazione Ecografi FAST & Simulatori Intraossei';
-        techBadge = 'SKILLS LAB WS2 (ECO FAST & IO)';
+        techActivityTitle = isEn
+          ? 'Skills Lab WS2 Presence: Calibration of FAST Ultrasounds & IO Simulators'
+          : 'Presidio Skills Lab WS2: Calibrazione Ecografi FAST & Simulatori Intraossei';
+        techBadge = isEn ? 'SKILLS LAB WS2 (FAST ECHO & IO)' : 'SKILLS LAB WS2 (ECO FAST & IO)';
         techBadgeColor = 'bg-purple-950 text-purple-300 border-purple-700';
-        techDuties = [
-          'Caricamento quadri ecografici patologici FAST (tamponamento, emotorace, falda peritoneale)',
-          'Rifornimento gel ecografico e ripristino phantom vascolari ecoguidati',
-          'Sostituzione aghi e test motori dei trapani intraossei (omerale/tibiale)',
-        ];
+        techDuties = isEn
+          ? [
+              'Load pathological FAST ultrasound clips (tamponade, hemothorax, peritoneal fluid)',
+              'Refill ultrasound gel and reset ultrasound-guided vascular phantoms',
+              'Replace needles and test motors for intraosseous drills (humeral/tibial)',
+            ]
+          : [
+              'Caricamento quadri ecografici patologici FAST (tamponamento, emotorace, falda peritoneale)',
+              'Rifornimento gel ecografico e ripristino phantom vascolari ecoguidati',
+              'Sostituzione aghi e test motori dei trapani intraossei (omerale/tibiale)',
+            ];
       } else {
-        techActivityTitle = 'Supporto Logistico e Gestione Scorte Skills Lab WS1 / WS2';
-        techBadge = 'SUPPORTO SKILLS LAB';
+        techActivityTitle = isEn
+          ? 'Logistical Support and Stock Management Skills Lab WS1 / WS2'
+          : 'Supporto Logistico e Gestione Scorte Skills Lab WS1 / WS2';
+        techBadge = isEn ? 'SKILLS LAB SUPPORT' : 'SUPPORTO SKILLS LAB';
         techBadgeColor = 'bg-purple-950 text-purple-300 border-purple-700';
-        techDuties = [
-          'Distribuzione presidi e reintegro continuo consumabili sui banchi di lavoro',
-          'Monitoraggio delle tempistiche di rotazione didattica delle squadre discenti',
-          'Pronto intervento tecnico su chiamata radio per anomalie sui simulatori',
-        ];
+        techDuties = isEn
+          ? [
+              'Device distribution and continuous consumable restocking on workbenches',
+              'Monitoring rotation timing of student teams',
+              'Prompt technical intervention on radio call for simulator issues',
+            ]
+          : [
+              'Distribuzione presidi e reintegro continuo consumabili sui banchi di lavoro',
+              'Monitoraggio delle tempistiche di rotazione didattica delle squadre discenti',
+              'Pronto intervento tecnico su chiamata radio per anomalie sui simulatori',
+            ];
       }
     } else if (isDebrief) {
-      techActivityTitle = 'Regia Video Debriefing, Messa in Sicurezza Simulatori & Pulizia Dispositivi';
-      techBadge = 'REGIA DEBRIEFING & SICUREZZA';
+      techActivityTitle = isEn
+        ? 'Debriefing Video Control, Simulator Securing & Device Cleaning'
+        : 'Regia Video Debriefing, Messa in Sicurezza Simulatori & Pulizia Dispositivi';
+      techBadge = isEn ? 'DEBRIEFING VIDEO & SAFETY' : 'REGIA DEBRIEFING & SICUREZZA';
       techBadgeColor = 'bg-cyan-950 text-cyan-300 border-cyan-700';
-      techDuties = [
-        'Supporto tecnico alla proiezione filmati e telecamere multi-angolo per la Faculty',
-        'Disattivazione temporanea pompe e messa in sicurezza dei circuiti idraulici',
-        'Smaltimento appropriato dei dispositivi contaminati e sanificazione superfici',
-      ];
+      techDuties = isEn
+        ? [
+            'Technical support for video and multi-angle camera projection for Faculty',
+            'Temporary pump shutoff and securing hydraulic lines',
+            'Appropriate disposal of contaminated devices and surface sanitization',
+          ]
+        : [
+            'Supporto tecnico alla proiezione filmati e telecamere multi-angolo per la Faculty',
+            'Disattivazione temporanea pompe e messa in sicurezza dei circuiti idraulici',
+            'Smaltimento appropriato dei dispositivi contaminati e sanificazione superfici',
+          ];
     } else if (isPause) {
-      techActivityTitle = 'Pausa Ristoro Staff Tecnico, Check Batterie & Rifornimento Magazzino';
-      techBadge = 'PAUSA RISTORO & LOGISTICA';
+      techActivityTitle = isEn
+        ? 'Technical Staff Rest Break, Battery Check & Warehouse Restocking'
+        : 'Pausa Ristoro Staff Tecnico, Check Batterie & Rifornimento Magazzino';
+      techBadge = isEn ? 'REST BREAK & LOGISTICS' : 'PAUSA RISTORO & LOGISTICA';
       techBadgeColor = 'bg-neutral-950 text-neutral-400 border-neutral-800';
-      techDuties = [
-        'Turno di pausa e ristoro per il personale tecnico addetto alla simulazione',
-        'Controllo accumulatori elettrici e ricarica stazioni radio/telemetria',
-        'Mantenimento presidio canale radio CH3 attivo per comunicazioni urgenti di regia',
-      ];
+      techDuties = isEn
+        ? [
+            'Rest break shift for simulation technical personnel',
+            'Check power packs and recharge radio/telemetry units',
+            'Maintain active radio CH3 monitoring for urgent messages from Control Room',
+          ]
+        : [
+            'Turno di pausa e ristoro per il personale tecnico addetto alla simulazione',
+            'Controllo accumulatori elettrici e ricarica stazioni radio/telemetria',
+            'Mantenimento presidio canale radio CH3 attivo per comunicazioni urgenti di regia',
+          ];
     } else {
-      techActivityTitle = `Presidio Operativo Postazione: ${stationLocation}`;
-      techBadge = 'PRESIDIO POSTAZIONE';
+      techActivityTitle = isEn
+        ? `Station Operational Presence: ${stationLocation}`
+        : `Presidio Operativo Postazione: ${stationLocation}`;
+      techBadge = isEn ? 'STATION PRESENCE' : 'PRESIDIO POSTAZIONE';
       techBadgeColor = 'bg-neutral-950 text-neutral-300 border-neutral-700';
-      techDuties = [
-        `Presidio tecnico continuo presso ${stationLocation}`,
-        'Assistenza al tutor FAC e alla squadra discenti assegnata',
-        'Mantenimento del contatto radio su CH3 con la regia master',
-      ];
+      techDuties = isEn
+        ? [
+            `Continuous technical presence at ${stationLocation}`,
+            'Assistance to FAC tutor and assigned student team',
+            'Maintain radio contact on CH3 with master control',
+          ]
+        : [
+            `Presidio tecnico continuo presso ${stationLocation}`,
+            'Assistenza al tutor FAC e alla squadra discenti assegnata',
+            'Mantenimento del contatto radio su CH3 con la regia master',
+          ];
     }
 
     // Check if the current technician is directly assigned/involved in this slot's station
@@ -519,62 +655,64 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   const COURSE_BLOCKS = [
     {
       id: 'block-1',
-      title: 'Blocco 1',
+      title: isEn ? 'Block 1' : 'Blocco 1',
       time: '08:45 - 10:45',
       slotIds: ['d2-prealert-1', 'd2-b1-tccc', 'd2-b1-handover', 'd2-b1-sr', 'd2-b1-debrief-sr', 'd3-prealert-1', 'd3-b1-ws', 'd3-b1-sr'],
       summary: activeDay === 2 ? 'ALPHA: TCCC ➔ SR | CHARLIE: SR | BRAVO: WS1 | DELTA: WS2' : 'BRAVO: TCCC | DELTA: SR | ALPHA: WS2 | CHARLIE: WS1',
     },
     {
       id: 'reset-1',
-      title: 'Reset 15\'',
+      title: "Reset 15'",
       time: '10:45 - 11:00',
       slotIds: ['d2-b1-reset', 'd3-b1-reset'],
-      summary: 'Sanificazione Box SR 1-3, spurgo circuiti sangue & ricarica sacche',
+      summary: isEn
+        ? 'Sanitization Box SR 1-3, blood circuit flushing & pouch refill'
+        : 'Sanificazione Box SR 1-3, spurgo circuiti sangue & ricarica sacche',
       isReset: true,
     },
     {
       id: 'block-2',
-      title: 'Blocco 2',
+      title: isEn ? 'Block 2' : 'Blocco 2',
       time: '11:00 - 13:00',
       slotIds: ['d2-b2-tccc', 'd2-b2-handover', 'd2-b2-sr', 'd3-b2-tccc', 'd3-b2-handover', 'd3-b2-sr'],
       summary: activeDay === 2 ? 'DELTA: TCCC ➔ SR | BRAVO: SR | CHARLIE: WS1 | ALPHA: WS2' : 'CHARLIE: TCCC | ALPHA: SR | BRAVO: WS1 | DELTA: WS2',
     },
     {
       id: 'lunch',
-      title: 'Pranzo',
+      title: isEn ? 'Lunch' : 'Pranzo',
       time: '13:00 - 14:00',
       slotIds: ['d2-lunch', 'd3-lunch'],
-      summary: 'Pausa ristoro staff & ricarica telemetrie',
+      summary: isEn ? 'Staff meal break & telemetry recharging' : 'Pausa ristoro staff & ricarica telemetrie',
       isPause: true,
     },
     {
       id: 'block-3',
-      title: 'Blocco 3',
+      title: isEn ? 'Block 3' : 'Blocco 3',
       time: '14:00 - 16:00',
       slotIds: ['d2-b3-tccc', 'd2-b3-handover', 'd2-b3-sr', 'd3-b3-tccc', 'd3-b3-handover', 'd3-b3-sr'],
       summary: activeDay === 2 ? 'BRAVO: TCCC ➔ SR | DELTA: SR | ALPHA: WS1 | CHARLIE: WS2' : 'ALPHA: TCCC | CHARLIE: SR | DELTA: WS1 | BRAVO: WS2',
     },
     {
       id: 'reset-2',
-      title: 'Reset 15\'',
+      title: "Reset 15'",
       time: '16:00 - 16:15',
       slotIds: ['d2-b3-reset', 'd3-b3-reset'],
-      summary: 'Turnaround rapido 15 min per il Blocco 4 finale',
+      summary: isEn ? 'Quick 15-min turnaround for final Block 4' : 'Turnaround rapido 15 min per il Blocco 4 finale',
       isReset: true,
     },
     {
       id: 'block-4',
-      title: 'Blocco 4',
+      title: isEn ? 'Block 4' : 'Blocco 4',
       time: '16:15 - 18:15',
       slotIds: ['d2-b4-tccc', 'd2-b4-handover', 'd2-b4-sr', 'd3-b4-tccc', 'd3-b4-handover', 'd3-b4-sr'],
       summary: activeDay === 2 ? 'CHARLIE: TCCC ➔ SR | ALPHA: SR | DELTA: WS1 | BRAVO: WS2' : 'DELTA: TCCC | BRAVO: SR | CHARLIE: WS2 | ALPHA: WS1',
     },
     {
       id: 'plenary',
-      title: 'Plenaria',
+      title: isEn ? 'Plenary' : 'Plenaria',
       time: '18:15 - 19:00',
       slotIds: ['d2-debrief-day', 'd3-debrief-finale', 'd2-chiusura', 'd3-chiusura'],
-      summary: 'Debriefing collegiale finale e revisione video',
+      summary: isEn ? 'Final collegial debriefing and video review' : 'Debriefing collegiale finale e revisione video',
     },
   ];
 
@@ -585,12 +723,12 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
     let bg = 'bg-neutral-800 text-neutral-200 border-neutral-700';
     let icon = <Activity className="w-3 h-3 shrink-0" />;
-    let typeLabel = 'Clinica';
+    let typeLabel = isEn ? 'Clinical' : 'Clinica';
 
-    if (actTitle.includes('tccc') || actLoc.includes('tattico')) {
+    if (actTitle.includes('tccc') || actLoc.includes('tattico') || actLoc.includes('tactical')) {
       bg = 'bg-emerald-950 text-emerald-300 border-emerald-600';
       icon = <Flame className="w-3 h-3 text-emerald-400 shrink-0" />;
-      typeLabel = 'TCCC Estrazione';
+      typeLabel = isEn ? 'TCCC Extraction' : 'TCCC Estrazione';
     } else if (actTitle.includes('shock') || actLoc.includes('shock') || actTitle.includes('sbar')) {
       bg = 'bg-red-950 text-red-300 border-red-600';
       icon = <HeartPulse className="w-3 h-3 text-red-400 shrink-0" />;
@@ -598,18 +736,18 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     } else if (actLoc.includes('ws1') || actTitle.includes('ws1') || actTitle.includes('airway')) {
       bg = 'bg-purple-950 text-purple-300 border-purple-600';
       icon = <Stethoscope className="w-3 h-3 text-purple-400 shrink-0" />;
-      typeLabel = 'WS1 Airway/Bleed';
+      typeLabel = isEn ? 'WS1 Airway/Bleed' : 'WS1 Airway/Bleed';
     } else if (actLoc.includes('ws2') || actTitle.includes('ws2') || actTitle.includes('fast')) {
       bg = 'bg-cyan-950 text-cyan-300 border-cyan-600';
       icon = <Gauge className="w-3 h-3 text-cyan-400 shrink-0" />;
-      typeLabel = 'WS2 Eco FAST/IO';
+      typeLabel = isEn ? 'WS2 FAST Echo/IO' : 'WS2 Eco FAST/IO';
     } else if (actTitle.includes('briefing') || actTitle.includes('debrief')) {
       bg = 'bg-blue-950 text-blue-300 border-blue-600';
       icon = <Users className="w-3 h-3 text-blue-400 shrink-0" />;
-      typeLabel = 'Debrief / Plenaria';
-    } else if (actTitle.includes('pausa') || actTitle.includes('ristoro')) {
+      typeLabel = isEn ? 'Debrief / Plenary' : 'Debrief / Plenaria';
+    } else if (actTitle.includes('pausa') || actTitle.includes('ristoro') || actTitle.includes('break') || actTitle.includes('lunch')) {
       bg = 'bg-neutral-900 text-neutral-400 border-neutral-700';
-      typeLabel = 'Pausa';
+      typeLabel = isEn ? 'Break' : 'Pausa';
     }
 
     return { bg, icon, typeLabel };
@@ -617,7 +755,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
   const isDayBefore8 = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 0;
   const isMorningCountdown = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 1;
-  const isNightToMorningCountdown = activeDay === 2 && masterCurrentSlot?.id === 'd2-chiusura';
+  const isNightToMorningCountdown = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
 
   const currentSlotInfo = getSlotTechActivity(currentSlot);
   const currentPatient = currentSlotInfo.relevantPatient;
@@ -633,10 +771,10 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[10px] uppercase tracking-wider rounded">
-                DOPPIO FLUSSO SINCRONIZZATO
+                {isEn ? 'DUAL SYNCHRONIZED STREAM' : 'DOPPIO FLUSSO SINCRONIZZATO'}
               </span>
               <span className="text-[11px] font-mono text-neutral-400">
-                Regia Day 0{activeDay} • {dayMasterSlots.length} Fasi Totali
+                {isEn ? 'Control' : 'Regia'} Day 0{activeDay} • {dayMasterSlots.length} {isEn ? 'Total Phases' : 'Fasi Totali'}
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
@@ -749,12 +887,12 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
             <span className="text-white font-bold">{currentTech.name}</span>
             <span className="text-pink-400 text-[11px]">({currentTech.specialty})</span>
             {partnerTech && (
-              <span className="text-neutral-400 text-[11px]">• Coppia: {partnerTech.name}</span>
+              <span className="text-neutral-400 text-[11px]">• {isEn ? 'Pair:' : 'Coppia:'} {partnerTech.name}</span>
             )}
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-            <span className="text-neutral-400 text-[10px] uppercase font-bold">Presidio:</span>
+            <span className="text-neutral-400 text-[10px] uppercase font-bold">{isEn ? 'Station:' : 'Presidio:'}</span>
             {currentTech.assignedStations?.map((st, i) => (
               <span key={i} className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 text-pink-300 rounded font-bold text-[10px]">
                 📍 {st}
@@ -773,16 +911,18 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       {isDayBefore8 && (
         <div className="bg-neutral-900 border-2 border-orange-500/80 p-5 rounded text-center space-y-3 shadow-xl">
           <div className="flex items-center justify-center gap-2 text-orange-400 font-bold uppercase text-xs tracking-widest">
-            <Clock className="w-4 h-4" /> ATTESA APERTURA CORSO ORE 08:30 • SINCRONIZZAZIONE GENERALE
+            <Clock className="w-4 h-4" /> {isEn ? 'AWAITING COURSE OPENING AT 08:30 • GENERAL SYNCHRONIZATION' : 'ATTESA APERTURA CORSO ORE 08:30 • SINCRONIZZAZIONE GENERALE'}
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
-            Briefing Staff Tecnico & Collaudo Linee Radio
+            {isEn ? 'Technical Staff Briefing & Radio Line Testing' : 'Briefing Staff Tecnico & Collaudo Linee Radio'}
           </h3>
           <p className="text-xs sm:text-sm text-neutral-300 max-w-2xl mx-auto font-mono">
-            Discenti in arrivo. Allineamento canali radio CH3 Tecnico, CH1 Regia, verifica serbatoi sangue artificiale nei 3 Ambienti Tattici e collaudo monitor e ventilatori nei 3 Box Shock Room.
+            {isEn
+              ? 'Students arriving. Alignment of radio channels CH3 Tech, CH1 Control, artificial blood tanks inspection in the 3 Tactical Environments and testing of monitors and ventilators in the 3 Shock Room Boxes.'
+              : 'Discenti in arrivo. Allineamento canali radio CH3 Tecnico, CH1 Regia, verifica serbatoi sangue artificiale nei 3 Ambienti Tattici e collaudo monitor e ventilatori nei 3 Box Shock Room.'}
           </p>
           <div className="inline-block bg-neutral-950 px-4 py-2 border border-neutral-800 rounded text-xs font-mono text-orange-400">
-            Apertura operativa del corso alle ore 08:30
+            {isEn ? 'Operational course opening at 08:30' : 'Apertura operativa del corso alle ore 08:30'}
           </div>
         </div>
       )}
@@ -790,13 +930,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       {isMorningCountdown && (
         <div className="bg-gradient-to-r from-orange-950/80 via-neutral-900 to-pink-950/80 border-2 border-orange-500 p-6 rounded shadow-2xl text-center space-y-4 animate-pulse">
           <div className="flex items-center justify-center gap-2 text-orange-300 font-bold uppercase text-xs tracking-widest">
-            <AlertTriangle className="w-4 h-4 text-orange-400 animate-bounce" /> COUNTDOWN 30 MINUTI (08:00 - 08:30) • ALLINEAMENTO TECNICO & SQUADRE
+            <AlertTriangle className="w-4 h-4 text-orange-400 animate-bounce" /> {isEn ? '30-MINUTE COUNTDOWN (08:00 - 08:30) • TECHNICAL & TEAM ALIGNMENT' : 'COUNTDOWN 30 MINUTI (08:00 - 08:30) • ALLINEAMENTO TECNICO & SQUADRE'}
           </div>
           <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-            Presidio Immediato Postazioni & Accoglienza
+            {isEn ? 'Immediate Station Presence & Reception' : 'Presidio Immediato Postazioni & Accoglienza'}
           </h3>
           <p className="text-xs sm:text-sm text-neutral-200 max-w-xl mx-auto font-mono">
-            Le squadre discenti si stanno raggruppando con i rispettivi Faculty. I tecnici devono presidiare la propria postazione e confermare la luce verde via radio CH3.
+            {isEn
+              ? 'Student teams are gathering with their Faculty tutors. Technicians must man their stations and confirm green light on radio CH3.'
+              : 'Le squadre discenti si stanno raggruppando con i rispettivi Faculty. I tecnici devono presidiare la propria postazione e confermare la luce verde via radio CH3.'}
           </p>
           <div className="text-4xl sm:text-5xl font-mono font-black text-orange-400 tracking-wider">
             {formatCumulativeTimer(timerSeconds)}
@@ -807,13 +949,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       {isNightToMorningCountdown && (
         <div className="bg-neutral-900 border-2 border-orange-500/80 p-5 rounded text-center space-y-3 shadow-xl">
           <div className="flex items-center justify-center gap-2 text-orange-400 font-bold uppercase text-xs tracking-widest">
-            <Clock className="w-4 h-4" /> SESSIONE DAY 02 COMPLETATA - TRANSIZIONE VERSO DAY 03
+            <Clock className="w-4 h-4" /> {isEn ? 'DAY 02 SESSION COMPLETED - TRANSITION TO DAY 03' : 'SESSIONE DAY 02 COMPLETATA - TRANSIZIONE VERSO DAY 03'}
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
-            Turnaround Notturno & Rotazione Speculare Day 03
+            {isEn ? 'Overnight Turnaround & Day 03 Specular Rotation' : 'Turnaround Notturno & Rotazione Speculare Day 03'}
           </h3>
           <p className="text-xs sm:text-sm text-neutral-300 max-w-2xl mx-auto font-mono">
-            Tutti i blocchi del Day 02 sono conclusi. Ricarica totale batterie simulatori, reintegro scorte e configurazione speculare dei gruppi per Day 03.
+            {isEn
+              ? 'All Day 02 blocks concluded. Full simulator battery recharging, restocking supplies, and specular group configuration for Day 03.'
+              : 'Tutti i blocchi del Day 02 sono conclusi. Ricarica totale batterie simulatori, reintegro scorte e configurazione speculare dei gruppi per Day 03.'}
           </p>
           <div className="text-3xl sm:text-4xl font-mono font-black text-orange-400 tracking-wider">
             {formatCumulativeTimer(timerSeconds)}
@@ -832,12 +976,12 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
             </span>
             <span className="text-xs font-mono font-black text-pink-400 uppercase tracking-widest">
-              🔴 FASE ATTUALE IN CORSO • REGIA MASTER LIVE
+              {isEn ? '🔴 CURRENT PHASE IN PROGRESS • MASTER LIVE CONTROL' : '🔴 FASE ATTUALE IN CORSO • REGIA MASTER LIVE'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 bg-neutral-950 text-pink-300 border border-pink-600 rounded text-xs font-mono font-bold">
-              Fase {effectiveCurrentIdx + 1} di {dayMasterSlots.length} ({currentSlot?.timeRange})
+              {isEn ? 'Phase' : 'Fase'} {effectiveCurrentIdx + 1} {isEn ? 'of' : 'di'} {dayMasterSlots.length} ({currentSlot?.timeRange})
             </span>
           </div>
         </div>
@@ -857,7 +1001,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono font-black text-pink-400 uppercase tracking-widest">
-                    CRONOMETRO DIGITALE FASE CORRENTE
+                    {isEn ? 'CURRENT PHASE DIGITAL TIMER' : 'CRONOMETRO DIGITALE FASE CORRENTE'}
                   </span>
                   <span
                     className={`px-2 py-0.5 text-[9px] font-mono font-bold border flex items-center gap-1 ${
@@ -871,7 +1015,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                         isTimerRunning ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
                       }`}
                     />
-                    {isTimerRunning ? 'AUTOMAZIONE ATTIVA' : 'IN PAUSA (STANDBY)'}
+                    {isTimerRunning ? (isEn ? 'AUTOMATION ACTIVE' : 'AUTOMAZIONE ATTIVA') : (isEn ? 'PAUSED (STANDBY)' : 'IN PAUSA (STANDBY)')}
                   </span>
                 </div>
 
@@ -888,7 +1032,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     {formatTimer(slotRemainingSeconds)}
                   </div>
                   <div className="text-xs font-mono text-neutral-400">
-                    <span>TEMPO TRASCORSO: </span>
+                    <span>{isEn ? 'ELAPSED TIME: ' : 'TEMPO TRASCORSO: '}</span>
                     <strong className="text-white">
                       {formatTimer(slotElapsedSeconds)}
                     </strong>{' '}
@@ -901,7 +1045,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
             {/* Avanzamento e Toggle Dettagli */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto justify-between md:justify-end">
               <div className="text-right font-mono">
-                <div className="text-[10px] text-neutral-400 uppercase">Avanzamento Fase</div>
+                <div className="text-[10px] text-neutral-400 uppercase">{isEn ? 'Phase Progress' : 'Avanzamento Fase'}</div>
                 <div className="text-lg font-black text-pink-300">
                   {slotProgressPercent}%{' '}
                   <span className="text-xs font-normal text-neutral-400">
@@ -915,7 +1059,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                 onClick={() => setShowDetailedPhases(!showDetailedPhases)}
                 className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-pink-300 hover:text-white border border-pink-700 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
-                <span>{showDetailedPhases ? 'Comprimi Tempi Fasi' : 'Espandi Tempi Fasi'}</span>
+                <span>{showDetailedPhases ? (isEn ? 'Collapse Phase Times' : 'Comprimi Tempi Fasi') : (isEn ? 'Expand Phase Times' : 'Espandi Tempi Fasi')}</span>
                 {showDetailedPhases ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -936,15 +1080,15 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               />
             </div>
             <div className="flex justify-between text-[10px] font-mono text-neutral-500">
-              <span>00:00 (Inizio)</span>
+              <span>00:00 ({isEn ? 'Start' : 'Inizio'})</span>
               <span>
                 {currentSlotInfo.isHandover
-                  ? 'CRITICO: Handover 5 Minuti Tassativo'
+                  ? (isEn ? 'CRITICAL: Mandatory 5-Minute Handover' : 'CRITICO: Handover 5 Minuti Tassativo')
                   : currentSlotInfo.isReset
-                  ? 'CRITICO: Reset 15 Minuti Tassativo'
-                  : `Metà fase (${Math.round(slotDurationMinutes / 2)} min)`}
+                  ? (isEn ? 'CRITICAL: Mandatory 15-Minute Reset' : 'CRITICO: Reset 15 Minuti Tassativo')
+                  : (isEn ? `Mid-phase (${Math.round(slotDurationMinutes / 2)} min)` : `Metà fase (${Math.round(slotDurationMinutes / 2)} min)`)}
               </span>
-              <span>{slotDurationMinutes}:00 (Termine)</span>
+              <span>{slotDurationMinutes}:00 ({isEn ? 'End' : 'Termine'})</span>
             </div>
           </div>
 
@@ -954,12 +1098,12 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5 text-xs font-mono">
                 <span className="text-yellow-400 font-bold uppercase flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-yellow-500" />
-                  TEMPI DELLE FASI INDICATE • {isTacticalBlock ? `BLOCCO FORMATIVO 0${currentBlockNumber} (90 MINUTI)` : currentSlot.title}
+                  {isEn ? 'INDICATED PHASE TIMINGS • ' : 'TEMPI DELLE FASI INDICATE • '}{isTacticalBlock ? (isEn ? `TRAINING BLOCK 0${currentBlockNumber} (90 MINUTES)` : `BLOCCO FORMATIVO 0${currentBlockNumber} (90 MINUTI)`) : currentSlot.title}
                 </span>
                 <span className="text-neutral-400 text-[11px]">
                   {isTacticalBlock
-                    ? 'Scansione rigida in slot da 15 min (TCCC ➔ Handover :30 ➔ Shock Room ➔ Debrief ➔ Reset)'
-                    : 'Punti di controllo e compiti temporali dello slot'}
+                    ? (isEn ? 'Rigid 15-min slot structure (TCCC ➔ Handover :30 ➔ Shock Room ➔ Debrief ➔ Reset)' : 'Scansione rigida in slot da 15 min (TCCC ➔ Handover :30 ➔ Shock Room ➔ Debrief ➔ Reset)')
+                    : (isEn ? 'Slot control points and timed tasks' : 'Punti di controllo e compiti temporali dello slot')}
                 </span>
               </div>
 
@@ -995,16 +1139,16 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                           {phase.isActive ? (
                             <span className="px-2 py-0.5 bg-pink-600 text-white font-mono font-black text-[10px] animate-pulse flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                              IN CORSO ORA
+                              {isEn ? 'RUNNING NOW' : 'IN CORSO ORA'}
                             </span>
                           ) : phase.isCompleted ? (
                             <span className="px-1.5 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 font-mono text-[9px] font-bold flex items-center gap-0.5">
                               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                              COMPLETATA
+                              {isEn ? 'COMPLETED' : 'COMPLETATA'}
                             </span>
                           ) : (
                             <span className="px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono text-[9px]">
-                              IN ATTESA
+                              {isEn ? 'PENDING' : 'IN ATTESA'}
                             </span>
                           )}
                         </div>
@@ -1021,7 +1165,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                           {/* Technical Duty for this phase */}
                           <div className="pt-1.5 mt-1 border-t border-neutral-800/80">
                             <span className="text-[9px] font-mono text-pink-400 uppercase font-black block">
-                              🔧 Mansione Tecnici:
+                              {isEn ? '🔧 Technical Duty:' : '🔧 Mansione Tecnici:'}
                             </span>
                             <p className="text-[10px] font-mono text-neutral-300 leading-tight">
                               {phase.techFocus}
@@ -1051,14 +1195,14 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                         </span>
                         {cp.isActive ? (
                           <span className="px-1.5 py-0.5 bg-pink-600 text-white font-mono text-[9px] font-black animate-pulse">
-                            LIVE ORA
+                            {isEn ? 'LIVE NOW' : 'LIVE ORA'}
                           </span>
                         ) : cp.isCompleted ? (
                           <span className="text-[9px] font-mono text-emerald-400 flex items-center gap-0.5">
-                            <CheckCircle2 className="w-3 h-3" /> FATTO
+                            <CheckCircle2 className="w-3 h-3" /> {isEn ? 'DONE' : 'FATTO'}
                           </span>
                         ) : (
-                          <span className="text-[9px] font-mono text-neutral-500">ATTESA</span>
+                          <span className="text-[9px] font-mono text-neutral-500">{isEn ? 'WAIT' : 'ATTESA'}</span>
                         )}
                       </div>
                       <div className="pt-1.5 space-y-1">
@@ -1091,14 +1235,14 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               } bg-neutral-950 border-2 border-orange-500/80 rounded-lg p-5 shadow-2xl space-y-4 relative overflow-hidden`}
             >
               <div className="absolute top-0 right-0 bg-orange-600 text-black font-mono font-black text-[10px] px-3 py-1 uppercase rounded-bl tracking-wider flex items-center gap-1">
-                <Globe className="w-3 h-3" /> QUADRO PUBBLICO CORSO
+                <Globe className="w-3 h-3" /> {isEn ? 'PUBLIC COURSE OVERVIEW' : 'QUADRO PUBBLICO CORSO'}
               </div>
 
               {/* Titolo e Orario Fase Master */}
               <div className="space-y-1 pr-32">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-orange-950 text-orange-300 border border-orange-700 text-[10px] font-black uppercase rounded">
-                    ORARIO: {currentSlot?.timeRange} ({currentSlot?.durationMinutes} MIN)
+                    {isEn ? 'SCHEDULE:' : 'ORARIO:'} {currentSlot?.timeRange} ({currentSlot?.durationMinutes} MIN)
                   </span>
                   {currentSlotInfo.isHandover && (
                     <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-600 text-[10px] font-black uppercase rounded animate-pulse">
@@ -1112,18 +1256,18 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                   )}
                 </div>
                 <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                  {currentSlot?.title || 'Attività Clinica in Corso'}
+                  {currentSlot?.title || (isEn ? 'Ongoing Clinical Activity' : 'Attività Clinica in Corso')}
                 </h3>
                 <p className="text-xs text-neutral-300 font-mono">
-                  {currentSlot?.description || 'Rotazione didattica delle 12 squadre sui 4 macro-ambienti addestrativi'}
+                  {currentSlot?.description || (isEn ? 'Educational rotation of the 12 teams across the 4 macro training environments' : 'Rotazione didattica delle 12 squadre sui 4 macro-ambienti addestrativi')}
                 </p>
               </div>
 
               {/* Distribuzione dei 4 Macro-Gruppi nel corso */}
               <div className="space-y-2 pt-2 border-t border-neutral-800">
                 <span className="text-[10px] font-mono text-orange-400 uppercase font-bold tracking-widest block flex items-center justify-between">
-                  <span>Posizione & Attività dei 4 Macro-Gruppi (60 Discenti):</span>
-                  <span className="text-[9px] text-neutral-500">15 allievi / 3 squadre per gruppo</span>
+                  <span>{isEn ? 'Position & Activity of the 4 Macro-Groups (60 Students):' : 'Posizione & Attività dei 4 Macro-Gruppi (60 Discenti):'}</span>
+                  <span className="text-[9px] text-neutral-500">{isEn ? '15 students / 3 teams per group' : '15 allievi / 3 squadre per gruppo'}</span>
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono text-xs">
@@ -1149,24 +1293,24 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                         <div className="flex items-center justify-between pb-1.5 border-b border-current/20">
                           <span className="font-black text-xs uppercase flex items-center gap-1.5">
                             {badgeInfo.icon}
-                            Gruppo {groupLabels[grp]}
+                            {isEn ? 'Group' : 'Gruppo'} {groupLabels[grp]}
                           </span>
                           {isVisitingTechStation && (
                             <span className="px-1.5 py-0.5 bg-pink-600 text-white font-black text-[9px] uppercase rounded animate-pulse">
-                              In Tua Postazione
+                              {isEn ? 'At Your Station' : 'In Tua Postazione'}
                             </span>
                           )}
                         </div>
                         <div className="pt-1.5 space-y-0.5">
                           <p className="font-bold text-white text-xs truncate">
-                            {act?.title || 'Attività Formativa'}
+                            {act?.title || (isEn ? 'Training Activity' : 'Attività Formativa')}
                           </p>
                           <p className="text-[11px] text-neutral-300 truncate">
                             {act?.subtitle || badgeInfo.typeLabel}
                           </p>
                           <p className="text-[10px] text-neutral-400 flex items-center gap-1 pt-0.5">
                             <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
-                            <span className="truncate">{act?.location || 'Sede da definire'}</span>
+                            <span className="truncate">{act?.location || (isEn ? 'Location TBD' : 'Sede da definire')}</span>
                           </p>
                         </div>
                       </div>
@@ -1178,16 +1322,16 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               {/* Nota Tattica per il Corso */}
               <div className="bg-neutral-900/90 p-3 rounded border border-neutral-800 text-xs font-mono text-neutral-300 space-y-1">
                 <span className="text-[10px] text-orange-300 uppercase font-black tracking-wider block">
-                  💡 Allineamento Orario Regia & Scadenze Tassative:
+                  {isEn ? '💡 Control Room Schedule Alignment & Mandatory Deadlines:' : '💡 Allineamento Orario Regia & Scadenze Tassative:'}
                 </span>
                 <p className="text-[11px] text-neutral-300">
                   {currentSlotInfo.isHandover
-                    ? 'TASSATIVO AL MINUTO :30: Travaso barellato da Ambiente Tattico a Box Shock Room con report SBAR (max 5 min).'
+                    ? (isEn ? 'MANDATORY AT MINUTE :30: Litter transfer from Tactical Environment to Shock Room Box with SBAR report (max 5 min).' : 'TASSATIVO AL MINUTO :30: Travaso barellato da Ambiente Tattico a Box Shock Room con report SBAR (max 5 min).')
                     : currentSlotInfo.isPreAllerta
-                    ? 'T -15 MINUTI: Le squadre Shock Room entrano in standby attivo nei Box; squadre TCCC allestiscono estrazione barellata.'
+                    ? (isEn ? 'T -15 MINUTES: Shock Room teams enter active standby in Boxes; TCCC teams prepare litter extraction.' : 'T -15 MINUTI: Le squadre Shock Room entrano in standby attivo nei Box; squadre TCCC allestiscono estrazione barellata.')
                     : currentSlotInfo.isReset
-                    ? 'FINE BLOCCO (MIN 75-90): Turnaround rapido 15 minuti. Tutti i box devono ricevere LUCE VERDE entro la ripartenza.'
-                    : 'Le 4 stazioni lavorano in parallelo continuo per 90 minuti secondo la rotazione clinica speculare.'}
+                    ? (isEn ? 'END OF BLOCK (MIN 75-90): Rapid 15-minute turnaround. All boxes must receive GREEN LIGHT before restart.' : 'FINE BLOCCO (MIN 75-90): Turnaround rapido 15 minuti. Tutti i box devono ricevere LUCE VERDE entro la ripartenza.')
+                    : (isEn ? 'The 4 stations operate continuously in parallel for 90 minutes according to specular clinical rotation.' : 'Le 4 stazioni lavorano in parallelo continuo per 90 minuti secondo la rotazione clinica speculare.')}
                 </p>
               </div>
             </div>
@@ -1229,20 +1373,20 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     <div>
                       <span className="text-[10px] font-mono font-bold text-yellow-300 uppercase tracking-widest block">
                         {currentSlotInfo.isPreAllerta
-                          ? 'COUNTDOWN PRE-ALLERTA T -15 MIN'
+                          ? (isEn ? 'PRE-ALERT COUNTDOWN T -15 MIN' : 'COUNTDOWN PRE-ALLERTA T -15 MIN')
                           : currentSlotInfo.isStandbySR
-                          ? 'STANDBY ATTIVO BOX SHOCK ROOM'
-                          : 'TURNAROUND RESET TECNICO 15 MIN'}
+                          ? (isEn ? 'SHOCK ROOM BOX ACTIVE STANDBY' : 'STANDBY ATTIVO BOX SHOCK ROOM')
+                          : (isEn ? 'TECHNICAL RESET TURNAROUND 15 MIN' : 'TURNAROUND RESET TECNICO 15 MIN')}
                       </span>
                       <p className="text-[11px] text-yellow-100">
                         {currentSlotInfo.isReset
-                          ? 'Sanificazione manichini e ricarica sangue prima del blocco successivo.'
-                          : 'Verifica circuiti idraulici e pompe pulsanti su radio CH3.'}
+                          ? (isEn ? 'Manikin sanitization and blood refill before next block.' : 'Sanificazione manichini e ricarica sangue prima del blocco successivo.')
+                          : (isEn ? 'Hydraulic circuit and pulsating pump check on radio CH3.' : 'Verifica circuiti idraulici e pompe pulsanti su radio CH3.')}
                       </p>
                     </div>
                   </div>
                   <div className="bg-neutral-950 px-3 py-1.5 border border-yellow-500 rounded text-right shrink-0">
-                    <span className="text-[9px] font-mono text-neutral-400 uppercase block">Tempo Rimasto</span>
+                    <span className="text-[9px] font-mono text-neutral-400 uppercase block">{isEn ? 'Time Left' : 'Tempo Rimasto'}</span>
                     <span className="text-xl font-mono font-black text-yellow-400">
                       {formatTimer(timerSeconds)}
                     </span>
@@ -1254,11 +1398,11 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               <div className="bg-neutral-900/90 p-3.5 border border-neutral-800 rounded space-y-2 text-xs font-mono">
                 <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800">
                   <span className="text-[10px] text-pink-400 uppercase font-black tracking-wider flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> Postazione: {currentSlotInfo.stationLocation}
+                    <MapPin className="w-3 h-3" /> {isEn ? 'Station:' : 'Postazione:'} {currentSlotInfo.stationLocation}
                   </span>
                   {currentSlotInfo.visitingGroup && (
                     <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 font-black text-[10px] rounded">
-                      Discenti attesi: GRUPPO {currentSlotInfo.visitingGroup}
+                      {isEn ? 'Expected students: GROUP' : 'Discenti attesi: GRUPPO'} {currentSlotInfo.visitingGroup}
                     </span>
                   )}
                 </div>
@@ -1269,17 +1413,19 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                       <span className="text-pink-300">{currentPatient.scenarioCode}</span>: {currentPatient.title}
                     </p>
                     <p className="text-neutral-300 text-[11px]">
-                      <strong>Simulatore:</strong> {currentPatient.simulatori || 'Alta Fedeltà'} • <strong>Moulage:</strong> {currentPatient.moulageProtesi || 'Standard'}
+                      <strong>{isEn ? 'Simulator:' : 'Simulatore:'}</strong> {currentPatient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')} • <strong>Moulage:</strong> {currentPatient.moulageProtesi || 'Standard'}
                     </p>
                     {currentPatient.lesioni && currentPatient.lesioni.length > 0 && (
                       <p className="text-neutral-400 text-[10px] truncate">
-                        <strong>Lesioni:</strong> {currentPatient.lesioni.join('; ')}
+                        <strong>{isEn ? 'Injuries:' : 'Lesioni:'}</strong> {currentPatient.lesioni.join('; ')}
                       </p>
                     )}
                   </div>
                 ) : (
                   <p className="text-neutral-400 text-xs">
-                    Supervisione tecnica di sala, riserva presidi consumabili e coordinamento radio CH3.
+                    {isEn
+                      ? 'Technical floor supervision, backup consumables inventory and CH3 radio coordination.'
+                      : 'Supervisione tecnica di sala, riserva presidi consumabili e coordinamento radio CH3.'}
                   </p>
                 )}
               </div>
@@ -1288,7 +1434,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
               <div className="space-y-1.5 font-mono text-xs">
                 <span className="text-[10px] text-pink-400 uppercase font-black tracking-widest block flex items-center gap-1.5">
                   <CheckSquare className="w-3.5 h-3.5 text-pink-400" />
-                  I Tuoi Compiti Tecnici per questa Fase:
+                  {isEn ? 'Your Technical Tasks for this Phase:' : 'I Tuoi Compiti Tecnici per questa Fase:'}
                 </span>
                 <ul className="space-y-1.5">
                   {currentSlotInfo.techDuties.map((duty, dIdx) => (
@@ -1312,7 +1458,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                       onClick={() => onOpenProtesiModal(currentPatient)}
                       className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5 shadow"
                     >
-                      <ClipboardList className="w-3.5 h-3.5" /> Risorse
+                      <ClipboardList className="w-3.5 h-3.5" /> {isEn ? 'Resources' : 'Risorse'}
                     </button>
                   )}
                   {currentPatient && (
@@ -1321,7 +1467,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                       onClick={() => onOpenChecklist(currentPatient)}
                       className="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5 shadow"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Checklist Scenario
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {isEn ? 'Scenario Checklist' : 'Checklist Scenario'}
                     </button>
                   )}
                   <button
@@ -1329,7 +1475,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     onClick={onSwitchToRegistro}
                     className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold text-xs uppercase rounded cursor-pointer"
                   >
-                    Registro Risorse
+                    {isEn ? 'Resource Registry' : 'Registro Risorse'}
                   </button>
                 </div>
 
@@ -1337,12 +1483,14 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                   type="button"
                   onClick={() =>
                     onSendRadioMessage(
-                      `[DISPACCIO CH3] Postazione ${currentSlotInfo.stationLocation} pronta e presidiata per Fase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
+                      isEn
+                        ? `[CH3 STATUS] Station ${currentSlotInfo.stationLocation} ready and manned for Phase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
+                        : `[STATO CH3] Postazione ${currentSlotInfo.stationLocation} pronta e presidiata per Fase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
                     )
                   }
                   className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <Radio className="w-3.5 h-3.5 text-pink-400" /> Trasmetti OK CH3
+                  <Radio className="w-3.5 h-3.5 text-pink-400" /> {isEn ? 'Status OK CH3' : 'Stato OK CH3'}
                 </button>
               </div>
             </div>
@@ -1359,14 +1507,16 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
             <div>
               <h3 className="text-sm font-black text-white uppercase tracking-tight flex items-center gap-2">
                 <Clock className="w-4 h-4 text-orange-400" />
-                Prossime Fasi in Programma ({futureSlots.length} Fasi Rimanenti)
+                {isEn ? `Upcoming Scheduled Phases (${futureSlots.length} Phases Remaining)` : `Prossime Fasi in Programma (${futureSlots.length} Fasi Rimanenti)`}
               </h3>
               <p className="text-[11px] text-neutral-400 font-mono">
-                La timeline del corso e le tue mansioni tecniche scorrono in parallelo fino a fine giornata
+                {isEn
+                  ? 'Course timeline and technical duties run in parallel until the end of the day'
+                  : 'La timeline del corso e le tue mansioni tecniche scorrono in parallelo fino a fine giornata'}
               </p>
             </div>
             <span className="text-[11px] font-mono text-neutral-400 self-start sm:self-center">
-              Fasi da completare: {effectiveCurrentIdx + 2} - {dayMasterSlots.length}
+              {isEn ? 'Phases to complete:' : 'Fasi da completare:'} {effectiveCurrentIdx + 2} - {dayMasterSlots.length}
             </span>
           </div>
 
@@ -1430,7 +1580,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <Globe className="w-3 h-3" /> Quadro Corso (4 Gruppi):
+                            <Globe className="w-3 h-3" /> {isEn ? 'Course Overview (4 Groups):' : 'Quadro Corso (4 Gruppi):'}
                           </span>
                           {slot.description && (
                             <span className="text-[10px] text-neutral-400 truncate max-w-[200px]">
@@ -1455,7 +1605,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                               >
                                 <span className="font-bold shrink-0">G.{grp}:</span>
                                 <span className="truncate text-white" title={`${act?.title} (${act?.location})`}>
-                                  {act?.location || act?.title || 'Clinica'}
+                                  {act?.location || act?.title || (isEn ? 'Clinical' : 'Clinica')}
                                 </span>
                               </div>
                             );
@@ -1473,7 +1623,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] text-pink-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <Wrench className="w-3 h-3" /> Mansione Tecnica & Postazione:
+                            <Wrench className="w-3 h-3" /> {isEn ? 'Technical Duty & Station:' : 'Mansione Tecnica & Postazione:'}
                           </span>
                           <span className="text-[11px] text-pink-300 font-bold">
                             📍 {slotInfo.stationLocation}
@@ -1486,7 +1636,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
                         <div className="flex items-center justify-between text-[11px] text-neutral-300 pt-1 border-t border-neutral-800/80">
                           <span className="truncate max-w-[250px] text-neutral-400">
-                            {slotPatient ? `Sim: ${slotPatient.simulatori || 'Alta Fedeltà'}` : 'Supporto logistico'}
+                            {slotPatient ? `${isEn ? 'Sim:' : 'Sim:'} ${slotPatient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')}` : (isEn ? 'Logistical support' : 'Supporto logistico')}
                           </span>
                           <div className="flex items-center gap-1 shrink-0">
                             {slotPatient && (
@@ -1495,7 +1645,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                                 onClick={() => onOpenProtesiModal(slotPatient)}
                                 className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[10px] font-bold uppercase rounded cursor-pointer"
                               >
-                                Risorse
+                                {isEn ? 'Resources' : 'Risorse'}
                               </button>
                             )}
                             {slotPatient && (
@@ -1532,17 +1682,17 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span className="font-bold uppercase tracking-wider text-neutral-300">
-                Archivio Fasi Concluse Oggi ({pastSlots.length} Fasi)
+                {isEn ? `Today Completed Phases Archive (${pastSlots.length} Phases)` : `Archivio Fasi Concluse Oggi (${pastSlots.length} Fasi)`}
               </span>
               <span className="text-[11px] text-neutral-500">
-                - {showCompletedArchive ? 'Clicca per comprimere' : 'Nascoste di default (clicca per visualizzare)'}
+                - {showCompletedArchive ? (isEn ? 'Click to collapse' : 'Clicca per comprimere') : (isEn ? 'Hidden by default (click to view)' : 'Nascoste di default (clicca per visualizzare)')}
               </span>
             </div>
             <div className="flex items-center gap-1 text-orange-400 text-xs font-bold">
               {showCompletedArchive ? (
-                <>Nascondi <ChevronUp className="w-4 h-4" /></>
+                <>{isEn ? 'Hide' : 'Nascondi'} <ChevronUp className="w-4 h-4" /></>
               ) : (
-                <>Mostra <ChevronDown className="w-4 h-4" /></>
+                <>{isEn ? 'Show' : 'Mostra'} <ChevronDown className="w-4 h-4" /></>
               )}
             </div>
           </button>
@@ -1568,10 +1718,10 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                             🕒 {slot.timeRange}
                           </span>
                           <span className="px-1.5 py-0.2 bg-emerald-950/60 text-emerald-400 border border-emerald-900 text-[10px] font-bold uppercase rounded">
-                            Completata
+                            {isEn ? 'Completed' : 'Completata'}
                           </span>
                           <span className="text-neutral-400 text-[10px]">
-                            Fase {originalIdx + 1}: {slot.title}
+                            {isEn ? 'Phase' : 'Fase'} {originalIdx + 1}: {slot.title}
                           </span>
                         </div>
                         <h5 className="text-neutral-300 font-bold text-xs mt-0.5">
@@ -1608,10 +1758,10 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       <div className="space-y-4 pt-4 border-t border-neutral-800">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-black text-pink-400 uppercase tracking-widest flex items-center gap-2">
-            <Activity className="w-4 h-4 text-pink-400" /> Scenari Clinici in Carico a {currentTech.badgeCode} ({assignedPatients.length} Pazienti)
+            <Activity className="w-4 h-4 text-pink-400" /> {isEn ? `Clinical Scenarios Assigned to ${currentTech.badgeCode} (${assignedPatients.length} Patients)` : `Scenari Clinici in Carico a ${currentTech.badgeCode} (${assignedPatients.length} Pazienti)`}
           </h3>
           <span className="text-xs font-mono text-neutral-400">
-            Day 0{activeDay} • Postazioni assegnate: {currentTech.assignedStations?.join(', ') || 'TCCC & SR'}
+            Day 0{activeDay} • {isEn ? 'Assigned stations:' : 'Postazioni assegnate:'} {currentTech.assignedStations?.join(', ') || 'TCCC & SR'}
           </span>
         </div>
 
@@ -1633,7 +1783,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 bg-yellow-950 text-yellow-300 border border-yellow-600 text-[10px] font-bold rounded animate-pulse">
-                      ⚠️ In Gestione
+                      ⚠️ {isEn ? 'In Progress' : 'In Gestione'}
                     </span>
                   )}
                 </div>
@@ -1643,17 +1793,17 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     {patient.scenarioCode}
                   </span>
                   <span className="text-neutral-400 text-xs font-bold">
-                    Paziente #{patient.id}
+                    {isEn ? 'Patient #' : 'Paziente #'}{patient.id}
                   </span>
                 </div>
 
                 <h4 className="text-white font-black text-sm uppercase group-hover:text-pink-400 transition-colors truncate">
-                  {patient.title || 'Scenario di Trauma'}
+                  {patient.title || (isEn ? 'Trauma Scenario' : 'Scenario di Trauma')}
                 </h4>
 
                 <div className="text-xs text-neutral-300 font-mono space-y-0.5">
                   <p className="truncate">
-                    <strong>Simulatore:</strong> {patient.simulatori || 'Alta Fedeltà'}
+                    <strong>{isEn ? 'Simulator:' : 'Simulatore:'}</strong> {patient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')}
                   </p>
                   <p className="truncate text-neutral-400">
                     <strong>Moulage:</strong> {patient.moulageProtesi || 'Standard'}
@@ -1662,7 +1812,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
                 <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs font-mono">
                   <span className="text-neutral-400 text-[11px]">
-                    Presidio: <strong>{patient.scenarioCode.includes('TCCC') ? 'Ambiente Tattico' : 'Shock Room'}</strong>
+                    {isEn ? 'Station:' : 'Presidio:'} <strong>{patient.scenarioCode.includes('TCCC') ? (isEn ? 'Tactical Environment' : 'Ambiente Tattico') : 'Shock Room'}</strong>
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -1673,7 +1823,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                       }}
                       className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 text-[10px] font-bold uppercase rounded cursor-pointer"
                     >
-                      Risorse
+                      {isEn ? 'Resources' : 'Risorse'}
                     </button>
                     <span className="text-pink-400 font-black flex items-center gap-1 text-[11px]">
                       Checklist <ChevronRight className="w-3.5 h-3.5" />

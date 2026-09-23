@@ -14,14 +14,15 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
   variant = 'default',
   readOnly = false,
 }) => {
-  const { activeDay, setActiveDay, setActiveSlotIndex } = useCourse();
+  const { activeDay, setActiveDay, setActiveSlotIndex, language } = useCourse();
+  const isEn = language === 'en';
 
   if (readOnly) {
     return (
       <div className={`flex items-center bg-neutral-950 px-2.5 py-1 border border-neutral-700 shadow-md rounded-none ${className}`}>
         <span className="text-[11px] font-mono text-yellow-400 font-bold flex items-center gap-1.5 uppercase tracking-wider">
           <Calendar className="w-3.5 h-3.5 text-yellow-400" />
-          <span>GIORNO 0{activeDay} ({activeDay === 2 ? 'Day 2' : 'Day 3'})</span>
+          <span>{isEn ? `DAY 0${activeDay}` : `GIORNO 0${activeDay}`} ({activeDay === 2 ? 'Day 2' : 'Day 3'})</span>
         </span>
       </div>
     );
@@ -46,7 +47,7 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
     <div className={`flex items-center bg-neutral-950 p-1 border border-neutral-700 shadow-md rounded ${className}`}>
       <span className="text-[10px] sm:text-[11px] font-mono text-neutral-400 font-bold px-1.5 sm:px-2 flex items-center gap-1 uppercase tracking-wider">
         <Calendar className="w-3.5 h-3.5 text-yellow-400" />
-        <span className="hidden xs:inline">GIORNO:</span>
+        <span className="hidden xs:inline">{isEn ? 'DAY:' : 'GIORNO:'}</span>
       </span>
       <div className="flex items-center gap-1">
         <button
@@ -57,7 +58,7 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
               ? activeBg
               : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
           }`}
-          title="Seleziona Giorno 2 di Corso"
+          title={isEn ? 'Select Course Day 2' : 'Seleziona Giorno 2 di Corso'}
         >
           <Sun className="w-3.5 h-3.5" />
           <span>DAY 02</span>
@@ -70,7 +71,7 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
               ? activeBg
               : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
           }`}
-          title="Seleziona Giorno 3 di Corso"
+          title={isEn ? 'Select Course Day 3' : 'Seleziona Giorno 3 di Corso'}
         >
           <Moon className="w-3.5 h-3.5" />
           <span>DAY 03</span>

@@ -38,10 +38,10 @@ export const DirettoriView: React.FC = () => {
     directors.find((d) => d.id === selectedDirectorId) ||
     directors[0] || {
       id: 'dir-1',
-      name: 'Direttore Scientifico',
-      title: 'Direttore Scientifico',
-      role: 'Direttore Scientifico',
-      nationality: 'Italiana',
+      name: isEn ? 'Scientific Director' : 'Direttore Scientifico',
+      title: isEn ? 'Scientific Director' : 'Direttore Scientifico',
+      role: isEn ? 'Scientific Director' : 'Direttore Scientifico',
+      nationality: isEn ? 'Italian' : 'Italiana',
       phone: '+39 000 000000',
       email: 'direzione@traumasim.it',
       organization: 'Trauma Center Academy',

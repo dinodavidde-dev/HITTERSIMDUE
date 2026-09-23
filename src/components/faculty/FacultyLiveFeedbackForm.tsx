@@ -40,21 +40,21 @@ interface FacultyLiveFeedbackFormProps {
 }
 
 // Rapid behavioral & clinical feedback tags
-const RAPID_FEEDBACK_TAGS: { label: string; type: 'strength' | 'gap'; category: string }[] = [
-  { label: '🎯 Leadership Chiara & Diretta', type: 'strength', category: 'CRM' },
-  { label: '🗣️ Comunicazione Closed-Loop', type: 'strength', category: 'CRM' },
-  { label: '⚡ Applicazione TQ Rapida (<30s)', type: 'strength', category: 'Tech' },
-  { label: '🫁 Decompressione Torace Immediata', type: 'strength', category: 'Tech' },
-  { label: '📋 Algoritmo C-ABCDE Rispettato', type: 'strength', category: 'ABCDE' },
-  { label: '🔄 Rivalutazione Dinamica Puntuale', type: 'strength', category: 'ABCDE' },
-  { label: '⏱️ Gestione Ottimale dei Tempi', type: 'strength', category: 'Safety' },
-  { label: '🤝 Handover SBAR Fluido & Strutturato', type: 'strength', category: 'SBAR' },
-  { label: '⚠️ Ritardo Decompressione Toracica', type: 'gap', category: 'Tech' },
-  { label: '⚠️ Sovrapposizione Voci nel Team', type: 'gap', category: 'CRM' },
-  { label: '⚠️ Mancata Rivalutazione Polsi Distali', type: 'gap', category: 'ABCDE' },
-  { label: '⚠️ SBAR Incompleto / Mancano Dati', type: 'gap', category: 'SBAR' },
-  { label: '⚠️ Fissaggio Avanzato Vie Aeree Lento', type: 'gap', category: 'Tech' },
-  { label: '⚠️ Sottostima Perdita Emorragica', type: 'gap', category: 'Safety' },
+const getRapidFeedbackTags = (isEn: boolean): { label: string; type: 'strength' | 'gap'; category: string }[] => [
+  { label: isEn ? '🎯 Clear & Direct Leadership' : '🎯 Leadership Chiara & Diretta', type: 'strength', category: 'CRM' },
+  { label: isEn ? '🗣️ Closed-Loop Communication' : '🗣️ Comunicazione Closed-Loop', type: 'strength', category: 'CRM' },
+  { label: isEn ? '⚡ Rapid TQ Application (<30s)' : '⚡ Applicazione TQ Rapida (<30s)', type: 'strength', category: 'Tech' },
+  { label: isEn ? '🫁 Immediate Chest Decompression' : '🫁 Decompressione Torace Immediata', type: 'strength', category: 'Tech' },
+  { label: isEn ? '📋 C-ABCDE Algorithm Followed' : '📋 Algoritmo C-ABCDE Rispettato', type: 'strength', category: 'ABCDE' },
+  { label: isEn ? '🔄 Timely Dynamic Re-evaluation' : '🔄 Rivalutazione Dinamica Puntuale', type: 'strength', category: 'ABCDE' },
+  { label: isEn ? '⏱️ Optimal Time Management' : '⏱️ Gestione Ottimale dei Tempi', type: 'strength', category: 'Safety' },
+  { label: isEn ? '🤝 Smooth & Structured SBAR Handover' : '🤝 Handover SBAR Fluido & Strutturato', type: 'strength', category: 'SBAR' },
+  { label: isEn ? '⚠️ Delayed Chest Decompression' : '⚠️ Ritardo Decompressione Toracica', type: 'gap', category: 'Tech' },
+  { label: isEn ? '⚠️ Team Talking Over Each Other' : '⚠️ Sovrapposizione Voci nel Team', type: 'gap', category: 'CRM' },
+  { label: isEn ? '⚠️ Missed Distal Pulse Check' : '⚠️ Mancata Rivalutazione Polsi Distali', type: 'gap', category: 'ABCDE' },
+  { label: isEn ? '⚠️ Incomplete SBAR / Missing Data' : '⚠️ SBAR Incompleto / Mancano Dati', type: 'gap', category: 'SBAR' },
+  { label: isEn ? '⚠️ Slow Advanced Airway Securing' : '⚠️ Fissaggio Avanzato Vie Aeree Lento', type: 'gap', category: 'Tech' },
+  { label: isEn ? '⚠️ Underestimated Hemorrhagic Loss' : '⚠️ Sottostima Perdita Emorragica', type: 'gap', category: 'Safety' },
 ];
 
 export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = ({
@@ -76,6 +76,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
   } = useCourse();
 
   const isEn = language === 'en';
+  const rapidFeedbackTags = getRapidFeedbackTags(isEn);
 
   // Identify current faculty member
   const currentFaculty =
@@ -98,7 +99,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
     day: (activeDay === 3 ? 3 : 2) as CourseDay,
     period: 'mattina',
     phase: 'EXTRA',
-    title: 'Scenario Day 2 Mattina • TCCC Extra-Ospedaliero',
+    title: isEn ? 'Day 2 Morning Scenario • Pre-Hospital TCCC' : 'Scenario Day 2 Mattina • TCCC Extra-Ospedaliero',
     scenarioCode: 'Scenario Extra TCCC D2M',
     patientId: 201,
   });
@@ -113,19 +114,34 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
   });
 
   // Selected quick tags
-  const [selectedTags, setSelectedTags] = useState<string[]>(['🎯 Leadership Chiara & Diretta', '⚡ Applicazione TQ Rapida (<30s)']);
+  const [selectedTags, setSelectedTags] = useState<string[]>([
+    isEn ? '🎯 Clear & Direct Leadership' : '🎯 Leadership Chiara & Diretta',
+    isEn ? '⚡ Rapid TQ Application (<30s)' : '⚡ Applicazione TQ Rapida (<30s)',
+  ]);
 
   // Procedures Completed
   const [proceduresCompleted, setProceduresCompleted] = useState<string[]>([
-    'Applicazione Tourniquet TQ',
-    'Decompressione Toracica con Ago ND',
-    'Controllo Vie Aeree C-ABCDE',
+    isEn ? 'TQ Tourniquet Application' : 'Applicazione Tourniquet TQ',
+    isEn ? 'Needle Chest Decompression ND' : 'Decompressione Toracica con Ago ND',
+    isEn ? 'C-ABCDE Airway Control' : 'Controllo Vie Aeree C-ABCDE',
   ]);
 
   // Qualitative Feedback Notes
-  const [strengths, setStrengths] = useState<string>('Eccellente coesione di squadra, chiara attribuzione dei ruoli e rispetto rigoroso della priorità di emostasi.');
-  const [criticalIssues, setCriticalIssues] = useState<string>('Migliorare la precisione dell\'handover SBAR per la trasmissione al team di Shock Room.');
-  const [debriefingActionItems, setDebriefingActionItems] = useState<string>('Focalizzare il debriefing sul timing di rivalutazione post-manovra e protocollo massivo.');
+  const [strengths, setStrengths] = useState<string>(
+    isEn
+      ? 'Excellent team cohesion, clear role assignment, and rigorous adherence to hemostasis priority.'
+      : 'Eccellente coesione di squadra, chiara attribuzione dei ruoli e rispetto rigoroso della priorità di emostasi.'
+  );
+  const [criticalIssues, setCriticalIssues] = useState<string>(
+    isEn
+      ? 'Improve SBAR handover precision for transmission to the Shock Room team.'
+      : 'Migliorare la precisione dell\'handover SBAR per la trasmissione al team di Shock Room.'
+  );
+  const [debriefingActionItems, setDebriefingActionItems] = useState<string>(
+    isEn
+      ? 'Focus debriefing on post-maneuver re-evaluation timing and massive protocol.'
+      : 'Focalizzare il debriefing sul timing di rivalutazione post-manovra e protocollo massivo.'
+  );
 
   // UI States
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,18 +167,18 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
 
   // Standard Available Procedures List
   const availableProceduresList = [
-    'Applicazione Tourniquet TQ',
-    'Decompressione Toracica con Ago ND',
-    'Cricotirotomia d\'Urgenza (CRIC)',
-    'Drenaggio Toracico a Tubo (Bulau)',
-    'Resuscitative Thoracotomy (Toracotomia)',
-    'REBOA (Occlusione Aortica Endovascolare)',
-    'Immobilizzazione Bacino con Fascia Pelvica',
-    'Controllo Vie Aeree & Intubazione Video-guidata',
-    'Accesso Intraosseo IO / Vascolare',
-    'Handover SBAR Standardizzato',
-    'Triage Tattico START / SALT',
-    'Bendaggio Compressivo Emostatico con Garze Pro-coagulanti',
+    isEn ? 'TQ Tourniquet Application' : 'Applicazione Tourniquet TQ',
+    isEn ? 'Needle Chest Decompression ND' : 'Decompressione Toracica con Ago ND',
+    isEn ? 'Emergency Cricothyroidotomy (CRIC)' : 'Cricotirotomia d\'Urgenza (CRIC)',
+    isEn ? 'Chest Tube Drainage (Bulau)' : 'Drenaggio Toracico a Tubo (Bulau)',
+    isEn ? 'Resuscitative Thoracotomy' : 'Resuscitative Thoracotomy (Toracotomia)',
+    isEn ? 'REBOA (Endovascular Aortic Occlusion)' : 'REBOA (Occlusione Aortica Endovascolare)',
+    isEn ? 'Pelvic Binder Immobilization' : 'Immobilizzazione Bacino con Fascia Pelvica',
+    isEn ? 'Airway Management & Video-Guided Intubation' : 'Controllo Vie Aeree & Intubazione Video-guidata',
+    isEn ? 'Intraosseous IO / Vascular Access' : 'Accesso Intraosseo IO / Vascolare',
+    isEn ? 'Standardized SBAR Handover' : 'Handover SBAR Standardizzato',
+    isEn ? 'START / SALT Tactical Triage' : 'Triage Tattico START / SALT',
+    isEn ? 'Hemostatic Pressure Bandage with Pro-coagulant Gauze' : 'Bendaggio Compressivo Emostatico con Garze Pro-coagulanti',
   ];
 
   const handleScorePreset = (level: number) => {
@@ -181,7 +197,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
     );
 
     // Auto append to strengths or critical issues based on tag type
-    const tagObj = RAPID_FEEDBACK_TAGS.find((t) => t.label === tag);
+    const tagObj = rapidFeedbackTags.find((t) => t.label === tag);
     if (tagObj) {
       if (tagObj.type === 'strength' && !strengths.includes(tagObj.label)) {
         setStrengths((prev) => (prev ? `${prev}; ${tagObj.label}` : tagObj.label));
@@ -284,7 +300,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           <div className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 flex items-center gap-2">
             <Cloud className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             <span className="text-[11px] font-mono text-emerald-300 font-bold">
-              {syncStatus.isOnline ? 'Cloud Connesso' : 'Locale'}
+              {syncStatus.isOnline ? (isEn ? 'Cloud Connected' : 'Cloud Connesso') : (isEn ? 'Local' : 'Locale')}
             </span>
           </div>
           {submittedTimestamp && (
@@ -313,7 +329,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           >
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
-                Squadra {t.id} ({t.name}) - Gruppo {t.groupId} {t.id === myAssignedTeam.id ? '★ (Mia Assegnata)' : ''}
+                {isEn ? 'Team' : 'Squadra'} {t.id} ({t.name}) - {isEn ? 'Group' : 'Gruppo'} {t.groupId} {t.id === myAssignedTeam.id ? (isEn ? '★ (Assigned to Me)' : '★ (Mia Assegnata)') : ''}
               </option>
             ))}
           </select>
@@ -321,14 +337,14 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           <div
             className="w-5 h-5 rounded-full border border-white/40 flex-shrink-0"
             style={{ backgroundColor: team.color }}
-            title={`Colore Squadra: ${team.color}`}
+            title={`Color: ${team.color}`}
           />
         </div>
 
         {/* Scenario Selection */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-black uppercase text-neutral-400 font-mono">
-            {isEn ? 'SCENARIO PROVE:' : 'PROVA SCENARIO:'}
+            {isEn ? 'SCENARIO TRIAL:' : 'PROVA SCENARIO:'}
           </span>
           <select
             id="faculty-feedback-scenario-selector"
@@ -340,7 +356,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   day: 2,
                   period: 'mattina',
                   phase: 'EXTRA',
-                  title: 'Day 2 Mattina • TCCC Extra-Ospedaliero',
+                  title: isEn ? 'Day 2 Morning • Pre-Hospital TCCC' : 'Day 2 Mattina • TCCC Extra-Ospedaliero',
                   scenarioCode: 'Scenario Extra TCCC D2M',
                   patientId: 201,
                 });
@@ -349,7 +365,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   day: 2,
                   period: 'pomeriggio',
                   phase: 'INTRA',
-                  title: 'Day 2 Pomeriggio • Shock Room DEA',
+                  title: isEn ? 'Day 2 Afternoon • ED Shock Room' : 'Day 2 Pomeriggio • Shock Room DEA',
                   scenarioCode: 'Scenario Intra DEA D2P',
                   patientId: 202,
                 });
@@ -358,8 +374,8 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
             }}
             className="bg-neutral-900 border border-neutral-700 text-neutral-200 font-bold text-xs px-3 py-1.5 focus:outline-hidden cursor-pointer"
           >
-            <option value="2-mattina">Giorno 2 Mattina (Extra TCCC)</option>
-            <option value="2-pomeriggio">Giorno 2 Pomeriggio (Intra Shock Room)</option>
+            <option value="2-mattina">{isEn ? 'Day 2 Morning (Extra TCCC)' : 'Giorno 2 Mattina (Extra TCCC)'}</option>
+            <option value="2-pomeriggio">{isEn ? 'Day 2 Afternoon (Intra Shock Room)' : 'Giorno 2 Pomeriggio (Intra Shock Room)'}</option>
           </select>
         </div>
 
@@ -397,7 +413,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-400" />
             <span className="text-xs font-black uppercase text-neutral-300 font-mono">
-              {isEn ? 'QUICK SCORE PRESET:' : 'MACRO-PUNTEGGIO RAPIDO (TUTTE LE 5 DIMENSIONI):'}
+              {isEn ? 'QUICK SCORE PRESET (ALL 5 DIMENSIONS):' : 'MACRO-PUNTEGGIO RAPIDO (TUTTE LE 5 DIMENSIONI):'}
             </span>
           </div>
 
@@ -408,28 +424,28 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
               className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-600 text-emerald-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center gap-1 transition-colors"
             >
               <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-              <span>5/5 Eccellente</span>
+              <span>5/5 {isEn ? 'Excellent' : 'Eccellente'}</span>
             </button>
             <button
               type="button"
               onClick={() => handleScorePreset(4)}
               className="px-2.5 py-1 bg-blue-950 hover:bg-blue-900 border border-blue-600 text-blue-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center gap-1 transition-colors"
             >
-              <span>4/5 Competente</span>
+              <span>4/5 {isEn ? 'Competent' : 'Competente'}</span>
             </button>
             <button
               type="button"
               onClick={() => handleScorePreset(3)}
               className="px-2.5 py-1 bg-amber-950 hover:bg-amber-900 border border-amber-600 text-amber-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center gap-1 transition-colors"
             >
-              <span>3/5 Da Perfezionare</span>
+              <span>3/5 {isEn ? 'To Improve' : 'Da Perfezionare'}</span>
             </button>
             <button
               type="button"
               onClick={() => handleScorePreset(2)}
               className="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-600 text-red-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center gap-1 transition-colors"
             >
-              <span>2/5 Criticità</span>
+              <span>2/5 {isEn ? 'Critical' : 'Criticità'}</span>
             </button>
           </div>
         </div>
@@ -439,7 +455,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
             <h4 className="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
               <Award className="w-4 h-4 text-emerald-400" />
-              <span>{isEn ? 'CORE CLINICAL & CRM COMPETENCY RUBRICS' : 'VALUTAZIONE DIMENSIONI CLINICHE E CRM (SCALA 1-5)'}</span>
+              <span>{isEn ? 'CORE CLINICAL & CRM COMPETENCY RUBRICS (1-5 SCALE)' : 'VALUTAZIONE DIMENSIONI CLINICHE E CRM (SCALA 1-5)'}</span>
             </h4>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-neutral-400">{isEn ? 'Average:' : 'Media:'}</span>
@@ -458,7 +474,9 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   <HeartPulse className="w-3.5 h-3.5 text-red-400" />
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1 leading-snug">
-                  Aderenza alla sequenza algoritmica C-ABCDE e priorità emorragiche.
+                  {isEn
+                    ? 'Adherence to algorithmic C-ABCDE sequence and hemorrhage priority.'
+                    : 'Aderenza alla sequenza algoritmica C-ABCDE e priorità emorragiche.'}
                 </p>
               </div>
               <div className="flex items-center justify-between gap-1 pt-2 border-t border-neutral-850">
@@ -483,11 +501,15 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
             <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-2 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-white uppercase font-mono">2. Tecniche</span>
+                  <span className="text-xs font-black text-white uppercase font-mono">
+                    2. {isEn ? 'Technical' : 'Tecniche'}
+                  </span>
                   <Stethoscope className="w-3.5 h-3.5 text-cyan-400" />
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1 leading-snug">
-                  Esecuzione corretta di CRIC, TQ, drenaggio torace, REBOA e accessi.
+                  {isEn
+                    ? 'Correct execution of CRIC, TQ, chest tube, REBOA and vascular access.'
+                    : 'Esecuzione corretta di CRIC, TQ, drenaggio torace, REBOA e accessi.'}
                 </p>
               </div>
               <div className="flex items-center justify-between gap-1 pt-2 border-t border-neutral-850">
@@ -512,11 +534,15 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
             <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-2 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-white uppercase font-mono">3. CRM & Team</span>
+                  <span className="text-xs font-black text-white uppercase font-mono">
+                    3. {isEn ? 'CRM & Team' : 'CRM & Team'}
+                  </span>
                   <Users className="w-3.5 h-3.5 text-amber-400" />
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1 leading-snug">
-                  Leadership chiara, comunicazione closed-loop e gestione stress.
+                  {isEn
+                    ? 'Clear leadership, closed-loop communication and stress management.'
+                    : 'Leadership chiara, comunicazione closed-loop e gestione stress.'}
                 </p>
               </div>
               <div className="flex items-center justify-between gap-1 pt-2 border-t border-neutral-850">
@@ -545,7 +571,9 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1 leading-snug">
-                  Passaggio di consegne sintetico, strutturato e senza perdite di dati.
+                  {isEn
+                    ? 'Concise, structured handover with no data loss.'
+                    : 'Passaggio di consegne sintetico, strutturato e senza perdite di dati.'}
                 </p>
               </div>
               <div className="flex items-center justify-between gap-1 pt-2 border-t border-neutral-850">
@@ -570,11 +598,15 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
             <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-2 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-white uppercase font-mono">5. Sicurezza</span>
+                  <span className="text-xs font-black text-white uppercase font-mono">
+                    5. {isEn ? 'Safety' : 'Sicurezza'}
+                  </span>
                   <Clock className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1 leading-snug">
-                  Decision-making tempestivo, sicurezza scena e prevenzione ipotermia.
+                  {isEn
+                    ? 'Timely decision-making, scene safety and hypothermia prevention.'
+                    : 'Decision-making tempestivo, sicurezza scena e prevenzione ipotermia.'}
                 </p>
               </div>
               <div className="flex items-center justify-between gap-1 pt-2 border-t border-neutral-850">
@@ -605,12 +637,12 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
               <span>{isEn ? 'ONE-TAP RAPID FEEDBACK TAGS (CLINICAL & BEHAVIORAL):' : 'TAG RAPIDI DI OSSERVAZIONE CLINICA E COMPORTAMENTALE:'}</span>
             </span>
             <span className="text-[10px] font-mono text-neutral-400">
-              {selectedTags.length} Selezionati
+              {selectedTags.length} {isEn ? 'Selected' : 'Selezionati'}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {RAPID_FEEDBACK_TAGS.map((tag) => {
+            {rapidFeedbackTags.map((tag) => {
               const isSelected = selectedTags.includes(tag.label);
               return (
                 <button
@@ -653,7 +685,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                     onClick={handleSelectAllProcedures}
                     className="text-[11px] font-mono font-bold text-emerald-400 hover:underline cursor-pointer"
                   >
-                    ✓ Seleziona Tutte
+                    ✓ {isEn ? 'Select All' : 'Seleziona Tutte'}
                   </button>
                   <span className="text-neutral-600">|</span>
                   <button
@@ -661,7 +693,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                     onClick={handleClearProcedures}
                     className="text-[11px] font-mono font-bold text-neutral-400 hover:underline cursor-pointer"
                   >
-                    Deseleziona
+                    {isEn ? 'Clear' : 'Deseleziona'}
                   </button>
                 </div>
               </div>
@@ -704,7 +736,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   rows={3}
                   value={strengths}
                   onChange={(e) => setStrengths(e.target.value)}
-                  placeholder="Es. Emostasi rapida, leadership serena..."
+                  placeholder={isEn ? 'E.g., Rapid hemostasis, calm leadership...' : 'Es. Emostasi rapida, leadership serena...'}
                   className="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 p-2.5 text-xs text-white focus:outline-hidden"
                 />
               </div>
@@ -717,7 +749,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   rows={3}
                   value={criticalIssues}
                   onChange={(e) => setCriticalIssues(e.target.value)}
-                  placeholder="Es. Mancata rivalutazione polsi dopo TQ..."
+                  placeholder={isEn ? 'E.g., Missing pulse check after TQ...' : 'Es. Mancata rivalutazione polsi dopo TQ...'}
                   className="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 p-2.5 text-xs text-white focus:outline-hidden"
                 />
               </div>
@@ -730,7 +762,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                   rows={3}
                   value={debriefingActionItems}
                   onChange={(e) => setDebriefingActionItems(e.target.value)}
-                  placeholder="Es. Rivedere algoritmo C-ABCDE per Shock Room..."
+                  placeholder={isEn ? 'E.g., Review C-ABCDE algorithm for Shock Room...' : 'Es. Rivedere algoritmo C-ABCDE per Shock Room...'}
                   className="w-full bg-neutral-950 border border-neutral-700 focus:border-emerald-500 p-2.5 text-xs text-white focus:outline-hidden"
                 />
               </div>
@@ -751,7 +783,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
                 setStrengths(e.target.value);
                 setDebriefingActionItems(e.target.value);
               }}
-              placeholder="Inserisci la nota sintetica per il debriefing plenario e la sincronizzazione col Direttore..."
+              placeholder={isEn ? 'Enter concise note for plenary debriefing and Director synchronization...' : 'Inserisci la nota sintetica per il debriefing plenario e la sincronizzazione col Direttore...'}
               className="w-full bg-neutral-900 border border-neutral-700 focus:border-orange-500 p-3 text-xs text-white focus:outline-hidden"
             />
           </div>
@@ -762,7 +794,7 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
           <div className="flex items-center gap-2 text-xs text-neutral-400">
             <User className="w-4 h-4 text-emerald-400" />
             <span>
-              Valutatore: <strong>{currentFaculty.name}</strong> • Squadra: <strong>{team.name}</strong>
+              {isEn ? 'Evaluator:' : 'Valutatore:'} <strong>{currentFaculty.name}</strong> • {isEn ? 'Team:' : 'Squadra:'} <strong>{team.name}</strong>
             </span>
           </div>
 
@@ -794,10 +826,18 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
               <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
               <div>
                 <div className="font-black text-white uppercase">
-                  FEEDBACK REGISTRATO & SINCRONIZZATO CON SUCCESSO!
+                  {isEn ? 'FEEDBACK RECORDED & SYNCED SUCCESSFULLY!' : 'FEEDBACK REGISTRATO & SINCRONIZZATO CON SUCCESSO!'}
                 </div>
                 <div className="text-[11px] text-emerald-300">
-                  La scheda di valutazione per la <strong>Squadra {team.id} ({scenarioSlot.title})</strong> è ora visibile in tempo reale nella dashboard aggregata del Direttore di Corso.
+                  {isEn ? (
+                    <>
+                      The evaluation form for <strong>Team {team.id} ({scenarioSlot.title})</strong> is now visible in real time in the Course Director aggregate dashboard.
+                    </>
+                  ) : (
+                    <>
+                      La scheda di valutazione per la <strong>Squadra {team.id} ({scenarioSlot.title})</strong> è ora visibile in tempo reale nella dashboard aggregata del Direttore di Corso.
+                    </>
+                  )}
                 </div>
               </div>
             </div>

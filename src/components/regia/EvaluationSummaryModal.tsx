@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Faculty, Team, TeamEvaluation } from '../../types';
 import { getTeamCodeName } from '../../utils/teamUtils';
+import { useCourse } from '../../context/CourseContext';
 
 interface EvaluationSummaryModalProps {
   isOpen: boolean;
@@ -45,6 +46,8 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
   onSendReminderToFaculty,
   onOpenDirectEvaluation,
 }) => {
+  const { language } = useCourse();
+  const isEn = language === 'en';
   const [reminderSent, setReminderSent] = useState(false);
 
   if (!isOpen) return null;
@@ -97,13 +100,13 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase font-mono tracking-widest px-2 py-0.5 bg-black/60 border border-white/20 text-white">
-                  DEBRIEFING & VALUTAZIONE CLINICA • {getTeamCodeName(team)}
+                  {isEn ? 'CLINICAL EVALUATION & DEBRIEFING' : 'DEBRIEFING & VALUTAZIONE CLINICA'} • {getTeamCodeName(team)}
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-white uppercase mt-0.5">
                 {isEvaluated
-                  ? '✅ Valutazione Registrata dal Tutor'
-                  : '⚠️ Valutazione In Attesa (Feedback Pending)'}
+                  ? (isEn ? '✅ Evaluation Logged by Tutor' : '✅ Valutazione Registrata dal Tutor')
+                  : (isEn ? '⚠️ Pending Evaluation (Feedback Pending)' : '⚠️ Valutazione In Attesa (Feedback Pending)')}
               </h3>
             </div>
           </div>
@@ -111,7 +114,7 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-white p-1.5 transition-colors cursor-pointer bg-neutral-900 border border-neutral-800"
-            aria-label="Chiudi finestra"
+            aria-label={isEn ? 'Close modal' : 'Chiudi finestra'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -129,17 +132,17 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
               <div>
                 <span className="text-sm font-black text-white uppercase">{getTeamCodeName(team)}</span>
                 <span className="text-[11px] text-neutral-400 font-mono block">
-                  Gruppo {team.groupId} • {scenarioCode || 'Scenario Operativo'}
+                  {isEn ? `Group ${team.groupId}` : `Gruppo ${team.groupId}`} • {scenarioCode || (isEn ? 'Operational Scenario' : 'Scenario Operativo')}
                 </span>
               </div>
             </div>
 
             <div className="text-left sm:text-right">
               <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold block">
-                FACULTY / TUTOR ASSEGNATO:
+                {isEn ? 'ASSIGNED FACULTY / TUTOR:' : 'FACULTY / TUTOR ASSEGNATO:'}
               </span>
               <span className="text-white font-bold text-xs">
-                {faculty ? faculty.name : 'Faculty di postazione'}
+                {faculty ? faculty.name : (isEn ? 'Station Faculty' : 'Faculty di postazione')}
               </span>
               {faculty?.organization && (
                 <span className="text-[10px] text-neutral-400 block">{faculty.organization}</span>
@@ -154,7 +157,7 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
               <div className="bg-gradient-to-r from-emerald-950 to-neutral-900 border-2 border-emerald-600 p-4 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-emerald-400 uppercase font-black tracking-widest block">
-                    PUNTEGGIO MEDIO GLOBALE:
+                    {isEn ? 'GLOBAL AVERAGE SCORE:' : 'PUNTEGGIO MEDIO GLOBALE:'}
                   </span>
                   <div className="flex items-baseline gap-2 mt-0.5">
                     <span className="text-3xl font-black font-mono text-emerald-400">
@@ -167,9 +170,9 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
                 </div>
 
                 <div className="text-right text-[11px] font-mono text-neutral-400">
-                  <span>Registrata il {new Date(evaluation.timestamp).toLocaleDateString('it-IT')}</span>
+                  <span>{isEn ? 'Logged on' : 'Registrata il'} {new Date(evaluation.timestamp).toLocaleDateString(isEn ? 'en-US' : 'it-IT')}</span>
                   <span className="block text-emerald-400 font-bold">
-                    ore {new Date(evaluation.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {isEn ? 'at' : 'ore'} {new Date(evaluation.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               </div>
@@ -178,13 +181,13 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
               <div className="space-y-2">
                 <span className="text-[11px] font-black uppercase text-neutral-300 font-mono flex items-center gap-1">
                   <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-                  DETTAGLIO RUBRICA DI VALUTAZIONE (SCALA 1 - 5):
+                  <span>{isEn ? 'EVALUATION RUBRIC BREAKDOWN (SCALE 1 - 5):' : 'DETTAGLIO RUBRICA DI VALUTAZIONE (SCALA 1 - 5):'}</span>
                 </span>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {[
-                    { label: 'Approccio ABCDE', val: evaluation.scores.abcdeApproach },
-                    { label: 'Abilità Tecniche', val: evaluation.scores.technicalSkills },
+                    { label: isEn ? 'ABCDE Approach' : 'Approccio ABCDE', val: evaluation.scores.abcdeApproach },
+                    { label: isEn ? 'Technical Skills' : 'Abilità Tecniche', val: evaluation.scores.technicalSkills },
                     { label: 'Teamwork & Leadership', val: evaluation.scores.teamworkLeadership },
                     { label: 'Handover SBAR', val: evaluation.scores.handoverSbar },
                     { label: 'Safety & Timing', val: evaluation.scores.safetyTiming },
@@ -220,7 +223,7 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
               {evaluation.proceduresCompleted && evaluation.proceduresCompleted.length > 0 && (
                 <div className="bg-neutral-900 border border-neutral-800 p-3 space-y-2">
                   <span className="text-[10px] font-mono text-emerald-400 uppercase font-black block">
-                    PROCEDURE CLINICO-CHIRURGICHE COMPLETATE CORRETTAMENTE:
+                    {isEn ? 'CLINICAL/SURGICAL PROCEDURES COMPLETED CORRECTLY:' : 'PROCEDURE CLINICO-CHIRURGICHE COMPLETATE CORRETTAMENTE:'}
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {evaluation.proceduresCompleted.map((proc, pIdx) => (
@@ -240,20 +243,20 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-neutral-900 border border-neutral-800 p-3 space-y-1.5">
                   <span className="text-[10px] font-mono text-emerald-400 uppercase font-black flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> PUNTI DI FORZA EMERSI:
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> {isEn ? 'KEY STRENGTHS OBSERVED:' : 'PUNTI DI FORZA EMERSI:'}
                   </span>
                   <p className="text-neutral-200 text-xs leading-relaxed">
-                    {evaluation.strengths || 'Ottima aderenza alle linee guida e leadership condivisa.'}
+                    {evaluation.strengths || (isEn ? 'Excellent adherence to guidelines and shared leadership.' : 'Ottima aderenza alle linee guida e leadership condivisa.')}
                   </p>
                 </div>
 
                 <div className="bg-neutral-900 border border-neutral-800 p-3 space-y-1.5">
                   <span className="text-[10px] font-mono text-amber-400 uppercase font-black flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> CRITICITÀ & MARGINI DI MIGLIORAMENTO:
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> {isEn ? 'CRITICAL ISSUES & AREAS FOR IMPROVEMENT:' : 'CRITICITÀ & MARGINI DI MIGLIORAMENTO:'}
                   </span>
                   <p className="text-neutral-200 text-xs leading-relaxed">
                     {evaluation.criticalIssues ||
-                      'Migliorare la fluidità dell\'handover SBAR e la gestione temporale delle manovre.'}
+                      (isEn ? 'Improve SBAR handover smoothness and temporal management of maneuvers.' : 'Migliorare la fluidità dell\'handover SBAR e la gestione temporale delle manovre.')}
                   </p>
                 </div>
               </div>
@@ -262,7 +265,7 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
               {evaluation.debriefingActionItems && (
                 <div className="bg-neutral-900 border border-neutral-800 p-3 space-y-1">
                   <span className="text-[10px] font-mono text-cyan-400 uppercase font-black block">
-                    TAKE-AWAY & ACTION ITEMS PER IL DEBRIEFING:
+                    {isEn ? 'TAKE-AWAYS & ACTION ITEMS FOR DEBRIEFING:' : 'TAKE-AWAY & ACTION ITEMS PER IL DEBRIEFING:'}
                   </span>
                   <p className="text-neutral-200 text-xs font-medium">
                     {evaluation.debriefingActionItems}
@@ -281,12 +284,14 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-base font-black text-amber-300 uppercase">
-                    FEEDBACK POST-MODULO NON ANCORA INVIATO
+                    {isEn ? 'POST-MODULE FEEDBACK NOT YET SUBMITTED' : 'FEEDBACK POST-MODULO NON ANCORA INVIATO'}
                   </h4>
                   <p className="text-neutral-300 text-xs max-w-md mx-auto leading-relaxed">
-                    Il modulo pratico è terminato, ma il Faculty Tutor assegnato (
-                    <strong className="text-white">{faculty ? faculty.name : 'Tutor di squadra'}</strong>
-                    ) non ha ancora inviato la scheda di valutazione e scoring per la squadra.
+                    {isEn ? (
+                      <>The practical module has ended, but the assigned Faculty Tutor (<strong className="text-white">{faculty ? faculty.name : 'Team Tutor'}</strong>) has not yet submitted the evaluation and scoring form for the team.</>
+                    ) : (
+                      <>Il modulo pratico è terminato, ma il Faculty Tutor assegnato (<strong className="text-white">{faculty ? faculty.name : 'Tutor di squadra'}</strong>) non ha ancora inviato la scheda di valutazione e scoring per la squadra.</>
+                    )}
                   </p>
                 </div>
 
@@ -297,7 +302,7 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
                     className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase flex items-center justify-center gap-2 cursor-pointer shadow-lg"
                   >
                     <Radio className="w-4 h-4" />
-                    <span>SOLLECITA TUTOR VIA RADIO / APP</span>
+                    <span>{isEn ? 'REMIND TUTOR VIA RADIO / APP' : 'SOLLECITA TUTOR VIA RADIO / APP'}</span>
                   </button>
 
                   {onOpenDirectEvaluation && (
@@ -310,15 +315,15 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
                       className="w-full sm:w-auto px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs uppercase border border-neutral-600 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Edit2 className="w-4 h-4 text-cyan-400" />
-                      <span>COMPILA DA REGIA MASTER</span>
+                      <span>{isEn ? 'FILL FROM MASTER CONTROL' : 'COMPILA DA REGIA MASTER'}</span>
                     </button>
                   )}
                 </div>
 
                 {reminderSent && (
                   <div className="pt-2 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1">
-                    <Check className="w-4 h-4" /> Sollecito di debriefing inviato con successo al
-                    dispositivo del Faculty!
+                    <Check className="w-4 h-4" />
+                    <span>{isEn ? 'Debriefing reminder successfully sent to Faculty device!' : 'Sollecito di debriefing inviato con successo al dispositivo del Faculty!'}</span>
                   </div>
                 )}
               </div>
@@ -329,14 +334,14 @@ export const EvaluationSummaryModal: React.FC<EvaluationSummaryModalProps> = ({
         {/* Modal Footer */}
         <div className="bg-neutral-900 border-t border-neutral-800 p-4 flex items-center justify-between">
           <span className="text-[11px] font-mono text-neutral-400">
-            Debriefing & Scoring Matrix • Sistema Trauma Course
+            {isEn ? 'Debriefing & Scoring Matrix • Trauma Course System' : 'Debriefing & Scoring Matrix • Sistema Trauma Course'}
           </span>
           <button
             type="button"
             onClick={onClose}
             className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer"
           >
-            CHIUDI
+            {isEn ? 'CLOSE' : 'CHIUDI'}
           </button>
         </div>
       </div>

@@ -375,7 +375,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="flex items-center gap-2 mb-2">
             <Globe className="w-4 h-4 text-neutral-400" />
             <span className="text-xs font-black uppercase tracking-wider text-neutral-300">
-              Riepilogo Nazionalità Partecipanti ({Object.keys(nationalityBreakdown).length} Nazioni)
+              {isEn ? `Participant Nationalities Breakdown (${Object.keys(nationalityBreakdown).length} Nations)` : `Riepilogo Nazionalità Partecipanti (${Object.keys(nationalityBreakdown).length} Nazioni)`}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -401,7 +401,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                 onClick={() => setNationalityFilter('ALL')}
                 className="px-2 py-1 text-xs text-orange-400 hover:text-white border border-orange-500/50 bg-neutral-950 font-black uppercase cursor-pointer"
               >
-                AZZERA FILTRO NAZIONE (MOSTRA TUTTI)
+                {isEn ? 'RESET NATIONALITY FILTER (SHOW ALL)' : 'AZZERA FILTRO NAZIONE (MOSTRA TUTTI)'}
               </button>
             )}
           </div>
@@ -419,7 +419,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <Users className="w-4 h-4 text-orange-400" />
-          1. DISCENTI OPERATIVI ({discenti.length})
+          {isEn ? '1. OPERATIONAL LEARNERS' : '1. DISCENTI OPERATIVI'} ({discenti.length})
         </button>
 
         <button
@@ -431,7 +431,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <Award className="w-4 h-4 text-emerald-400" />
-          2. FACULTY ISTRUTTORI ({faculty.length})
+          {isEn ? '2. FACULTY INSTRUCTORS' : '2. FACULTY ISTRUTTORI'} ({faculty.length})
         </button>
 
         <button
@@ -443,7 +443,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <Wrench className="w-4 h-4 text-amber-400" />
-          3. TECNICI & LAB MOULAGE ({technicians.length})
+          {isEn ? '3. TECHS & MOULAGE LAB' : '3. TECNICI & LAB MOULAGE'} ({technicians.length})
         </button>
 
         <button
@@ -455,7 +455,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <ShieldCheck className="w-4 h-4 text-purple-400" />
-          4. DIREZIONE DEL CORSO ({directors.length})
+          {isEn ? '4. COURSE DIRECTION' : '4. DIREZIONE DEL CORSO'} ({directors.length})
         </button>
 
         <button
@@ -467,7 +467,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <Radio className="w-4 h-4 text-pink-400" />
-          REGIA & MISSION CONTROL ({regiaStaff.length})
+          {isEn ? 'MISSION CONTROL & REGIA' : 'REGIA & MISSION CONTROL'} ({regiaStaff.length})
         </button>
 
         <button
@@ -479,7 +479,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <UserCheck className="w-4 h-4 text-cyan-400" />
-          5. ANAGRAFICA OSPITI & VIP ({guests.length})
+          {isEn ? '5. GUESTS & VIP DIRECTORY' : '5. ANAGRAFICA OSPITI & VIP'} ({guests.length})
         </button>
 
         <button
@@ -491,7 +491,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           }`}
         >
           <QrCode className="w-4 h-4" />
-          REGISTRO QR PASS & BADGE ({totalPersonnel})
+          {isEn ? 'QR PASS & BADGE REGISTRY' : 'REGISTRO QR PASS & BADGE'} ({totalPersonnel})
         </button>
       </div>
 
@@ -503,7 +503,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cerca per nome, ruolo, ente di appartenenza o badge..."
+            placeholder={isEn ? 'Search by name, role, organization or badge...' : 'Cerca per nome, ruolo, ente di appartenenza o badge...'}
             className="w-full pl-9 pr-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-xs font-medium text-white focus:outline-hidden focus:border-orange-500"
           />
         </div>
@@ -515,7 +515,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
             onChange={(e) => setNationalityFilter(e.target.value)}
             className="px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-xs font-black uppercase text-white focus:outline-hidden"
           >
-            <option value="ALL">TUTTE LE NAZIONALITÀ</option>
+            <option value="ALL">{isEn ? 'ALL NATIONALITIES' : 'TUTTE LE NAZIONALITÀ'}</option>
             {uniqueNationalities.map((nat) => (
               <option key={nat} value={nat}>
                 {getCountryFlag(nat)} {nat} ({nationalityBreakdown[nat]})
@@ -530,11 +530,11 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               onChange={(e) => setGroupFilter(e.target.value)}
               className="px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-xs font-black uppercase text-white focus:outline-hidden"
             >
-              <option value="ALL">TUTTI I GRUPPI</option>
-              <option value="A">GRUPPO A (SQ. 1-3)</option>
-              <option value="B">GRUPPO B (SQ. 4-6)</option>
-              <option value="C">GRUPPO C (SQ. 7-9)</option>
-              <option value="D">GRUPPO D (SQ. 10-12)</option>
+              <option value="ALL">{isEn ? 'ALL GROUPS' : 'TUTTI I GRUPPI'}</option>
+              <option value="A">{isEn ? 'GROUP A (TEAMS 1-3)' : 'GRUPPO A (SQ. 1-3)'}</option>
+              <option value="B">{isEn ? 'GROUP B (TEAMS 4-6)' : 'GRUPPO B (SQ. 4-6)'}</option>
+              <option value="C">{isEn ? 'GROUP C (TEAMS 7-9)' : 'GRUPPO C (SQ. 7-9)'}</option>
+              <option value="D">{isEn ? 'GROUP D (TEAMS 10-12)' : 'GRUPPO D (SQ. 10-12)'}</option>
             </select>
           )}
 
@@ -545,7 +545,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="px-4 py-2 bg-orange-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-orange-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
             >
               <Plus className="w-4 h-4" />
-              NUOVO DISCENTE
+              {isEn ? 'NEW LEARNER' : 'NUOVO DISCENTE'}
             </button>
           )}
           {activeSection === 'faculty' && (
@@ -554,7 +554,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="px-4 py-2 bg-emerald-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-emerald-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
             >
               <Plus className="w-4 h-4" />
-              NUOVO DOCENTE FACULTY
+              {isEn ? 'NEW FACULTY INSTRUCTOR' : 'NUOVO DOCENTE FACULTY'}
             </button>
           )}
           {activeSection === 'tecnici' && (
@@ -563,7 +563,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="px-4 py-2 bg-amber-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-amber-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
             >
               <Plus className="w-4 h-4" />
-              NUOVO TECNICO LAB
+              {isEn ? 'NEW LAB TECH' : 'NUOVO TECNICO LAB'}
             </button>
           )}
           {activeSection === 'direttori' && (
@@ -572,7 +572,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="px-4 py-2 bg-purple-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-purple-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
             >
               <Plus className="w-4 h-4" />
-              NUOVO MEMBRO DIREZIONE
+              {isEn ? 'NEW DIRECTION MEMBER' : 'NUOVO MEMBRO DIREZIONE'}
             </button>
           )}
           {activeSection === 'regia' && (
@@ -581,7 +581,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="px-4 py-2 bg-pink-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-pink-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
             >
               <Plus className="w-4 h-4" />
-              NUOVO MEMBRO REGIA
+              {isEn ? 'NEW CONTROL ROOM MEMBER' : 'NUOVO MEMBRO REGIA'}
             </button>
           )}
           {activeSection === 'ospiti' && (
@@ -590,32 +590,38 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="px-4 py-2 bg-cyan-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-cyan-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
             >
               <Plus className="w-4 h-4" />
-              COMPILA NUOVO OSPITE / VIP
+              {isEn ? 'REGISTER NEW GUEST / VIP' : 'COMPILA NUOVO OSPITE / VIP'}
             </button>
           )}
         </div>
       </div>
 
-      {/* SECTION 1: DISCENTI LIST */}
+      {/* SECTION 1: DISCENTI TABLE */}
       {activeSection === 'discenti' && (
         <div className="bg-neutral-900 border-2 border-neutral-800 overflow-hidden">
           <div className="p-3 bg-neutral-950 border-b border-neutral-800 flex justify-between items-center text-xs font-bold text-neutral-400">
-            <span>Visualizzati {filteredDiscenti.length} discenti su {discenti.length} registrati</span>
-            <span className="text-orange-400 font-mono">5 Operatori per Squadra (12 Squadre)</span>
+            <span>
+              {isEn
+                ? `Showing ${filteredDiscenti.length} learners out of ${discenti.length} registered`
+                : `Visualizzati ${filteredDiscenti.length} discenti su ${discenti.length} registrati`}
+            </span>
+            <span className="text-orange-400 font-mono">
+              {isEn ? '5 Operators per Team (12 Teams)' : '5 Operatori per Squadra (12 Squadre)'}
+            </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-neutral-200">
               <thead className="bg-neutral-900 text-neutral-400 uppercase font-black text-[10px] tracking-wider border-b-2 border-neutral-800">
                 <tr>
-                  <th className="p-3"># BADGE</th>
-                  <th className="p-3">NOME & COGNOME</th>
-                  <th className="p-3">NAZIONALITÀ</th>
-                  <th className="p-3">RUOLO TEAM</th>
-                  <th className="p-3">SQUADRA & GRP</th>
-                  <th className="p-3">ENTE / OSPEDALE</th>
-                  <th className="p-3">TELEFONO / EMAIL</th>
-                  <th className="p-3 text-right">AZIONI</th>
+                  <th className="p-3"># {isEn ? 'BADGE' : 'BADGE'}</th>
+                  <th className="p-3">{isEn ? 'FULL NAME' : 'NOME & COGNOME'}</th>
+                  <th className="p-3">{isEn ? 'NATIONALITY' : 'NAZIONALITÀ'}</th>
+                  <th className="p-3">{isEn ? 'TEAM ROLE' : 'RUOLO TEAM'}</th>
+                  <th className="p-3">{isEn ? 'TEAM & GRP' : 'SQUADRA & GRP'}</th>
+                  <th className="p-3">{isEn ? 'ORGANIZATION / HOSPITAL' : 'ENTE / OSPEDALE'}</th>
+                  <th className="p-3">{isEn ? 'PHONE / EMAIL' : 'TELEFONO / EMAIL'}</th>
+                  <th className="p-3 text-right">{isEn ? 'ACTIONS' : 'AZIONI'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 font-medium">
@@ -634,7 +640,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       <td className="p-3 font-mono font-bold text-neutral-200">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-neutral-950 border border-neutral-700 text-[11px]">
                           <span>{getCountryFlag(disc.nationality)}</span>
-                          <span>{disc.nationality || 'Italiana'}</span>
+                          <span>{disc.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
                         </span>
                       </td>
                       <td className="p-3 text-orange-400 font-bold font-mono text-[11px]">
@@ -642,7 +648,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       </td>
                       <td className="p-3">
                         <span className="px-2 py-0.5 bg-neutral-950 text-neutral-200 border border-neutral-700 font-mono font-bold text-[10px]">
-                          SQ. {disc.teamId} (GRP {team?.groupId})
+                          {isEn ? `TEAM ${disc.teamId}` : `SQ. ${disc.teamId}`} (GRP {team?.groupId})
                         </span>
                       </td>
                       <td className="p-3 text-neutral-300 text-[11px]">
@@ -658,7 +664,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                             type="button"
                             onClick={() => setSelectedPersonForQr({ person: disc, category: 'discenti' })}
                             className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 hover:border-cyan-500 transition-colors cursor-pointer text-xs font-black uppercase flex items-center gap-1"
-                            title="Visualizza QR Code Pass univoco e pagina personalizzata"
+                            title={isEn ? 'View unique QR Code Pass and personalized page' : 'Visualizza QR Code Pass univoco e pagina personalizzata'}
                           >
                             <QrCode className="w-3.5 h-3.5 text-cyan-400" />
                             QR PASS
@@ -666,19 +672,19 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                           <button
                             onClick={() => setEditingDiscente(disc)}
                             className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-100 hover:text-black text-neutral-300 border border-neutral-700 transition-colors cursor-pointer text-xs font-black uppercase"
-                            title="Modifica scheda anagrafica discente"
+                            title={isEn ? 'Edit learner profile' : 'Modifica scheda anagrafica discente'}
                           >
                             <Edit2 className="w-3.5 h-3.5 inline mr-1" />
-                            EDIT
+                            {isEn ? 'EDIT' : 'EDIT'}
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`Sei sicuro di voler eliminare ${disc.name} dal corso?`)) {
+                              if (confirm(isEn ? `Are you sure you want to remove ${disc.name} from the course?` : `Sei sicuro di voler eliminare ${disc.name} dal corso?`)) {
                                 deleteDiscente(disc.id);
                               }
                             }}
                             className="p-1 text-neutral-500 hover:text-red-400 cursor-pointer"
-                            title="Elimina"
+                            title={isEn ? 'Delete' : 'Elimina'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -704,11 +710,11 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-700 text-[10px] font-black uppercase">
-                        DOCENTE FACULTY
+                        {isEn ? 'FACULTY INSTRUCTOR' : 'DOCENTE FACULTY'}
                       </span>
                       <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
                         <span>{getCountryFlag(f.nationality)}</span>
-                        <span>{f.nationality || 'Italiana'}</span>
+                        <span>{f.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
                       </span>
                     </div>
                     <h4 className="text-base font-black text-white uppercase mt-1">{f.name}</h4>
@@ -719,25 +725,25 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       type="button"
                       onClick={() => setSelectedPersonForQr({ person: f, category: 'faculty' })}
                       className="p-1.5 bg-neutral-800 hover:bg-amber-500 hover:text-black text-amber-400 border border-neutral-700 transition-colors cursor-pointer"
-                      title="Visualizza QR Code Pass Faculty"
+                      title={isEn ? 'View Faculty QR Code Pass' : 'Visualizza QR Code Pass Faculty'}
                     >
                       <QrCode className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setEditingFaculty(f)}
                       className="p-1.5 bg-neutral-800 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-neutral-700 transition-colors cursor-pointer"
-                      title="Modifica faculty"
+                      title={isEn ? 'Edit faculty' : 'Modifica faculty'}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`Eliminare il docente ${f.name}?`)) {
+                        if (confirm(isEn ? `Delete instructor ${f.name}?` : `Eliminare il docente ${f.name}?`)) {
                           deleteFaculty(f.id);
                         }
                       }}
                       className="p-1.5 bg-neutral-800 hover:bg-red-500 hover:text-white text-neutral-400 border border-neutral-700 transition-colors cursor-pointer"
-                      title="Elimina"
+                      title={isEn ? 'Delete' : 'Elimina'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -746,26 +752,26 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
                 <div className="text-xs space-y-1.5 font-medium">
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Specializzazione:</span>
+                    <span className="text-neutral-400">{isEn ? 'Specialization:' : 'Specializzazione:'}</span>
                     <span className="font-bold text-white text-right">{f.specialty}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Ente / Ospedale:</span>
+                    <span className="text-neutral-400">{isEn ? 'Organization / Hospital:' : 'Ente / Ospedale:'}</span>
                     <span className="text-neutral-200 text-right">{f.organization || '—'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Squadra Tutorata:</span>
+                    <span className="text-neutral-400">{isEn ? 'Tutored Team:' : 'Squadra Tutorata:'}</span>
                     <span className="font-mono font-bold text-orange-400">
                       {assignedTeam ? `${getTeamCodeName(assignedTeam)} (GRP ${assignedTeam.groupId})` : getTeamCodeName(f.assignedTeamId)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Telefono:</span>
+                    <span className="text-neutral-400">{isEn ? 'Phone:' : 'Telefono:'}</span>
                     <span className="font-mono text-neutral-300">{f.phone}</span>
                   </div>
                   {f.email && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Email:</span>
+                      <span className="text-neutral-400">{isEn ? 'Email:' : 'Email:'}</span>
                       <span className="font-mono text-neutral-400 text-[11px]">{f.email}</span>
                     </div>
                   )}
@@ -785,11 +791,11 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-black uppercase">
-                      TECNICO / MOULAGE STAFF
+                      {isEn ? 'TECHNICIAN / MOULAGE STAFF' : 'TECNICO / MOULAGE STAFF'}
                     </span>
                     <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
                       <span>{getCountryFlag(t.nationality)}</span>
-                      <span>{t.nationality || 'Italiana'}</span>
+                      <span>{t.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
                     </span>
                   </div>
                   <h4 className="text-base font-black text-white uppercase mt-1">{t.name}</h4>
@@ -800,25 +806,25 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                     type="button"
                     onClick={() => setSelectedPersonForQr({ person: t, category: 'tecnici' })}
                     className="p-1.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Visualizza QR Code Pass Tecnico"
+                    title={isEn ? 'View Technician QR Code Pass' : 'Visualizza QR Code Pass Tecnico'}
                   >
                     <QrCode className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setEditingTech(t)}
                     className="p-1.5 bg-neutral-800 hover:bg-amber-500 hover:text-black text-amber-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Modifica tecnico"
+                    title={isEn ? 'Edit technician' : 'Modifica tecnico'}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`Eliminare il tecnico ${t.name}?`)) {
+                      if (confirm(isEn ? `Delete technician ${t.name}?` : `Eliminare il tecnico ${t.name}?`)) {
                         deleteTechnician(t.id);
                       }
                     }}
                     className="p-1.5 bg-neutral-800 hover:bg-red-500 hover:text-white text-neutral-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Elimina"
+                    title={isEn ? 'Delete' : 'Elimina'}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -827,20 +833,20 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="text-xs space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Postazioni Assegnate:</span>
+                  <span className="text-neutral-400">{isEn ? 'Assigned Stations:' : 'Postazioni Assegnate:'}</span>
                   <span className="font-mono font-bold text-white text-right">{t.assignedStations.join(', ')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Ente / Lab:</span>
+                  <span className="text-neutral-400">{isEn ? 'Organization / Lab:' : 'Ente / Lab:'}</span>
                   <span className="text-neutral-300 text-right">{t.organization || 'SimCenter Lab'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Telefono / Radio:</span>
+                  <span className="text-neutral-400">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
                   <span className="font-mono text-neutral-300">{t.phone}</span>
                 </div>
                 {t.email && (
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Email:</span>
+                    <span className="text-neutral-400">{isEn ? 'Email:' : 'Email:'}</span>
                     <span className="font-mono text-neutral-400 text-[11px]">{t.email}</span>
                   </div>
                 )}
@@ -859,24 +865,24 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-2 py-0.5 bg-purple-950 text-purple-300 border border-purple-700 text-[10px] font-black uppercase">
-                      DIREZIONE DEL CORSO
+                      {isEn ? 'COURSE DIRECTION' : 'DIREZIONE DEL CORSO'}
                     </span>
                     {d.isMaster ? (
                       <span className="px-2 py-0.5 bg-amber-500 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <span>★ DIRETORE MASTER (ACCESSO TOTALE)</span>
+                        <span>{isEn ? '★ MASTER DIRECTOR (FULL ACCESS)' : '★ DIRETORE MASTER (ACCESSO TOTALE)'}</span>
                       </span>
                     ) : (
                       <button
                         onClick={() => updateDirector(d.id, { isMaster: true })}
                         className="px-2 py-0.5 bg-neutral-800 hover:bg-amber-500 hover:text-black text-amber-400 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                        title="Designa come Direttore Master con accesso totale"
+                        title={isEn ? 'Designate as Master Director with full access' : 'Designa come Direttore Master con accesso totale'}
                       >
-                        Designa Master
+                        {isEn ? 'Designate Master' : 'Designa Master'}
                       </button>
                     )}
                     <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
                       <span>{getCountryFlag(d.nationality)}</span>
-                      <span>{d.nationality || 'Italiana'}</span>
+                      <span>{d.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
                     </span>
                   </div>
                   <h4 className="text-lg font-black text-white uppercase mt-1">{d.name}</h4>
@@ -887,25 +893,25 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                     type="button"
                     onClick={() => setSelectedPersonForQr({ person: d, category: 'direttori' })}
                     className="p-1.5 bg-neutral-800 hover:bg-yellow-500 hover:text-black text-yellow-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Visualizza QR Code Pass Direttore"
+                    title={isEn ? 'View Director QR Code Pass' : 'Visualizza QR Code Pass Direttore'}
                   >
                     <QrCode className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setEditingDir(d)}
                     className="p-1.5 bg-neutral-800 hover:bg-purple-500 hover:text-black text-purple-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Modifica dati direttore"
+                    title={isEn ? 'Edit director details' : 'Modifica dati direttore'}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`Eliminare ${d.name} dalla direzione?`)) {
+                      if (confirm(isEn ? `Remove ${d.name} from direction?` : `Eliminare ${d.name} dalla direzione?`)) {
                         deleteDirector(d.id);
                       }
                     }}
                     className="p-1.5 bg-neutral-800 hover:bg-red-500 hover:text-white text-neutral-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Elimina"
+                    title={isEn ? 'Delete' : 'Elimina'}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -914,22 +920,22 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="text-xs space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Ente / Ospedale:</span>
+                  <span className="text-neutral-400">{isEn ? 'Organization / Hospital:' : 'Ente / Ospedale:'}</span>
                   <span className="text-white font-medium">{d.organization || 'Ospedale Niguarda Trauma Center'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Canale Radio / Tel:</span>
+                  <span className="text-neutral-400">{isEn ? 'Radio Channel / Phone:' : 'Canale Radio / Tel:'}</span>
                   <span className="font-mono font-bold text-white">{d.phone}</span>
                 </div>
                 {d.email && (
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Email Ufficiale:</span>
+                    <span className="text-neutral-400">{isEn ? 'Official Email:' : 'Email Ufficiale:'}</span>
                     <span className="font-mono text-neutral-300">{d.email}</span>
                   </div>
                 )}
                 {d.notes && (
                   <div className="pt-1 text-[11px] text-neutral-400 border-t border-neutral-800">
-                    <span className="font-bold text-neutral-300">Note: </span>
+                    <span className="font-bold text-neutral-300">{isEn ? 'Notes: ' : 'Note: '}</span>
                     {d.notes}
                   </div>
                 )}
@@ -948,24 +954,24 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 text-[10px] font-black uppercase">
-                      REGIA & MISSION CONTROL
+                      {isEn ? 'CONTROL ROOM & MISSION CONTROL' : 'REGIA & MISSION CONTROL'}
                     </span>
                     {r.isMaster ? (
                       <span className="px-2 py-0.5 bg-pink-500 text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <span>★ REGIA MASTER (ACCESSO TOTALE)</span>
+                        <span>{isEn ? '★ MASTER CONTROL (FULL ACCESS)' : '★ REGIA MASTER (ACCESSO TOTALE)'}</span>
                       </span>
                     ) : (
                       <button
                         onClick={() => updateRegiaStaff(r.id, { isMaster: true })}
                         className="px-2 py-0.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-pink-500/40 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                        title="Designa come Regia Master con accesso totale"
+                        title={isEn ? 'Designate as Master Control with full access' : 'Designa come Regia Master con accesso totale'}
                       >
-                        Designa Master
+                        {isEn ? 'Designate Master' : 'Designa Master'}
                       </button>
                     )}
                     <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
                       <span>{getCountryFlag(r.nationality)}</span>
-                      <span>{r.nationality || 'Italiana'}</span>
+                      <span>{r.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
                     </span>
                   </div>
                   <h4 className="text-lg font-black text-white uppercase mt-1">{r.name}</h4>
@@ -976,25 +982,25 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                     type="button"
                     onClick={() => setSelectedPersonForQr({ person: r, category: 'regia' })}
                     className="p-1.5 bg-neutral-800 hover:bg-purple-500 hover:text-black text-purple-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Visualizza QR Code Pass Regia"
+                    title={isEn ? 'View Control Room QR Code Pass' : 'Visualizza QR Code Pass Regia'}
                   >
                     <QrCode className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setEditingRegia(r)}
                     className="p-1.5 bg-neutral-800 hover:bg-pink-500 hover:text-black text-pink-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Modifica dati regia"
+                    title={isEn ? 'Edit control room member' : 'Modifica dati regia'}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`Eliminare ${r.name} dalla regia?`)) {
+                      if (confirm(isEn ? `Remove ${r.name} from control room?` : `Eliminare ${r.name} dalla regia?`)) {
                         deleteRegiaStaff(r.id);
                       }
                     }}
                     className="p-1.5 bg-neutral-800 hover:bg-red-500 hover:text-white text-neutral-400 border border-neutral-700 transition-colors cursor-pointer"
-                    title="Elimina"
+                    title={isEn ? 'Delete' : 'Elimina'}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1003,26 +1009,26 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="text-xs space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Ente / Struttura:</span>
+                  <span className="text-neutral-400">{isEn ? 'Organization / Facility:' : 'Ente / Struttura:'}</span>
                   <span className="text-white font-medium">{r.organization || 'Control Room / Trauma Academy'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Badge ID:</span>
+                  <span className="text-neutral-400">{isEn ? 'Badge ID:' : 'Badge ID:'}</span>
                   <span className="font-mono font-bold text-pink-400">{r.badgeCode || 'REGIA-01'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Telefono / Radio:</span>
+                  <span className="text-neutral-400">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
                   <span className="font-mono font-bold text-white">{r.phone}</span>
                 </div>
                 {r.email && (
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Email:</span>
+                    <span className="text-neutral-400">{isEn ? 'Email:' : 'Email:'}</span>
                     <span className="font-mono text-neutral-300">{r.email}</span>
                   </div>
                 )}
                 {r.notes && (
                   <div className="pt-1 text-[11px] text-neutral-400 border-t border-neutral-800">
-                    <span className="font-bold text-neutral-300">Note: </span>
+                    <span className="font-bold text-neutral-300">{isEn ? 'Notes: ' : 'Note: '}</span>
                     {r.notes}
                   </div>
                 )}
@@ -1042,11 +1048,11 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700 text-[10px] font-black uppercase">
-                        OSPITE / VIP
+                        {isEn ? 'GUEST / VIP' : 'OSPITE / VIP'}
                       </span>
                       <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 border border-neutral-700 text-[10px] font-mono font-bold inline-flex items-center gap-1">
                         <span>{getCountryFlag(g.nationality)}</span>
-                        <span>{g.nationality || 'Italiana'}</span>
+                        <span>{g.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
                       </span>
                     </div>
                     <h4 className="text-base font-black text-white uppercase mt-1">{g.name}</h4>
@@ -1057,25 +1063,25 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       type="button"
                       onClick={() => setSelectedPersonForQr({ person: g, category: 'ospiti' })}
                       className="p-1.5 bg-neutral-800 hover:bg-emerald-500 hover:text-black text-emerald-400 border border-neutral-700 transition-colors cursor-pointer"
-                      title="Visualizza QR Code Pass Ospite"
+                      title={isEn ? 'View Guest QR Code Pass' : 'Visualizza QR Code Pass Ospite'}
                     >
                       <QrCode className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setEditingGuest(g)}
                       className="p-1.5 bg-neutral-800 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-neutral-700 transition-colors cursor-pointer"
-                      title="Modifica ospite"
+                      title={isEn ? 'Edit guest' : 'Modifica ospite'}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`Eliminare l'ospite ${g.name}?`)) {
+                        if (confirm(isEn ? `Delete guest ${g.name}?` : `Eliminare l'ospite ${g.name}?`)) {
                           deleteGuest(g.id);
                         }
                       }}
                       className="p-1.5 bg-neutral-800 hover:bg-red-500 hover:text-white text-neutral-400 border border-neutral-700 transition-colors cursor-pointer"
-                      title="Elimina"
+                      title={isEn ? 'Delete' : 'Elimina'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1084,34 +1090,34 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
                 <div className="text-xs space-y-1.5">
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Ente / Istituzione:</span>
+                    <span className="text-neutral-400">{isEn ? 'Organization / Institution:' : 'Ente / Istituzione:'}</span>
                     <span className="font-bold text-white text-right">{g.organization}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Badge Accreditamento:</span>
+                    <span className="text-neutral-400">{isEn ? 'Accreditation Badge:' : 'Badge Accreditamento:'}</span>
                     <span className="font-mono font-bold text-cyan-400">{g.badgeCode || 'VIP'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Giornate di Presenza:</span>
+                    <span className="text-neutral-400">{isEn ? 'Presence Days:' : 'Giornate di Presenza:'}</span>
                     <span className="font-mono text-neutral-200">
-                      {g.assignedDays.map((d) => `Giorno ${d}`).join(', ')}
+                      {g.assignedDays.map((d) => (isEn ? `Day ${d}` : `Giorno ${d}`)).join(', ')}
                     </span>
                   </div>
                   {g.escortFaculty && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Faculty Accompagnatore:</span>
+                      <span className="text-neutral-400">{isEn ? 'Escort Faculty:' : 'Faculty Accompagnatore:'}</span>
                       <span className="text-orange-400 font-bold text-right">{g.escortFaculty}</span>
                     </div>
                   )}
                   {g.phone && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-400">Recapito:</span>
+                      <span className="text-neutral-400">{isEn ? 'Phone / Contact:' : 'Recapito:'}</span>
                       <span className="font-mono text-neutral-300">{g.phone}</span>
                     </div>
                   )}
                   {g.notes && (
                     <div className="pt-2 text-[11px] text-neutral-400 border-t border-neutral-800">
-                      <span className="font-bold text-neutral-300">Obiettivo Osservazione: </span>
+                      <span className="font-bold text-neutral-300">{isEn ? 'Observation Objective: ' : 'Obiettivo Osservazione: '}</span>
                       {g.notes}
                     </div>
                   )}
@@ -1135,7 +1141,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
               <h3 className="font-black text-lg text-white uppercase tracking-tight">
-                {editingDiscente ? `MODIFICA ANAGRAFICA: ${editingDiscente.name}` : 'COMPILA NUOVO PARTECIPANTE DISCENTE'}
+                {editingDiscente
+                  ? (isEn ? `EDIT PROFILE: ${editingDiscente.name}` : `MODIFICA ANAGRAFICA: ${editingDiscente.name}`)
+                  : (isEn ? 'REGISTER NEW LEARNER PARTICIPANT' : 'COMPILA NUOVO PARTECIPANTE DISCENTE')}
               </h3>
               <button
                 type="button"
@@ -1167,7 +1175,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3.5 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Cognome *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Full Name *' : 'Nome e Cognome *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1178,14 +1188,14 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewDiscente({ ...newDiscente, name: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-orange-500"
-                  placeholder="Es. Dr. Luca De Angeli"
+                  placeholder={isEn ? 'e.g. Dr. Luca De Angeli' : 'Es. Dr. Luca De Angeli'}
                 />
               </div>
 
               {/* NAZIONALITA */}
               <div>
                 <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
-                  <span>Nazionalità *</span>
+                  <span>{isEn ? 'Nationality *' : 'Nazionalità *'}</span>
                   <span className="text-orange-400 font-mono">
                     {getCountryFlag(editingDiscente ? editingDiscente.nationality : newDiscente.nationality)}
                   </span>
@@ -1200,7 +1210,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewDiscente({ ...newDiscente, nationality: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-orange-500 mb-1.5"
-                  placeholder="Es. Italiana, Svizzera, Spagnola, Tedesca..."
+                  placeholder={isEn ? 'e.g. Italian, Swiss, Spanish, German...' : 'Es. Italiana, Svizzera, Spagnola, Tedesca...'}
                 />
                 <div className="flex flex-wrap gap-1">
                   {NATIONALITY_PRESETS.map((preset) => (
@@ -1222,7 +1232,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               {/* RUOLO OPERATIVO */}
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ruolo Operativo nel Trauma Team *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Operational Role in Trauma Team *' : 'Ruolo Operativo nel Trauma Team *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1261,7 +1273,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Squadra Assegnata</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Assigned Team' : 'Squadra Assegnata'}
+                  </label>
                   <select
                     value={editingDiscente ? editingDiscente.teamId : newDiscente.teamId}
                     onChange={(e) =>
@@ -1279,7 +1293,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   </select>
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Badge ID</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Badge ID' : 'Badge ID'}
+                  </label>
                   <input
                     type="text"
                     value={editingDiscente ? editingDiscente.badgeCode || '' : newDiscente.badgeCode || ''}
@@ -1295,7 +1311,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ente / Ospedale</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Organization / Hospital' : 'Ente / Ospedale'}
+                  </label>
                   <input
                     type="text"
                     value={editingDiscente ? editingDiscente.organization || '' : newDiscente.organization || ''}
@@ -1305,11 +1323,13 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                         : setNewDiscente({ ...newDiscente, organization: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-orange-500"
-                    placeholder="Es. DEA Niguarda"
+                    placeholder={isEn ? 'e.g. Trauma Center Niguarda' : 'Es. DEA Niguarda'}
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Telefono</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Phone' : 'Telefono'}
+                  </label>
                   <input
                     type="text"
                     value={editingDiscente ? editingDiscente.phone || '' : newDiscente.phone || ''}
@@ -1324,7 +1344,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Email Istituzionale</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Institutional Email' : 'Email Istituzionale'}
+                </label>
                 <input
                   type="email"
                   value={editingDiscente ? editingDiscente.email || '' : newDiscente.email || ''}
@@ -1347,13 +1369,15 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   }}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-orange-500 hover:bg-neutral-100 text-black border-2 border-orange-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  {editingDiscente ? 'SALVA MODIFICHE' : 'REGISTRA DISCENTE'}
+                  {editingDiscente
+                    ? (isEn ? 'SAVE CHANGES' : 'SALVA MODIFICHE')
+                    : (isEn ? 'REGISTER LEARNER' : 'REGISTRA DISCENTE')}
                 </button>
               </div>
             </form>
@@ -1367,7 +1391,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
               <h3 className="font-black text-lg text-white uppercase tracking-tight">
-                {editingFaculty ? `MODIFICA DOCENTE FACULTY: ${editingFaculty.name}` : 'COMPILA NUOVO DOCENTE FACULTY'}
+                {editingFaculty
+                  ? (isEn ? `EDIT FACULTY INSTRUCTOR: ${editingFaculty.name}` : `MODIFICA DOCENTE FACULTY: ${editingFaculty.name}`)
+                  : (isEn ? 'REGISTER NEW FACULTY INSTRUCTOR' : 'COMPILA NUOVO DOCENTE FACULTY')}
               </h3>
               <button
                 type="button"
@@ -1399,7 +1425,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Titolo Accademico *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Name and Academic Title *' : 'Nome e Titolo Accademico *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1410,14 +1438,14 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewFaculty({ ...newFaculty, name: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-emerald-500"
-                  placeholder="Es. Prof. Dott. Mario Rossi"
+                  placeholder={isEn ? 'e.g. Prof. Dr. Mario Rossi' : 'Es. Prof. Dott. Mario Rossi'}
                 />
               </div>
 
               {/* NAZIONALITA */}
               <div>
                 <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
-                  <span>Nazionalità *</span>
+                  <span>{isEn ? 'Nationality *' : 'Nazionalità *'}</span>
                   <span className="text-emerald-400 font-mono">
                     {getCountryFlag(editingFaculty ? editingFaculty.nationality : newFaculty.nationality)}
                   </span>
@@ -1452,7 +1480,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Qualifica Didattica</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Academic Qualification' : 'Qualifica Didattica'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1467,7 +1497,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Specializzazione Clinica *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Clinical Specialization *' : 'Specializzazione Clinica *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1483,7 +1515,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Squadra Assegnata</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Assigned Team' : 'Squadra Assegnata'}
+                  </label>
                   <select
                     value={editingFaculty ? editingFaculty.assignedTeamId : newFaculty.assignedTeamId}
                     onChange={(e) =>
@@ -1501,7 +1535,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   </select>
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Telefono Diretto</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Direct Phone' : 'Telefono Diretto'}
+                  </label>
                   <input
                     type="text"
                     value={editingFaculty ? editingFaculty.phone : newFaculty.phone}
@@ -1524,13 +1560,15 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   }}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-emerald-500 hover:bg-neutral-100 text-black border-2 border-emerald-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  {editingFaculty ? 'SALVA DOCENTE' : 'REGISTRA DOCENTE'}
+                  {editingFaculty
+                    ? (isEn ? 'SAVE FACULTY' : 'SALVA DOCENTE')
+                    : (isEn ? 'REGISTER FACULTY' : 'REGISTRA DOCENTE')}
                 </button>
               </div>
             </form>
@@ -1544,7 +1582,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
               <h3 className="font-black text-lg text-white uppercase tracking-tight">
-                {editingTech ? `MODIFICA TECNICO LAB: ${editingTech.name}` : 'COMPILA NUOVO TECNICO MOULAGE'}
+                {editingTech
+                  ? (isEn ? `EDIT LAB TECHNICIAN: ${editingTech.name}` : `MODIFICA TECNICO LAB: ${editingTech.name}`)
+                  : (isEn ? 'REGISTER NEW MOULAGE TECHNICIAN' : 'COMPILA NUOVO TECNICO MOULAGE')}
               </h3>
               <button
                 type="button"
@@ -1576,7 +1616,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Cognome *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Full Name *' : 'Nome e Cognome *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1593,7 +1635,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               {/* NAZIONALITA */}
               <div>
                 <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
-                  <span>Nazionalità *</span>
+                  <span>{isEn ? 'Nationality *' : 'Nazionalità *'}</span>
                   <span className="text-amber-400 font-mono">
                     {getCountryFlag(editingTech ? editingTech.nationality : newTech.nationality)}
                   </span>
@@ -1628,7 +1670,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Specialità Tecnica & Protesi *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Technical Specialty & Moulage *' : 'Specialità Tecnica & Protesi *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1643,7 +1687,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Postazioni Assegnate (separate da virgola)</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Assigned Stations (comma-separated)' : 'Postazioni Assegnate (separate da virgola)'}
+                </label>
                 <input
                   type="text"
                   value={editingTech ? editingTech.assignedStations.join(', ') : newTech.assignedStations.join(', ')}
@@ -1658,7 +1704,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Telefono / Radio</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Phone / Radio' : 'Telefono / Radio'}
+                  </label>
                   <input
                     type="text"
                     value={editingTech ? editingTech.phone : newTech.phone}
@@ -1671,7 +1719,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ente / Laboratorio</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Organization / Lab' : 'Ente / Laboratorio'}
+                  </label>
                   <input
                     type="text"
                     value={editingTech ? editingTech.organization || '' : newTech.organization || ''}
@@ -1694,13 +1744,15 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   }}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-amber-500 hover:bg-neutral-100 text-black border-2 border-amber-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  {editingTech ? 'SALVA TECNICO' : 'REGISTRA TECNICO'}
+                  {editingTech
+                    ? (isEn ? 'SAVE TECHNICIAN' : 'SALVA TECNICO')
+                    : (isEn ? 'REGISTER TECHNICIAN' : 'REGISTRA TECNICO')}
                 </button>
               </div>
             </form>
@@ -1714,7 +1766,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
               <h3 className="font-black text-lg text-white uppercase tracking-tight">
-                {editingDir ? `MODIFICA DIREZIONE: ${editingDir.name}` : 'COMPILA NUOVO MEMBRO DIREZIONE'}
+                {editingDir
+                  ? (isEn ? `EDIT DIRECTION: ${editingDir.name}` : `MODIFICA DIREZIONE: ${editingDir.name}`)
+                  : (isEn ? 'REGISTER NEW COURSE DIRECTION MEMBER' : 'COMPILA NUOVO MEMBRO DIREZIONE')}
               </h3>
               <button
                 type="button"
@@ -1746,7 +1800,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Titolo *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Name and Title *' : 'Nome e Titolo *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1763,7 +1819,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               {/* NAZIONALITA */}
               <div>
                 <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
-                  <span>Nazionalità *</span>
+                  <span>{isEn ? 'Nationality *' : 'Nazionalità *'}</span>
                   <span className="text-purple-400 font-mono">
                     {getCountryFlag(editingDir ? editingDir.nationality : newDir.nationality)}
                   </span>
@@ -1798,7 +1854,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ruolo Direttivo *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Director Role *' : 'Ruolo Direttivo *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1814,7 +1872,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Canale Radio / Telefono</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Radio Channel / Phone' : 'Canale Radio / Telefono'}
+                  </label>
                   <input
                     type="text"
                     value={editingDir ? editingDir.phone : newDir.phone}
@@ -1827,7 +1887,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ente / Ospedale</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Organization / Hospital' : 'Ente / Ospedale'}
+                  </label>
                   <input
                     type="text"
                     value={editingDir ? editingDir.organization || '' : newDir.organization || ''}
@@ -1854,7 +1916,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   className="w-4 h-4 accent-amber-500 cursor-pointer"
                 />
                 <label htmlFor="isMasterDirectorCheckbox" className="text-xs uppercase font-bold text-amber-400 cursor-pointer">
-                  Concedi Accesso Totale Direttore Master (isMaster)
+                  {isEn ? 'Grant Full Access Master Director (isMaster)' : 'Concedi Accesso Totale Direttore Master (isMaster)'}
                 </label>
               </div>
 
@@ -1867,13 +1929,15 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   }}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-purple-500 hover:bg-neutral-100 text-black border-2 border-purple-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  {editingDir ? 'SALVA DIREZIONE' : 'REGISTRA MEMBRO'}
+                  {editingDir
+                    ? (isEn ? 'SAVE DIRECTION' : 'SALVA DIREZIONE')
+                    : (isEn ? 'REGISTER MEMBER' : 'REGISTRA MEMBRO')}
                 </button>
               </div>
             </form>
@@ -1887,7 +1951,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
               <h3 className="font-black text-lg text-white uppercase tracking-tight">
-                {editingRegia ? `MODIFICA REGIA: ${editingRegia.name}` : 'COMPILA NUOVO MEMBRO REGIA & MISSION CONTROL'}
+                {editingRegia
+                  ? (isEn ? `EDIT CONTROL ROOM: ${editingRegia.name}` : `MODIFICA REGIA: ${editingRegia.name}`)
+                  : (isEn ? 'REGISTER NEW CONTROL ROOM & MISSION CONTROL MEMBER' : 'COMPILA NUOVO MEMBRO REGIA & MISSION CONTROL')}
               </h3>
               <button
                 type="button"
@@ -1919,7 +1985,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Cognome *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Full Name *' : 'Nome e Cognome *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -1930,14 +1998,14 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewRegia({ ...newRegia, name: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-pink-500"
-                  placeholder="Es. Ing. Marco Regia"
+                  placeholder={isEn ? 'e.g. Marco Regia, Eng.' : 'Es. Ing. Marco Regia'}
                 />
               </div>
 
               {/* NAZIONALITA */}
               <div>
                 <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
-                  <span>Nazionalità *</span>
+                  <span>{isEn ? 'Nationality *' : 'Nazionalità *'}</span>
                   <span className="text-pink-400 font-mono">
                     {getCountryFlag(editingRegia ? editingRegia.nationality : newRegia.nationality)}
                   </span>
@@ -1973,7 +2041,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ruolo / Funzione *</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Role / Function *' : 'Ruolo / Funzione *'}
+                  </label>
                   <input
                     type="text"
                     required
@@ -1987,7 +2057,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Titolo / Qualifica</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Title / Qualification' : 'Titolo / Qualifica'}
+                  </label>
                   <input
                     type="text"
                     required
@@ -2004,7 +2076,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Telefono / Radio</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Phone / Radio' : 'Telefono / Radio'}
+                  </label>
                   <input
                     type="text"
                     value={editingRegia ? editingRegia.phone : newRegia.phone}
@@ -2017,7 +2091,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Badge ID</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Badge ID' : 'Badge ID'}
+                  </label>
                   <input
                     type="text"
                     value={editingRegia ? editingRegia.badgeCode || '' : newRegia.badgeCode || ''}
@@ -2032,7 +2108,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ente / Ospedale</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Organization / Facility' : 'Ente / Ospedale'}
+                </label>
                 <input
                   type="text"
                   value={editingRegia ? editingRegia.organization || '' : newRegia.organization || ''}
@@ -2054,13 +2132,15 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   }}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-pink-500 hover:bg-neutral-100 text-black border-2 border-pink-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  {editingRegia ? 'SALVA REGIA' : 'REGISTRA MEMBRO'}
+                  {editingRegia
+                    ? (isEn ? 'SAVE CONTROL ROOM' : 'SALVA REGIA')
+                    : (isEn ? 'REGISTER MEMBER' : 'REGISTRA MEMBRO')}
                 </button>
               </div>
             </form>
@@ -2074,7 +2154,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-lg w-full text-neutral-100 space-y-4 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-800">
               <h3 className="font-black text-lg text-white uppercase tracking-tight">
-                {editingGuest ? `MODIFICA OSPITE / VIP: ${editingGuest.name}` : 'COMPILA ANAGRAFICA OSPITE & DELEGAZIONE'}
+                {editingGuest
+                  ? (isEn ? `EDIT GUEST / VIP: ${editingGuest.name}` : `MODIFICA OSPITE / VIP: ${editingGuest.name}`)
+                  : (isEn ? 'REGISTER GUEST & DELEGATION' : 'COMPILA ANAGRAFICA OSPITE & DELEGAZIONE')}
               </h3>
               <button
                 type="button"
@@ -2106,7 +2188,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3.5 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome e Titolo *</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Name and Title *' : 'Nome e Titolo *'}
+                </label>
                 <input
                   type="text"
                   required
@@ -2117,14 +2201,14 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewGuest({ ...newGuest, name: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-cyan-500"
-                  placeholder="Es. Col. Med. Hans Gruber / Delegato Croce Rossa"
+                  placeholder={isEn ? 'e.g. Col. Dr. Hans Gruber / Red Cross Delegate' : 'Es. Col. Med. Hans Gruber / Delegato Croce Rossa'}
                 />
               </div>
 
               {/* NAZIONALITA */}
               <div>
                 <label className="block uppercase tracking-wider text-neutral-400 mb-1 flex items-center justify-between">
-                  <span>Nazionalità *</span>
+                  <span>{isEn ? 'Nationality *' : 'Nazionalità *'}</span>
                   <span className="text-cyan-400 font-mono">
                     {getCountryFlag(editingGuest ? editingGuest.nationality : newGuest.nationality)}
                   </span>
@@ -2139,7 +2223,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewGuest({ ...newGuest, nationality: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-cyan-500 mb-1.5"
-                  placeholder="Es. Tedesca, Svizzera, Britannica, Francese..."
+                  placeholder={isEn ? 'e.g. German, Swiss, British, French...' : 'Es. Tedesca, Svizzera, Britannica, Francese...'}
                 />
                 <div className="flex flex-wrap gap-1">
                   {NATIONALITY_PRESETS.map((preset) => (
@@ -2161,7 +2245,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Qualifica / Ruolo *</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Qualification / Role *' : 'Qualifica / Ruolo *'}
+                  </label>
                   <input
                     type="text"
                     required
@@ -2172,11 +2258,13 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                         : setNewGuest({ ...newGuest, title: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-cyan-500"
-                    placeholder="Es. Auditor Medico NATO"
+                    placeholder={isEn ? 'e.g. NATO Medical Auditor' : 'Es. Auditor Medico NATO'}
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Ente / Istituzione *</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Organization / Institution *' : 'Ente / Istituzione *'}
+                  </label>
                   <input
                     type="text"
                     required
@@ -2187,14 +2275,16 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                         : setNewGuest({ ...newGuest, organization: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-cyan-500"
-                    placeholder="Es. NATO MilMed COE"
+                    placeholder={isEn ? 'e.g. NATO MilMed COE' : 'Es. NATO MilMed COE'}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Codice Badge / VIP Pass</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Badge Code / VIP Pass' : 'Codice Badge / VIP Pass'}
+                  </label>
                   <input
                     type="text"
                     value={editingGuest ? editingGuest.badgeCode || '' : newGuest.badgeCode || ''}
@@ -2208,7 +2298,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Faculty Accompagnatore</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Escort Faculty' : 'Faculty Accompagnatore'}
+                  </label>
                   <select
                     value={editingGuest ? editingGuest.escortFaculty || '' : newGuest.escortFaculty || ''}
                     onChange={(e) =>
@@ -2218,10 +2310,10 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                     }
                     className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-cyan-500"
                   >
-                    <option value="">Nessun Accompagnatore Diretto</option>
+                    <option value="">{isEn ? 'No Direct Escort' : 'Nessun Accompagnatore Diretto'}</option>
                     {directors.map((d) => (
                       <option key={d.id} value={d.name}>
-                        {d.name} (Direzione)
+                        {d.name} ({isEn ? 'Direction' : 'Direzione'})
                       </option>
                     ))}
                     {faculty.map((f) => (
@@ -2235,7 +2327,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Telefono / Radio</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Phone / Radio' : 'Telefono / Radio'}
+                  </label>
                   <input
                     type="text"
                     value={editingGuest ? editingGuest.phone || '' : newGuest.phone || ''}
@@ -2248,7 +2342,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   />
                 </div>
                 <div>
-                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">Email</label>
+                  <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                    {isEn ? 'Email' : 'Email'}
+                  </label>
                   <input
                     type="email"
                     value={editingGuest ? editingGuest.email || '' : newGuest.email || ''}
@@ -2263,7 +2359,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               </div>
 
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Note & Obiettivi Osservazione</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Notes & Observation Objectives' : 'Note & Obiettivi Osservazione'}
+                </label>
                 <textarea
                   rows={2}
                   value={editingGuest ? editingGuest.notes || '' : newGuest.notes || ''}
@@ -2273,7 +2371,7 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                       : setNewGuest({ ...newGuest, notes: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-xs font-medium text-white focus:outline-hidden focus:border-cyan-500"
-                  placeholder="Es. Valutazione standard damage control surgery e maxiemergenza..."
+                  placeholder={isEn ? 'e.g. Assessment of damage control surgery and disaster response standards...' : 'Es. Valutazione standard damage control surgery e maxiemergenza...'}
                 />
               </div>
 
@@ -2286,13 +2384,15 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   }}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-cyan-500 hover:bg-neutral-100 text-black border-2 border-cyan-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  {editingGuest ? 'SALVA MODIFICHE OSPITE' : 'REGISTRA OSPITE / VIP'}
+                  {editingGuest
+                    ? (isEn ? 'SAVE GUEST CHANGES' : 'SALVA MODIFICHE OSPITE')
+                    : (isEn ? 'REGISTER GUEST / VIP' : 'REGISTRA OSPITE / VIP')}
                 </button>
               </div>
             </form>
@@ -2304,7 +2404,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
       {editingTeam && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xs overflow-y-auto">
           <div className="bg-neutral-950 border-4 border-neutral-100 p-6 sm:p-8 max-w-md w-full text-neutral-100 space-y-4 shadow-2xl my-8">
-            <h3 className="font-black text-lg text-white uppercase tracking-tight">MODIFICA SQUADRA #{editingTeam.id}</h3>
+            <h3 className="font-black text-lg text-white uppercase tracking-tight">
+              {isEn ? `EDIT TEAM #${editingTeam.id}` : `MODIFICA SQUADRA #${editingTeam.id}`}
+            </h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -2314,7 +2416,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
               className="space-y-3 text-xs font-bold"
             >
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Nome Squadra</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Team Name' : 'Nome Squadra'}
+                </label>
                 <input
                   type="text"
                   value={editingTeam.name}
@@ -2324,20 +2428,24 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                 />
               </div>
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Gruppo Logistico (A, B, C, D)</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Logistic Group (A, B, C, D)' : 'Gruppo Logistico (A, B, C, D)'}
+                </label>
                 <select
                   value={editingTeam.groupId}
                   onChange={(e) => setEditingTeam({ ...editingTeam, groupId: e.target.value as 'A' | 'B' | 'C' | 'D' })}
                   className="w-full px-3 py-2 bg-neutral-900 border-2 border-neutral-700 text-sm font-bold text-white focus:outline-hidden focus:border-orange-500"
                 >
-                  <option value="A">GRUPPO A</option>
-                  <option value="B">GRUPPO B</option>
-                  <option value="C">GRUPPO C</option>
-                  <option value="D">GRUPPO D</option>
+                  <option value="A">{isEn ? 'GROUP A' : 'GRUPPO A'}</option>
+                  <option value="B">{isEn ? 'GROUP B' : 'GRUPPO B'}</option>
+                  <option value="C">{isEn ? 'GROUP C' : 'GRUPPO C'}</option>
+                  <option value="D">{isEn ? 'GROUP D' : 'GRUPPO D'}</option>
                 </select>
               </div>
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Docente Faculty Assegnato</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Assigned Faculty Instructor' : 'Docente Faculty Assegnato'}
+                </label>
                 <select
                   value={editingTeam.facultyId}
                   onChange={(e) => setEditingTeam({ ...editingTeam, facultyId: e.target.value })}
@@ -2351,7 +2459,9 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                 </select>
               </div>
               <div>
-                <label className="block uppercase tracking-wider text-neutral-400 mb-1">Note Operative Squadra</label>
+                <label className="block uppercase tracking-wider text-neutral-400 mb-1">
+                  {isEn ? 'Team Operational Notes' : 'Note Operative Squadra'}
+                </label>
                 <textarea
                   rows={2}
                   value={editingTeam.notes || ''}
@@ -2365,13 +2475,13 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
                   onClick={() => setEditingTeam(null)}
                   className="px-4 py-2 text-xs font-black uppercase text-neutral-400 hover:text-white cursor-pointer"
                 >
-                  Annulla
+                  {isEn ? 'Cancel' : 'Annulla'}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-orange-500 hover:bg-neutral-100 text-black border-2 border-orange-500 hover:border-neutral-100 cursor-pointer font-bold"
                 >
-                  SALVA SQUADRA
+                  {isEn ? 'SAVE TEAM' : 'SALVA SQUADRA'}
                 </button>
               </div>
             </form>

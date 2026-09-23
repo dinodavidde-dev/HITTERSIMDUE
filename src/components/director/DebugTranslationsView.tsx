@@ -195,12 +195,12 @@ export const DebugTranslationsView: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-neutral-950 text-neutral-400 text-[10px] font-mono uppercase border-b border-neutral-800">
-                <th className="p-3">Module</th>
-                <th className="p-3">Key / ID</th>
-                <th className="p-3">Italian (IT)</th>
-                <th className="p-3">English (EN)</th>
-                <th className="p-3 text-center">Status</th>
-                <th className="p-3 text-right">Coverage</th>
+                <th className="p-3">{isEn ? 'Module' : 'Modulo'}</th>
+                <th className="p-3">{isEn ? 'Key / ID' : 'Chiave / ID'}</th>
+                <th className="p-3">{isEn ? 'Italian (IT)' : 'Italiano (IT)'}</th>
+                <th className="p-3">{isEn ? 'English (EN)' : 'Inglese (EN)'}</th>
+                <th className="p-3 text-center">{isEn ? 'Status' : 'Stato'}</th>
+                <th className="p-3 text-right">{isEn ? 'Coverage' : 'Copertura'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800 text-xs">
@@ -235,7 +235,7 @@ export const DebugTranslationsView: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>{isEn ? 'All application views are fully verified with zero missing placeholders.' : 'Tutte le visuali dell\'applicazione sono verificate senza segnaposto mancanti.'}</span>
           </div>
-          <span className="font-mono text-[11px] text-yellow-400">Current active language mode: <strong className="text-white uppercase">{language}</strong></span>
+          <span className="font-mono text-[11px] text-yellow-400">{isEn ? 'Current active language mode:' : 'Modalità lingua attiva:'} <strong className="text-white uppercase">{language}</strong></span>
         </div>
       </div>
     </div>

@@ -26,6 +26,7 @@ interface CourseMessagesPanelProps {
 
 export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
   const {
+    language,
     courseMessages,
     acknowledgeCourseMessage,
     deleteCourseMessage,
@@ -35,6 +36,8 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
     selectedDirectorId,
   } = useCourse();
 
+  const isEn = language === 'en';
+
   const [roleFilter, setRoleFilter] = useState<'ALL' | UserRole>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'pending' | 'acknowledged'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -42,7 +45,7 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
   const currentDirector = directors.find((d) => d.id === selectedDirectorId) || directors[0];
   const currentActorName =
     userRole === 'direttore'
-      ? (currentDirector ? currentDirector.name : 'Direzione')
+      ? (currentDirector ? currentDirector.name : (isEn ? 'Direction' : 'Direzione'))
       : (facultyAuthSession.facultyName || 'Faculty Tutor');
 
   const filteredMessages = courseMessages.filter((msg) => {
@@ -67,14 +70,14 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
         return (
           <span className="bg-red-600 text-white font-black text-[10px] uppercase px-2 py-0.5 border border-white flex items-center gap-1 animate-pulse">
             <Flame className="w-3 h-3" />
-            <span>URGENTE</span>
+            <span>{isEn ? 'URGENT' : 'URGENTE'}</span>
           </span>
         );
       case 'warning':
         return (
           <span className="bg-orange-500 text-black font-black text-[10px] uppercase px-2 py-0.5 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
-            <span>ALLERTA</span>
+            <span>{isEn ? 'ALERT' : 'ALLERTA'}</span>
           </span>
         );
       case 'info':
@@ -110,20 +113,22 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="p-1.5 bg-orange-500 text-black font-black text-xs uppercase tracking-wider">
-              REGIA & FACULTY FEED
+              {isEn ? 'CONTROL & FACULTY FEED' : 'REGIA & FACULTY FEED'}
             </span>
             {pendingCount > 0 && (
               <span className="bg-red-600 text-white font-mono text-xs font-black px-2 py-0.5 animate-pulse">
-                {pendingCount} DA GESTIRE
+                {isEn ? `${pendingCount} PENDING` : `${pendingCount} DA GESTIRE`}
               </span>
             )}
           </div>
           <h3 className="font-black text-xl sm:text-2xl text-white uppercase tracking-tight mt-1 flex items-center gap-2">
             <MessageSquare className="w-6 h-6 text-orange-500" />
-            <span>SEGNALAZIONI & MESSAGGI DAL CAMPO</span>
+            <span>{isEn ? 'INCIDENT REPORTS & FIELD MESSAGES' : 'SEGNALAZIONI & MESSAGGI DAL CAMPO'}</span>
           </h3>
           <p className="text-xs text-neutral-400 font-semibold mt-0.5">
-            Canale riservato: raccoglie tutte le comunicazioni trasmesse da Discenti, Tecnici e Istruttori in tempo reale.
+            {isEn
+              ? 'Restricted channel: aggregates live communications sent by Participants, Techs, and Faculty tutors in real-time.'
+              : 'Canale riservato: raccoglie tutte le comunicazioni trasmesse da Discenti, Tecnici e Istruttori in tempo reale.'}
           </p>
         </div>
 
@@ -137,7 +142,7 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cerca per mittente, postazione, oggetto o testo..."
+            placeholder={isEn ? 'Search sender, station, subject, or content...' : 'Cerca per mittente, postazione, oggetto o testo...'}
             className="w-full bg-neutral-900 border border-neutral-700 focus:border-orange-500 px-3 py-1.5 text-xs text-white placeholder-neutral-500 font-medium focus:outline-hidden"
           />
         </div>
@@ -145,21 +150,30 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
         {/* Role Filters */}
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
           <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest mr-1 hidden lg:inline">
-            RUOLO:
+            {isEn ? 'ROLE:' : 'RUOLO:'}
           </span>
-          {(['ALL', 'discente', 'tecnico', 'faculty', 'ospite'] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRoleFilter(r)}
-              className={`px-2.5 py-1 text-xs font-black uppercase tracking-wider transition-all cursor-pointer border flex-shrink-0 ${
-                roleFilter === r
-                  ? 'bg-neutral-100 text-black border-neutral-100'
-                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-800'
-              }`}
-            >
-              {r === 'ALL' ? 'TUTTI' : r}
-            </button>
-          ))}
+          {(['ALL', 'discente', 'tecnico', 'faculty', 'ospite'] as const).map((r) => {
+            const roleLabelMap: Record<string, string> = {
+              ALL: isEn ? 'ALL' : 'TUTTI',
+              discente: isEn ? 'PARTICIPANT' : 'DISCENTE',
+              tecnico: isEn ? 'TECH' : 'TECNICO',
+              faculty: 'FACULTY',
+              ospite: isEn ? 'GUEST' : 'OSPITE',
+            };
+            return (
+              <button
+                key={r}
+                onClick={() => setRoleFilter(r)}
+                className={`px-2.5 py-1 text-xs font-black uppercase tracking-wider transition-all cursor-pointer border flex-shrink-0 ${
+                  roleFilter === r
+                    ? 'bg-neutral-100 text-black border-neutral-100'
+                    : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-800'
+                }`}
+              >
+                {roleLabelMap[r] || r}
+              </button>
+            );
+          })}
         </div>
 
         {/* Status Filters */}
@@ -174,7 +188,7 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
                   : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-800'
               }`}
             >
-              {s === 'ALL' ? 'STATO: TUTTI' : s === 'pending' ? 'DA GESTIRE' : 'PRESI IN CARICO'}
+              {s === 'ALL' ? (isEn ? 'STATUS: ALL' : 'STATO: TUTTI') : s === 'pending' ? (isEn ? 'PENDING' : 'DA GESTIRE') : (isEn ? 'ACKNOWLEDGED' : 'PRESI IN CARICO')}
             </button>
           ))}
         </div>
@@ -186,10 +200,12 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
           <div className="p-8 text-center bg-neutral-950 border border-neutral-800 space-y-2">
             <MessageSquare className="w-8 h-8 text-neutral-600 mx-auto" />
             <p className="text-sm font-bold text-neutral-400 uppercase">
-              Nessun messaggio trovato con i filtri selezionati
+              {isEn ? 'No messages found with selected filters' : 'Nessun messaggio trovato con i filtri selezionati'}
             </p>
             <p className="text-xs text-neutral-600">
-              Tutte le nuove segnalazioni dal campo compariranno qui automaticamente in tempo reale.
+              {isEn
+                ? 'All new reports from the field will appear here automatically in real time.'
+                : 'Tutte le nuove segnalazioni dal campo compariranno qui automaticamente in tempo reale.'}
             </p>
           </div>
         ) : (
@@ -225,7 +241,7 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
                         </span>
                         {msg.senderTeamId && (
                           <span className="text-[10px] font-bold text-cyan-300 px-1.5 py-0.2 bg-cyan-950 border border-cyan-800">
-                            SQUADRA {msg.senderTeamId}
+                            {isEn ? `SQUAD ${msg.senderTeamId}` : `SQUADRA ${msg.senderTeamId}`}
                           </span>
                         )}
                         {msg.senderStation && (
@@ -251,22 +267,22 @@ export const CourseMessagesPanel: React.FC<CourseMessagesPanelProps> = () => {
                       <button
                         onClick={() => acknowledgeCourseMessage(msg.id, currentActorName)}
                         className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
-                        title="Prendi in carico la segnalazione"
+                        title={isEn ? 'Acknowledge report' : 'Prendi in carico la segnalazione'}
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>PRENDI IN CARICO</span>
+                        <span>{isEn ? 'ACKNOWLEDGE' : 'PRENDI IN CARICO'}</span>
                       </button>
                     ) : (
                       <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 border border-emerald-800">
                         <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Gestito da: {msg.acknowledgedBy} ({msg.acknowledgedAt})</span>
+                        <span>{isEn ? 'Handled by:' : 'Gestito da:'} {msg.acknowledgedBy} ({msg.acknowledgedAt})</span>
                       </div>
                     )}
 
                     <button
                       onClick={() => deleteCourseMessage(msg.id)}
                       className="p-1.5 bg-neutral-900 hover:bg-red-950 text-neutral-500 hover:text-red-400 border border-neutral-800 hover:border-red-800 transition-colors cursor-pointer"
-                      title="Rimuovi messaggio"
+                      title={isEn ? 'Delete message' : 'Rimuovi messaggio'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

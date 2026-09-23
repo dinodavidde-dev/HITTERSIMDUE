@@ -309,25 +309,84 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
+  // Helper to persist course state changes to Firestore
+  const syncCourseStateToFirestore = useCallback(
+    async (partialState: Record<string, any>) => {
+      const statePath = 'course_state/current_state';
+      try {
+        await setDoc(
+          doc(db, 'course_state', 'current_state'),
+          cleanUndefined({
+            ...partialState,
+            updatedAt: new Date().toISOString(),
+          }),
+          { merge: true }
+        );
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, statePath);
+      }
+    },
+    []
+  );
+
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     try {
       localStorage.setItem(STORAGE_KEY_PREFIX + 'language', JSON.stringify(lang));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('trauma_language_change', { detail: lang }));
+      }
     } catch (e) {
       console.warn('Failed to save language', e);
     }
-  }, []);
+    syncCourseStateToFirestore({ language: lang });
+  }, [syncCourseStateToFirestore]);
 
   const toggleLanguage = useCallback(() => {
     setLanguageState((prev) => {
-      const next = prev === 'en' ? 'it' : 'en';
+      const next: Language = prev === 'en' ? 'it' : 'en';
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + 'language', JSON.stringify(next));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('trauma_language_change', { detail: next }));
+        }
       } catch (e) {
         console.warn('Failed to save language', e);
       }
+      syncCourseStateToFirestore({ language: next });
       return next;
     });
+  }, [syncCourseStateToFirestore]);
+
+  // Synchronize language across tabs and windows
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY_PREFIX + 'language' && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (parsed === 'it' || parsed === 'en') {
+            setLanguageState(parsed);
+          }
+        } catch (e) {}
+      }
+    };
+
+    const handleCustomLang = (event: Event) => {
+      const customEvent = event as CustomEvent<Language>;
+      if (customEvent.detail === 'it' || customEvent.detail === 'en') {
+        setLanguageState(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('trauma_language_change', handleCustomLang);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('trauma_language_change', handleCustomLang);
+    };
   }, []);
 
   const t = useCallback((key: keyof typeof translations, defaultText?: string) => {
@@ -577,6 +636,17 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (typeof data.autoAdvancePhases === 'boolean') setAutoAdvancePhasesState(data.autoAdvancePhases);
             if (data.suspensionInfo) setSuspensionInfo(data.suspensionInfo);
             if (data.courseStartSchedule) setCourseStartSchedule(data.courseStartSchedule);
+            if (data.language === 'it' || data.language === 'en') {
+              setLanguageState((prevLang) => {
+                if (prevLang !== data.language) {
+                  try {
+                    localStorage.setItem(STORAGE_KEY_PREFIX + 'language', JSON.stringify(data.language));
+                  } catch (e) {}
+                  return data.language as Language;
+                }
+                return prevLang;
+              });
+            }
             setLastSyncTimestamp(Date.now());
             setIsFirebaseCloudConnected(true);
           } else {
@@ -985,26 +1055,6 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     facultyAuthSession,
     phaseShiftLogs,
   ]);
-
-  // Helper to persist course state changes to Firestore
-  const syncCourseStateToFirestore = useCallback(
-    async (partialState: Record<string, any>) => {
-      const statePath = 'course_state/current_state';
-      try {
-        await setDoc(
-          doc(db, 'course_state', 'current_state'),
-          cleanUndefined({
-            ...partialState,
-            updatedAt: new Date().toISOString(),
-          }),
-          { merge: true }
-        );
-      } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, statePath);
-      }
-    },
-    []
-  );
 
   // Timer ticker with Time Multiplier Acceleration & Auto-Advance
   const timerRef = useRef<number | null>(null);

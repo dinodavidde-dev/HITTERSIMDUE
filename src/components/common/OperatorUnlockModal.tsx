@@ -130,7 +130,7 @@ export const OperatorUnlockModal: React.FC<OperatorUnlockModalProps> = ({
                   setPin(e.target.value);
                   setError(null);
                 }}
-                placeholder="es. 2026 o 118"
+                placeholder={isEn ? 'e.g. 2026 or 118' : 'es. 2026 o 118'}
                 autoFocus
                 className="w-full bg-neutral-950 border border-neutral-700 focus:border-yellow-400 text-white font-mono text-center tracking-widest text-lg py-2 px-3 rounded outline-none"
               />
@@ -151,20 +151,20 @@ export const OperatorUnlockModal: React.FC<OperatorUnlockModalProps> = ({
             )}
 
             <div className="flex items-center gap-2 pt-1">
-              <span className="text-[10px] text-neutral-400 uppercase">PIN Rapidi:</span>
+              <span className="text-[10px] text-neutral-400 uppercase">{isEn ? 'Quick PINs:' : 'PIN Rapidi:'}</span>
               <button
                 type="button"
                 onClick={() => handleQuickUnlock('2026')}
                 className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-yellow-300 text-[11px] rounded transition-colors cursor-pointer"
               >
-                2026 (Direzione)
+                2026 ({isEn ? 'Direction' : 'Direzione'})
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickUnlock('118')}
                 className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-yellow-300 text-[11px] rounded transition-colors cursor-pointer"
               >
-                118 (Regia)
+                118 ({isEn ? 'Control' : 'Regia'})
               </button>
             </div>
 

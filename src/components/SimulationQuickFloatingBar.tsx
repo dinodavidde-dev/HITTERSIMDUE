@@ -8,6 +8,7 @@ interface SimulationQuickFloatingBarProps {
 
 export const SimulationQuickFloatingBar: React.FC<SimulationQuickFloatingBarProps> = ({ onOpenFullModal }) => {
   const {
+    language,
     timeMultiplier,
     setTimeMultiplier,
     isTimerRunning,
@@ -16,6 +17,7 @@ export const SimulationQuickFloatingBar: React.FC<SimulationQuickFloatingBarProp
     activeDay,
     activeSlotIndex,
   } = useCourse();
+  const isEn = language === 'en';
 
   // If time is 1x and user hasn't explicitly activated fast mode, we don't need to force show it
   // but if timeMultiplier > 1, we show a vivid status bar
@@ -39,10 +41,10 @@ export const SimulationQuickFloatingBar: React.FC<SimulationQuickFloatingBarProp
         </div>
         <div className="hidden sm:block">
           <div className="text-[10px] font-mono font-black text-orange-400 uppercase tracking-widest leading-tight">
-            ⚡ ACCELERATORE TEMPO ATTIVO
+            {isEn ? '⚡ TIME ACCELERATOR ACTIVE' : '⚡ ACCELERATORE TEMPO ATTIVO'}
           </div>
           <div className="text-xs font-mono font-black text-white">
-            {timeMultiplier}x • G{activeDay} Fase {activeSlotIndex + 1} ({formatTimer(timerSeconds)})
+            {timeMultiplier}x • {isEn ? 'D' : 'G'}{activeDay} {isEn ? 'Phase' : 'Fase'} {activeSlotIndex + 1} ({formatTimer(timerSeconds)})
           </div>
         </div>
       </div>
@@ -58,7 +60,7 @@ export const SimulationQuickFloatingBar: React.FC<SimulationQuickFloatingBarProp
                 ? 'bg-orange-500 text-black border-orange-300 font-black'
                 : 'bg-neutral-900 text-neutral-300 hover:bg-neutral-800 border-neutral-700'
             }`}
-            title={`Imposta velocità a ${spd}x`}
+            title={isEn ? `Set speed to ${spd}x` : `Imposta velocità a ${spd}x`}
           >
             {spd}x
           </button>
@@ -73,7 +75,7 @@ export const SimulationQuickFloatingBar: React.FC<SimulationQuickFloatingBarProp
             ? 'bg-amber-600 hover:bg-amber-500 text-black border-amber-400'
             : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400'
         }`}
-        title={isTimerRunning ? 'Metti in pausa' : 'Avvia timer'}
+        title={isTimerRunning ? (isEn ? 'Pause' : 'Metti in pausa') : (isEn ? 'Start timer' : 'Avvia timer')}
       >
         {isTimerRunning ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
       </button>
@@ -82,17 +84,17 @@ export const SimulationQuickFloatingBar: React.FC<SimulationQuickFloatingBarProp
       <button
         onClick={onOpenFullModal}
         className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-orange-400 font-mono text-xs font-black uppercase border border-neutral-700 cursor-pointer flex items-center gap-1"
-        title="Apri pannello di controllo simulazione completo"
+        title={isEn ? 'Open complete simulation control panel' : 'Apri pannello di controllo simulazione completo'}
       >
         <Sliders className="w-3.5 h-3.5" />
-        <span className="hidden md:inline">REGIA</span>
+        <span className="hidden md:inline">{isEn ? 'CONTROL' : 'REGIA'}</span>
       </button>
 
       {/* Reset to 1x normal */}
       <button
         onClick={() => setTimeMultiplier(1)}
         className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-white cursor-pointer"
-        title="Torna a velocità normale 1x"
+        title={isEn ? 'Return to normal 1x speed' : 'Torna a velocità normale 1x'}
       >
         <X className="w-3.5 h-3.5" />
       </button>

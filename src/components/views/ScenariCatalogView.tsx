@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { SimulatorPatient } from '../../types';
 import { ScenarioStatusBadge } from '../ScenarioStatusBadge';
+import { translatePatient } from '../../utils/courseTranslation';
 
 export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ onOpenProtesi }) => {
   const { simulatorPatients, updateSimulatorPatient, language, selectedCatalogPatientId } = useCourse();
@@ -38,7 +39,7 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
   const [modalPatient, setModalPatient] = useState<SimulatorPatient | null>(null);
 
   // Clear selectedCatalogPatientId effect if needed, but ensure all 24 are always shown in grid
-  const filteredPatients = simulatorPatients.filter((p) => {
+  const rawFilteredPatients = simulatorPatients.filter((p) => {
     const matchSearch =
       p.scenarioCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.id.toString().includes(searchQuery.toLowerCase()) ||
@@ -55,6 +56,8 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
 
     return matchSearch && matchDay && matchPeriod && matchGroup;
   });
+
+  const filteredPatients = rawFilteredPatients.map((p) => translatePatient(p, language));
 
   const exportCatalogJSON = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(simulatorPatients, null, 2));
@@ -77,7 +80,7 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
               <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest">
                 {isEn ? 'MASTER CATALOG' : 'CATALOGO UFFICIALE'}
               </span>
-              <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">24 SCENARI • 4 MACRO-GRUPPI • TCCC & SHOCK ROOM</span>
+              <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">{isEn ? '24 SCENARIOS • 4 MACRO-GROUPS • TCCC & SHOCK ROOM' : '24 SCENARI • 4 MACRO-GRUPPI • TCCC & SHOCK ROOM'}</span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 sm:gap-3">
               <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 shrink-0" />
@@ -133,8 +136,8 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-200 px-3 py-2 text-xs uppercase font-bold focus:outline-none focus:border-orange-500 cursor-pointer"
             >
               <option value="ALL">{isEn ? 'All Days' : 'Tutti i Giorni (Day 2 & 3)'}</option>
-              <option value="2">Day 2 (Scenari 1-12)</option>
-              <option value="3">Day 3 (Scenari 13-24)</option>
+              <option value="2">{isEn ? 'Day 2 (Scenarios 1-12)' : 'Day 2 (Scenari 1-12)'}</option>
+              <option value="3">{isEn ? 'Day 3 (Scenarios 13-24)' : 'Day 3 (Scenari 13-24)'}</option>
             </select>
           </div>
 
@@ -159,10 +162,10 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-200 px-3 py-2 text-xs uppercase font-bold focus:outline-none focus:border-orange-500 cursor-pointer"
             >
               <option value="ALL">{isEn ? 'All Groups' : 'Tutti i Gruppi (Alpha-Delta)'}</option>
-              <option value="A">Gruppo ALPHA (DISC 01-15)</option>
-              <option value="B">Gruppo BRAVO (DISC 16-30)</option>
-              <option value="C">Gruppo CHARLIE (DISC 31-45)</option>
-              <option value="D">Gruppo DELTA (DISC 46-60)</option>
+              <option value="A">{isEn ? 'ALPHA Group (DISC 01-15)' : 'Gruppo ALPHA (DISC 01-15)'}</option>
+              <option value="B">{isEn ? 'BRAVO Group (DISC 16-30)' : 'Gruppo BRAVO (DISC 16-30)'}</option>
+              <option value="C">{isEn ? 'CHARLIE Group (DISC 31-45)' : 'Gruppo CHARLIE (DISC 31-45)'}</option>
+              <option value="D">{isEn ? 'DELTA Group (DISC 46-60)' : 'Gruppo DELTA (DISC 46-60)'}</option>
             </select>
           </div>
         </div>
@@ -209,7 +212,7 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
                     <ScenarioStatusBadge patient={patient} />
                   </div>
                   <h3 className="text-white font-bold text-sm tracking-wide">
-                    {patient.lesioni[0] || 'Politrauma Tattico / Shock Room'}
+                    {patient.lesioni[0] || (isEn ? 'Tactical Polytrauma / Shock Room' : 'Politrauma Tattico / Shock Room')}
                   </h3>
                 </div>
               </div>
@@ -221,13 +224,13 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
                   <div>
                     <span className="text-neutral-500 block">TCCC (Extra):</span>
                     <span className="text-white font-bold">
-                      Gruppo {patient.groupExtraAssigned} (Sq. {patient.teamExtraAssigned})
+                      {isEn ? 'Group' : 'Gruppo'} {patient.groupExtraAssigned} ({isEn ? 'Team' : 'Sq.'} {patient.teamExtraAssigned})
                     </span>
                   </div>
                   <div>
                     <span className="text-neutral-500 block">Shock Room (Intra):</span>
                     <span className="text-white font-bold">
-                      Gruppo {patient.groupIntraAssigned} (Sq. {patient.teamIntraAssigned})
+                      {isEn ? 'Group' : 'Gruppo'} {patient.groupIntraAssigned} ({isEn ? 'Team' : 'Sq.'} {patient.teamIntraAssigned})
                     </span>
                   </div>
                 </div>
@@ -282,7 +285,7 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
                 {/* Simulator Equipment */}
                 <div className="flex items-center gap-2 text-neutral-300 bg-neutral-950 p-2 border border-neutral-800 font-mono text-[11px]">
                   <Wrench className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-                  <span className="truncate"><strong>Simulatore:</strong> {patient.simulatori}</span>
+                  <span className="truncate"><strong>{isEn ? 'Simulator: ' : 'Simulatore: '}</strong>{patient.simulatori}</span>
                 </div>
               </div>
 
@@ -302,19 +305,21 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
       </div>
 
       {/* Detailed Modal */}
-      {modalPatient && (
+      {modalPatient && (() => {
+        const tModalPatient = translatePatient(modalPatient, language);
+        return (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-neutral-900 border-2 border-orange-500/60 max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative space-y-6">
             <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
               <div>
                 <span className="px-2.5 py-1 bg-orange-600 text-black font-black text-xs uppercase">
-                  SCENARIO SIMULATORE #{modalPatient.id} • {modalPatient.scenarioCode}
+                  {isEn ? 'SIMULATOR SCENARIO' : 'SCENARIO SIMULATORE'} #{tModalPatient.id} • {tModalPatient.scenarioCode}
                 </span>
                 <h2 className="text-xl font-black text-white mt-2">
-                  {modalPatient.lesioni[0]}
+                  {tModalPatient.lesioni[0]}
                 </h2>
                 <p className="text-xs text-neutral-400 font-mono mt-1">
-                  Day {modalPatient.day} • Periodo: {modalPatient.period.toUpperCase()} • Gruppo Extra: {modalPatient.groupExtraAssigned} | Gruppo Intra: {modalPatient.groupIntraAssigned}
+                  Day {tModalPatient.day} • {isEn ? 'Period: ' : 'Periodo: '}{tModalPatient.period.toUpperCase()} • {isEn ? 'Extra Group: ' : 'Gruppo Extra: '}{tModalPatient.groupExtraAssigned} | {isEn ? 'Intra Group: ' : 'Gruppo Intra: '}{tModalPatient.groupIntraAssigned}
                 </p>
               </div>
               <button
@@ -329,10 +334,10 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
               {/* Lesioni */}
               <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                 <h4 className="text-orange-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                  <Activity className="w-4 h-4" /> Quadro Lesionale Completo
+                  <Activity className="w-4 h-4" /> {isEn ? 'Complete Lesion Pattern' : 'Quadro Lesionale Completo'}
                 </h4>
                 <ul className="list-disc pl-4 space-y-1 text-neutral-200">
-                  {modalPatient.lesioni.map((les, idx) => (
+                  {tModalPatient.lesioni.map((les, idx) => (
                     <li key={idx}>{les}</li>
                   ))}
                 </ul>
@@ -342,20 +347,20 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                   <h4 className="text-orange-400 font-black text-xs uppercase tracking-wider">
-                    Procedure TCCC (Ambiente Tattico)
+                    {isEn ? 'TCCC Procedures (Tactical Environment)' : 'Procedure TCCC (Ambiente Tattico)'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
-                    {modalPatient.procedureExtra.map((p, idx) => (
+                    {tModalPatient.procedureExtra.map((p, idx) => (
                       <li key={idx}>{p}</li>
                     ))}
                   </ul>
                 </div>
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                   <h4 className="text-cyan-400 font-black text-xs uppercase tracking-wider">
-                    Procedure Shock Room (ABCDE)
+                    {isEn ? 'Shock Room Procedures (ABCDE)' : 'Procedure Shock Room (ABCDE)'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
-                    {modalPatient.procedureIntra.map((p, idx) => (
+                    {tModalPatient.procedureIntra.map((p, idx) => (
                       <li key={idx}>{p}</li>
                     ))}
                   </ul>
@@ -365,27 +370,27 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
               {/* Moulage & Protesi */}
               <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                 <h4 className="text-red-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                  <Droplet className="w-4 h-4" /> Dettagli Moulage & Protesi
+                  <Droplet className="w-4 h-4" /> {isEn ? 'Moulage & Prosthetics Details' : 'Dettagli Moulage & Protesi'}
                 </h4>
-                <p className="text-neutral-200">{modalPatient.moulageProtesi}</p>
+                <p className="text-neutral-200">{tModalPatient.moulageProtesi}</p>
               </div>
 
               {/* Attori & Simulatori */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
-                  <span className="text-neutral-400 font-bold uppercase text-[10px]">Simulatori & Hardware:</span>
-                  <p className="text-white font-medium text-xs">{modalPatient.simulatori}</p>
+                  <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Simulators & Hardware:' : 'Simulatori & Hardware:'}</span>
+                  <p className="text-white font-medium text-xs">{tModalPatient.simulatori}</p>
                 </div>
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
-                  <span className="text-neutral-400 font-bold uppercase text-[10px]">Attori / Figuranti ({modalPatient.attoriCount}):</span>
-                  <p className="text-white font-medium text-xs">{modalPatient.attoreDettagli}</p>
+                  <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Actors / Roleplayers' : 'Attori / Figuranti'} ({tModalPatient.attoriCount}):</span>
+                  <p className="text-white font-medium text-xs">{tModalPatient.attoreDettagli}</p>
                 </div>
               </div>
 
               {/* Note Tecniche */}
               <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
-                <span className="text-neutral-400 font-bold uppercase text-[10px]">Note Regia & Team Tecnico:</span>
-                <p className="text-neutral-200 text-xs">{modalPatient.techNotes}</p>
+                <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Control Room & Tech Team Notes:' : 'Note Regia & Team Tecnico:'}</span>
+                <p className="text-neutral-200 text-xs">{tModalPatient.techNotes}</p>
               </div>
             </div>
 
@@ -394,12 +399,13 @@ export const ScenariCatalogView: React.FC<{ onOpenProtesi?: () => void }> = ({ o
                 onClick={() => setModalPatient(null)}
                 className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider cursor-pointer"
               >
-                Chiudi Scheda
+                {isEn ? 'Close Sheet' : 'Chiudi Scheda'}
               </button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

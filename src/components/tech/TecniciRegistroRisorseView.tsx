@@ -207,6 +207,8 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
     language,
   } = useCourse();
 
+  const isEn = language === 'en';
+
   const [activeSection, setActiveSection] = useState<'scenari' | 'protesi' | 'simulatori' | 'attori' | 'tecnici'>('scenari');
   const [filterDay, setFilterDay] = useState<'all' | '2' | '3'>('all');
   const [filterStation, setFilterStation] = useState<'all' | 'mine' | 'tccc' | 'shock'>('all');
@@ -337,19 +339,20 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-700 font-mono text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                <ClipboardList className="w-3.5 h-3.5 text-cyan-400" /> REGISTRO OPERATIVO RISORSE TECNICHE
+                <ClipboardList className="w-3.5 h-3.5 text-cyan-400" /> {isEn ? 'OPERATIONAL TECHNICAL RESOURCES REGISTRY' : 'REGISTRO OPERATIVO RISORSE TECNICHE'}
               </span>
               <span className="text-neutral-400 text-xs font-bold">
-                Presidi • Protesi • Manichini • Attori
+                {isEn ? 'Devices • Prosthetics • Manikins • Actors' : 'Presidi • Protesi • Manichini • Attori'}
               </span>
             </div>
             <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
               <Wrench className="w-5 h-5 text-cyan-400" />
-              Gestione Risorse, Biomodelli & Supporto Tecnico
+              {isEn ? 'Resource Management, Biomodels & Technical Support' : 'Gestione Risorse, Biomodelli & Supporto Tecnico'}
             </h2>
             <p className="text-xs text-neutral-300 max-w-2xl font-normal">
-              Registro centralizzato per il monitoraggio in tempo reale di protesi in silicone ad alta fedeltà,
-              simulatori hardware, biomodelli biologici, figuranti/attori simulati e presidio delle postazioni.
+              {isEn
+                ? 'Centralized registry for real-time monitoring of high-fidelity silicone prosthetics, hardware simulators, biological biomodels, simulated role players/actors, and station assignments.'
+                : 'Registro centralizzato per il monitoraggio in tempo reale di protesi in silicone ad alta fedeltà, simulatori hardware, biomodelli biologici, figuranti/attori simulati e presidio delle postazioni.'}
             </p>
           </div>
 
@@ -357,9 +360,9 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             <button
               onClick={handleExportResources}
               className="px-3 py-2 bg-neutral-950 hover:bg-neutral-800 text-cyan-300 border border-cyan-700/80 font-mono text-xs font-bold uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Esporta Registro Risorse in JSON"
+              title={isEn ? 'Export Resources Registry to JSON' : 'Esporta Registro Risorse in JSON'}
             >
-              <Download className="w-3.5 h-3.5" /> Esporta Registro
+              <Download className="w-3.5 h-3.5" /> {isEn ? 'Export Registry' : 'Esporta Registro'}
             </button>
           </div>
         </div>
@@ -367,37 +370,37 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
         {/* Status Metrics Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
           <div className="bg-neutral-950 p-3 border border-neutral-800 rounded">
-            <span className="text-[10px] text-neutral-400 font-bold uppercase block">Scenari Totali</span>
+            <span className="text-[10px] text-neutral-400 font-bold uppercase block">{isEn ? 'Total Scenarios' : 'Scenari Totali'}</span>
             <span className="text-lg font-black text-white">{stats.total}</span>
             <span className="text-[10px] text-neutral-500 block">Day 2 (12) + Day 3 (12)</span>
           </div>
           <div className="bg-neutral-950 p-3 border border-emerald-900/60 rounded">
             <span className="text-[10px] text-emerald-400 font-bold uppercase block flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Postazioni Pronte
+              <CheckCircle2 className="w-3 h-3" /> {isEn ? 'Stations Ready' : 'Postazioni Pronte'}
             </span>
             <span className="text-lg font-black text-emerald-300">{stats.ready}</span>
-            <span className="text-[10px] text-emerald-500/80 block">Allestite & Verificate</span>
+            <span className="text-[10px] text-emerald-500/80 block">{isEn ? 'Set Up & Verified' : 'Allestite & Verificate'}</span>
           </div>
           <div className="bg-neutral-950 p-3 border border-yellow-900/60 rounded">
             <span className="text-[10px] text-yellow-400 font-bold uppercase block flex items-center gap-1">
-              <Clock className="w-3 h-3" /> In Allestimento
+              <Clock className="w-3 h-3" /> {isEn ? 'Setting Up' : 'In Allestimento'}
             </span>
             <span className="text-lg font-black text-yellow-300">{stats.preparing}</span>
-            <span className="text-[10px] text-yellow-500/80 block">In Turnaround/Reset</span>
+            <span className="text-[10px] text-yellow-500/80 block">{isEn ? 'In Turnaround/Reset' : 'In Turnaround/Reset'}</span>
           </div>
           <div className="bg-neutral-950 p-3 border border-red-900/60 rounded">
             <span className="text-[10px] text-red-400 font-bold uppercase block flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Criticità / Reset
+              <AlertTriangle className="w-3 h-3" /> {isEn ? 'Critical / Reset' : 'Criticità / Reset'}
             </span>
             <span className="text-lg font-black text-red-400">{stats.critical}</span>
-            <span className="text-[10px] text-red-500/80 block">Intervento Richiesto</span>
+            <span className="text-[10px] text-red-500/80 block">{isEn ? 'Action Required' : 'Intervento Richiesto'}</span>
           </div>
           <div className="bg-neutral-950 p-3 border border-amber-900/60 rounded col-span-2 sm:col-span-1">
             <span className="text-[10px] text-amber-400 font-bold uppercase block flex items-center gap-1">
-              <Users className="w-3 h-3" /> Attori & Moulage
+              <Users className="w-3 h-3" /> {isEn ? 'Actors & Moulage' : 'Attori & Moulage'}
             </span>
-            <span className="text-lg font-black text-amber-300">{stats.totalActors} Attori</span>
-            <span className="text-[10px] text-amber-500/80 block">12 Tecnici Operativi</span>
+            <span className="text-lg font-black text-amber-300">{stats.totalActors} {isEn ? 'Actors' : 'Attori'}</span>
+            <span className="text-[10px] text-amber-500/80 block">{isEn ? '12 Active Technicians' : '12 Tecnici Operativi'}</span>
           </div>
         </div>
       </div>
@@ -416,7 +419,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             }`}
           >
             <Activity className="w-4 h-4" />
-            <span>1. Scenari (TCCC vs SR) ({filteredPatients.length})</span>
+            <span>1. {isEn ? 'Scenarios (TCCC vs SR)' : 'Scenari (TCCC vs SR)'} ({filteredPatients.length})</span>
           </button>
 
           <button
@@ -429,7 +432,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>2. Protesi & Moulage ({filteredPatients.length})</span>
+            <span>2. {isEn ? 'Prosthetics & Moulage' : 'Protesi & Moulage'} ({filteredPatients.length})</span>
           </button>
 
           <button
@@ -442,7 +445,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             }`}
           >
             <HardHat className="w-4 h-4" />
-            <span>3. Hardware & Sim ({filteredPatients.length})</span>
+            <span>3. {isEn ? 'Hardware & Sim' : 'Hardware & Sim'} ({filteredPatients.length})</span>
           </button>
 
           <button
@@ -455,7 +458,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>4. Attori ({filteredPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)})</span>
+            <span>4. {isEn ? 'Actors' : 'Attori'} ({filteredPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)})</span>
           </button>
 
           <button
@@ -464,7 +467,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             className={`p-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border transition-all cursor-pointer rounded col-span-2 sm:col-span-1`}
           >
             <Radio className="w-4 h-4" />
-            <span>5. Squadra Tecnici ({technicians.length})</span>
+            <span>5. {isEn ? 'Technician Team' : 'Squadra Tecnici'} ({technicians.length})</span>
           </button>
         </div>
 
@@ -472,7 +475,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
         <div className="bg-neutral-900 border border-neutral-800 p-3 rounded flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
           {/* Day & Station Filters */}
           <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
-            <span className="text-[10px] text-neutral-400 uppercase font-bold">Giorno:</span>
+            <span className="text-[10px] text-neutral-400 uppercase font-bold">{isEn ? 'Day:' : 'Giorno:'}</span>
             <div className="flex items-center bg-neutral-950 border border-neutral-800 p-0.5 rounded">
               <button
                 type="button"
@@ -481,7 +484,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   filterDay === 'all' ? 'bg-cyan-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Tutti
+                {isEn ? 'All' : 'Tutti'}
               </button>
               <button
                 type="button"
@@ -503,7 +506,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
               </button>
             </div>
 
-            <span className="text-[10px] text-neutral-400 uppercase font-bold ml-2">Suddivisione Ambiente:</span>
+            <span className="text-[10px] text-neutral-400 uppercase font-bold ml-2">{isEn ? 'Environment Division:' : 'Suddivisione Ambiente:'}</span>
             <div className="flex items-center bg-neutral-950 border border-neutral-800 p-0.5 rounded flex-wrap gap-1">
               <button
                 type="button"
@@ -512,7 +515,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   filterStation === 'all' ? 'bg-cyan-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                🔄 Entrambi (TCCC & SR)
+                🔄 {isEn ? 'Both (TCCC & SR)' : 'Entrambi (TCCC & SR)'}
               </button>
               <button
                 type="button"
@@ -521,7 +524,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   filterStation === 'mine' ? 'bg-pink-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                ★ Miei Scenari
+                ★ {isEn ? 'My Scenarios' : 'Miei Scenari'}
               </button>
               <button
                 type="button"
@@ -530,7 +533,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   filterStation === 'tccc' ? 'bg-emerald-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                🌲 Solo TCCC (Extra-Osp)
+                🌲 {isEn ? 'TCCC Only (Pre-Hosp)' : 'Solo TCCC (Extra-Osp)'}
               </button>
               <button
                 type="button"
@@ -539,7 +542,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   filterStation === 'shock' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                🏥 Solo Shock Room (Intra-Osp)
+                🏥 {isEn ? 'Shock Room Only (In-Hosp)' : 'Solo Shock Room (Intra-Osp)'}
               </button>
             </div>
           </div>
@@ -549,7 +552,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
             <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cerca per lesione, protesi, attore..."
+              placeholder={isEn ? 'Search by injury, prosthesis, actor...' : 'Cerca per lesione, protesi, attore...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-neutral-950 text-neutral-200 pl-8 pr-7 py-1.5 border border-neutral-800 rounded text-xs focus:outline-none focus:border-cyan-500 placeholder:text-neutral-600"
@@ -586,10 +589,10 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
         <div className="space-y-4">
           <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between rounded">
             <span className="text-xs text-neutral-300 font-bold flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-cyan-400" /> Registro Protesi in Silicone & Circuiti di Sanguinamento
+              <Sparkles className="w-4 h-4 text-cyan-400" /> {isEn ? 'Silicone Prosthetics & Bleeding Circuits Registry' : 'Registro Protesi in Silicone & Circuiti di Sanguinamento'}
             </span>
             <span className="text-[11px] text-cyan-400 font-mono">
-              Mostrati: <strong>{filteredPatients.length}</strong> scenari
+              {isEn ? 'Displayed:' : 'Mostrati:'} <strong>{filteredPatients.length}</strong> {isEn ? 'scenarios' : 'scenari'}
             </span>
           </div>
 
@@ -609,14 +612,14 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                     <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-cyan-500 text-black font-black font-mono text-xs rounded">
-                          PZ #{patient.id}
+                          {isEn ? 'PT' : 'PZ'} #{patient.id}
                         </span>
                         <span className="font-black text-white text-sm uppercase">
                           {patient.scenarioCode}
                         </span>
                         {isAssignedToCurrentTech && (
                           <span className="px-1.5 py-0.2 bg-pink-950 text-pink-300 border border-pink-700 text-[9px] font-bold rounded">
-                            TUO SCENARIO
+                            {isEn ? 'YOUR SCENARIO' : 'TUO SCENARIO'}
                           </span>
                         )}
                       </div>
@@ -632,29 +635,29 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                               ? 'bg-red-950 text-red-300 border-red-600 hover:bg-red-900 animate-pulse'
                               : 'bg-yellow-950 text-yellow-300 border-yellow-600 hover:bg-yellow-900'
                           }`}
-                          title="Clicca per cambiare stato di prontezza postazione"
+                          title={isEn ? 'Click to change station readiness status' : 'Clicca per cambiare stato di prontezza postazione'}
                         >
-                          {readiness === 'ready' ? '🟢 PRONTO' : readiness === 'critical' ? '🔴 CRITICO' : '🟡 IN CORSO'}
+                          {readiness === 'ready' ? (isEn ? '🟢 READY' : '🟢 PRONTO') : readiness === 'critical' ? (isEn ? '🔴 CRITICAL' : '🔴 CRITICO') : (isEn ? '🟡 IN PROGRESS' : '🟡 IN CORSO')}
                         </button>
                       </div>
                     </div>
 
                     <div className="text-xs text-neutral-300">
-                      <span className="font-bold text-neutral-400">Day {patient.day} • {patient.period.toUpperCase()}</span>
+                      <span className="font-bold text-neutral-400">{isEn ? 'Day' : 'Day'} {patient.day} • {patient.period.toUpperCase()}</span>
                       <span className="mx-2 text-neutral-600">|</span>
-                      <span>Extra: <strong className="text-white">Sq.{patient.teamExtraAssigned} (Grp {patient.groupExtraAssigned})</strong></span>
+                      <span>Extra: <strong className="text-white">{isEn ? 'Team' : 'Sq.'}{patient.teamExtraAssigned} ({isEn ? 'Grp' : 'Grp'} {patient.groupExtraAssigned})</strong></span>
                       <span className="mx-1 text-neutral-600">•</span>
-                      <span>Intra: <strong className="text-white">Sq.{patient.teamIntraAssigned} (Grp {patient.groupIntraAssigned})</strong></span>
+                      <span>Intra: <strong className="text-white">{isEn ? 'Team' : 'Sq.'}{patient.teamIntraAssigned} ({isEn ? 'Grp' : 'Grp'} {patient.groupIntraAssigned})</strong></span>
                     </div>
 
                     {/* Protesi Silicone */}
                     <div className="bg-neutral-950 p-3 border border-neutral-800 rounded space-y-1.5">
                       <span className="text-[10px] text-amber-400 font-bold uppercase flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        Protesi in Silicone & Moulage ad Alta Fedeltà:
+                        {isEn ? 'Silicone Prosthetics & High-Fidelity Moulage:' : 'Protesi in Silicone & Moulage ad Alta Fedeltà:'}
                       </span>
                       <p className="text-xs text-neutral-200 font-semibold leading-relaxed">
-                        {patient.moulageProtesi || 'Protesi traumatologica standard'}
+                        {patient.moulageProtesi || (isEn ? 'Standard trauma prosthesis' : 'Protesi traumatologica standard')}
                       </p>
                     </div>
 
@@ -662,7 +665,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                     {patient.lesioni && patient.lesioni.length > 0 && (
                       <div className="space-y-1">
                         <span className="text-[10px] text-neutral-400 font-bold uppercase block">
-                          Lesioni Simulate:
+                          {isEn ? 'Simulated Injuries:' : 'Lesioni Simulate:'}
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {patient.lesioni.map((lesione, lIdx) => (
@@ -680,7 +683,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                     {/* Note Tecniche */}
                     {patient.techNotes && (
                       <div className="bg-amber-950/20 border border-amber-600/30 p-2.5 rounded text-[11px] text-amber-200">
-                        <strong className="text-amber-400 font-bold uppercase block text-[10px]">Note Tecniche / Reset:</strong>
+                        <strong className="text-amber-400 font-bold uppercase block text-[10px]">{isEn ? 'Technical Notes / Reset:' : 'Note Tecniche / Reset:'}</strong>
                         {patient.techNotes}
                       </div>
                     )}
@@ -694,7 +697,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                         onClick={() => onOpenChecklist(patient)}
                         className="px-3 py-1.5 bg-neutral-950 hover:bg-neutral-800 text-pink-400 border border-pink-700/80 font-bold text-[11px] uppercase rounded transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Checklist Reset
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {isEn ? 'Reset Checklist' : 'Checklist Reset'}
                       </button>
                     )}
 
@@ -704,7 +707,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                         onClick={() => onOpenModal(patient)}
                         className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-bold text-[11px] uppercase rounded transition-colors flex items-center gap-1 cursor-pointer ml-auto"
                       >
-                        <ClipboardList className="w-3.5 h-3.5" /> Scheda Completa
+                        <ClipboardList className="w-3.5 h-3.5" /> {isEn ? 'Full File' : 'Scheda Completa'}
                       </button>
                     )}
                   </div>
@@ -720,10 +723,10 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
         <div className="space-y-4">
           <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between rounded">
             <span className="text-xs text-neutral-300 font-bold flex items-center gap-1.5">
-              <HardHat className="w-4 h-4 text-cyan-400" /> Registro Simulatori Hardware, Biomodelli & Manichini
+              <HardHat className="w-4 h-4 text-cyan-400" /> {isEn ? 'Hardware Simulators, Biomodels & Manikins Registry' : 'Registro Simulatori Hardware, Biomodelli & Manichini'}
             </span>
             <span className="text-[11px] text-cyan-400 font-mono">
-              Totale registrati: <strong>{filteredPatients.length}</strong>
+              {isEn ? 'Total registered:' : 'Totale registrati:'} <strong>{filteredPatients.length}</strong>
             </span>
           </div>
 
@@ -737,14 +740,14 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-cyan-500 text-black font-black font-mono text-xs rounded">
-                        SIMULATORE PZ #{patient.id}
+                        {isEn ? 'SIMULATOR PT' : 'SIMULATORE PZ'} #{patient.id}
                       </span>
                       <span className="font-black text-white text-sm uppercase">
                         {patient.scenarioCode}
                       </span>
                     </div>
                     <span className="text-neutral-400 text-xs font-bold">
-                      Day {patient.day} • {patient.period.toUpperCase()}
+                      {isEn ? 'Day' : 'Day'} {patient.day} • {patient.period.toUpperCase()}
                     </span>
                   </div>
 
@@ -752,28 +755,28 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                   <div className="bg-neutral-950 p-3 border border-neutral-800 rounded space-y-1.5">
                     <span className="text-[10px] text-cyan-400 font-bold uppercase flex items-center gap-1.5">
                       <HardHat className="w-3.5 h-3.5 text-cyan-400" />
-                      Dotazione Hardware & Manichino Assegnato:
+                      {isEn ? 'Hardware Equipment & Assigned Manikin:' : 'Dotazione Hardware & Manichino Assegnato:'}
                     </span>
                     <p className="text-xs text-neutral-200 font-semibold leading-relaxed">
-                      {patient.simulatori || 'Simulatore traumatologico avanzato ad alta fedeltà'}
+                      {patient.simulatori || (isEn ? 'Advanced high-fidelity trauma simulator' : 'Simulatore traumatologico avanzato ad alta fedeltà')}
                     </p>
                   </div>
 
                   {/* Procedure Tecniche Attese */}
                   <div className="space-y-1 text-xs">
                     <span className="text-[10px] text-neutral-400 font-bold uppercase block">
-                      Procedure con Consumabili / Impianti:
+                      {isEn ? 'Procedures with Consumables / Implants:' : 'Procedure con Consumabili / Impianti:'}
                     </span>
                     <div className="space-y-1 font-mono text-[11px]">
                       {patient.procedureExtra && patient.procedureExtra.length > 0 && (
                         <div className="bg-neutral-950 p-2 border border-neutral-800 rounded text-cyan-300">
-                          <strong className="text-neutral-400 block text-[10px] uppercase">Extra-Ospedaliero (TCCC):</strong>
+                          <strong className="text-neutral-400 block text-[10px] uppercase">{isEn ? 'Pre-Hospital (TCCC):' : 'Extra-Ospedaliero (TCCC):'}</strong>
                           {patient.procedureExtra.join(' • ')}
                         </div>
                       )}
                       {patient.procedureIntra && patient.procedureIntra.length > 0 && (
                         <div className="bg-neutral-950 p-2 border border-neutral-800 rounded text-emerald-300">
-                          <strong className="text-neutral-400 block text-[10px] uppercase">Intra-Ospedaliero (Shock Room):</strong>
+                          <strong className="text-neutral-400 block text-[10px] uppercase">{isEn ? 'In-Hospital (Shock Room):' : 'Intra-Ospedaliero (Shock Room):'}</strong>
                           {patient.procedureIntra.join(' • ')}
                         </div>
                       )}
@@ -782,14 +785,14 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                 </div>
 
                 <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono">
-                  <span>Stato: <strong className="text-white uppercase">{patient.readinessStatus || 'ready'}</strong></span>
+                  <span>{isEn ? 'Status:' : 'Stato:'} <strong className="text-white uppercase">{patient.readinessStatus || 'ready'}</strong></span>
                   {onOpenChecklist && (
                     <button
                       type="button"
                       onClick={() => onOpenChecklist(patient)}
                       className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer"
                     >
-                      Verifica Consumabili <ChevronRight className="w-3.5 h-3.5" />
+                      {isEn ? 'Verify Consumables' : 'Verifica Consumabili'} <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -804,10 +807,10 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
         <div className="space-y-4">
           <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between rounded">
             <span className="text-xs text-neutral-300 font-bold flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-amber-400" /> Registro Attori Professionisti & Ruoli Simulati
+              <Users className="w-4 h-4 text-amber-400" /> {isEn ? 'Professional Actors & Simulated Roles Registry' : 'Registro Attori Professionisti & Ruoli Simulati'}
             </span>
             <span className="text-[11px] text-amber-400 font-mono">
-              Totale attori in turno: <strong>{filteredPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)}</strong>
+              {isEn ? 'Total actors on duty:' : 'Totale attori in turno:'} <strong>{filteredPatients.reduce((acc, p) => acc + (p.attoriCount || 1), 0)}</strong>
             </span>
           </div>
 
@@ -823,36 +826,36 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                     <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-amber-500 text-black font-black font-mono text-xs rounded">
-                          PAZIENTE #{patient.id}
+                          {isEn ? 'PATIENT' : 'PAZIENTE'} #{patient.id}
                         </span>
                         <span className="font-black text-white text-sm uppercase">
                           {patient.scenarioCode}
                         </span>
                       </div>
                       <span className="px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-700 font-bold text-[10px] rounded">
-                        {actorCount} {actorCount > 1 ? 'Attori' : 'Attore'}
+                        {actorCount} {isEn ? (actorCount > 1 ? 'Actors' : 'Actor') : (actorCount > 1 ? 'Attori' : 'Attore')}
                       </span>
                     </div>
 
                     <div className="text-xs text-neutral-300 font-bold">
-                      Day {patient.day} • {patient.period.toUpperCase()} • Postazione Paziente #{patient.id}
+                      {isEn ? 'Day' : 'Day'} {patient.day} • {patient.period.toUpperCase()} • {isEn ? 'Station Patient' : 'Postazione Paziente'} #{patient.id}
                     </div>
 
                     {/* Acting Instructions & Actor Details */}
                     <div className="bg-neutral-950 p-3 border border-neutral-800 rounded space-y-1.5">
                       <span className="text-[10px] text-amber-400 font-bold uppercase flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-amber-400" />
-                        Ruolo Simulato & Note per gli Attori:
+                        {isEn ? 'Simulated Role & Instructions for Actors:' : 'Ruolo Simulato & Note per gli Attori:'}
                       </span>
                       <p className="text-xs text-neutral-200 font-semibold leading-relaxed">
-                        {patient.attoreDettagli || 'Attore con moulage ferita ad alta fedeltà. Manifesta agitazione, dolore progressivo e dispnea.'}
+                        {patient.attoreDettagli || (isEn ? 'Actor with high-fidelity wound moulage. Exhibits agitation, escalating pain and dyspnea.' : 'Attore con moulage ferita ad alta fedeltà. Manifesta agitazione, dolore progressivo e dispnea.')}
                       </p>
                     </div>
 
                     {/* Dinamica delle Lesioni */}
                     {patient.dinamicaDelleLesioni && (
                       <div className="bg-neutral-950 p-2.5 border border-neutral-800 rounded text-xs text-neutral-300 space-y-1">
-                        <strong className="text-[10px] text-neutral-400 uppercase block font-bold">Contesto Clinico / Script:</strong>
+                        <strong className="text-[10px] text-neutral-400 uppercase block font-bold">{isEn ? 'Clinical Context / Script:' : 'Contesto Clinico / Script:'}</strong>
                         <p className="italic text-neutral-300">{patient.dinamicaDelleLesioni}</p>
                       </div>
                     )}
@@ -860,19 +863,19 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                     {/* Safety word reminder */}
                     <div className="bg-red-950/30 border border-red-800/40 p-2 rounded text-[10px] text-red-300 flex items-center gap-2">
                       <ShieldAlert className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                      <span>Parola di Sicurezza Attore: <strong>"ROSSO ARRESTO"</strong> (Interruzione immediata manovra reale dolorosa)</span>
+                      <span>{isEn ? 'Actor Safety Word:' : 'Parola di Sicurezza Attore:'} <strong>"RED STOP"</strong> ({isEn ? 'Immediate halt of real painful maneuver' : 'Interruzione immediata manovra reale dolorosa'})</span>
                     </div>
                   </div>
 
                   <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs font-mono">
-                    <span className="text-neutral-400">Protesi: <strong className="text-white">{patient.moulageProtesi || 'Standard'}</strong></span>
+                    <span className="text-neutral-400">{isEn ? 'Prosthesis:' : 'Protesi:'} <strong className="text-white">{patient.moulageProtesi || (isEn ? 'Standard' : 'Standard')}</strong></span>
                     {onOpenModal && (
                       <button
                         type="button"
                         onClick={() => onOpenModal(patient)}
                         className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
                       >
-                        Scheda Attori <ChevronRight className="w-3.5 h-3.5" />
+                        {isEn ? 'Actor File' : 'Scheda Attori'} <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -888,10 +891,10 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
         <div className="space-y-4">
           <div className="bg-neutral-900 border border-neutral-800 p-3 flex items-center justify-between rounded">
             <span className="text-xs text-neutral-300 font-bold flex items-center gap-1.5">
-              <Radio className="w-4 h-4 text-emerald-400" /> Presidio Tecnico Postazioni • Squadra TECH-01 – TECH-12
+              <Radio className="w-4 h-4 text-emerald-400" /> {isEn ? 'Station Technical Guard • Team TECH-01 – TECH-12' : 'Presidio Tecnico Postazioni • Squadra TECH-01 – TECH-12'}
             </span>
             <span className="text-[11px] text-emerald-400 font-mono">
-              <strong>{technicians.length}</strong> Tecnici in Turno
+              <strong>{technicians.length}</strong> {isEn ? 'Technicians on Duty' : 'Tecnici in Turno'}
             </span>
           </div>
 
@@ -920,23 +923,23 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                       </div>
                       {isCurrent && (
                         <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 text-[10px] font-bold rounded">
-                          TUO PROFILO
+                          {isEn ? 'YOUR PROFILE' : 'TUO PROFILO'}
                         </span>
                       )}
                     </div>
 
                     <div className="text-xs font-mono space-y-1">
                       <div className="text-neutral-300">
-                        <span className="text-neutral-400">Specialità:</span> <strong className="text-cyan-300">{tech.specialty}</strong>
+                        <span className="text-neutral-400">{isEn ? 'Specialty:' : 'Specialità:'}</span> <strong className="text-cyan-300">{tech.specialty}</strong>
                       </div>
                       <div className="text-neutral-300">
-                        <span className="text-neutral-400">Contatto:</span> <strong className="text-white">{tech.phone || 'Radio Ch. 4'}</strong>
+                        <span className="text-neutral-400">{isEn ? 'Contact:' : 'Contatto:'}</span> <strong className="text-white">{tech.phone || 'Radio Ch. 4'}</strong>
                       </div>
                     </div>
 
                     <div className="space-y-1 pt-1">
                       <span className="text-[10px] text-neutral-400 font-bold uppercase block">
-                        Postazioni di Presidio Assegnate:
+                        {isEn ? 'Assigned Duty Stations:' : 'Postazioni di Presidio Assegnate:'}
                       </span>
                       <div className="flex flex-wrap gap-1">
                         {tech.assignedStations && tech.assignedStations.length > 0 ? (
@@ -949,7 +952,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-neutral-500">Postazione Tattica / Shock Room</span>
+                          <span className="text-xs text-neutral-500">{isEn ? 'Tactical Station / Shock Room' : 'Postazione Tattica / Shock Room'}</span>
                         )}
                       </div>
                     </div>
@@ -961,7 +964,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                       <div className="space-y-2">
                         <input
                           type="text"
-                          placeholder={`Messaggio per ${tech.name}...`}
+                          placeholder={isEn ? `Message for ${tech.name}...` : `Messaggio per ${tech.name}...`}
                           value={quickPingMsg}
                           onChange={(e) => setQuickPingMsg(e.target.value)}
                           className="w-full bg-neutral-950 text-neutral-200 px-2.5 py-1 border border-cyan-500 rounded text-xs focus:outline-none"
@@ -973,20 +976,20 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                             onClick={() => setQuickPingTechId(null)}
                             className="px-2 py-1 bg-neutral-800 text-neutral-300 text-[10px] rounded hover:text-white"
                           >
-                            Annulla
+                            {isEn ? 'Cancel' : 'Annulla'}
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSendPing(tech)}
                             className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-bold uppercase rounded flex items-center gap-1"
                           >
-                            <Send className="w-3 h-3" /> Invia
+                            <Send className="w-3 h-3" /> {isEn ? 'Send' : 'Invia'}
                           </button>
                         </div>
                       </div>
                     ) : isSuccess ? (
                       <div className="p-1.5 bg-emerald-950 border border-emerald-600 text-emerald-300 text-[11px] text-center font-bold rounded">
-                        ✓ Messaggio Inviato!
+                        ✓ {isEn ? 'Message Sent!' : 'Messaggio Inviato!'}
                       </div>
                     ) : (
                       <button
@@ -997,7 +1000,7 @@ export const TecniciRegistroRisorseView: React.FC<TecniciRegistroRisorseViewProp
                         }}
                         className="w-full py-1.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 text-[11px] font-bold uppercase rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <MessageSquare className="w-3 h-3 text-cyan-400" /> Invia Richiesta Presidi
+                        <MessageSquare className="w-3 h-3 text-cyan-400" /> {isEn ? 'Send Resource Request' : 'Invia Richiesta Presidi'}
                       </button>
                     )}
                   </div>

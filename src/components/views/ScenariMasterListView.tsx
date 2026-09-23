@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { SimulatorPatient } from '../../types';
 import { ScenarioStatusBadge } from '../ScenarioStatusBadge';
+import { translatePatient } from '../../utils/courseTranslation';
 
 export const ScenariMasterListView: React.FC = () => {
   const { simulatorPatients, language, teams, technicians, evaluations } = useCourse();
@@ -34,25 +35,27 @@ export const ScenariMasterListView: React.FC = () => {
 
   // Helper to get execution time based on day & period / slot
   const getExecutionTimeInfo = (patient: SimulatorPatient) => {
+    const blockText = isEn ? 'Block' : 'Blocco';
+    const preAlertText = isEn ? 'TCCC Pre-alert / SR Standby' : 'Pre-allerta TCCC / Standby SR';
     if (patient.day === 2 && patient.period === 'mattina') {
-      return { time: '08:30 - 10:00 (Blocco 1)', preAlert: '08:30 (Pre-allerta TCCC / Standby SR)' };
+      return { time: `08:30 - 10:00 (${blockText} 1)`, preAlert: `08:30 (${preAlertText})` };
     }
     if (patient.day === 2 && patient.period === 'pomeriggio') {
-      return { time: '10:15 - 11:45 (Blocco 2)', preAlert: '10:15 (Pre-allerta TCCC / Standby SR)' };
+      return { time: `10:15 - 11:45 (${blockText} 2)`, preAlert: `10:15 (${preAlertText})` };
     }
     if (patient.day === 3 && patient.period === 'mattina') {
-      return { time: '12:00 - 13:30 (Blocco 3)', preAlert: '12:00 (Pre-allerta TCCC / Standby SR)' };
+      return { time: `12:00 - 13:30 (${blockText} 3)`, preAlert: `12:00 (${preAlertText})` };
     }
-    return { time: '14:15 - 15:45 (Blocco 4)', preAlert: '14:15 (Pre-allerta TCCC / Standby SR)' };
+    return { time: `14:15 - 15:45 (${blockText} 4)`, preAlert: `14:15 (${preAlertText})` };
   };
 
   // Helper to get assigned technician based on team
   const getTechnicianForTeam = (teamId: number) => {
     const techIdx = ((teamId - 1) % technicians.length);
-    return technicians[techIdx] || { badgeCode: `TECH-${String(teamId).padStart(2, '0')}`, name: `Tecnico Postazione ${teamId}` };
+    return technicians[techIdx] || { badgeCode: `TECH-${String(teamId).padStart(2, '0')}`, name: isEn ? `Station Technician ${teamId}` : `Tecnico Postazione ${teamId}` };
   };
 
-  const filteredScenarios = simulatorPatients.filter((p) => {
+  const rawFilteredScenarios = simulatorPatients.filter((p) => {
     const matchSearch =
       p.scenarioCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.id.toString().includes(searchQuery.toLowerCase()) ||
@@ -65,6 +68,8 @@ export const ScenariMasterListView: React.FC = () => {
 
     return matchSearch && matchDay && matchPeriod;
   });
+
+  const filteredScenarios = rawFilteredScenarios.map((p) => translatePatient(p, language));
 
   const exportScenariosListJSON = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(simulatorPatients, null, 2));
@@ -87,7 +92,7 @@ export const ScenariMasterListView: React.FC = () => {
               <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest">
                 {isEn ? 'MASTER COURSE SCENARIOS' : 'ELENCO GENERALE SCENARI'}
               </span>
-              <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">24 SCENARI UFFICIALI • TCCC & SHOCK ROOM</span>
+              <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">{isEn ? '24 OFFICIAL SCENARIOS • TCCC & SHOCK ROOM' : '24 SCENARI UFFICIALI • TCCC & SHOCK ROOM'}</span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 sm:gap-3">
               <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 shrink-0" />
@@ -134,8 +139,8 @@ export const ScenariMasterListView: React.FC = () => {
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-200 px-3 py-2 text-xs uppercase font-bold focus:outline-none focus:border-orange-500 cursor-pointer"
             >
               <option value="ALL">{isEn ? 'All Days' : 'Tutti i Giorni (Day 2 & 3)'}</option>
-              <option value="2">Day 2 (Scenari 1-12)</option>
-              <option value="3">Day 3 (Scenari 13-24)</option>
+              <option value="2">{isEn ? 'Day 2 (Scenarios 1-12)' : 'Day 2 (Scenari 1-12)'}</option>
+              <option value="3">{isEn ? 'Day 3 (Scenarios 13-24)' : 'Day 3 (Scenari 13-24)'}</option>
             </select>
           </div>
 
@@ -147,8 +152,8 @@ export const ScenariMasterListView: React.FC = () => {
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-200 px-3 py-2 text-xs uppercase font-bold focus:outline-none focus:border-orange-500 cursor-pointer"
             >
               <option value="ALL">{isEn ? 'All Periods' : 'Tutti i Periodi (Mattina/Pomeriggio)'}</option>
-              <option value="mattina">{isEn ? 'Morning (Blocchi 1 & 3)' : 'Mattina (Blocchi 1 & 3)'}</option>
-              <option value="pomeriggio">{isEn ? 'Afternoon (Blocchi 2 & 4)' : 'Pomeriggio (Blocchi 2 & 4)'}</option>
+              <option value="mattina">{isEn ? 'Morning (Blocks 1 & 3)' : 'Mattina (Blocchi 1 & 3)'}</option>
+              <option value="pomeriggio">{isEn ? 'Afternoon (Blocks 2 & 4)' : 'Pomeriggio (Blocchi 2 & 4)'}</option>
             </select>
           </div>
         </div>
@@ -384,19 +389,21 @@ export const ScenariMasterListView: React.FC = () => {
       </div>
 
       {/* Scenario Detail Modal */}
-      {selectedModalPatient && (
+      {selectedModalPatient && (() => {
+        const modalPatient = translatePatient(selectedModalPatient, language);
+        return (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-neutral-900 border-2 border-orange-500/60 max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative space-y-6">
             <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
               <div>
                 <span className="px-2.5 py-1 bg-orange-600 text-black font-black text-xs uppercase">
-                  SCENARIO #{selectedModalPatient.id} • {selectedModalPatient.scenarioCode}
+                  SCENARIO #{modalPatient.id} • {modalPatient.scenarioCode}
                 </span>
                 <h2 className="text-xl font-black text-white mt-2">
-                  {selectedModalPatient.lesioni[0]}
+                  {modalPatient.lesioni[0]}
                 </h2>
                 <p className="text-xs text-neutral-400 font-mono mt-1">
-                  Day {selectedModalPatient.day} • {selectedModalPatient.period.toUpperCase()} • Gruppo Extra: {selectedModalPatient.groupExtraAssigned} | Gruppo Intra: {selectedModalPatient.groupIntraAssigned}
+                  Day {modalPatient.day} • {modalPatient.period.toUpperCase()} • {isEn ? 'Extra Group: ' : 'Gruppo Extra: '}{modalPatient.groupExtraAssigned} | {isEn ? 'Intra Group: ' : 'Gruppo Intra: '}{modalPatient.groupIntraAssigned}
                 </p>
               </div>
               <button
@@ -412,7 +419,7 @@ export const ScenariMasterListView: React.FC = () => {
                 <h4 className="text-orange-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
                   <Activity className="w-4 h-4" /> {isEn ? 'Dynamics & Environment Simulation Description' : 'Dinamica & Descrizione Ambiente da Ricreare'}
                 </h4>
-                <p className="text-neutral-200 leading-relaxed">{selectedModalPatient.dinamicaDelleLesioni}</p>
+                <p className="text-neutral-200 leading-relaxed">{modalPatient.dinamicaDelleLesioni}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -421,7 +428,7 @@ export const ScenariMasterListView: React.FC = () => {
                     {isEn ? 'TCCC Procedures (Tactical Environment)' : 'Procedure TCCC (Ambiente Tattico)'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
-                    {selectedModalPatient.procedureExtra.map((p, idx) => (
+                    {modalPatient.procedureExtra.map((p, idx) => (
                       <li key={idx}>{p}</li>
                     ))}
                   </ul>
@@ -431,7 +438,7 @@ export const ScenariMasterListView: React.FC = () => {
                     {isEn ? 'Shock Room Procedures (ABCDE)' : 'Procedure Shock Room (ABCDE)'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
-                    {selectedModalPatient.procedureIntra.map((p, idx) => (
+                    {modalPatient.procedureIntra.map((p, idx) => (
                       <li key={idx}>{p}</li>
                     ))}
                   </ul>
@@ -442,17 +449,17 @@ export const ScenariMasterListView: React.FC = () => {
                 <h4 className="text-red-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
                   <Droplet className="w-4 h-4" /> {isEn ? 'Moulage & Prosthetics Details' : 'Dettagli Moulage & Protesi'}
                 </h4>
-                <p className="text-neutral-200">{selectedModalPatient.moulageProtesi}</p>
+                <p className="text-neutral-200">{modalPatient.moulageProtesi}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
                   <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Simulators & Hardware:' : 'Simulatori & Hardware:'}</span>
-                  <p className="text-white font-medium text-xs">{selectedModalPatient.simulatori}</p>
+                  <p className="text-white font-medium text-xs">{modalPatient.simulatori}</p>
                 </div>
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
-                  <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? `Actors / Patients (${selectedModalPatient.attoriCount}):` : `Attori / Figuranti (${selectedModalPatient.attoriCount}):`}</span>
-                  <p className="text-white font-medium text-xs">{selectedModalPatient.attoreDettagli}</p>
+                  <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? `Actors / Patients (${modalPatient.attoriCount}):` : `Attori / Figuranti (${modalPatient.attoriCount}):`}</span>
+                  <p className="text-white font-medium text-xs">{modalPatient.attoreDettagli}</p>
                 </div>
               </div>
 
@@ -465,10 +472,10 @@ export const ScenariMasterListView: React.FC = () => {
                   {/* TCCC Extra Team */}
                   <div className="bg-neutral-900 p-3 border border-neutral-800 space-y-1.5">
                     <span className="text-orange-400 font-bold block uppercase text-[10px]">
-                      {isEn ? `TCCC Team #${selectedModalPatient.teamExtraAssigned} (Group ${selectedModalPatient.groupExtraAssigned})` : `Squadra TCCC #${selectedModalPatient.teamExtraAssigned} (Gruppo ${selectedModalPatient.groupExtraAssigned})`}
+                      {isEn ? `TCCC Team #${modalPatient.teamExtraAssigned} (Group ${modalPatient.groupExtraAssigned})` : `Squadra TCCC #${modalPatient.teamExtraAssigned} (Gruppo ${modalPatient.groupExtraAssigned})`}
                     </span>
-                    {evaluations.find(e => e.patientId === selectedModalPatient.id && e.teamId === selectedModalPatient.teamExtraAssigned) ? (() => {
-                      const ev = evaluations.find(e => e.patientId === selectedModalPatient.id && e.teamId === selectedModalPatient.teamExtraAssigned)!;
+                    {evaluations.find(e => e.patientId === modalPatient.id && e.teamId === modalPatient.teamExtraAssigned) ? (() => {
+                      const ev = evaluations.find(e => e.patientId === modalPatient.id && e.teamId === modalPatient.teamExtraAssigned)!;
                       const avg = ((ev.scores.abcdeApproach + ev.scores.technicalSkills + ev.scores.teamworkLeadership + ev.scores.handoverSbar + ev.scores.safetyTiming)/5).toFixed(1);
                       return (
                         <div className="space-y-1 font-mono text-[11px]">
@@ -490,10 +497,10 @@ export const ScenariMasterListView: React.FC = () => {
                   {/* Shock Room Intra Team */}
                   <div className="bg-neutral-900 p-3 border border-neutral-800 space-y-1.5">
                     <span className="text-cyan-400 font-bold block uppercase text-[10px]">
-                      {isEn ? `Shock Room Team #${selectedModalPatient.teamIntraAssigned} (Group ${selectedModalPatient.groupIntraAssigned})` : `Squadra Shock Room #${selectedModalPatient.teamIntraAssigned} (Gruppo ${selectedModalPatient.groupIntraAssigned})`}
+                      {isEn ? `Shock Room Team #${modalPatient.teamIntraAssigned} (Group ${modalPatient.groupIntraAssigned})` : `Squadra Shock Room #${modalPatient.teamIntraAssigned} (Gruppo ${modalPatient.groupIntraAssigned})`}
                     </span>
-                    {evaluations.find(e => e.patientId === selectedModalPatient.id && e.teamId === selectedModalPatient.teamIntraAssigned) ? (() => {
-                      const ev = evaluations.find(e => e.patientId === selectedModalPatient.id && e.teamId === selectedModalPatient.teamIntraAssigned)!;
+                    {evaluations.find(e => e.patientId === modalPatient.id && e.teamId === modalPatient.teamIntraAssigned) ? (() => {
+                      const ev = evaluations.find(e => e.patientId === modalPatient.id && e.teamId === modalPatient.teamIntraAssigned)!;
                       const avg = ((ev.scores.abcdeApproach + ev.scores.technicalSkills + ev.scores.teamworkLeadership + ev.scores.handoverSbar + ev.scores.safetyTiming)/5).toFixed(1);
                       return (
                         <div className="space-y-1 font-mono text-[11px]">
@@ -516,7 +523,7 @@ export const ScenariMasterListView: React.FC = () => {
 
               <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
                 <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Control Room & Tech Notes:' : 'Note Regia & Team Tecnico:'}</span>
-                <p className="text-neutral-200 text-xs">{selectedModalPatient.techNotes}</p>
+                <p className="text-neutral-200 text-xs">{modalPatient.techNotes}</p>
               </div>
             </div>
 
@@ -530,7 +537,8 @@ export const ScenariMasterListView: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

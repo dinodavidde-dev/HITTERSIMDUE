@@ -71,16 +71,16 @@ export const ModuleCalloutBanner: React.FC = () => {
   const nextAlert = useMemo<NextModuleAlertInfo | null>(() => {
     if (!isCourseStarted) return null;
 
-    let operatorRoleName = 'Operatore Plenario';
+    let operatorRoleName = isEn ? 'Plenary Operator' : 'Operatore Plenario';
     if (userRole === 'discente') {
       const disc = discenti.find((d) => d.id === selectedDiscenteId) || discenti[0];
-      if (disc) operatorRoleName = `Discente: ${disc.name} (${disc.role})`;
+      if (disc) operatorRoleName = isEn ? `Participant: ${disc.name} (${disc.role})` : `Discente: ${disc.name} (${disc.role})`;
     } else if (userRole === 'faculty') {
       const fac = faculty.find((f) => f.id === selectedFacultyId) || faculty[0];
-      if (fac) operatorRoleName = `Faculty: ${fac.name} (${fac.title})`;
+      if (fac) operatorRoleName = isEn ? `Faculty: ${fac.name} (${fac.title})` : `Faculty: ${fac.name} (${fac.title})`;
     } else if (userRole === 'tecnico') {
       const tec = technicians.find((t) => t.id === selectedTechnicianId) || technicians[0];
-      if (tec) operatorRoleName = `Tecnico: ${tec.name} (${tec.specialty})`;
+      if (tec) operatorRoleName = isEn ? `Technician: ${tec.name} (${tec.specialty})` : `Tecnico: ${tec.name} (${tec.specialty})`;
     }
 
     if (timerSeconds <= 900 && timerSeconds > 0) {
@@ -99,7 +99,7 @@ export const ModuleCalloutBanner: React.FC = () => {
           groupId: gId,
           groupName: groupNames[gId],
           activityTitle: act ? act.title : (isEn ? 'Assembly & Briefing' : 'Raduno e Briefing'),
-          location: act ? act.location : 'Postazione Assegnata',
+          location: act ? act.location : (isEn ? 'Assigned Station' : 'Postazione Assegnata'),
         };
       });
 
@@ -108,8 +108,10 @@ export const ModuleCalloutBanner: React.FC = () => {
         : 'Chiamata 15 min: Tutte le squadre sono invitate al raduno con il proprio Faculty tutor presso le rispettive postazioni.';
 
       return {
-        moduleName: nextSlot ? `Prossima Fase: ${nextSlot.title}` : `Conclusione ${currentSlot.title}`,
-        teamName: 'Tutte le Squadre (Gruppi A, B, C, D)',
+        moduleName: nextSlot
+          ? (isEn ? `Next Phase: ${nextSlot.title}` : `Prossima Fase: ${nextSlot.title}`)
+          : (isEn ? `Conclusion ${currentSlot.title}` : `Conclusione ${currentSlot.title}`),
+        teamName: isEn ? 'All Teams (Groups A, B, C, D)' : 'Tutte le Squadre (Gruppi A, B, C, D)',
         teamId: 1,
         groupId: 'A',
         minutesRemaining: Math.floor(timerSeconds / 60),
@@ -258,7 +260,7 @@ export const ModuleCalloutBanner: React.FC = () => {
             type="button"
             onClick={() => setDismissedKey(currentAlertId)}
             className="p-1.5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            title="Nascondi promemoria"
+            title={isEn ? 'Hide reminder' : 'Nascondi promemoria'}
           >
             <X className="w-4 h-4" />
           </button>

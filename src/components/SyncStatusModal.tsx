@@ -31,6 +31,7 @@ interface SyncStatusModalProps {
 
 export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClose }) => {
   const {
+    language,
     syncStatus,
     triggerManualSync,
     sendPing,
@@ -42,6 +43,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
     signOutFirebase,
   } = useCourse();
 
+  const isEn = language === 'en';
   const [isPinging, setIsPinging] = useState(false);
   const [pingSuccessMessage, setPingSuccessMessage] = useState<string | null>(null);
   const [isSyncingLocal, setIsSyncingLocal] = useState(false);
@@ -55,7 +57,11 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
     sendPing();
     setTimeout(() => {
       setIsPinging(false);
-      setPingSuccessMessage('Ping completato: tutti i nodi e Firestore rispondono regolarmente.');
+      setPingSuccessMessage(
+        isEn
+          ? 'Ping completed: all nodes and Firestore respond normally.'
+          : 'Ping completato: tutti i nodi e Firestore rispondono regolarmente.'
+      );
       setTimeout(() => setPingSuccessMessage(null), 3000);
     }, 400);
   };
@@ -65,7 +71,11 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
     triggerManualSync();
     setTimeout(() => {
       setIsSyncingLocal(false);
-      setPingSuccessMessage('Dati sincronizzati con successo con Firebase Firestore.');
+      setPingSuccessMessage(
+        isEn
+          ? 'Data synchronized successfully with Firebase Firestore.'
+          : 'Dati sincronizzati con successo con Firebase Firestore.'
+      );
       setTimeout(() => setPingSuccessMessage(null), 3000);
     }, 500);
   };
@@ -74,7 +84,9 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
     setIsAuthBusy(true);
     try {
       await signInWithGoogle();
-      setPingSuccessMessage('Autenticato con Google Firebase con successo!');
+      setPingSuccessMessage(
+        isEn ? 'Signed in with Google Firebase successfully!' : 'Autenticato con Google Firebase con successo!'
+      );
       setTimeout(() => setPingSuccessMessage(null), 3000);
     } catch (err) {
       console.error(err);
@@ -87,7 +99,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
     setIsAuthBusy(true);
     try {
       await signOutFirebase();
-      setPingSuccessMessage('Disconnessione completata.');
+      setPingSuccessMessage(isEn ? 'Signed out successfully.' : 'Disconnessione completata.');
       setTimeout(() => setPingSuccessMessage(null), 3000);
     } catch (err) {
       console.error(err);
@@ -112,9 +124,9 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
   };
 
   const formatLastSync = (timestamp: number) => {
-    if (!timestamp) return 'In attesa...';
+    if (!timestamp) return isEn ? 'Waiting...' : 'In attesa...';
     const d = new Date(timestamp);
-    return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return d.toLocaleTimeString(isEn ? 'en-US' : 'it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
   return (
@@ -132,7 +144,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
             </div>
             <div>
               <h2 className="font-black text-sm sm:text-base uppercase tracking-tight text-white flex items-center gap-2">
-                STATO CONNETTIVITÀ & CLOUD FIRESTORE
+                {isEn ? 'CONNECTIVITY & CLOUD FIRESTORE STATUS' : 'STATO CONNETTIVITÀ & CLOUD FIRESTORE'}
                 <span className="text-[10px] font-black px-1.5 py-0.5 bg-emerald-500 text-black uppercase tracking-wider">
                   FIREBASE LIVE
                 </span>
@@ -145,7 +157,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
           <button
             onClick={onClose}
             className="p-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors cursor-pointer border border-neutral-700"
-            title="Chiudi"
+            title={isEn ? 'Close' : 'Chiudi'}
           >
             <X className="w-4 h-4" />
           </button>
@@ -174,24 +186,32 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-black text-sm sm:text-base uppercase tracking-tight text-white">
-                    {syncStatus.isOnline ? 'SISTEMA FIRESTORE COLLEGATO & SINCRONIZZATO' : 'MODALITÀ OFFLINE RILEVATA'}
+                    {syncStatus.isOnline
+                      ? (isEn ? 'FIRESTORE SYSTEM CONNECTED & SYNCED' : 'SISTEMA FIRESTORE COLLEGATO & SINCRONIZZATO')
+                      : (isEn ? 'OFFLINE MODE DETECTED' : 'MODALITÀ OFFLINE RILEVATA')}
                   </span>
                   <span className={`text-[10px] font-black px-1.5 py-0.2 uppercase ${
                     syncStatus.isOnline ? 'bg-emerald-500 text-black' : 'bg-red-600 text-white'
                   }`}>
-                    {syncStatus.isOnline ? 'CLOUD ATTIVO' : 'DISCONNESSO'}
+                    {syncStatus.isOnline ? (isEn ? 'CLOUD ACTIVE' : 'CLOUD ATTIVO') : (isEn ? 'DISCONNECTED' : 'DISCONNESSO')}
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-300 mt-0.5">
                   {syncStatus.isOnline
-                    ? `I dati (timer, rotazioni, allerte, messaggi e valutazioni) sono sincronizzati istantaneamente con Google Cloud Firestore europe-west1.`
-                    : 'La sincronizzazione tra dispositivi potrebbe essere limitata alla memoria locale.'}
+                    ? (isEn
+                        ? 'Data (timers, rotations, alerts, messages, and evaluations) are instantly synced with Google Cloud Firestore europe-west1.'
+                        : 'I dati (timer, rotazioni, allerte, messaggi e valutazioni) sono sincronizzati istantaneamente con Google Cloud Firestore europe-west1.')
+                    : (isEn
+                        ? 'Device synchronization may be limited to local memory.'
+                        : 'La sincronizzazione tra dispositivi potrebbe essere limitata alla memoria locale.')}
                 </p>
               </div>
             </div>
 
             <div className="text-right flex-shrink-0 hidden sm:block">
-              <span className="text-[10px] text-neutral-400 uppercase font-mono block">Latenza Canale</span>
+              <span className="text-[10px] text-neutral-400 uppercase font-mono block">
+                {isEn ? 'Channel Latency' : 'Latenza Canale'}
+              </span>
               <span className="font-mono text-sm font-black text-emerald-400">
                 {syncStatus.latencyMs !== null ? `${syncStatus.latencyMs} ms` : '< 2 ms'}
               </span>
@@ -204,7 +224,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
               <div className="flex items-center gap-2">
                 <Cloud className="w-4 h-4 text-orange-400" />
                 <span className="font-bold text-neutral-200 uppercase tracking-wide">
-                  Autenticazione & Cloud Project
+                  {isEn ? 'Authentication & Cloud Project' : 'Autenticazione & Cloud Project'}
                 </span>
               </div>
               <span className="text-[10px] font-mono text-neutral-400">
@@ -227,10 +247,14 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-neutral-100 text-xs">
-                    {firebaseUser ? firebaseUser.displayName || firebaseUser.email : 'Utente Locale / PIN Faculty'}
+                    {firebaseUser
+                      ? firebaseUser.displayName || firebaseUser.email
+                      : (isEn ? 'Local User / Faculty PIN' : 'Utente Locale / PIN Faculty')}
                   </div>
                   <div className="text-[10px] font-mono text-neutral-400 truncate">
-                    {firebaseUser ? firebaseUser.email : 'Non connesso ad account Google'}
+                    {firebaseUser
+                      ? firebaseUser.email
+                      : (isEn ? 'Not connected to Google account' : 'Non connesso ad account Google')}
                   </div>
                 </div>
               </div>
@@ -243,7 +267,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                     className="flex items-center gap-1 px-2.5 py-1.5 bg-neutral-800 hover:bg-red-950 text-neutral-300 hover:text-red-300 text-[11px] font-bold uppercase rounded border border-neutral-700 hover:border-red-600 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    <span>Disconnetti</span>
+                    <span>{isEn ? 'Sign Out' : 'Disconnetti'}</span>
                   </button>
                 ) : (
                   <button
@@ -252,7 +276,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase rounded transition-colors cursor-pointer shadow-xs"
                   >
                     <LogIn className="w-3.5 h-3.5" />
-                    <span>Accedi con Google</span>
+                    <span>{isEn ? 'Sign in with Google' : 'Accedi con Google'}</span>
                   </button>
                 )}
               </div>
@@ -263,17 +287,21 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-1">
               <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-[10px] font-mono uppercase font-bold">Client Attivi</span>
+                <span className="text-[10px] font-mono uppercase font-bold">
+                  {isEn ? 'Active Clients' : 'Client Attivi'}
+                </span>
                 <Laptop className="w-3.5 h-3.5 text-orange-400" />
               </div>
               <p className="text-lg font-black font-mono text-white">
-                {syncStatus.peerCount} <span className="text-[11px] font-normal text-neutral-400">nodi</span>
+                {syncStatus.peerCount} <span className="text-[11px] font-normal text-neutral-400">{isEn ? 'nodes' : 'nodi'}</span>
               </p>
             </div>
 
             <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-1">
               <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-[10px] font-mono uppercase font-bold">Ultimo Sync</span>
+                <span className="text-[10px] font-mono uppercase font-bold">
+                  {isEn ? 'Last Sync' : 'Ultimo Sync'}
+                </span>
                 <Clock className="w-3.5 h-3.5 text-cyan-400" />
               </div>
               <p className="text-sm font-black font-mono text-cyan-300">
@@ -283,7 +311,9 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
 
             <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-1">
               <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-[10px] font-mono uppercase font-bold">Protocollo</span>
+                <span className="text-[10px] font-mono uppercase font-bold">
+                  {isEn ? 'Protocol' : 'Protocollo'}
+                </span>
                 <Radio className="w-3.5 h-3.5 text-emerald-400" />
               </div>
               <p className="text-xs font-black font-mono text-emerald-300 truncate" title="Cloud Firestore onSnapshot + Broadcast Mesh">
@@ -293,7 +323,9 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
 
             <div className="p-3 bg-neutral-900 border border-neutral-800 space-y-1">
               <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-[10px] font-mono uppercase font-bold">Ruolo Locale</span>
+                <span className="text-[10px] font-mono uppercase font-bold">
+                  {isEn ? 'Local Role' : 'Ruolo Locale'}
+                </span>
                 {getRoleIcon(userRole)}
               </div>
               <p className="text-xs font-black font-mono text-orange-400 uppercase">
@@ -308,11 +340,11 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
               <div className="flex items-center gap-1.5">
                 <Server className="w-4 h-4 text-orange-400" />
                 <span className="font-black text-xs uppercase tracking-wider text-neutral-200">
-                  Nodi Rete Rilevati ({syncStatus.peers.length})
+                  {isEn ? 'Detected Network Nodes' : 'Nodi Rete Rilevati'} ({syncStatus.peers.length})
                 </span>
               </div>
               <span className="text-[10px] font-mono text-neutral-400">
-                Aggiornato in tempo reale (Heartbeat 4s)
+                {isEn ? 'Updated in real time (Heartbeat 4s)' : 'Aggiornato in tempo reale (Heartbeat 4s)'}
               </span>
             </div>
 
@@ -337,7 +369,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                         </span>
                         {peer.isCurrent && (
                           <span className="text-[9px] font-black px-1.5 py-0.2 bg-orange-500 text-black uppercase">
-                            Questo dispositivo
+                            {isEn ? 'This device' : 'Questo dispositivo'}
                           </span>
                         )}
                       </div>
@@ -350,7 +382,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-[10px] font-mono text-emerald-400 font-bold">
-                      ATTIVO
+                      {isEn ? 'ACTIVE' : 'ATTIVO'}
                     </span>
                   </div>
                 </div>
@@ -358,7 +390,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
 
               {syncStatus.peers.length === 0 && (
                 <p className="text-neutral-500 text-xs italic py-2 text-center">
-                  Nessun altro peer connesso in questo momento.
+                  {isEn ? 'No other peers connected at this moment.' : 'Nessun altro peer connesso in questo momento.'}
                 </p>
               )}
             </div>
@@ -382,7 +414,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                 className="flex items-center gap-1.5 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-100 font-black text-xs uppercase tracking-wider border border-neutral-700 hover:border-neutral-500 transition-all cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 <Zap className={`w-3.5 h-3.5 text-yellow-400 ${isPinging ? 'animate-spin' : ''}`} />
-                <span>{isPinging ? 'TEST IN CORSO...' : 'TEST PING / LATENZA'}</span>
+                <span>{isPinging ? (isEn ? 'TESTING...' : 'TEST IN CORSO...') : (isEn ? 'PING TEST / LATENCY' : 'TEST PING / LATENZA')}</span>
               </button>
 
               <button
@@ -392,7 +424,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                 className="flex items-center gap-1.5 px-3 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black text-xs uppercase tracking-wider border border-orange-500 transition-all cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncingLocal ? 'animate-spin' : ''}`} />
-                <span>{isSyncingLocal ? 'SINCRONIZZAZIONE...' : 'FORZA SYNC FIRESTORE'}</span>
+                <span>{isSyncingLocal ? (isEn ? 'SYNCING...' : 'SINCRONIZZAZIONE...') : (isEn ? 'FORCE FIRESTORE SYNC' : 'FORZA SYNC FIRESTORE')}</span>
               </button>
             </div>
 
@@ -401,13 +433,16 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
               onClick={onClose}
               className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ml-auto"
             >
-              Chiudi
+              {isEn ? 'Close' : 'Chiudi'}
             </button>
           </div>
 
           {/* Info Notice */}
           <div className="p-2.5 bg-neutral-900/70 border border-neutral-800 text-[11px] text-neutral-400 leading-relaxed">
-            <span className="font-bold text-neutral-300">💡 Architettura Cloud:</span> Il sistema memorizza lo stato delle rotazioni, le check-list dei simulatori, le valutazioni dei team e i messaggi privati in tempo reale su Google Cloud Firestore (`europe-west1`), garantendo persistenza affidabile e allineamento istantaneo su tutti i monitor e tablet.
+            <span className="font-bold text-neutral-300">💡 {isEn ? 'Cloud Architecture:' : 'Architettura Cloud:'}</span>{' '}
+            {isEn
+              ? 'The system persists rotation states, simulator checklists, team evaluations, and private messages in real-time on Google Cloud Firestore (europe-west1), guaranteeing reliable persistence and instant alignment across all monitors and tablets.'
+              : 'Il sistema memorizza lo stato delle rotazioni, le check-list dei simulatori, le valutazioni dei team e i messaggi privati in tempo reale su Google Cloud Firestore (europe-west1), garantendo persistenza affidabile e allineamento istantaneo su tutti i monitor e tablet.'}
           </div>
 
         </div>

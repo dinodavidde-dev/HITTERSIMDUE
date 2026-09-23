@@ -53,21 +53,34 @@ export function translateLocation(loc: string, lang: Language): string {
 // SLOT TITLE & DESCRIPTION TRANSLATIONS
 // ==========================================
 const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: string }> = {
+  // Day 2 Slots
+  'dir-1': {
+    title: 'Staff Setup (Phases 1 & 2)',
+    description: 'Staff briefing, radio check (CH1, CH2, CH3) and mannequin/simulator calibration.',
+  },
   'd2-setup-1': {
-    title: 'Pre-Apertura & Allestimento Tecnico',
-    description: 'Verifica simulatori, linee infusionali e manichini.',
+    title: 'Pre-Opening & Technical Setup',
+    description: 'Check simulators, infusion lines and mannequins.',
   },
   'd2-setup-2': {
-    title: 'Briefing Docenti & Allineamento Staff',
-    description: 'Allineamento metodologico faculty, regia e tecnici.',
+    title: 'Staff Setup (Phases 3 & 4)',
+    description: 'Faculty/control room alignment and final stations check (GO / NO-GO).',
+  },
+  'd2-welcome': {
+    title: 'Learner Welcome & Training Agreement',
+    description: 'Learner gathering and station reconnaissance.',
   },
   'd2-apertura': {
-    title: 'Accoglienza Discenti & Plenaria Iniziale',
-    description: 'Ingresso allievi, assegnazione badge e introduzione al corso.',
+    title: 'Learner Welcome & Initial Plenary',
+    description: 'Learner check-in, badge assignment and course introduction.',
+  },
+  'd2-prealert-1': {
+    title: 'Pre-Alert T-15 Block 1',
+    description: 'TCCC PRE-ALERT and station staging at T-15.',
   },
   'd2-b1-tccc': {
     title: 'BLOCK 1 • TCCC Tactical Scenario & WS',
-    description: 'Direct engagement, massive bleeding control (Pts 1-3) & Skill Workshops.',
+    description: 'TCCC engagement, triage, Stop the Bleed (Pts 1-3) & Skill Workshops.',
   },
   'd2-b1-handover': {
     title: 'STANDARDIZED SBAR HANDOVER 1:1',
@@ -75,39 +88,39 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd2-b1-sr': {
     title: 'BLOCK 1 • Shock Room Scenario & TCCC Debriefing',
-    description: 'Critical patient management ABCDE, FAST, thoracostomy & TCCC debriefing.',
+    description: 'Critical patient management ABCDE in Shock Room (Pts 1-3) & TCCC Debriefing Part 1.',
   },
   'd2-b1-debrief-clinico': {
-    title: 'Joint Clinical Debriefing (Shock Room & TCCC)',
-    description: 'Video review, non-technical skills (CRM) and plus/delta analysis.',
+    title: 'Joint Clinical Debriefing SR & TCCC Part 2',
+    description: 'Video review, non-technical skills (CRM) and block wrap-up.',
   },
   'd2-b1-reset': {
-    title: 'Station Reset & Technical Turnaround',
-    description: '15-min turnaround: synthetic skin replacement, fake blood & fluids reload.',
+    title: 'Technical Reset Block 1',
+    description: '15-min turnaround: Shock Room bays cleaning, sanitization and equipment reload.',
   },
   'd2-pausa-m': {
     title: 'Coffee Break + Block 2 Pre-Alert',
-    description: 'Rest and transition to operating stations.',
+    description: 'Refreshment and transition to operating stations.',
   },
   'd2-b2-tccc': {
-    title: 'BLOCK 2 • TCCC Scenario & Skill Workshops',
-    description: 'Blast injury management, tactical triage (Pts 4-6) & Skill Workshops.',
+    title: 'BLOCK 2 • TCCC Tactical Scenario & WS',
+    description: 'Blast injury hemostasis, triage (Pts 4-6) & Skill Workshops.',
   },
   'd2-b2-handover': {
     title: 'STANDARDIZED SBAR HANDOVER 1:1',
-    description: 'Stretcher SBAR handover between TCCC teams and Shock Room bays.',
+    description: 'Stretcher SBAR handover (< 5 min) between TCCC teams and Shock Room bays.',
   },
   'd2-b2-sr': {
     title: 'BLOCK 2 • Shock Room ABCDE & TCCC Debriefing',
-    description: 'Hemorrhagic shock, massive transfusion protocol (Pts 4-6) & debriefing.',
+    description: 'Hemorrhagic shock, massive transfusion protocol (Pts 4-6) & TCCC Debriefing Part 1.',
   },
   'd2-b2-debrief-clinico': {
-    title: 'Joint Clinical Debriefing & Teamwork Review',
+    title: 'Joint Clinical Debriefing SR & TCCC Part 2',
     description: 'NTS video analysis, communication closed-loop and Block 2 closure.',
   },
   'd2-b2-reset': {
-    title: 'Block 2 Technical Reset',
-    description: '15-minute quick turnaround of Shock Room bays by technicians.',
+    title: 'Technical Reset Block 2',
+    description: '15-minute quick turnaround: Shock Room bays cleaning and consumables reload.',
   },
   'd2-pranzo': {
     title: 'PROTECTED LUNCH BREAK',
@@ -115,7 +128,7 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd2-prealert-3': {
     title: 'Pre-Alert T-15 Block 3',
-    description: 'Regrouping and TCCC pre-alert for afternoon Block 3.',
+    description: 'Regrouping and TCCC PRE-ALERT for afternoon Block 3.',
   },
   'd2-b3-tccc': {
     title: 'BLOCK 3 • TCCC Scenario & Skill Workshops',
@@ -127,49 +140,65 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd2-b3-sr': {
     title: 'BLOCK 3 • Shock Room ABCDE & TCCC Debriefing',
-    description: 'High-fidelity Shock Room management (Pts 7-9) and TCCC feedback.',
+    description: 'Chest drain, tension pneumothorax (Pts 7-9) & TCCC Debriefing Part 1.',
   },
   'd2-b3-debrief-clinico': {
-    title: 'Joint Clinical Debriefing Block 3',
+    title: 'Joint Clinical Debriefing SR & TCCC Part 2',
     description: 'Video review, invasive skills analysis and CRM performance.',
   },
   'd2-b3-reset': {
-    title: 'Block 3 Technical Reset',
-    description: '15-min turnaround: simulator calibration and consumables reload.',
+    title: 'Technical Reset Block 3',
+    description: '15-min turnaround: Shock Room bays cleaning and equipment reload.',
   },
   'd2-pausa-p': {
-    title: 'Technical Pause & Block 4 Pre-Alert',
-    description: 'Hydration, PPE check and operational preparation for final block.',
+    title: 'Afternoon Break + Block 4 Pre-Alert',
+    description: 'Refreshment and transition (T-15 Pre-Alert at 15:55).',
   },
   'd2-b4-tccc': {
     title: 'BLOCK 4 • TCCC Scenario & Skill Workshops',
-    description: 'Complex tactical scenarios, catastrophic bleeds (Pts 10-12) & WS.',
+    description: 'Major polytrauma, catastrophic bleeds (Pts 10-12) & Skill Workshops.',
   },
   'd2-b4-handover': {
     title: 'STANDARDIZED SBAR HANDOVER 1:1',
-    description: 'Final morning/afternoon rotation stretcher clinical handover.',
+    description: 'Stretcher SBAR handover (< 5 min) between TCCC and Shock Room.',
   },
   'd2-b4-sr': {
     title: 'BLOCK 4 • Shock Room ABCDE & TCCC Debriefing',
-    description: 'Aggressive resuscitation, thoracic decompression (Pts 10-12) & Debriefing.',
+    description: 'Traumatic cardiac arrest, MTP (Pts 10-12) & TCCC Debriefing Part 1.',
   },
   'd2-b4-debrief-clinico': {
-    title: 'Plenary Debriefing & Day 2 Evaluation',
+    title: 'Joint Clinical Debriefing SR & TCCC Part 2',
     description: 'Comprehensive day review, faculty feedback and team score analysis.',
   },
+  'd2-b4-reset': {
+    title: 'Final Reset Block 4',
+    description: 'Final turnaround: sanitization and stations shutdown.',
+  },
   'd2-chiusura': {
-    title: 'Day 2 Wrap-up & Overnight Standby',
-    description: 'End of Day 2 activities. Recharging equipment and night scenario standby.',
+    title: 'Day 2 Plenary Closing',
+    description: 'Joint debriefing & general daily feedback.',
   },
 
   // Day 3 Slots
   'd3-setup-1': {
-    title: 'Day 3 Morning Setup & Simulator Check',
-    description: 'Biomodel and technical calibration for Day 3 specular rotations.',
+    title: 'Staff Setup (Phases 1 & 2)',
+    description: 'Staff Briefing, radio check and Day 3 mannequin calibration.',
+  },
+  'd3-setup-2': {
+    title: 'Staff Setup (Phases 3 & 4)',
+    description: 'Faculty/control room alignment and final Day 3 stations check.',
+  },
+  'd3-welcome': {
+    title: 'Learner Welcome & Day 3 Briefing',
+    description: 'Learner assembly and specular rotation briefing.',
+  },
+  'd3-prealert-1': {
+    title: 'Pre-Alert T-15 Block 1 (Day 3)',
+    description: 'Staging and TCCC PRE-ALERT for Day 3 specular rotation.',
   },
   'd3-b1-tccc': {
     title: 'BLOCK 1 (DAY 3) • TCCC Scenario & WS',
-    description: 'Specular clinical rotations: ballistic trauma, junctional packing (Pts 13-15).',
+    description: 'Cardiac tamponade, triage (Pts 13-15) & Skill Workshops.',
   },
   'd3-b1-handover': {
     title: 'STANDARDIZED SBAR HANDOVER 1:1',
@@ -177,23 +206,23 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd3-b1-sr': {
     title: 'BLOCK 1 (DAY 3) • Shock Room ABCDE & Debriefing',
-    description: 'Advanced hemodynamic resuscitation (Pts 13-15) and TCCC feedback.',
+    description: 'REBOA Z3, pelvis (Pts 13-15) & TCCC Debriefing Part 1.',
   },
   'd3-b1-debrief-clinico': {
     title: 'Day 3 Block 1 Joint Debriefing',
-    description: 'Video review, rapid decision making and non-technical skills.',
+    description: 'NTS video analysis, Plus/Delta and block 1 wrap-up.',
   },
   'd3-b1-reset': {
-    title: 'Block 1 Technical Reset',
-    description: 'Consumables reload and mannequin maintenance.',
+    title: 'Technical Reset Block 1 (Day 3)',
+    description: '15-min turnaround: Shock Room bays cleaning and equipment reload.',
   },
   'd3-pausa-m': {
-    title: 'Morning Break + Block 2 Pre-Alert',
-    description: 'Coffee break and team rotation transition.',
+    title: 'Coffee Break + Block 2 Pre-Alert (Day 3)',
+    description: 'Refreshment and rotation transition.',
   },
   'd3-b2-tccc': {
     title: 'BLOCK 2 (DAY 3) • TCCC Scenario & WS',
-    description: 'Tactical extraction under hostile conditions (Pts 16-18) & WS.',
+    description: 'Pericardiocentesis, triage (Pts 16-18) & Skill Workshops.',
   },
   'd3-b2-handover': {
     title: 'STANDARDIZED SBAR HANDOVER 1:1',
@@ -201,27 +230,27 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd3-b2-sr': {
     title: 'BLOCK 2 (DAY 3) • Shock Room ABCDE & Debriefing',
-    description: 'Damage control resuscitation (Pts 16-18) and field debriefing.',
+    description: 'REBOA Z3, MTP 1:1:1 (Pts 16-18) & TCCC Debriefing Part 1.',
   },
   'd3-b2-debrief-clinico': {
     title: 'Day 3 Block 2 Joint Debriefing',
     description: 'CRM team evaluation and leadership transition review.',
   },
   'd3-b2-reset': {
-    title: 'Block 2 Technical Reset',
-    description: 'Simulator preparation for afternoon rotation.',
+    title: 'Technical Reset Block 2 (Day 3)',
+    description: '15-min turnaround: Shock Room bays cleaning and equipment reload.',
   },
   'd3-pranzo': {
-    title: 'PROTECTED LUNCH BREAK',
-    description: 'Protected 75-minute rest and nutrition interval.',
+    title: 'PROTECTED LUNCH BREAK (Day 3)',
+    description: 'Protected 75-minute meal & rest interval. No active alarms.',
   },
   'd3-prealert-3': {
-    title: 'Pre-Alert T-15 Block 3',
-    description: 'Equipment verification and afternoon station entry.',
+    title: 'Pre-Alert T-15 Block 3 (Day 3)',
+    description: 'Assembly and TCCC PRE-ALERT for afternoon Block 3.',
   },
   'd3-b3-tccc': {
     title: 'BLOCK 3 (DAY 3) • TCCC Scenario & WS',
-    description: 'Multiple penetrating wounds and pelvic fracture (Pts 19-21) & WS.',
+    description: 'Escharotomy, Parkland (Pts 19-21) & Skill Workshops.',
   },
   'd3-b3-handover': {
     title: 'STANDARDIZED SBAR HANDOVER 1:1',
@@ -229,23 +258,23 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd3-b3-sr': {
     title: 'BLOCK 3 (DAY 3) • Shock Room ABCDE & Debriefing',
-    description: 'Massive transfusion protocol, ultrasound and invasive procedures (Pts 19-21).',
+    description: 'REBOA Z1, burns (Pts 19-21) & TCCC Debriefing Part 1.',
   },
   'd3-b3-debrief-clinico': {
     title: 'Day 3 Block 3 Joint Debriefing',
-    description: 'Faculty review and tactical decision breakdown.',
+    description: 'NTS video analysis, Plus/Delta and block 3 wrap-up.',
   },
   'd3-b3-reset': {
-    title: 'Block 3 Technical Reset',
-    description: 'Quick turnaround for final graduation block.',
+    title: 'Technical Reset Block 3 (Day 3)',
+    description: '15-min turnaround: Shock Room bays cleaning and equipment reload.',
   },
   'd3-pausa-p': {
-    title: 'Technical Pause & Block 4 Pre-Alert',
-    description: 'Pre-alert for the final integrated practical challenge.',
+    title: 'Afternoon Break + Block 4 Pre-Alert (Day 3)',
+    description: 'Refreshment and transition.',
   },
   'd3-b4-tccc': {
     title: 'BLOCK 4 (DAY 3) • Final Complex Scenario & WS',
-    description: 'Catastrophic polytrauma, severe TBI and blast injuries (Pts 22-24).',
+    description: 'Bilateral amputations, triage (Pts 22-24) & Skill Workshops.',
   },
   'd3-b4-handover': {
     title: 'FINAL STANDARDIZED SBAR HANDOVER 1:1',
@@ -253,37 +282,73 @@ const SLOT_TEXT_TRANSLATIONS: Record<string, { title: string; description: strin
   },
   'd3-b4-sr': {
     title: 'BLOCK 4 (DAY 3) • Final Shock Room & Debriefing',
-    description: 'High-intensity Damage Control Surgery & Thoracotomy resuscitation (Pts 22-24).',
+    description: 'Traumatic cardiac arrest (Pts 22-24) & TCCC Debriefing Part 1.',
   },
   'd3-b4-debrief-clinico': {
     title: 'Final Integrated Debriefing',
     description: 'Course summary debriefing and tactical skills consolidation.',
   },
+  'd3-b4-reset': {
+    title: 'Final Reset Block 4 (Day 3)',
+    description: 'Final turnaround: sanitization and stations shutdown.',
+  },
   'd3-chiusura': {
-    title: 'Official Closing, Graduation & Certificates',
-    description: 'Faculty assessment, certificate presentation and final course closing.',
+    title: 'Plenary Closing & Certificate Awarding',
+    description: 'Final joint debriefing, clinical summary and course closing.',
   },
 };
 
 // Activity Titles & Subtitles translation dictionary
 const ACTIVITY_PHRASES_EN: Record<string, { title: string; subtitle: string }> = {
+  'Airway & Bleeding': { title: 'Airway & Bleeding', subtitle: 'Junctional Bleeding & Airway Management' },
+  'Check postazioni': { title: 'Station Check', subtitle: 'Technical Calibration & GO/NO-GO' },
+  'Check presidi': { title: 'Equipment Check', subtitle: 'Kit & Simulator Readiness' },
+  'Chiusura report tattico': { title: 'Tactical Report Wrap-up', subtitle: 'SBAR Documentation & Team Evaluation' },
+  'Consegna SBAR ➔ Shock Room': { title: 'SBAR Handover ➔ Shock Room', subtitle: 'Stretcher Patient Delivery' },
+  'Debriefing clinico congiunto': { title: 'Joint Clinical Debriefing', subtitle: 'Video Review & CRM Feedback' },
+  'Debriefing TCCC': { title: 'TCCC Debriefing', subtitle: 'Tactical Phase Analysis' },
+  'Debriefing TCCC (Pt 1)': { title: 'TCCC Debriefing (Part 1)', subtitle: 'Tactical Phase Analysis' },
+  'Debriefing TCCC (Pt 2)': { title: 'TCCC Debriefing (Part 2)', subtitle: 'SBAR Documentation & Review' },
+  'Debriefing workshop': { title: 'Workshop Debriefing', subtitle: 'Technical Skills Assessment' },
+  'Debriefing SR Plus/Delta': { title: 'Shock Room Debriefing', subtitle: 'Video Review & CRM NTS ≥ 4' },
+  'Eco FAST & IO': { title: 'e-FAST Ultrasound & IO', subtitle: 'Vascular Access & Sonography' },
+  'Patto d\'Aula': { title: 'Training Agreement', subtitle: 'Initial Briefing & Station Walkthrough' },
+  'Pausa Caffè': { title: 'Coffee Break', subtitle: 'Refreshment & Rest' },
+  'Pausa Pranzo Protetta': { title: 'Protected Lunch Break', subtitle: 'Rest & Refreshment' },
+  'Plenaria finale': { title: 'Final Plenary', subtitle: 'General Feedback & Certificate Awarding' },
+  'PRE-ALLERTA TCCC': { title: 'TCCC PRE-ALERT', subtitle: 'PPE & Bleeding Control Kits Check' },
+  'RESET Box SR': { title: 'Shock Room Bays Reset', subtitle: 'Clean-up, fluids reload & skin change' },
+  'Ricezione SBAR ➔ Box 1-3': { title: 'SBAR Reception ➔ Bays 1-3', subtitle: 'Incoming Stretcher Patient Reception' },
+  'Riordino WS1': { title: 'Workshop 1 Reset', subtitle: 'Airway Consumables Restock' },
+  'Riordino WS2': { title: 'Workshop 2 Reset', subtitle: 'Ultrasound Calibration & Needle Reset' },
+  'Scenario TCCC': { title: 'TCCC Tactical Scenario', subtitle: 'Under Fire Care & Stretcher Evacuation' },
+  'Shock Room ABCDE': { title: 'Shock Room ABCDE', subtitle: 'Advanced Trauma Resuscitation' },
   'Skills Workshop 1': { title: 'Skill Workshop 1', subtitle: 'Airway & Junctional Bleeding' },
   'Skills Workshop 2': { title: 'Skill Workshop 2', subtitle: 'e-FAST Ultrasound & Vascular Access' },
-  'Scenario TCCC': { title: 'TCCC Live Scenario', subtitle: 'Under Fire Care & Stretcher Evacuation' },
-  'Shock Room ABCDE': { title: 'Shock Room ABCDE', subtitle: 'Advanced Trauma Resuscitation' },
-  'Ricezione SBAR': { title: 'SBAR Handover Reception', subtitle: 'Incoming Stretcher Transfer' },
-  'Consegna SBAR': { title: 'SBAR Handover Delivery', subtitle: 'Clinical Handover to Shock Room' },
-  'Debriefing TCCC': { title: 'TCCC Debriefing', subtitle: 'Tactical Phase Analysis' },
-  'Debriefing TCCC (Pt 1)': { title: 'TCCC Debriefing (Part 1)', subtitle: 'Tactical Team Feedback' },
-  'Debriefing TCCC (Pt 2)': { title: 'TCCC Debriefing (Part 2)', subtitle: 'Report & Lesson Learned' },
-  'Debriefing SR Plus/Delta': { title: 'Shock Room Debriefing', subtitle: 'Video Review & CRM NTS ≥ 4' },
-  'Pausa Caffè': { title: 'Coffee Break', subtitle: 'Rest & Station Preparation' },
-  'Pausa Pranzo Protetta': { title: 'Protected Lunch Break', subtitle: 'Rest & Refreshment' },
   'Standby SR (Box 1-3)': { title: 'Shock Room Standby (Bays 1-3)', subtitle: 'Active Pre-Handover Standby (T-15)' },
-  'PRE-ALLERTA TCCC': { title: 'TCCC PRE-ALERT', subtitle: 'PPE & Bleeding Control Kits Check' },
-  'RESET Box SR': { title: 'Shock Room Reset', subtitle: 'Clean-up, fluids reload & skin change' },
-  'Riordino WS1': { title: 'Workshop 1 Reset', subtitle: 'Material Restocking' },
-  'Riordino WS2': { title: 'Workshop 2 Reset', subtitle: 'Ultrasound & Phantom Calibration' },
+  'Validazione CH1/CH2': { title: 'Radio CH1/CH2 Check', subtitle: 'Communications & Link Validation' },
+};
+
+const SUBTITLE_EXACT_MAP: Record<string, string> = {
+  'Check presidi Box 1-3': 'Equipment Check Bays 1-3',
+  'Analisi tattica e triage': 'Tactical Analysis & Triage',
+  'Revisione video NTS ≥ 4': 'Video Review NTS ≥ 4',
+  'Restituzione generale': 'General Feedback',
+  'Briefing iniziale': 'Initial Briefing',
+  'Briefing Day 3': 'Day 3 Briefing',
+  'Briefing pomeridiano': 'Afternoon Briefing',
+  'Preparazione materiale': 'Material Preparation',
+  'Standby attivo pre-handover': 'Active Pre-Handover Standby',
+  'Ripristino materiale': 'Equipment Restock',
+  'Ristoro': 'Refreshment & Rest',
+  'Pratica avanzata': 'Advanced Hands-on Practice',
+  'Valutazione tecnica': 'Technical Evaluation',
+  'TECH-01/02/03 (Pulizia, fluidi, cute)': 'TECH-01/02/03 (Clean-up, fluids, skin)',
+  'TECH-01/02/03 (Sanificazione finale)': 'TECH-01/02/03 (Final sanitization)',
+  'TECH-04/05/06 (Pulizia, fluidi, cute)': 'TECH-04/05/06 (Clean-up, fluids, skin)',
+  'TECH-04/05/06 (Sanificazione finale)': 'TECH-04/05/06 (Final sanitization)',
+  'TECH-07/08/09 (Pulizia, fluidi, cute)': 'TECH-07/08/09 (Clean-up, fluids, skin)',
+  'TECH-10/11/12 (Pulizia, fluidi, cute)': 'TECH-10/11/12 (Clean-up, fluids, skin)',
 };
 
 export function translateGroupActivity(act: GroupActivitySlot, lang: Language): GroupActivitySlot {
@@ -292,32 +357,55 @@ export function translateGroupActivity(act: GroupActivitySlot, lang: Language): 
   let translatedTitle = act.title;
   let translatedSubtitle = act.subtitle;
 
-  for (const [key, val] of Object.entries(ACTIVITY_PHRASES_EN)) {
-    if (act.title.toLowerCase().includes(key.toLowerCase())) {
-      translatedTitle = val.title;
-      if (!translatedSubtitle || translatedSubtitle.length < 5) {
-        translatedSubtitle = val.subtitle;
+  // Exact or prefix match from dictionary
+  if (ACTIVITY_PHRASES_EN[act.title]) {
+    translatedTitle = ACTIVITY_PHRASES_EN[act.title].title;
+    if (!translatedSubtitle || translatedSubtitle.length < 5) {
+      translatedSubtitle = ACTIVITY_PHRASES_EN[act.title].subtitle;
+    }
+  } else {
+    for (const [key, val] of Object.entries(ACTIVITY_PHRASES_EN)) {
+      if (act.title.toLowerCase().includes(key.toLowerCase())) {
+        translatedTitle = val.title;
+        if (!translatedSubtitle || translatedSubtitle.length < 5) {
+          translatedSubtitle = val.subtitle;
+        }
+        break;
       }
-      break;
     }
   }
 
-  // Regex patterns
+  // Exact subtitle dictionary match
+  if (SUBTITLE_EXACT_MAP[act.subtitle]) {
+    translatedSubtitle = SUBTITLE_EXACT_MAP[act.subtitle];
+  }
+
+  // Dynamic replacements for titles
   if (translatedTitle.includes('Pausa Pranzo')) translatedTitle = 'Protected Lunch Break';
   if (translatedTitle.includes('Pausa Caffè')) translatedTitle = 'Coffee Break';
-  if (translatedTitle.includes('Consegna SBAR')) translatedTitle = 'SBAR Handover Delivery';
-  if (translatedTitle.includes('Ricezione SBAR')) translatedTitle = 'SBAR Handover Reception';
+  if (translatedTitle.includes('Consegna SBAR')) translatedTitle = translatedTitle.replace(/Consegna SBAR/g, 'SBAR Handover Delivery');
+  if (translatedTitle.includes('Ricezione SBAR')) translatedTitle = translatedTitle.replace(/Ricezione SBAR/g, 'SBAR Handover Reception');
   if (translatedTitle.includes('Scenario TCCC')) translatedTitle = 'TCCC Tactical Scenario';
   if (translatedTitle.includes('Shock Room ABCDE')) translatedTitle = 'Shock Room ABCDE';
   if (translatedTitle.includes('Debriefing')) translatedTitle = translatedTitle.replace(/Debriefing/g, 'Debriefing');
 
+  // Dynamic replacements for subtitles
+  if (translatedSubtitle.includes('➔ Consegna ad ')) translatedSubtitle = translatedSubtitle.replace(/➔ Consegna ad /g, '➔ Handover to ');
+  if (translatedSubtitle.includes('➔ Consegna a ')) translatedSubtitle = translatedSubtitle.replace(/➔ Consegna a /g, '➔ Handover to ');
+  if (translatedSubtitle.includes('➔ Ricezione da ')) translatedSubtitle = translatedSubtitle.replace(/➔ Ricezione da /g, '➔ Reception from ');
+  if (translatedSubtitle.includes('Gestione avanzata Pz')) translatedSubtitle = translatedSubtitle.replace(/Gestione avanzata Pz/g, 'Advanced Management Pts');
+  if (translatedSubtitle.includes('Ingaggio / Stop Bleed (Pz')) translatedSubtitle = translatedSubtitle.replace(/Ingaggio \/ Stop Bleed \(Pz/g, 'Engagement / Stop Bleed (Pts');
+  if (translatedSubtitle.includes('Ingaggio / Triage (Pz')) translatedSubtitle = translatedSubtitle.replace(/Ingaggio \/ Triage \(Pz/g, 'Engagement / Triage (Pts');
+  if (translatedSubtitle.includes('Ferite complesse (Pz')) translatedSubtitle = translatedSubtitle.replace(/Ferite complesse \(Pz/g, 'Complex Wounds (Pts');
+  if (translatedSubtitle.includes('Politrauma (Pz')) translatedSubtitle = translatedSubtitle.replace(/Politrauma \(Pz/g, 'Polytrauma (Pts');
+  if (translatedSubtitle.includes('(Pulizia, fluidi, cute)')) translatedSubtitle = translatedSubtitle.replace(/\(Pulizia, fluidi, cute\)/g, '(Clean-up, fluids, skin)');
+  if (translatedSubtitle.includes('(Sanificazione finale)')) translatedSubtitle = translatedSubtitle.replace(/\(Sanificazione finale\)/g, '(Final sanitization)');
   if (translatedSubtitle.includes('Ristoro')) translatedSubtitle = 'Refreshment & Rest';
-  if (translatedSubtitle.includes('Check presidi')) translatedSubtitle = 'Kit & Equipment Check';
+  if (translatedSubtitle.includes('Check presidi')) translatedSubtitle = 'Equipment & Kit Check';
   if (translatedSubtitle.includes('Pratica avanzata')) translatedSubtitle = 'Advanced Hands-on Practice';
-  if (translatedSubtitle.includes('Valutazione tecnica')) translatedSubtitle = 'Technical Assessment';
+  if (translatedSubtitle.includes('Valutazione tecnica')) translatedSubtitle = 'Technical Evaluation';
   if (translatedSubtitle.includes('Analisi tattica')) translatedSubtitle = 'Tactical Analysis';
   if (translatedSubtitle.includes('Ripristino')) translatedSubtitle = 'Turnaround & Restock';
-  if (translatedSubtitle.includes('Gestione avanzata')) translatedSubtitle = translatedSubtitle.replace(/Gestione avanzata/g, 'Advanced Management');
 
   return {
     ...act,

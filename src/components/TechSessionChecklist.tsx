@@ -38,17 +38,19 @@ export const TechSessionChecklist: React.FC = () => {
       <div className="bg-neutral-900 border border-neutral-800 p-5 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-mono text-pink-400 uppercase font-black tracking-widest">
-            CHECKLIST TECNICA INTEGRATA • PROTESI, MOULAGE & SCENARI ASSEGNATI
+            {isEn ? 'INTEGRATED TECHNICAL CHECKLIST • PROSTHETICS, MOULAGE & ASSIGNED SCENARIOS' : 'CHECKLIST TECNICA INTEGRATA • PROTESI, MOULAGE & SCENARI ASSEGNATI'}
           </span>
           <span className="px-2.5 py-1 bg-neutral-950 text-neutral-300 border border-neutral-700 font-mono text-xs font-bold">
-            {currentTech.name} ({currentTech.badgeCode}) - Giorno {activeDay}
+            {currentTech.name} ({currentTech.badgeCode}) - {isEn ? 'Day' : 'Giorno'} {activeDay}
           </span>
         </div>
         <h3 className="text-base font-black text-white uppercase">
-          Assegnazioni di Protesi, Moulage e Verifiche Tecniche Pre/Post Sessione
+          {isEn ? 'Prosthetics, Moulage Assignments and Pre/Post Session Technical Checks' : 'Assegnazioni di Protesi, Moulage e Verifiche Tecniche Pre/Post Sessione'}
         </h3>
         <p className="text-xs text-neutral-400">
-          Tabella di controllo operativa allineata al Catalogo Protesi & Moulage e ai 24 Scenari Ufficiali del Corso.
+          {isEn
+            ? 'Operational control table aligned with the Prosthetics & Moulage Catalog and the 24 Official Course Scenarios.'
+            : 'Tabella di controllo operativa allineata al Catalogo Protesi & Moulage e ai 24 Scenari Ufficiali del Corso.'}
         </p>
       </div>
 
@@ -60,21 +62,21 @@ export const TechSessionChecklist: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
                 <div className="flex items-center gap-3">
                   <span className="px-3 py-1 bg-pink-600 text-white font-mono font-black text-xs">
-                    PAZIENTE #{patient.id}
+                    {isEn ? 'PATIENT' : 'PAZIENTE'} #{patient.id}
                   </span>
                   <div>
                     <h4 className="font-black text-white text-base uppercase">
-                      {patient.scenarioCode} • Giorno {patient.day} ({patient.period})
+                      {patient.scenarioCode} • {isEn ? 'Day' : 'Giorno'} {patient.day} ({patient.period})
                     </h4>
                     <p className="text-xs text-pink-300 font-mono">
-                      Postazione: {patient.groupExtraAssigned ? `Gruppo ${patient.groupExtraAssigned}` : 'Shock Room / TCCC'}
+                      {isEn ? 'Station: ' : 'Postazione: '}{patient.groupExtraAssigned ? `${isEn ? 'Group' : 'Gruppo'} ${patient.groupExtraAssigned}` : 'Shock Room / TCCC'}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 bg-neutral-950 text-neutral-300 border border-neutral-700 text-xs font-mono font-bold">
-                    {patient.simulatori || 'Manichino Alta Fedeltà'}
+                    {patient.simulatori || (isEn ? 'High-Fidelity Manikin' : 'Manichino Alta Fedeltà')}
                   </span>
                 </div>
               </div>
@@ -82,17 +84,17 @@ export const TechSessionChecklist: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                   <span className="text-[10px] font-mono text-pink-400 uppercase font-black block">
-                    PROTESI & MOULAGE ASSOCIATI (DAL CATALOGO):
+                    {isEn ? 'ASSOCIATED PROSTHETICS & MOULAGE (FROM CATALOG):' : 'PROTESI & MOULAGE ASSOCIATI (DAL CATALOGO):'}
                   </span>
-                  <p className="text-xs text-white font-bold">{patient.moulageProtesi || 'Protesi standard con sanguinamento pulsante'}</p>
+                  <p className="text-xs text-white font-bold">{patient.moulageProtesi || (isEn ? 'Standard prosthesis with pulsating bleeding' : 'Protesi standard con sanguinamento pulsante')}</p>
                   <p className="text-[11px] text-neutral-400">
-                    <strong>Dinamica lesioni:</strong> {patient.dinamicaDelleLesioni || patient.lesioni?.join(', ')}
+                    <strong>{isEn ? 'Injury dynamics: ' : 'Dinamica lesioni: '}</strong>{patient.dinamicaDelleLesioni || patient.lesioni?.join(', ')}
                   </p>
                 </div>
 
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-3">
                   <span className="text-[10px] font-mono text-pink-400 uppercase font-black block">
-                    VERIFICHE TECNICHE DI SESSIONE:
+                    {isEn ? 'SESSION TECHNICAL CHECKS:' : 'VERIFICHE TECNICHE DI SESSIONE:'}
                   </span>
                   <div className="grid grid-cols-3 gap-2">
                     <button
@@ -103,8 +105,8 @@ export const TechSessionChecklist: React.FC = () => {
                           : 'bg-neutral-900 text-neutral-400 border-neutral-700'
                       }`}
                     >
-                      <span className="block text-[9px] font-mono text-neutral-400">1. PREPARAZIONE</span>
-                      {checklist.preDone ? '✓ PRONTO' : 'DA FARE'}
+                      <span className="block text-[9px] font-mono text-neutral-400">1. {isEn ? 'PREPARATION' : 'PREPARAZIONE'}</span>
+                      {checklist.preDone ? (isEn ? '✓ READY' : '✓ PRONTO') : (isEn ? 'PENDING' : 'DA FARE')}
                     </button>
 
                     <button
@@ -115,8 +117,8 @@ export const TechSessionChecklist: React.FC = () => {
                           : 'bg-neutral-900 text-neutral-400 border-neutral-700'
                       }`}
                     >
-                      <span className="block text-[9px] font-mono text-neutral-400">2. GESTIONE</span>
-                      {checklist.intraDone ? '✓ LIVE OK' : 'IN CORSO'}
+                      <span className="block text-[9px] font-mono text-neutral-400">2. {isEn ? 'MANAGEMENT' : 'GESTIONE'}</span>
+                      {checklist.intraDone ? '✓ LIVE OK' : (isEn ? 'IN PROGRESS' : 'IN CORSO')}
                     </button>
 
                     <button
@@ -127,8 +129,8 @@ export const TechSessionChecklist: React.FC = () => {
                           : 'bg-neutral-900 text-neutral-400 border-neutral-700'
                       }`}
                     >
-                      <span className="block text-[9px] font-mono text-neutral-400">3. RIORDINO</span>
-                      {checklist.postDone ? '🟢 LUCE VERDE' : 'RESET'}
+                      <span className="block text-[9px] font-mono text-neutral-400">3. {isEn ? 'RESET & CLEANUP' : 'RIORDINO'}</span>
+                      {checklist.postDone ? (isEn ? '🟢 GREEN LIGHT' : '🟢 LUCE VERDE') : 'RESET'}
                     </button>
                   </div>
                 </div>

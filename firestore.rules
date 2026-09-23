@@ -33,7 +33,8 @@ service cloud.firestore {
         (!('timeMultiplier' in data) || data.timeMultiplier is number) &&
         (!('autoAdvancePhases' in data) || data.autoAdvancePhases is bool) &&
         (!('suspensionInfo' in data) || data.suspensionInfo is map) &&
-        (!('courseStartSchedule' in data) || data.courseStartSchedule is map);
+        (!('courseStartSchedule' in data) || data.courseStartSchedule is map) &&
+        (!('language' in data) || data.language in ['it', 'en']);
     }
 
     match /course_state/{stateId} {
