@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Guest, GroupType, CourseDay } from '../../types';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
+import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
+import { DaySelectorToggle } from '../DaySelectorToggle';
 import { getGroupPhaseDetails } from '../../utils/groupPhaseDetails';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 
@@ -41,6 +43,9 @@ export const OspiteView: React.FC = () => {
     technicians,
     language,
     timerSeconds,
+    isCourseStarted,
+    courseStartSchedule,
+    timeRemainingMs,
   } = useCourse();
 
   const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -49,6 +54,7 @@ export const OspiteView: React.FC = () => {
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<'ALL' | GroupType>('ALL');
 
   const isEn = language === 'en';
+  const isPreCourse = !isCourseStarted || (courseStartSchedule?.isGateEnabled && timeRemainingMs > 0);
 
   const currentGuest: Guest =
     guests.find((g) => g.id === selectedGuestId) ||
@@ -127,6 +133,204 @@ export const OspiteView: React.FC = () => {
 
   const groupsToDisplay: GroupType[] =
     selectedGroupFilter === 'ALL' ? ['A', 'B', 'C', 'D'] : [selectedGroupFilter];
+
+  // Pre-Course Standby: Only show personal Anagrafica & Public Countdown until course is started by Regia
+  if (isPreCourse) {
+    return (
+      <div className="space-y-4 pb-16 max-w-7xl mx-auto px-2 sm:px-4">
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between gap-2 flex-wrap bg-neutral-900 border border-emerald-500/50 p-2.5 sm:p-3 rounded-lg shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 bg-emerald-600 text-black font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-sm">
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>{isEn ? 'GUEST VIEW' : 'VISUALE OSPITI'}</span>
+            </span>
+            <DaySelectorToggle variant="public" />
+            <span className="px-2 py-0.5 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}
+            </span>
+          </div>
+
+          {/* Guest Selector */}
+          {canSelectOperator ? (
+            <div className="flex items-center gap-1.5 bg-neutral-950 p-1.5 rounded border border-emerald-700/60">
+              <span className="text-[11px] font-mono text-emerald-300 font-bold uppercase hidden sm:inline">
+                {isEn ? 'Guest:' : 'Ospite:'}
+              </span>
+              <select
+                value={selectedGuestId}
+                onChange={(e) => setSelectedGuestId(e.target.value)}
+                className="bg-neutral-900 text-white font-mono text-xs border border-emerald-600/50 rounded px-2 py-1 focus:outline-none focus:border-emerald-400 cursor-pointer"
+              >
+                {guests.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.badgeCode || 'GUEST'} • {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 bg-neutral-950 text-emerald-300 font-mono text-xs border border-emerald-800/80 rounded flex items-center gap-1.5 shadow-inner">
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <strong className="text-white text-xs">{currentGuest.badgeCode || 'GUEST'} • {currentGuest.name}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowUnlockModal(true)}
+                className="p-1 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 hover:text-emerald-400 border border-neutral-800 rounded transition-colors cursor-pointer"
+                title={isEn ? 'Unlock Selector (Control Room / Direction)' : 'Sblocca Selettore (Regia / Direzione)'}
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* DIGITAL VIP OBSERVER BADGE & ESCORT TUTOR */}
+        <div className="bg-neutral-900 border-2 border-emerald-500/80 rounded-xl p-4 sm:p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 space-y-3">
+            {/* Badge Top Line */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-emerald-600/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center font-black rounded-lg shadow flex-shrink-0">
+                  <UserCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 bg-emerald-600 text-black font-mono font-black text-[10px] uppercase tracking-wider rounded">
+                      {currentGuest.badgeCode || 'GUEST'}
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-300 font-bold bg-neutral-950 px-1.5 py-0.5 border border-emerald-850 rounded">
+                      {currentGuest.nationality || (isEn ? 'International' : 'Internazionale')}
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight mt-0.5 leading-snug">
+                    {currentGuest.name}
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            {/* Title and Organization */}
+            <div className="text-xs text-neutral-300 font-medium">
+              <span className="text-emerald-400 font-bold">{currentGuest.title}</span>
+              <span className="mx-1.5 text-neutral-500">•</span>
+              <span className="text-neutral-200">{currentGuest.organization}</span>
+            </div>
+
+            {/* Designated Escort Faculty */}
+            <div className="bg-neutral-950/90 border border-emerald-900/80 rounded-lg p-2.5 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <div className="text-xs">
+                  <span className="text-[10px] uppercase font-mono text-neutral-400 block">{isEn ? 'Escort Tutor:' : 'Tutor Accompagnatore:'}</span>
+                  <span className="font-bold text-white">
+                    {currentGuest.escortFaculty || (isEn ? 'Hospital Coordination Faculty' : 'Faculty di Coordinamento Ospedale')}
+                  </span>
+                </div>
+              </div>
+
+              {escortFacultyMember?.phone && (
+                <a
+                  href={`tel:${escortFacultyMember.phone}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider rounded shadow transition-all"
+                >
+                  <Phone className="w-3 h-3" />
+                  <span>{isEn ? 'Call' : 'Chiama'}</span>
+                </a>
+              )}
+            </div>
+
+            {/* Collapsible Section for Accreditation Details & Safety Guidelines */}
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={() => setShowProfileDetails(!showProfileDetails)}
+                className="text-xs text-emerald-400 font-bold flex items-center gap-1.5 py-1 px-1 -ml-1 rounded hover:bg-neutral-800/60 transition-colors cursor-pointer"
+              >
+                <span>{showProfileDetails ? (isEn ? 'Hide accreditation sheet' : 'Nascondi scheda accreditamento') : (isEn ? 'Show accreditation details' : 'Mostra dettagli accreditamento')}</span>
+                {showProfileDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowVademecum(!showVademecum)}
+                className="text-xs text-neutral-300 hover:text-white font-bold flex items-center gap-1 py-1 px-2 bg-neutral-950 border border-neutral-800 rounded transition-colors cursor-pointer"
+              >
+                <Info className="w-3.5 h-3.5 text-orange-400" />
+                <span>{isEn ? 'Guest Handbook' : 'Vademecum Ospite'}</span>
+              </button>
+            </div>
+
+            {/* Expanded Details Drawer */}
+            {showProfileDetails && (
+              <div className="pt-2 border-t border-neutral-800/80 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="bg-neutral-950 p-2.5 border border-neutral-850 rounded">
+                  <span className="text-[10px] font-mono text-neutral-400 uppercase block">{isEn ? 'Assigned Days:' : 'Giorni Assegnati:'}</span>
+                  <span className="font-bold text-white">
+                    {currentGuest.assignedDays?.map((d) => `Day 0${d}`).join(', ') || 'Day 02 & Day 03'}
+                  </span>
+                </div>
+                <div className="bg-neutral-950 p-2.5 border border-neutral-850 rounded">
+                  <span className="text-[10px] font-mono text-neutral-400 uppercase block">{isEn ? 'Institutional Email:' : 'Email Istituzionale:'}</span>
+                  <span className="font-mono text-neutral-200 truncate block">{currentGuest.email || 'ospite@example.com'}</span>
+                </div>
+                {currentGuest.phone && (
+                  <div className="bg-neutral-950 p-2.5 border border-neutral-850 rounded">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase block">{isEn ? 'Phone:' : 'Telefono:'}</span>
+                    <span className="font-mono text-neutral-200">{currentGuest.phone}</span>
+                  </div>
+                )}
+                {currentGuest.notes && (
+                  <div className="bg-neutral-950 p-2.5 border border-neutral-850 rounded">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase block">{isEn ? 'Guest Notes:' : 'Note Ospite:'}</span>
+                    <span className="text-neutral-300 italic">{currentGuest.notes}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Vademecum & Safety Briefing Modal / Alert */}
+            {showVademecum && (
+              <div className="p-3 bg-neutral-950 border border-orange-500/70 rounded-lg space-y-2 text-xs text-neutral-200 shadow-inner">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
+                  <span className="font-black text-orange-400 uppercase flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                    {isEn ? 'Observer Code of Conduct & Safety' : 'Regole di Condotta & Sicurezza Osservatori'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowVademecum(false)}
+                    className="text-neutral-400 hover:text-white text-xs cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ul className="space-y-1.5 list-disc list-inside text-[11px] text-neutral-300">
+                  <li>{isEn ? 'Maintain silent presence in observation corridors without crossing tactical tape boundaries.' : 'Mantenere il silenzio nei corridoi di osservazione senza oltrepassare le linee di demarcazione tattica.'}</li>
+                  <li>{isEn ? 'Photography and video recording strictly require Regia authorization.' : 'Riprese video e foto sono consentite solo previa autorizzazione della Regia.'}</li>
+                  <li>{isEn ? 'Wear designated High-Visibility / VIP Observer lanyard at all times.' : 'Indossare sempre il badge VIP Observer ad alta visibilità.'}</li>
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* COUNTDOWN PUBBLICO UFFICIALE */}
+        <PreCoursePublicCountdown />
+
+        {/* Unlock Modal */}
+        <OperatorUnlockModal
+          isOpen={showUnlockModal}
+          onClose={() => setShowUnlockModal(false)}
+          roleLabel="Ospite"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-16 max-w-7xl mx-auto px-2 sm:px-4">

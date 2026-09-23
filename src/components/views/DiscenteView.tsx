@@ -26,6 +26,7 @@ import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { ParticipantQRModal } from '../anagrafica/ParticipantQRModal';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
+import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
 import { DiscentePersonalTimeline } from './DiscentePersonalTimeline';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 
@@ -63,9 +64,13 @@ export const DiscenteView: React.FC = () => {
     technicians,
     canSelectOperator,
     language,
+    isCourseStarted,
+    courseStartSchedule,
+    timeRemainingMs,
   } = useCourse();
 
   const isEn = language === 'en';
+  const isPreCourse = !isCourseStarted || (courseStartSchedule?.isGateEnabled && timeRemainingMs > 0);
 
   const currentDiscente = discenti.find((d) => d.id === selectedDiscenteId) || discenti[0] || {
     id: 'disc-1',
@@ -114,6 +119,137 @@ export const DiscenteView: React.FC = () => {
   const getCumulativeSeconds = (isMorning: boolean, isNightToMorning: boolean) => {
     return timerSeconds;
   };
+
+  // Pre-Course Standby: Only show personal Anagrafica & Public Countdown until course is started by Regia
+  if (isPreCourse) {
+    return (
+      <div className="space-y-4 pb-12 max-w-5xl mx-auto px-2 sm:px-4 font-mono">
+        {/* Header Banner - Nascosto quando aperta da QR Code */}
+        {!isFromQR && (
+          <div className="bg-neutral-900 border-2 border-cyan-500/60 p-3 sm:p-4 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 rounded">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <span className="px-2.5 sm:px-3 py-1 bg-cyan-600 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
+                <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'LEARNER VIEW' : 'VISUALE DISCENTE'}
+              </span>
+              <DaySelectorToggle variant="public" />
+              <span className="px-2 py-0.5 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}
+              </span>
+            </div>
+
+            {/* Discente Selector */}
+            {canSelectOperator ? (
+              <div className="flex items-center gap-2 flex-wrap bg-cyan-950/40 p-1.5 border border-cyan-700/50 rounded">
+                <span className="text-xs font-mono text-cyan-300 uppercase font-bold flex items-center gap-1">
+                  <User className="w-3.5 h-3.5" /> {isEn ? 'Select:' : 'Seleziona:'}
+                </span>
+                <select
+                  value={selectedDiscenteId}
+                  onChange={(e) => setSelectedDiscenteId(e.target.value)}
+                  className="bg-neutral-950 text-cyan-300 font-mono text-xs border border-cyan-700/60 px-2.5 py-1.5 rounded focus:outline-none focus:border-cyan-400 max-w-full sm:max-w-xs cursor-pointer font-bold"
+                >
+                  {discenti.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.badgeCode || 'DISC'} • {d.name} ({isEn ? 'Team' : 'Sq.'} {d.teamId})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 bg-neutral-950 text-cyan-300 font-mono text-xs border border-cyan-800/80 rounded flex items-center gap-1.5 shadow-inner">
+                  <Lock className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-cyan-400/80">{isEn ? 'Learner:' : 'Discente:'}</span>
+                  <strong className="text-white text-xs">{currentDiscente.badgeCode || 'DISC'} • {currentDiscente.name}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowUnlockModal(true)}
+                  title={isEn ? 'Unlock Selector (Control / Direction)' : 'Sblocca Selettore (Regia / Direzione)'}
+                  className="p-1.5 text-neutral-500 hover:text-cyan-400 transition-colors cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ANAGRAFICA COMPLETA DEL DISCENTE */}
+        <div className="bg-neutral-950 border-2 border-cyan-500/80 p-3.5 sm:p-5 rounded-xl shadow-xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {/* Nome, Cognome, Matricola e Ruolo */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 bg-cyan-500 text-black font-mono font-black text-xs sm:text-sm rounded shadow-xs">
+                  {currentDiscente.badgeCode || 'DISC-01'}
+                </span>
+                <h1 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                  {currentDiscente.name}
+                </h1>
+                <span className={`px-2.5 py-1 font-mono text-xs font-bold rounded border ${
+                  isTeamLeader
+                    ? 'bg-cyan-950 text-cyan-300 border-cyan-600'
+                    : 'bg-neutral-900 text-neutral-300 border-neutral-700'
+                }`}>
+                  {isTeamLeader ? 'Team Leader (TL)' : (isEn ? 'Operator' : 'Operatore')}
+                </span>
+              </div>
+              <p className="text-neutral-300 text-xs sm:text-sm font-mono">
+                {currentDiscente.role || (isEn ? 'Healthcare / Emergency Profession' : 'Professione Sanitaria / Emergenza')} • {currentDiscente.nationality || (isEn ? 'Italian' : 'Italiana')}
+              </p>
+            </div>
+
+            {/* Info Integrate: Gruppo, Squadra, Faculty Tutor & Pass QR */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded flex items-center gap-2 text-xs font-mono">
+                <span className="text-neutral-400 text-[11px]">{isEn ? 'Group:' : 'Gruppo:'}</span>
+                <strong className="text-cyan-400 font-bold">{isEn ? `GROUP ${groupLabel}` : `GRUPPO ${groupLabel}`}</strong>
+              </div>
+
+              <div className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded flex items-center gap-2 text-xs font-mono">
+                <span className="text-neutral-400 text-[11px]">{isEn ? 'Team:' : 'Squadra:'}</span>
+                <strong className="text-white">{isEn ? `Team ${currentDiscente.teamId}` : `Squadra ${currentDiscente.teamId}`}</strong>
+              </div>
+
+              <div className="px-3 py-1.5 bg-neutral-900 border border-orange-500/50 rounded flex items-center gap-2 text-xs font-mono" title={assignedFaculty?.name}>
+                <span className="text-neutral-400 text-[11px]">Faculty:</span>
+                <strong className="text-orange-400">{assignedFaculty?.badgeCode || 'FAC'} • {assignedFaculty?.name || 'Tutor'}</strong>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowQRModal(true)}
+                className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 text-xs font-mono font-bold uppercase flex items-center gap-1.5 rounded transition-colors cursor-pointer shadow-xs"
+                title={isEn ? 'View QR Code Pass' : 'Visualizza QR Code Pass'}
+              >
+                <QrCode className="w-4 h-4 text-cyan-400" />
+                <span>{isEn ? 'QR Pass' : 'Pass QR'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* COUNTDOWN PUBBLICO UFFICIALE */}
+        <PreCoursePublicCountdown />
+
+        {/* Modals */}
+        {showQRModal && currentDiscente && (
+          <ParticipantQRModal
+            isOpen={showQRModal}
+            onClose={() => setShowQRModal(false)}
+            person={currentDiscente}
+            category="discenti"
+          />
+        )}
+        <OperatorUnlockModal
+          isOpen={showUnlockModal}
+          onClose={() => setShowUnlockModal(false)}
+          roleLabel={isEn ? 'Learner' : 'Discente'}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-12 max-w-5xl mx-auto px-2 sm:px-4">

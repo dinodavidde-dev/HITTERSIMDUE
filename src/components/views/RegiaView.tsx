@@ -26,6 +26,7 @@ import { CourseSuspensionModal } from '../CourseSuspensionModal';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { ScenariMasterListView } from './ScenariMasterListView';
 import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
+import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
 
 export const RegiaView: React.FC = () => {
   const {
@@ -86,6 +87,9 @@ export const RegiaView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-12">
+      {/* Banner Countdown Inizio Corso (Visibile fino all'avvio del corso da parte della regia) */}
+      <PreCourseDirectorBanner variant="regia" />
+
       {/* Regia Top Header with Anagrafica & Live Controls */}
       <div className="bg-neutral-950 border-2 border-pink-500/80 p-4 sm:p-5 shadow-xl space-y-3">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

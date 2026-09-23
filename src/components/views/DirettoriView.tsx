@@ -14,6 +14,7 @@ import { MasterAnagraficaManager } from '../anagrafica/MasterAnagraficaManager';
 import { ScenariMasterListView } from './ScenariMasterListView';
 import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
+import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
 
 export const DirettoriView: React.FC = () => {
   const {
@@ -61,6 +62,9 @@ export const DirettoriView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-12 px-2 sm:px-4 max-w-7xl mx-auto font-mono">
+      {/* Banner Countdown Inizio Corso (Visibile fino all'avvio del corso da parte della regia) */}
+      <PreCourseDirectorBanner variant="direttore" />
+
       {/* Director Top Header with Anagrafica & Controls */}
       <div className="bg-neutral-950 border-2 border-yellow-500/80 p-3 sm:p-5 shadow-xl space-y-3">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">

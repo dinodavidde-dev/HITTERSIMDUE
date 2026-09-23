@@ -13,6 +13,7 @@ import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { FacultyScenariValutazioniModal } from '../faculty/FacultyScenariValutazioniModal';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
+import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 
 export const FacultyView: React.FC = () => {
@@ -30,9 +31,13 @@ export const FacultyView: React.FC = () => {
     evaluations,
     canSelectOperator,
     language,
+    isCourseStarted,
+    courseStartSchedule,
+    timeRemainingMs,
   } = useCourse();
 
   const isEn = language === 'en';
+  const isPreCourse = !isCourseStarted || (courseStartSchedule?.isGateEnabled && timeRemainingMs > 0);
 
   // Modal state
   const [showScenariValutazioniModal, setShowScenariValutazioniModal] = useState(false);
@@ -93,6 +98,158 @@ export const FacultyView: React.FC = () => {
     const s = secs % 60;
     return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  // Pre-Course Standby: Only show personal Anagrafica & Public Countdown until course is started by Regia
+  if (isPreCourse) {
+    return (
+      <div className="space-y-4 sm:space-y-6 pb-12 max-w-5xl mx-auto px-2 sm:px-4 font-mono">
+        {/* Header Banner - Faculty View & Selector */}
+        <div className="bg-neutral-900 border-2 border-amber-500/60 p-3 sm:p-4 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <span className="px-2.5 sm:px-3 py-1 bg-amber-600 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'FACULTY VIEW' : 'VISUALE FACULTY'}
+            </span>
+
+            <DaySelectorToggle variant="public" />
+
+            <span className="px-2.5 py-1 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}
+            </span>
+          </div>
+
+          {/* Faculty Selector */}
+          {canSelectOperator ? (
+            <div className="flex items-center gap-2 flex-wrap bg-amber-950/40 p-1.5 border border-amber-700/50 rounded">
+              <span className="text-xs font-mono text-amber-300 uppercase font-bold flex items-center gap-1">
+                <User className="w-3.5 h-3.5" /> Faculty:
+              </span>
+              <select
+                value={selectedFacultyId}
+                onChange={(e) => setSelectedFacultyId(e.target.value)}
+                className="bg-neutral-950 text-amber-300 font-mono text-xs border border-amber-700/60 px-2.5 py-1.5 rounded focus:outline-none focus:border-amber-400 max-w-full sm:max-w-xs cursor-pointer font-bold"
+              >
+                {faculty.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.badgeCode || 'FAC'} • {f.name} ({isEn ? 'Team' : 'Sq.'} {f.assignedTeamId})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-1 bg-neutral-950 text-amber-300 font-mono text-xs border border-amber-800/80 rounded flex items-center gap-1.5 shadow-inner">
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-amber-400/80">Tutor:</span>
+                <strong className="text-white text-xs">{currentFaculty.badgeCode || 'FAC'} • {currentFaculty.name}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowUnlockModal(true)}
+                title={isEn ? 'Unlock Selector (Control / Direction)' : 'Sblocca Selettore (Regia / Direzione)'}
+                className="p-1.5 text-neutral-500 hover:text-amber-400 transition-colors cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* PERSONALIZED FACULTY ANAGRAFICA CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Box 1: Intestazione Personale Faculty */}
+          <div className="bg-neutral-950 border-2 border-amber-500/80 p-3.5 sm:p-5 rounded-xl shadow-xl relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute top-0 right-0 bg-amber-600 text-black font-mono font-black text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl">
+              {currentFaculty.badgeCode || 'FAC-01'}
+            </div>
+            <div className="space-y-2.5 sm:space-y-3">
+              <div className="flex items-center gap-2 text-amber-400 text-xs font-mono uppercase tracking-widest">
+                <User className="w-4 h-4" /> {isEn ? 'Faculty / Tutor Profile' : 'Profilo Faculty / Tutor'}
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight break-words">
+                  {currentFaculty.name}
+                </h2>
+                <p className="text-amber-300 font-medium text-xs sm:text-sm pt-0.5 break-words">
+                  {currentFaculty.title || (isEn ? 'Lecturer / Clinical Tutor' : 'Docente / Tutor Clinico')}
+                </p>
+                {currentFaculty.specialty && (
+                  <p className="text-neutral-400 text-xs font-mono pt-0.5">
+                    {currentFaculty.specialty}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-3 mt-3 border-t border-neutral-800">
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
+                <div>
+                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                  <strong className="text-white truncate block">{currentFaculty.nationality || (isEn ? 'Italian' : 'Italiana')}</strong>
+                </div>
+                <div className="truncate">
+                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Affiliation:' : 'Affiliazione:'}</span>
+                  <strong className="text-white truncate block" title={currentFaculty.organization || currentFaculty.affiliation}>
+                    {currentFaculty.organization || currentFaculty.affiliation || (isEn ? 'Hospital' : 'Ospedale')}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 2: Assegnazione Squadra & Anagrafica Discenti */}
+          <div className="bg-neutral-950 border-2 border-orange-500/80 p-3.5 sm:p-5 rounded-xl shadow-xl relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute top-0 right-0 bg-orange-600 text-black font-mono font-black text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl">
+              {isEn ? `GROUP ${facultyGroup} • TEAM ${currentFaculty.assignedTeamId}` : `GRUPPO ${facultyGroup} • SQ. ${currentFaculty.assignedTeamId}`}
+            </div>
+            <div className="space-y-2.5 sm:space-y-3">
+              <div className="flex items-center gap-2 text-orange-400 text-xs font-mono uppercase tracking-widest">
+                <Compass className="w-4 h-4" /> {isEn ? 'Group & Assigned Team Details' : 'Specifiche Gruppo & Squadra Assegnata'}
+              </div>
+              <div className="bg-neutral-900 p-2.5 sm:p-3 border border-neutral-800 grid grid-cols-2 gap-2 text-xs font-mono rounded">
+                <div>
+                  <span className="text-neutral-400 block text-[10px] uppercase">{isEn ? 'Macro-Group:' : 'Macro-Gruppo:'}</span>
+                  <strong className="text-white text-xs sm:text-sm">{isEn ? `GROUP ${facultyGroup}` : `GRUPPO ${facultyGroup}`}</strong>
+                </div>
+                <div>
+                  <span className="text-neutral-400 block text-[10px] uppercase">{isEn ? 'Specific Team:' : 'Squadra Specifica:'}</span>
+                  <strong className="text-amber-400 text-xs sm:text-sm">{isEn ? `Team ${currentFaculty.assignedTeamId}` : `Squadra ${currentFaculty.assignedTeamId}`}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="pt-3 mt-2 border-t border-neutral-800">
+              <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block mb-1">
+                {isEn ? `Learners Directory Team ${currentFaculty.assignedTeamId} (1:1):` : `Anagrafica Discenti Squadra ${currentFaculty.assignedTeamId} (1:1):`}
+              </span>
+              <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+                {assignedTeamDiscenti.length > 0 ? (
+                  assignedTeamDiscenti.map((d, idx) => (
+                    <div key={d.id} className="flex items-center justify-between text-[11px] font-mono bg-neutral-900 px-2 py-1 border border-neutral-800 gap-2 rounded">
+                      <span className="text-white font-bold truncate">{d.badgeCode || `DISC-0${idx+1}`} • {d.name}</span>
+                      <span className="text-orange-300 font-semibold flex-shrink-0 text-[10px] sm:text-[11px]">
+                        {d.role || (idx === 0 ? 'Team Leader' : (isEn ? 'Operator' : 'Operatore'))}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-neutral-500 font-mono">{isEn ? 'No learners associated with this team.' : 'Nessun discente associato alla squadra.'}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* COUNTDOWN PUBBLICO UFFICIALE */}
+        <PreCoursePublicCountdown />
+
+        {/* Unlock Modal */}
+        <OperatorUnlockModal
+          isOpen={showUnlockModal}
+          onClose={() => setShowUnlockModal(false)}
+          roleLabel="Faculty"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-12 max-w-5xl mx-auto px-2 sm:px-4 font-mono">
