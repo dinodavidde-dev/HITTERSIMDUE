@@ -18,6 +18,8 @@ import {
   TIMELINE_REGIA_RADIO_SCRIPTS,
   TimelineRegiaRadioScript,
 } from '../../data/timelineRegiaRadioScripts';
+import { getLocalizedRadioScript } from '../../data/timelineRegiaRadioTranslations';
+import { translateSlot } from '../../utils/courseTranslation';
 
 interface RegiaRadioCoordinationPanelProps {
   currentSlot: TimelineSlot;
@@ -44,10 +46,16 @@ export const RegiaRadioCoordinationPanel: React.FC<RegiaRadioCoordinationPanelPr
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // Filter scripts for active day
+  // Filter and localize scripts for active day
   const dayScripts = useMemo(() => {
-    return TIMELINE_REGIA_RADIO_SCRIPTS.filter((s) => s.day === activeDay);
-  }, [activeDay]);
+    return TIMELINE_REGIA_RADIO_SCRIPTS
+      .filter((s) => s.day === activeDay)
+      .map((s) => getLocalizedRadioScript(s, isEn));
+  }, [activeDay, isEn]);
+
+  const activeSlotTranslated = useMemo(() => {
+    return translateSlot(currentSlot, isEn ? 'en' : 'it');
+  }, [currentSlot, isEn]);
 
   // Current scripts matching currentSlot.id, or the first script of current slot
   const currentSlotScripts = useMemo(() => {
@@ -102,14 +110,14 @@ export const RegiaRadioCoordinationPanel: React.FC<RegiaRadioCoordinationPanelPr
         return {
           bg: 'bg-purple-950 text-purple-300 border-purple-600',
           dot: 'bg-purple-400',
-          label: 'CH3 • TECNICI',
+          label: isEn ? 'CH3 • TECHNICIANS' : 'CH3 • TECNICI',
         };
       case 'CH_ALL':
       default:
         return {
           bg: 'bg-amber-950 text-amber-300 border-amber-500',
           dot: 'bg-amber-400',
-          label: 'CH ALL • BROADCAST',
+          label: isEn ? 'CH ALL • BROADCAST' : 'CH ALL • BROADCAST',
         };
     }
   };
@@ -187,7 +195,7 @@ export const RegiaRadioCoordinationPanel: React.FC<RegiaRadioCoordinationPanelPr
               <div className="flex items-center justify-between text-xs font-mono pb-1 border-b border-neutral-800">
                 <span className="text-yellow-400 font-bold uppercase flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  {isEn ? 'Synchronized with Active Phase:' : 'Sincronizzato con la Fase Attiva:'} {currentSlot.title} ({currentSlot.timeRange})
+                  {isEn ? 'Synchronized with Active Phase:' : 'Sincronizzato con la Fase Attiva:'} {activeSlotTranslated.title} ({currentSlot.timeRange})
                 </span>
                 <span className="text-neutral-400">
                   {currentSlotScripts.length} {isEn ? 'radio suggestions for this block' : 'suggerimenti radio per questo blocco'}
