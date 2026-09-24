@@ -224,7 +224,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
     } else if (p.category === 'ospiti') {
       setSelectedGuestId(p.id);
       setUserRole('ospite');
-      setCurrentTab('ospite');
+      setCurrentTab('public');
     }
   };
 

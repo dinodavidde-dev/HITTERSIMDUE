@@ -306,6 +306,26 @@
         "signalNotes": { "type": "string", "maxLength": 500 }
       },
       "required": ["stationId", "stationName", "sessionPeriod", "day", "isFullyCertified"]
+    },
+    "DevicePresence": {
+      "title": "DevicePresence",
+      "description": "Real-time telemetry and heartbeat of connected technician and student devices for course synchronization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "badgeCode": { "type": "string", "maxLength": 50 },
+        "name": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "enum": ["discente", "tecnico", "faculty", "direttore", "ospite", "regia"] },
+        "status": { "type": "string", "enum": ["online", "standby", "offline", "warning"] },
+        "lastSeen": { "type": "number" },
+        "currentSlotIndex": { "type": "number" },
+        "activeDay": { "type": "number", "enum": [2, 3] },
+        "latencyMs": { "type": "number" },
+        "deviceInfo": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "badgeCode", "name", "role", "status", "lastSeen"]
     }
   },
   "firestore": {
@@ -360,6 +380,10 @@
     "/station_checklists/{checklistId}": {
       "schema": "StationChecklist",
       "description": "Pre-session technical readiness checklists and equipment statuses"
+    },
+    "/device_presence/{presenceId}": {
+      "schema": "DevicePresence",
+      "description": "Live device connectivity heartbeats and synchronization status"
     }
   }
 }

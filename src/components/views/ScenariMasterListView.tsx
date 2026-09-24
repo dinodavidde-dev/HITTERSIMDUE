@@ -9,11 +9,15 @@ import {
   Clock,
   Download,
   Droplet,
+  Edit3,
   FileText,
   Filter,
   MapPin,
+  Plus,
+  RotateCcw,
   Search,
   Shield,
+  Sliders,
   Star,
   Users,
   Wrench,
@@ -22,9 +26,10 @@ import {
 import { SimulatorPatient } from '../../types';
 import { ScenarioStatusBadge } from '../ScenarioStatusBadge';
 import { translatePatient } from '../../utils/courseTranslation';
+import { ScenarioEditorModal } from '../scenari/ScenarioEditorModal';
 
 export const ScenariMasterListView: React.FC = () => {
-  const { simulatorPatients, language, teams, technicians, evaluations } = useCourse();
+  const { simulatorPatients, resetSimulatorPatients, language, teams, technicians, evaluations } = useCourse();
   const isEn = language === 'en';
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +37,21 @@ export const ScenariMasterListView: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'ALL' | 'mattina' | 'pomeriggio'>('ALL');
   const [selectedType, setSelectedType] = useState<'ALL' | 'TCCC' | 'SHOCK_ROOM'>('ALL');
   const [selectedModalPatient, setSelectedModalPatient] = useState<SimulatorPatient | null>(null);
+
+  // Scenario Editor Modal State
+  const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
+  const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
+
+  const handleResetAllDefaults = () => {
+    const confirmReset = window.confirm(
+      isEn
+        ? 'Are you sure you want to reset ALL 24 scenarios to official initial default values? Any custom modifications will be overwritten.'
+        : 'Sei sicuro di voler ripristinare TUTTI i 24 scenari ai valori predefiniti ufficiali del corso? Tutte le modifiche personalizzate verranno reimpostate.'
+    );
+    if (confirmReset && resetSimulatorPatients) {
+      resetSimulatorPatients();
+    }
+  };
 
   // Helper to get execution time based on day & period / slot
   const getExecutionTimeInfo = (patient: SimulatorPatient) => {
@@ -106,8 +126,40 @@ export const ScenariMasterListView: React.FC = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
+              onClick={() => {
+                setEditingPatientId(null);
+                setIsEditorOpen(true);
+              }}
+              className="min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/30"
+              title={isEn ? 'Open Scenario Editor to edit or create scenarios' : 'Apri l\'editor per modificare o creare scenari'}
+            >
+              <Sliders className="w-4 h-4" />
+              <span>{isEn ? 'Scenario Editor' : 'Editor Scenari'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setEditingPatientId(null);
+                setIsEditorOpen(true);
+              }}
+              className="min-h-[40px] px-3 sm:px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-orange-400 hover:text-orange-300 font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-neutral-700"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{isEn ? 'New Scenario' : 'Nuovo Scenario'}</span>
+            </button>
+
+            <button
+              onClick={handleResetAllDefaults}
+              className="min-h-[40px] px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-neutral-800"
+              title={isEn ? 'Reset all scenarios to factory defaults' : 'Ripristina tutti gli scenari ai valori predefiniti'}
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="hidden sm:inline">{isEn ? 'Reset' : 'Ripristina'}</span>
+            </button>
+
+            <button
               onClick={exportScenariosListJSON}
-              className="w-full sm:w-auto min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
+              className="min-h-[40px] px-3 sm:px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-neutral-800"
             >
               <Download className="w-4 h-4" />
               <span>{isEn ? 'Export JSON' : 'Esporta JSON'}</span>
@@ -243,14 +295,27 @@ export const ScenariMasterListView: React.FC = () => {
                 <span className="text-neutral-500">Hardware: </span>{patient.simulatori} • {patient.attoriCount} {isEn ? 'actor(s)' : 'attore/i'}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setSelectedModalPatient(patient)}
-                className="w-full min-h-[40px] py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-neutral-700"
-              >
-                <FileText className="w-3.5 h-3.5 text-orange-400" />
-                <span>{isEn ? 'View Full Sheet' : 'Visualizza Scheda Completa'}</span>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPatientId(patient.id);
+                    setIsEditorOpen(true);
+                  }}
+                  className="w-full min-h-[40px] py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{isEn ? 'Edit' : 'Modifica'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedModalPatient(patient)}
+                  className="w-full min-h-[40px] py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-neutral-700"
+                >
+                  <FileText className="w-3.5 h-3.5 text-orange-400" />
+                  <span>{isEn ? 'Sheet' : 'Scheda'}</span>
+                </button>
+              </div>
             </div>
           );
         })}
@@ -373,13 +438,26 @@ export const ScenariMasterListView: React.FC = () => {
                     </p>
                   </td>
                   <td className="p-3 text-right">
-                    <button
-                      onClick={() => setSelectedModalPatient(patient)}
-                      className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1"
-                    >
-                      <FileText className="w-3 h-3 text-orange-400" />
-                      {isEn ? 'Details' : 'Dettagli'}
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => {
+                          setEditingPatientId(patient.id);
+                          setIsEditorOpen(true);
+                        }}
+                        className="px-2.5 py-1 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                        title={isEn ? 'Edit this scenario' : 'Modifica questo scenario'}
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        {isEn ? 'Edit' : 'Modifica'}
+                      </button>
+                      <button
+                        onClick={() => setSelectedModalPatient(patient)}
+                        className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1 border border-neutral-700"
+                      >
+                        <FileText className="w-3 h-3 text-orange-400" />
+                        {isEn ? 'Details' : 'Dettagli'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -527,10 +605,23 @@ export const ScenariMasterListView: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-neutral-800 flex justify-end">
+            <div className="pt-4 border-t border-neutral-800 flex items-center justify-between gap-3 flex-wrap">
+              <button
+                onClick={() => {
+                  const idToEdit = selectedModalPatient.id;
+                  setSelectedModalPatient(null);
+                  setEditingPatientId(idToEdit);
+                  setIsEditorOpen(true);
+                }}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center gap-1.5 cursor-pointer shadow-lg shadow-orange-600/30"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>{isEn ? 'Edit This Scenario' : 'Modifica questo Scenario'}</span>
+              </button>
+
               <button
                 onClick={() => setSelectedModalPatient(null)}
-                className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider cursor-pointer"
+                className="px-5 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold uppercase text-xs tracking-wider cursor-pointer border border-neutral-700"
               >
                 {isEn ? 'Close Sheet' : 'Chiudi Scheda'}
               </button>
@@ -539,6 +630,16 @@ export const ScenariMasterListView: React.FC = () => {
         </div>
         );
       })()}
+
+      {/* SCENARIO MASTER EDITOR MODAL */}
+      <ScenarioEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingPatientId(null);
+        }}
+        initialPatientId={editingPatientId}
+      />
     </div>
   );
 };

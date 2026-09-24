@@ -27,6 +27,10 @@ import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { ScenariMasterListView } from './ScenariMasterListView';
 import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
 import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
+import { TcccPreAlertCountdownBanner } from '../common/TcccPreAlertCountdownBanner';
+import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
+import { RegiaDeviceStatusDashboard } from '../regia/RegiaDeviceStatusDashboard';
+import { Wifi } from 'lucide-react';
 
 export const RegiaView: React.FC = () => {
   const {
@@ -58,6 +62,7 @@ export const RegiaView: React.FC = () => {
   } = useCourse();
 
   const isEn = language === 'en';
+  const isPreAllertaTccc = isPreAllertaTcccSlot(currentSlot);
 
   const currentRegia =
     regiaStaff.find((r) => r.id === selectedRegiaId) ||
@@ -74,7 +79,7 @@ export const RegiaView: React.FC = () => {
       isMaster: true,
     };
 
-  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'scenari' | 'suspension' | 'anagrafica'>('timeline');
+  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'scenari' | 'suspension' | 'anagrafica'>('timeline');
   const [isSuspensionModalOpen, setIsSuspensionModalOpen] = useState(false);
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
 
@@ -103,6 +108,11 @@ export const RegiaView: React.FC = () => {
               <span className="text-[11px] text-neutral-300 font-mono font-bold px-2.5 py-1 bg-neutral-900 border border-neutral-700">
                 DAY 0{activeDay} • {isEn ? 'SLOT' : 'SLOT'} {activeSlotIndex + 1}/{filteredSlots.length}
               </span>
+              {isPreAllertaTccc && (
+                <span className="bg-amber-500 text-black font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1 shadow-md">
+                  ⚠️ {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')} • {isEn ? 'TCCC PRE-ALERT (T -15)' : 'PRE-ALLERTA TCCC (T -15)'}
+                </span>
+              )}
               {suspensionInfo.isSuspended ? (
                 <span className="bg-red-600 text-white font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1">
                   <AlertOctagon className="w-3.5 h-3.5" />
@@ -190,9 +200,14 @@ export const RegiaView: React.FC = () => {
         </div>
       </div>
 
+      {/* TCCC Pre-Alert Flashing Countdown Banner: Specifies in both Italian and English that 15 min remain */}
+      {isPreAllertaTccc && (
+        <TcccPreAlertCountdownBanner role="regia" />
+      )}
+
       {/* Regia Navigation Menu */}
       <nav aria-label="Menu Regia" className="bg-neutral-950 border border-neutral-800 p-1 sm:p-1.5 shadow-xl">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-1.5">
           <button
             onClick={() => setActiveSubTab('timeline')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
@@ -205,6 +220,22 @@ export const RegiaView: React.FC = () => {
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
                 {isEn ? 'CONTROL & TIMELINE' : 'REGIA & TIMELINE'}
+              </span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('devices')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'devices'
+                ? 'bg-cyan-600 text-white border-cyan-400 shadow-md font-black'
+                : 'bg-neutral-900 text-cyan-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-cyan-500/50'
+            }`}
+          >
+            <Wifi className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'DEVICES & SYNC' : 'STATO DISPOSITIVI & SYNC'}
               </span>
             </div>
           </button>
@@ -262,6 +293,12 @@ export const RegiaView: React.FC = () => {
       {activeSubTab === 'timeline' && (
         <div className="space-y-6">
           <RegiaVisualTimelineBoard isMaster={true} />
+        </div>
+      )}
+
+      {activeSubTab === 'devices' && (
+        <div className="space-y-6">
+          <RegiaDeviceStatusDashboard />
         </div>
       )}
 
@@ -510,12 +547,24 @@ export const RegiaView: React.FC = () => {
                   {isEn ? 'TIMER & STATUS' : 'TIMER & STATO'}
                 </span>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-mono text-base font-black px-2 py-0.5 bg-black text-white border border-neutral-700">
+                  <span
+                    className={`font-mono text-base font-black px-2 py-0.5 border ${
+                      isPreAllertaTccc
+                        ? 'bg-amber-950 text-amber-300 border-amber-400 animate-pulse ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.6)]'
+                        : 'bg-black text-white border-neutral-700'
+                    }`}
+                  >
                     {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
                   </span>
-                  <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border ${isTimerRunning ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-pulse' : 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
-                    {isTimerRunning ? 'RUNNING' : (isEn ? 'PAUSED' : 'PAUSA')}
-                  </span>
+                  {isPreAllertaTccc ? (
+                    <span className="bg-amber-500 text-black font-black text-[10px] uppercase px-2 py-0.5 border border-amber-300 animate-pulse flex items-center gap-1">
+                      ⚠️ PRE-ALLERTA TCCC (T -15 MIN)
+                    </span>
+                  ) : (
+                    <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border ${isTimerRunning ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-pulse' : 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
+                      {isTimerRunning ? 'RUNNING' : (isEn ? 'PAUSED' : 'PAUSA')}
+                    </span>
+                  )}
                 </div>
               </div>
 

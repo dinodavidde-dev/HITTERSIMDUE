@@ -98,7 +98,7 @@ export const FacultyScenariValutazioniModal: React.FC<FacultyScenariValutazioniM
                   {isEn ? `SCENARIOS & EVALUATIONS PORTAL • TEAM ${teamId}` : `PORTALE SCENARI & VALUTAZIONI • SQUADRA ${teamId}`}
                 </span>
                 <span className="text-xs px-2 py-0.5 bg-neutral-800 text-amber-400 border border-neutral-700">
-                  Tutor: {currentFaculty.badgeCode} • {currentFaculty.name}
+                  Tutor: {currentFaculty.badgeCode || 'FAC'} • {currentFaculty.name}
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight mt-1">

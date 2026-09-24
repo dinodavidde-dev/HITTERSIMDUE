@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useCourse } from '../../context/CourseContext';
 import { StationPreSessionChecklist } from '../../types';
 import { INITIAL_STATION_CHECKLISTS } from '../../data/initialChecklists';
+import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
 import {
   Activity,
   AlertOctagon,
@@ -160,6 +161,11 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
   const currentSlot = useMemo(() => translateSlot(rawCurrentSlot, language), [rawCurrentSlot, language]);
   const filteredSlots = useMemo(() => rawFilteredSlots.map((s) => translateSlot(s, language)), [rawFilteredSlots, language]);
+
+  const isPreAllertaTccc = useMemo(
+    () => isPreAllertaTcccSlot(rawCurrentSlot) || isPreAllertaTcccSlot(currentSlot),
+    [rawCurrentSlot, currentSlot]
+  );
 
   const currentFilteredIndex = useMemo(() => {
     const idx = filteredSlots.findIndex((s) => s.id === currentSlot.id);
@@ -555,13 +561,37 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
 
           {/* Master Countdown Timer & Controls */}
           <div className={`flex items-center gap-2 self-stretch sm:self-auto ${isMaster ? 'justify-between sm:justify-end' : 'justify-end lg:ml-auto w-full lg:w-auto'}`}>
-            <div className="bg-neutral-950 border border-yellow-500/80 px-4 py-1.5 text-center min-w-[130px] shadow-md">
-              <span className="text-[10px] font-mono text-yellow-400 font-black uppercase block tracking-wider">
-                {isTimerRunning ? (isEn ? 'PHASE TIMER (ACTIVE)' : 'TIMER FASE (ATTIVO)') : (isEn ? 'PHASE TIMER (PAUSED)' : 'TIMER FASE (PAUSA)')}
-              </span>
-              <span className="text-2xl font-black font-mono text-yellow-300 leading-none">
+            <div
+              className={`px-4 py-1.5 text-center min-w-[140px] shadow-md transition-all ${
+                isPreAllertaTccc
+                  ? 'bg-amber-950/90 border-2 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.6)] animate-pulse'
+                  : 'bg-neutral-950 border border-yellow-500/80'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                {isPreAllertaTccc && (
+                  <span className="relative flex h-2 w-2 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-80"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                )}
+                <span className={`text-[10px] font-mono font-black uppercase block tracking-wider ${isPreAllertaTccc ? 'text-amber-300' : 'text-yellow-400'}`}>
+                  {isPreAllertaTccc
+                    ? (isEn ? '⚠️ TCCC PRE-ALERT (T -15)' : '⚠️ PRE-ALLERTA TCCC (T -15)')
+                    : isTimerRunning
+                    ? (isEn ? 'PHASE TIMER (ACTIVE)' : 'TIMER FASE (ATTIVO)')
+                    : (isEn ? 'PHASE TIMER (PAUSED)' : 'TIMER FASE (PAUSA)')}
+                </span>
+              </div>
+              <span className={`text-2xl font-black font-mono leading-none ${isPreAllertaTccc ? 'text-amber-300 animate-pulse' : 'text-yellow-300'}`}>
                 {formatTimer(timerSeconds)}
               </span>
+              {isPreAllertaTccc && (
+                <div className="mt-1 pt-1 border-t border-amber-500/40 text-[9px] font-mono font-bold text-amber-200 leading-tight space-y-0.5 text-left">
+                  <div>🇮🇹 Mancano 15 minuti all&apos;inizio dello scenario</div>
+                  <div className="text-amber-300/90">🇬🇧 15 minutes remaining until the start of the scenario</div>
+                </div>
+              )}
             </div>
 
             {isMaster && (

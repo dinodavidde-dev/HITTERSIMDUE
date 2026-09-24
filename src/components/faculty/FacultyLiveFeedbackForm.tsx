@@ -79,10 +79,28 @@ export const FacultyLiveFeedbackForm: React.FC<FacultyLiveFeedbackFormProps> = (
   const rapidFeedbackTags = getRapidFeedbackTags(isEn);
 
   // Identify current faculty member
-  const currentFaculty =
+  const rawFaculty =
     faculty.find((f) => f.id === selectedFacultyId) ||
     faculty.find((f) => f.name.toLowerCase().includes(facultyAuthSession.facultyName?.toLowerCase() || '')) ||
     faculty[0];
+
+  const currentFaculty = rawFaculty
+    ? {
+        ...rawFaculty,
+        badgeCode: rawFaculty.badgeCode || (rawFaculty.id ? rawFaculty.id.toUpperCase() : 'FAC-01'),
+      }
+    : {
+        id: 'fac-1',
+        name: 'Dr. Marco Rossi',
+        title: 'Medico di Anestesia e Rianimazione',
+        specialty: 'Trauma Team Leader',
+        nationality: 'Italiana',
+        assignedTeamId: 1,
+        organization: 'Ospedale Policlinico Universitario',
+        badgeCode: 'FAC-01',
+        phone: '+39 333 1234567',
+        assignedStations: ['TCCC 1', 'Shock Room 1'],
+      };
 
   // Assigned squad
   const myAssignedTeam = teams.find((t) => t.id === currentFaculty.assignedTeamId) || teams[0];

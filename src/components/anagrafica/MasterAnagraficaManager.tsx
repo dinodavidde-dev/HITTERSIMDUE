@@ -833,10 +833,6 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
               <div className="text-xs space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">{isEn ? 'Assigned Stations:' : 'Postazioni Assegnate:'}</span>
-                  <span className="font-mono font-bold text-white text-right">{t.assignedStations.join(', ')}</span>
-                </div>
-                <div className="flex justify-between">
                   <span className="text-neutral-400">{isEn ? 'Organization / Lab:' : 'Ente / Lab:'}</span>
                   <span className="text-neutral-300 text-right">{t.organization || 'SimCenter Lab'}</span>
                 </div>

@@ -113,7 +113,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
     } else if (category === 'ospiti') {
       setSelectedGuestId(person.id);
       setUserRole('ospite');
-      setCurrentTab('ospite');
+      setCurrentTab('public');
     }
 
     onClose();

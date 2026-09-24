@@ -43,17 +43,24 @@ export const FacultyView: React.FC = () => {
   const [showScenariValutazioniModal, setShowScenariValutazioniModal] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
 
-  const currentFaculty = faculty.find((f) => f.id === selectedFacultyId) || faculty[0] || {
-    id: 'fac-1',
-    name: 'Dr. Marco Rossi',
-    title: 'Medico di Anestesia e Rianimazione',
-    specialty: 'Trauma Team Leader',
-    nationality: 'Italiana',
-    assignedTeamId: 1,
-    organization: 'Ospedale Policlinico Universitario',
-    badgeCode: 'FAC-01',
-    phone: '+39 333 1234567',
-  };
+  const rawFaculty = faculty.find((f) => f.id === selectedFacultyId) || faculty[0];
+  const currentFaculty = rawFaculty
+    ? {
+        ...rawFaculty,
+        badgeCode: rawFaculty.badgeCode || (rawFaculty.id ? rawFaculty.id.toUpperCase() : 'FAC-01'),
+      }
+    : {
+        id: 'fac-1',
+        name: 'Dr. Marco Rossi',
+        title: 'Medico di Anestesia e Rianimazione',
+        specialty: 'Trauma Team Leader',
+        nationality: 'Italiana',
+        assignedTeamId: 1,
+        organization: 'Ospedale Policlinico Universitario',
+        badgeCode: 'FAC-01',
+        phone: '+39 333 1234567',
+        assignedStations: ['TCCC 1', 'Shock Room 1'],
+      };
 
   const assignedTeam = teams.find((t) => t.id === currentFaculty.assignedTeamId);
   const facultyGroup: GroupType = assignedTeam ? assignedTeam.groupId : (currentFaculty.assignedTeamId <= 3 ? 'A' : currentFaculty.assignedTeamId <= 6 ? 'B' : currentFaculty.assignedTeamId <= 9 ? 'C' : 'D');
@@ -66,13 +73,15 @@ export const FacultyView: React.FC = () => {
   const personalizedTimeline = dayMasterSlots.map((slot) => {
     let matchedActivity: any = null;
     let matchedGroup: GroupType | null = null;
+    const facBadgeUpper = (currentFaculty.badgeCode || '').toUpperCase();
+    const facIdLower = (currentFaculty.id || '').toLowerCase();
     
     if (slot.groupActivities) {
       for (const [gKey, gAct] of Object.entries(slot.groupActivities)) {
         const act: any = gAct;
         const involvesFaculty = act.facultyInvolved && act.facultyInvolved.some((f: string) => 
-          f.toUpperCase() === currentFaculty.badgeCode.toUpperCase() || 
-          f.toLowerCase() === currentFaculty.id.toLowerCase()
+          (facBadgeUpper && f.toUpperCase() === facBadgeUpper) || 
+          (facIdLower && f.toLowerCase() === facIdLower)
         );
         if (involvesFaculty || gKey === facultyGroup) {
           matchedActivity = act;
@@ -188,8 +197,8 @@ export const FacultyView: React.FC = () => {
                 </div>
                 <div className="truncate">
                   <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Affiliation:' : 'Affiliazione:'}</span>
-                  <strong className="text-white truncate block" title={currentFaculty.organization || currentFaculty.affiliation}>
-                    {currentFaculty.organization || currentFaculty.affiliation || (isEn ? 'Hospital' : 'Ospedale')}
+                  <strong className="text-white truncate block" title={currentFaculty.organization || (currentFaculty as any).affiliation}>
+                    {currentFaculty.organization || (currentFaculty as any).affiliation || (isEn ? 'Hospital' : 'Ospedale')}
                   </strong>
                 </div>
               </div>
@@ -336,7 +345,7 @@ export const FacultyView: React.FC = () => {
               </div>
               <div className="truncate">
                 <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Affiliation:' : 'Affiliazione:'}</span>
-                <strong className="text-white truncate block" title={currentFaculty.organization || currentFaculty.affiliation}>{currentFaculty.organization || currentFaculty.affiliation || (isEn ? 'Hospital' : 'Ospedale')}</strong>
+                <strong className="text-white truncate block" title={currentFaculty.organization || (currentFaculty as any).affiliation}>{currentFaculty.organization || (currentFaculty as any).affiliation || (isEn ? 'Hospital' : 'Ospedale')}</strong>
               </div>
             </div>
 
@@ -396,7 +405,7 @@ export const FacultyView: React.FC = () => {
         <div className="border-b border-neutral-800 pb-3 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-400 uppercase tracking-widest block mb-0.5">
-              {isEn ? 'INDIVIDUAL FACULTY TIMELINE' : 'TIMELINE INDIVIDUALE FACULTY'} • {currentFaculty.badgeCode} ({currentFaculty.name}) • DAY 0{activeDay}
+              {isEn ? 'INDIVIDUAL FACULTY TIMELINE' : 'TIMELINE INDIVIDUALE FACULTY'} • {currentFaculty.badgeCode || 'FAC'} ({currentFaculty.name}) • DAY 0{activeDay}
             </span>
             <h3 className="text-base sm:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
               <Activity className="w-5 h-5 text-amber-400 shrink-0" /> {isEn ? `Operational Schedule Tutor & Team ${currentFaculty.assignedTeamId}` : `Programma Operativo Tutor & Squadra ${currentFaculty.assignedTeamId}`}
@@ -463,7 +472,7 @@ export const FacultyView: React.FC = () => {
                   <div className="text-left md:text-right">
                     <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? '1:1 Engagement:' : 'Coinvolgimento 1:1:'}</span>
                     <span className="text-orange-300 font-bold block">{isEn ? `Group ${group} (Team ${currentFaculty.assignedTeamId})` : `Gruppo ${group} (Sq. ${currentFaculty.assignedTeamId})`}</span>
-                    <span className="text-neutral-400 text-[11px] block">{currentFaculty.badgeCode} • {currentFaculty.name}</span>
+                    <span className="text-neutral-400 text-[11px] block">{currentFaculty.badgeCode || 'FAC'} • {currentFaculty.name}</span>
                   </div>
                 </div>
               </div>

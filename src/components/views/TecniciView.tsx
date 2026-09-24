@@ -10,17 +10,24 @@ import {
   Wrench,
   ClipboardList,
   Lock,
+  Globe,
+  Radio,
+  RotateCcw,
+  AlertTriangle,
+  Flame,
 } from 'lucide-react';
 import { TechSessionChecklist } from '../TechSessionChecklist';
 import { ProtesiCatalogView } from './ProtesiCatalogView';
 import { TechScenariChecklistModal } from '../tech/TechScenariChecklistModal';
 import { TecniciRegistroRisorseView } from '../tech/TecniciRegistroRisorseView';
 import { TecniciTimelineAffiancata } from '../tech/TecniciTimelineAffiancata';
+import { QuadroPubblicoCorsoModal } from '../tech/QuadroPubblicoCorsoModal';
 import { ProtesiAttoriTecniciModal } from '../regia/ProtesiAttoriTecniciModal';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { SimulatorPatient, GroupType } from '../../types';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
 import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
+import { isScenarioSlot } from '../../utils/scenarioStatusHelper';
 
 export const TecniciView: React.FC = () => {
   const {
@@ -49,6 +56,7 @@ export const TecniciView: React.FC = () => {
   const [selectedPatientForChecklist, setSelectedPatientForChecklist] = useState<SimulatorPatient | null>(null);
   const [selectedProtesiPatient, setSelectedProtesiPatient] = useState<SimulatorPatient | null>(null);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [showQuadroPubblicoModal, setShowQuadroPubblicoModal] = useState(false);
 
   // Current active technician
   const currentTech =
@@ -81,6 +89,52 @@ export const TecniciView: React.FC = () => {
 
   // Regia timeline synchronization
   const dayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
+  const currentSlot = dayMasterSlots[activeSlotIndex] || INITIAL_TIMELINE_SLOTS[activeSlotIndex] || dayMasterSlots[0];
+  const isScenarioInProgress = isScenarioSlot(currentSlot);
+
+  const slotTitleLower = (currentSlot.title || '').toLowerCase();
+  const slotDescLower = (currentSlot.description || '').toLowerCase();
+  const slotIdLower = currentSlot.id.toLowerCase();
+
+  // 1. Riordino tra uno scenario e l'altro (Turnaround / Reset 15 min)
+  const isResetBetweenScenarios =
+    slotIdLower.includes('reset') ||
+    slotIdLower.includes('turnaround') ||
+    slotTitleLower.includes('reset') ||
+    slotTitleLower.includes('riordino') ||
+    slotTitleLower.includes('turnaround') ||
+    slotDescLower.includes('reset') ||
+    slotDescLower.includes('riordino') ||
+    slotDescLower.includes('turnaround');
+
+  // 2. Standby a 15 minuti dall'inizio dello scenario assegnato (Pre-Allerta T-15 / Standby Attivo SR)
+  const isStandby15Min =
+    !isResetBetweenScenarios && (
+      slotIdLower.includes('prealert') ||
+      slotIdLower.includes('pre-alert') ||
+      slotTitleLower.includes('pre-alert') ||
+      slotTitleLower.includes('pre-allerta') ||
+      slotTitleLower.includes('preallerta') ||
+      slotDescLower.includes('pre-allerta') ||
+      slotDescLower.includes('pre-alert') ||
+      slotTitleLower.includes('standby') ||
+      slotDescLower.includes('standby') ||
+      slotDescLower.includes('t -15') ||
+      slotDescLower.includes('t-15')
+    );
+
+  // 3. Operativa quando lo scenario si sta svolgendo
+  const isScenarioActive = !isResetBetweenScenarios && !isStandby15Min && isScenarioInProgress;
+
+  const isCurrentSlotPreAlert = isStandby15Min;
+
+  const nextScenarioSlot = dayMasterSlots
+    .slice(activeSlotIndex + 1)
+    .find((s) => isScenarioSlot(s)) || null;
+
+  const nextScenarioStartTime = nextScenarioSlot?.timeRange
+    ? nextScenarioSlot.timeRange.split('-')[0].trim()
+    : null;
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -104,6 +158,17 @@ export const TecniciView: React.FC = () => {
             <span className="px-2.5 py-1 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}
             </span>
+
+            {/* Tasto nell'intestazione: Quadro Pubblico del Corso */}
+            <button
+              type="button"
+              onClick={() => setShowQuadroPubblicoModal(true)}
+              className="px-2.5 sm:px-3 py-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded shadow cursor-pointer transition-all border border-orange-400"
+              title={isEn ? 'Open Public Course Overview Menu' : 'Apri Menu Quadro Pubblico del Corso'}
+            >
+              <Globe className="w-3.5 h-3.5 text-black" />
+              <span>{isEn ? 'Public Course' : 'Quadro Pubblico Corso'}</span>
+            </button>
           </div>
 
           {/* Technician Profile Selector */}
@@ -181,33 +246,16 @@ export const TecniciView: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2: Postazioni Didattiche & Simulatori Assegnati */}
+          {/* Card 2: Simulatori Pazienti Presidiati */}
           <div className="bg-neutral-950 border-2 border-neutral-800 p-3.5 sm:p-5 rounded-xl shadow-xl relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-2.5 sm:space-y-3">
               <div className="flex items-center gap-2 text-neutral-300 text-xs font-mono uppercase tracking-widest">
-                <Wrench className="w-4 h-4 text-pink-400" /> {isEn ? 'Assigned Stations & Simulators' : 'Postazioni Didattiche & Simulatori'}
+                <Wrench className="w-4 h-4 text-pink-400" /> {isEn ? 'Dedicated Patient Simulators' : 'Simulatori Pazienti Presidiati'}
               </div>
               <div className="space-y-2 text-xs font-mono">
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase block mb-1">
-                    {isEn ? 'Assigned Simulation Stations:' : 'Postazioni Assegnate:'}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {currentTech.assignedStations && currentTech.assignedStations.length > 0 ? (
-                      currentTech.assignedStations.map((st, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 text-pink-300 rounded text-[11px] font-bold">
-                          {st}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-neutral-500 text-[11px]">Tutti i setting (Ambiente Tattico, Shock Room, WS)</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-neutral-800">
-                  <span className="text-[10px] text-neutral-400 uppercase block mb-1">
-                    {isEn ? 'Dedicated Patient Simulators:' : 'Simulatori Pazienti Presidiati:'}
+                    {isEn ? 'Dedicated Patient Simulators for Active Day:' : 'Simulatori Pazienti Assegnati per la Giornata:'}
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {assignedPatients.map((p) => (
@@ -232,6 +280,12 @@ export const TecniciView: React.FC = () => {
         {/* COUNTDOWN PUBBLICO UFFICIALE */}
         <PreCoursePublicCountdown />
 
+        {/* Quadro Pubblico del Corso Modal */}
+        <QuadroPubblicoCorsoModal
+          isOpen={showQuadroPubblicoModal}
+          onClose={() => setShowQuadroPubblicoModal(false)}
+        />
+
         {/* Unlock Modal */}
         <OperatorUnlockModal
           isOpen={showUnlockModal}
@@ -254,11 +308,19 @@ export const TecniciView: React.FC = () => {
           <DaySelectorToggle variant="public" />
 
           <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-[11px] sm:text-xs border border-neutral-800 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping" /> DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{dayMasterSlots.length}
+            <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping" /> DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{dayMasterSlots.length} ({currentSlot.timeRange})
           </span>
-          <span className="px-2 py-0.5 bg-neutral-950 text-pink-400 border border-neutral-800 font-mono text-[11px] sm:text-xs flex items-center gap-1.5">
-            <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-pink-400 animate-spin' : 'text-neutral-400'}`} /> {isEn ? 'T-Phase:' : 'T-Fase:'} {formatTimer(timerSeconds)}
-          </span>
+
+          {/* Tasto nell'intestazione: Quadro Pubblico del Corso */}
+          <button
+            type="button"
+            onClick={() => setShowQuadroPubblicoModal(true)}
+            className="px-2.5 sm:px-3 py-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded shadow cursor-pointer transition-all border border-orange-400"
+            title={isEn ? 'Open Public Course Overview Menu' : 'Apri Menu Quadro Pubblico del Corso'}
+          >
+            <Globe className="w-3.5 h-3.5 text-black" />
+            <span>{isEn ? 'Public Course' : 'Quadro Pubblico Corso'}</span>
+          </button>
         </div>
 
         {/* Technician Profile Selector & Assignment Mode - visible ONLY when opened by Regia or Direttore */}
@@ -320,6 +382,263 @@ export const TecniciView: React.FC = () => {
             </button>
           </div>
         )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* ANAGRAFICA DEL TECNICO IN CIMA ALLA PAGINA & SEGNALE OPERATIVO FASE      */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+        {/* Card Sinistra (lg:col-span-7): Anagrafica del Tecnico Assegnato */}
+        <div className="lg:col-span-7 bg-neutral-950 border-2 border-pink-500/80 p-3.5 sm:p-4 rounded-xl shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 bg-pink-600 text-white font-mono font-black text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl shadow">
+            {currentTech.badgeCode || 'TECH-01'}
+          </div>
+
+          <div className="space-y-2.5">
+            {/* Intestazione Anagrafica */}
+            <div className="flex items-center gap-2 text-pink-400 text-xs font-mono uppercase tracking-widest">
+              <User className="w-4 h-4 text-pink-400" />
+              <span>{isEn ? 'OPERATIONAL TECHNICIAN REGISTRY' : 'ANAGRAFICA TECNICO OPERATIVO'}</span>
+            </div>
+
+            {/* Nome e Specialità */}
+            <div>
+              <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight break-words">
+                {currentTech.name}
+              </h2>
+              <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                <span className="text-pink-300 font-bold text-xs sm:text-sm">
+                  {currentTech.specialty}
+                </span>
+                <span className="text-neutral-500 text-xs">•</span>
+                <span className="text-neutral-300 text-xs font-mono flex items-center gap-1">
+                  <Radio className="w-3 h-3 text-pink-400" />
+                  <strong className="text-pink-300">CH-3 TECNICI</strong>
+                  <span className="text-[10px] text-neutral-400">({isEn ? 'Active listening' : 'In ascolto'})</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Simulatori Pazienti Presidiati */}
+            <div className="pt-2 border-t border-neutral-800 text-xs font-mono space-y-1">
+              <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">
+                🎯 {isEn ? 'Dedicated Patient Simulators:' : 'Simulatori Pazienti Presidiati:'}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {assignedPatients.map((p) => (
+                  <span
+                    key={p.id}
+                    className="px-2 py-0.5 bg-neutral-900 border border-pink-700/60 text-white rounded text-[11px] font-bold"
+                  >
+                    Paz. {p.id} <span className="text-pink-300 font-normal">({p.scenarioCode || p.name})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Partner di Coppia se attivo */}
+            {partnerTech && (
+              <div className="pt-2 border-t border-neutral-800/80 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
+                <span>{isEn ? 'Pair Partner:' : 'Partner di Coppia:'}</span>
+                <strong className="text-white bg-neutral-900 px-2 py-0.5 rounded border border-neutral-700">
+                  👥 {partnerTech.badgeCode} • {partnerTech.name}
+                </strong>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card Destra (lg:col-span-5): SEGNALE OPERATIVO FASE IN CORSO */}
+        <div className="lg:col-span-5 flex flex-col justify-between">
+          {isScenarioActive ? (
+            /* ================================================================= */
+            /* 1. SEGNALE FASE OPERATIVA (SCENARIO IN SVOLGIMENTO)               */
+            /* ================================================================= */
+            <div className="h-full bg-emerald-950/80 border-2 border-emerald-500 p-3.5 sm:p-4 rounded-xl shadow-xl shadow-emerald-950/30 flex flex-col justify-between space-y-3 relative overflow-hidden">
+              <div className="space-y-2">
+                {/* Badge Stato + Beacon Pulsante Verde */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-emerald-500 text-black font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider rounded shadow">
+                      {isEn ? '🟢 OPERATIONAL PHASE' : '🟢 FASE OPERATIVA'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700">
+                    {isEn ? 'SCENARIO IN PROGRESS' : 'SCENARIO IN CORSO'}
+                  </span>
+                </div>
+
+                {/* Titolo e Dettaglio Operativo */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{currentSlot.title}</span>
+                  </h3>
+                  <p className="text-[11px] text-emerald-100/90 font-mono mt-1 leading-relaxed">
+                    {isEn
+                      ? 'The clinical scenario is actively unfolding in the simulation station. Bleed pumps delivery, dynamic telemetry modulation and invasive procedures support active.'
+                      : 'Lo scenario clinico si sta svolgendo sul campo. Erogazione flussi emorragici, modulazione parametri vitali su telemetria e supporto operativo in corso.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Box Cronometro Operativo */}
+              <div className="pt-2 border-t border-emerald-500/40 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase text-emerald-300 font-bold">
+                  {isEn ? 'Scenario Phase Timer:' : 'Timer Scenario Attivo:'}
+                </span>
+                <div className="px-3 py-1 bg-neutral-950 border border-emerald-500 rounded flex items-center gap-1.5 shadow-inner">
+                  <Clock className={`w-3.5 h-3.5 ${isTimerRunning ? 'text-emerald-400 animate-spin' : 'text-neutral-400'}`} />
+                  <span className="text-base sm:text-lg font-mono font-black text-emerald-300">
+                    {formatTimer(timerSeconds)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : isStandby15Min ? (
+            /* ================================================================= */
+            /* 2. SEGNALE STANDBY A 15 MIN DALL'INIZIO DELLO SCENARIO ASSEGNATO  */
+            /* ================================================================= */
+            <div className="h-full bg-amber-950/85 border-2 border-amber-500 p-3.5 sm:p-4 rounded-xl shadow-xl shadow-amber-950/30 flex flex-col justify-between space-y-3 relative overflow-hidden">
+              <div className="space-y-2">
+                {/* Badge Stato + Beacon Pulsante Ambra */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-amber-500 text-black font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider rounded shadow">
+                      {isEn ? '🟡 ACTIVE STANDBY (T -15 MIN)' : '🟡 STANDBY ATTIVO (T -15 MIN)'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-900/60 px-2 py-0.5 rounded border border-amber-700">
+                    {isEn ? '15 MIN TO SCENARIO' : '15 MIN DALL\'INIZIO'}
+                  </span>
+                </div>
+
+                {/* Titolo e Dettaglio Standby */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-bounce" />
+                    <span>{isEn ? 'STANDBY 15 MIN BEFORE SCENARIO' : 'STANDBY A 15 MIN DALL\'INIZIO SCENARIO'}</span>
+                  </h3>
+                  <p className="text-[11px] text-amber-100/90 font-mono mt-1 leading-relaxed">
+                    {isEn
+                      ? 'Standby window 15 minutes before the start of the assigned scenario. Bleeding pumps priming, hydraulic lines test, telemetry check and radio CH3 verification.'
+                      : 'Finestra di standby a 15 minuti dall\'inizio dello scenario assegnato. Innesco pompe sanguinamento, check circuiti idraulici, telemetria e apparati radio CH3.'}
+                  </p>
+                  {nextScenarioStartTime && (
+                    <div className="mt-1.5 text-[11px] font-mono font-bold text-amber-300 bg-neutral-950/80 px-2.5 py-1 rounded border border-amber-700/60 inline-flex items-center gap-1.5">
+                      <span>🎯 {nextScenarioSlot?.title || (isEn ? 'Upcoming Scenario' : 'Scenario in arrivo')}</span>
+                      <span>•</span>
+                      <span className="text-white">{isEn ? `Starts at ${nextScenarioStartTime}` : `Inizio ore ${nextScenarioStartTime}`}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Box Cronometro Standby */}
+              <div className="pt-2 border-t border-amber-500/40 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase text-amber-300 font-bold">
+                  {isEn ? 'Standby Countdown:' : 'Countdown Standby:'}
+                </span>
+                <div className="px-3 py-1 bg-neutral-950 border border-amber-500 rounded flex items-center gap-1.5 shadow-inner">
+                  <Clock className={`w-3.5 h-3.5 ${isTimerRunning ? 'text-amber-400 animate-spin' : 'text-neutral-400'}`} />
+                  <span className="text-base sm:text-lg font-mono font-black text-amber-300">
+                    {formatTimer(timerSeconds)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : isResetBetweenScenarios ? (
+            /* ================================================================= */
+            /* 3. SEGNALE RIORDINO TRA UNO SCENARIO E L'ALTRO (RESET RAPIDO)     */
+            /* ================================================================= */
+            <div className="h-full bg-yellow-950/85 border-2 border-yellow-500 p-3.5 sm:p-4 rounded-xl shadow-xl shadow-yellow-950/30 flex flex-col justify-between space-y-3 relative overflow-hidden">
+              <div className="space-y-2">
+                {/* Badge Stato + Icona Rotante Gialla */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <RotateCcw className="w-4 h-4 text-yellow-400 animate-spin" />
+                    <span className="px-2.5 py-0.5 bg-yellow-500 text-black font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider rounded shadow">
+                      {isEn ? '🔄 RESET & TURNAROUND' : '🔄 RIORDINO & RESET RAPIDO'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-yellow-300 bg-yellow-900/60 px-2 py-0.5 rounded border border-yellow-700">
+                    {isEn ? 'BETWEEN SCENARIOS' : 'TRA SCENARI'}
+                  </span>
+                </div>
+
+                {/* Titolo e Dettaglio Riordino */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5">
+                    <span>{isEn ? 'RECOVERY & RESET BETWEEN SCENARIOS' : 'RIORDINO TRA UNO SCENARIO E L\'ALTRO'}</span>
+                  </h3>
+                  <p className="text-[11px] text-yellow-100/90 font-mono mt-1 leading-relaxed">
+                    {isEn
+                      ? '15-minute quick turnaround: manikin disinfection, flushing lines and refilling synthetic blood pouches, inserts replacement, restocking consumables and sending green light on CH3.'
+                      : 'Turnaround di 15 min tra gli scenari: sanificazione manichini, spurgo sacche sangue sintetico, sostituzione inserti cricotiroidotomia e cute, reintegro consumabili e invio "LUCE VERDE" via radio CH3.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Box Cronometro Riordino */}
+              <div className="pt-2 border-t border-yellow-500/40 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase text-yellow-300 font-bold">
+                  {isEn ? 'Turnaround Reset Timer:' : 'Timer Riordino / Turnaround:'}
+                </span>
+                <div className="px-3 py-1 bg-neutral-950 border border-yellow-500 rounded flex items-center gap-1.5 shadow-inner">
+                  <Clock className={`w-3.5 h-3.5 ${isTimerRunning ? 'text-yellow-400 animate-spin' : 'text-neutral-400'}`} />
+                  <span className="text-base sm:text-lg font-mono font-black text-yellow-300">
+                    {formatTimer(timerSeconds)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ================================================================= */
+            /* 4. ALTRA FASE DI CORSO (PAUSA / BRIEFING / SETUP STAFF)           */
+            /* ================================================================= */
+            <div className="h-full bg-neutral-900/90 border-2 border-neutral-700 p-3.5 sm:p-4 rounded-xl shadow-xl flex flex-col justify-between space-y-3 relative overflow-hidden">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 bg-neutral-800 text-neutral-200 font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider rounded border border-neutral-600">
+                    {isEn ? '⚙️ COURSE TECHNICAL PHASE' : '⚙️ FASE TECNICA DI CORSO'}
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-400">
+                    {currentSlot.timeRange}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                    {currentSlot.title}
+                  </h3>
+                  <p className="text-[11px] text-neutral-300 font-mono mt-1">
+                    {currentSlot.description || (isEn ? 'Logistics supervision and CH3 standby.' : 'Presidio logistico e ascolto attivo su canale radio CH3.')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-neutral-800 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase text-neutral-400 font-bold">
+                  {isEn ? 'Phase Timer:' : 'Timer Fase:'}
+                </span>
+                <div className="px-3 py-1 bg-neutral-950 border border-neutral-700 rounded flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                  <span className="text-base sm:text-lg font-mono font-black text-neutral-300">
+                    {formatTimer(timerSeconds)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SubTab Navigation */}
@@ -395,6 +714,7 @@ export const TecniciView: React.FC = () => {
             }
           }}
           onSwitchToRegistro={() => setActiveSubTab('registro')}
+          onOpenQuadroPubblico={() => setShowQuadroPubblicoModal(true)}
         />
       )}
 
@@ -420,14 +740,38 @@ export const TecniciView: React.FC = () => {
                 {isEn ? 'Station Management, Moulage & 🟢 Green Light Signal' : 'Gestione Postazioni, Moulage & 🟢 Segnale Luce Verde'}
               </h2>
             </div>
-            <div className="bg-pink-950/80 border border-pink-600 px-4 py-2 text-right">
-              <span className="text-[10px] font-mono text-pink-300 uppercase block font-bold">
-                {isEn ? 'CURRENT PHASE USEFUL TIME (T-)' : 'TEMPO UTILE FASE CORRENTE (T-)'}
-              </span>
-              <span className="text-white font-mono font-black text-base">
-                {formatTimer(timerSeconds)}
-              </span>
-            </div>
+            {isScenarioInProgress ? (
+              <div className="bg-emerald-950/80 border border-emerald-600 px-3.5 py-1.5 text-right font-mono">
+                <span className="text-[10px] text-emerald-300 uppercase block font-bold">
+                  {isEn ? 'SCENARIO IN PROGRESS' : 'SCENARIO IN CORSO'}
+                </span>
+                <span className="text-xs text-white font-bold uppercase flex items-center gap-1 justify-end">
+                  <Flame className="w-3.5 h-3.5 text-emerald-400" />
+                  {isEn ? 'Timer in top panel' : 'Timer nel pannello superiore'}
+                </span>
+              </div>
+            ) : isCurrentSlotPreAlert ? (
+              <div className="bg-amber-950/90 border border-amber-500 px-3.5 py-1.5 text-right font-mono">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span className="text-[10px] text-amber-300 uppercase block font-bold">
+                    {isEn ? 'STANDBY T-15 ACTIVE' : 'STANDBY T-15 ATTIVO'}
+                  </span>
+                </div>
+                <span className="text-xs text-amber-200 font-bold uppercase block">
+                  {nextScenarioStartTime ? `${isEn ? 'Starts at' : 'Inizio ore'} ${nextScenarioStartTime}` : (isEn ? 'Countdown in top panel' : 'Countdown nel pannello')}
+                </span>
+              </div>
+            ) : (
+              <div className="bg-neutral-950 border border-neutral-800 px-3.5 py-1.5 text-right font-mono">
+                <span className="text-[10px] text-neutral-400 uppercase block font-bold">
+                  {isEn ? 'PHASE STATUS' : 'STATO FASE'}
+                </span>
+                <span className="text-xs text-pink-400 font-bold uppercase">
+                  {isEn ? 'Technical Duties / No Active Scenario' : 'Mansione Tecnica / Nessun Scenario Attivo'}
+                </span>
+              </div>
+            )}
           </div>
 
           <TechSessionChecklist />
@@ -490,6 +834,12 @@ export const TecniciView: React.FC = () => {
           }}
         />
       )}
+
+      {/* Quadro Pubblico del Corso Modal */}
+      <QuadroPubblicoCorsoModal
+        isOpen={showQuadroPubblicoModal}
+        onClose={() => setShowQuadroPubblicoModal(false)}
+      />
 
       {/* REGIA/DIREZIONE OPERATOR UNLOCK MODAL */}
       <OperatorUnlockModal

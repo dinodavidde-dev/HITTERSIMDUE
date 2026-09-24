@@ -23,6 +23,7 @@ export const EmailAccessModal: React.FC<EmailAccessModalProps> = ({
     directors,
     guests,
     setUserRole,
+    setCurrentTab,
     setSelectedDiscenteId,
     setSelectedFacultyId,
     setSelectedTechnicianId,
@@ -100,6 +101,7 @@ export const EmailAccessModal: React.FC<EmailAccessModalProps> = ({
     if (foundGuest) {
       setSelectedGuestId(foundGuest.id);
       setUserRole('ospite');
+      setCurrentTab('public');
       localStorage.setItem('trauma_verified_email', cleanEmail);
       setSuccessMsg(isEn ? `Welcome, ${foundGuest.name} (Guest/VIP)` : `Benvenuto/a, ${foundGuest.name} (Ospite VIP)`);
       setTimeout(() => {

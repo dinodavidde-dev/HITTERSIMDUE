@@ -117,7 +117,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
       return;
     }
     setUserRole(targetRole);
-    setCurrentTab('main');
+    if (targetRole === 'ospite') {
+      setCurrentTab('public');
+    } else {
+      setCurrentTab('main');
+    }
   };
 
   const currentRoleObj = roleOptions.find((r) => r.role === userRole) || roleOptions[0];
@@ -486,10 +490,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       <button
                         id="subnav-ospiti-btn"
                         onClick={() => {
-                          setCurrentTab('ospite');
+                          setCurrentTab('public');
                         }}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'ospite'
+                          currentTab === 'public' && userRole === 'ospite'
                             ? 'text-white bg-emerald-600 border-emerald-500 shadow-xs'
                             : 'text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/40 hover:border-emerald-500'
                         }`}

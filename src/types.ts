@@ -223,7 +223,7 @@ export interface TeamEvaluation {
   period: SessionPeriod;
   patientId: number;
   scenarioCode: string;
-  phase: 'EXTRA' | 'INTRA' | 'WORKSHOP';
+  phase: 'EXTRA' | 'INTRA' | 'HANDOVER' | 'WORKSHOP';
   scores: TeamEvaluationScores;
   proceduresCompleted: string[];
   strengths: string;
@@ -263,6 +263,32 @@ export interface ConnectedPeer {
   roleLabel: string;
   lastSeen: number;
   isCurrent?: boolean;
+}
+
+export type DeviceSyncState = 'online' | 'standby' | 'lag' | 'offline';
+
+export interface DevicePresenceRecord {
+  id: string;
+  deviceId: string;
+  clientId: string;
+  badgeCode: string;
+  name: string;
+  role: UserRole;
+  status: DeviceSyncState;
+  lastSeen: number;
+  currentSlotIndex: number;
+  activeDay: CourseDay;
+  latencyMs: number;
+  deviceInfo?: string;
+  // UI enrichment
+  assignedStation?: string;
+  assignedTeamId?: number;
+  assignedPatientId?: number;
+  groupId?: GroupType;
+  isTeamLeader?: boolean;
+  specialty?: string;
+  radioChannel?: string;
+  isCurrentDevice?: boolean;
 }
 
 export interface SyncStatusInfo {

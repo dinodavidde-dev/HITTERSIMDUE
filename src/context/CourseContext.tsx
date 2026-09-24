@@ -20,6 +20,7 @@ import {
   TriageCategory,
   UserRole,
   PhaseShiftLogEntry,
+  DevicePresenceRecord,
 } from '../types';
 import {
   INITIAL_COURSE_MESSAGES,
@@ -100,6 +101,9 @@ interface CourseContextType {
 
   simulatorPatients: SimulatorPatient[];
   updateSimulatorPatient: (patientId: number, updates: Partial<SimulatorPatient>) => void;
+  addSimulatorPatient: (newPatient: Omit<SimulatorPatient, 'id'>) => void;
+  deleteSimulatorPatient: (patientId: number) => void;
+  resetSimulatorPatients: () => void;
   updateTechChecklist: (patientId: number, phase: 'preDone' | 'intraDone' | 'postDone', val: boolean, notes?: string) => void;
 
   teams: Team[];
@@ -179,6 +183,9 @@ interface CourseContextType {
   syncStatus: SyncStatusInfo;
   triggerManualSync: () => void;
   sendPing: () => void;
+  devicePresenceMap: Record<string, DevicePresenceRecord>;
+  sendGlobalPing: () => void;
+  forceDeviceResync: () => void;
 
   // Firebase Auth & Cloud Integration
   firebaseUser: FirebaseUser | null;
@@ -613,6 +620,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [peersMap, setPeersMap] = useState<Record<string, { role: UserRole; lastSeen: number }>>({});
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [devicePresenceMap, setDevicePresenceMap] = useState<Record<string, DevicePresenceRecord>>({});
 
   // -------------------------------------------------------------
   // FIRESTORE REAL-TIME SYNCHRONIZATION LISTENERS
@@ -765,9 +773,16 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Team[] = [];
-            snapshot.forEach((d) => list.push(d.data() as Team));
+            snapshot.forEach((d) => {
+              const data = d.data();
+              const parsedId = Number(data.id ?? d.id);
+              list.push({
+                ...data,
+                id: !isNaN(parsedId) && parsedId > 0 ? parsedId : list.length + 1,
+              } as Team);
+            });
             list.sort((a, b) => a.id - b.id);
-            setTeams(list);
+            setTeams(list.length > 0 ? list : INITIAL_TEAMS);
             setLastSyncTimestamp(Date.now());
           }
         },
@@ -912,6 +927,32 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to guests:', err);
     }
 
+    // 12. Listen to Device Presence
+    const devicePresencePath = 'device_presence';
+    try {
+      const unsubPresence = onSnapshot(
+        collection(db, devicePresencePath),
+        (snapshot) => {
+          const map: Record<string, DevicePresenceRecord> = {};
+          snapshot.forEach((d) => {
+            const data = d.data() as DevicePresenceRecord;
+            if (data && (data.badgeCode || data.id)) {
+              const key = (data.badgeCode || data.id).toUpperCase();
+              map[key] = data;
+            }
+          });
+          setDevicePresenceMap(map);
+          setLastSyncTimestamp(Date.now());
+        },
+        (error) => {
+          console.warn('Device presence listener error:', error);
+        }
+      );
+      unsubscribers.push(unsubPresence);
+    } catch (err) {
+      console.warn('Failed to listen to device_presence:', err);
+    }
+
 
 
     return () => {
@@ -1014,6 +1055,90 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Continuous real-time device heartbeat publisher to Firestore
+  useEffect(() => {
+    let activeDeviceId = '';
+    let badgeCode = '';
+    let displayName = '';
+
+    if (userRole === 'tecnico') {
+      const t = technicians.find((tech) => tech.id === selectedTechnicianId) || technicians[0];
+      activeDeviceId = t?.id || 'tech-01';
+      badgeCode = t?.badgeCode || 'TECH-01';
+      displayName = t?.name || 'Tecnico';
+    } else if (userRole === 'discente') {
+      const d = discenti.find((disc) => disc.id === selectedDiscenteId) || discenti[0];
+      activeDeviceId = d?.id || 'disc-01';
+      badgeCode = d?.badgeCode || 'DISC-01';
+      displayName = d?.name || 'Discente';
+    } else if (userRole === 'faculty') {
+      const f = faculty.find((fac) => fac.id === selectedFacultyId) || faculty[0];
+      activeDeviceId = f?.id || 'fac-01';
+      badgeCode = f?.badgeCode || 'FAC-01';
+      displayName = f?.name || 'Faculty';
+    } else if (userRole === 'regia') {
+      const r = regiaStaff.find((reg) => reg.id === selectedRegiaId) || regiaStaff[0];
+      activeDeviceId = r?.id || 'regia-01';
+      badgeCode = r?.badgeCode || 'REGIA-01';
+      displayName = r?.name || 'Regia Staff';
+    } else if (userRole === 'direttore') {
+      const dir = directors.find((d) => d.id === selectedDirectorId) || directors[0];
+      activeDeviceId = dir?.id || 'dir-01';
+      badgeCode = dir?.badgeCode || 'DIR-01';
+      displayName = dir?.name || 'Direttore';
+    } else {
+      activeDeviceId = `guest-${clientId}`;
+      badgeCode = 'PUBLIC';
+      displayName = 'Schermo Pubblico';
+    }
+
+    const deviceDocId = `device-${badgeCode.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+
+    const sendHeartbeat = () => {
+      try {
+        const payload: DevicePresenceRecord = {
+          id: deviceDocId,
+          deviceId: activeDeviceId,
+          clientId,
+          badgeCode: badgeCode.toUpperCase(),
+          name: displayName,
+          role: userRole,
+          status: 'online',
+          lastSeen: Date.now(),
+          currentSlotIndex: activeSlotIndex,
+          activeDay,
+          latencyMs: latencyMs ?? 12,
+          deviceInfo: typeof navigator !== 'undefined' ? `${navigator.platform || 'Client'} (${window.innerWidth}x${window.innerHeight})` : 'Client',
+        };
+
+        setDoc(doc(db, 'device_presence', deviceDocId), payload, { merge: true }).catch(() => {});
+      } catch (e) {}
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [
+    userRole,
+    selectedTechnicianId,
+    selectedDiscenteId,
+    selectedFacultyId,
+    selectedDirectorId,
+    selectedRegiaId,
+    technicians,
+    discenti,
+    faculty,
+    directors,
+    regiaStaff,
+    activeSlotIndex,
+    activeDay,
+    latencyMs,
+    clientId,
+  ]);
 
   // Sync to localStorage as local offline backup
   useEffect(() => {
@@ -1322,6 +1447,42 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const addSimulatorPatient = useCallback((newPatientData: Omit<SimulatorPatient, 'id'>) => {
+    setSimulatorPatients((prev) => {
+      const nextId = prev.length > 0 ? Math.max(...prev.map((p) => p.id)) + 1 : 1;
+      const newPatient: SimulatorPatient = {
+        ...newPatientData,
+        id: nextId,
+        techChecklist: newPatientData.techChecklist || {
+          preDone: false,
+          intraDone: false,
+          postDone: false,
+        },
+      };
+      setDoc(doc(db, 'simulator_patients', String(nextId)), newPatient).catch((err) => {
+        handleFirestoreError(err, OperationType.CREATE, `simulator_patients/${nextId}`);
+      });
+      return [...prev, newPatient];
+    });
+  }, []);
+
+  const deleteSimulatorPatient = useCallback((patientId: number) => {
+    setSimulatorPatients((prev) => prev.filter((p) => p.id !== patientId));
+    deleteDoc(doc(db, 'simulator_patients', String(patientId))).catch((err) => {
+      handleFirestoreError(err, OperationType.DELETE, `simulator_patients/${patientId}`);
+    });
+  }, []);
+
+  const resetSimulatorPatients = useCallback(() => {
+    setSimulatorPatients(INITIAL_SIMULATOR_PATIENTS);
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'simulatorPatients');
+    } catch (e) {}
+    INITIAL_SIMULATOR_PATIENTS.forEach((p) => {
+      setDoc(doc(db, 'simulator_patients', String(p.id)), p).catch(() => {});
+    });
+  }, []);
+
   const updateTechChecklist = useCallback(
     (patientId: number, phase: 'preDone' | 'intraDone' | 'postDone', val: boolean, notes?: string) => {
       setSimulatorPatients((prev) =>
@@ -1349,26 +1510,45 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     []
   );
 
-  const saveEvaluation = useCallback((evalData: Omit<TeamEvaluation, 'id' | 'timestamp'>) => {
+  const saveEvaluation = useCallback((evalData: Omit<TeamEvaluation, 'id' | 'timestamp'> | TeamEvaluation) => {
+    const existingId = (evalData as any).id;
+    const finalId =
+      existingId && String(existingId).trim() !== ''
+        ? existingId
+        : `eval-t${evalData.teamId}-p${evalData.patientId || 0}-${(evalData.phase || 'extra').toLowerCase()}-${Date.now()}`;
+    const timestamp =
+      (evalData as any).timestamp ||
+      new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
     const newEval: TeamEvaluation = {
       ...evalData,
-      id: `eval-${Date.now()}`,
-      timestamp: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      id: finalId,
+      timestamp,
     };
 
     setEvaluations((prev) => {
       const existingIdx = prev.findIndex(
-        (e) => e.teamId === evalData.teamId && e.day === evalData.day && e.period === evalData.period
+        (e) =>
+          e.id === finalId ||
+          ((evalData as any).id && e.id === (evalData as any).id) ||
+          (e.teamId === evalData.teamId &&
+            Number(e.patientId) === Number(evalData.patientId) &&
+            e.phase === evalData.phase)
       );
+      let updated: TeamEvaluation[];
       if (existingIdx >= 0) {
-        const copy = [...prev];
-        copy[existingIdx] = newEval;
-        return copy;
+        updated = [...prev];
+        updated[existingIdx] = newEval;
+      } else {
+        updated = [newEval, ...prev];
       }
-      return [newEval, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'evaluations', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
     });
 
-    setDoc(doc(db, 'evaluations', newEval.id), newEval).catch((err) => {
+    setDoc(doc(db, 'evaluations', newEval.id), newEval, { merge: true }).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `evaluations/${newEval.id}`);
     });
   }, []);
@@ -1944,6 +2124,30 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [clientId]);
 
+  const sendGlobalPing = useCallback(() => {
+    sendPing();
+    if (db) {
+      const activeBadge =
+        userRole === 'tecnico'
+          ? technicians.find((t) => t.id === selectedTechnicianId)?.badgeCode || 'TECH-01'
+          : userRole === 'discente'
+          ? discenti.find((d) => d.id === selectedDiscenteId)?.badgeCode || 'DISC-01'
+          : userRole === 'faculty'
+          ? faculty.find((f) => f.id === selectedFacultyId)?.badgeCode || 'FAC-01'
+          : 'REGIA-01';
+      const docId = `device-${activeBadge.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      setDoc(
+        doc(db, 'device_presence', docId),
+        {
+          lastSeen: Date.now(),
+          latencyMs: Math.floor(Math.random() * 15) + 5,
+          status: 'online',
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+  }, [sendPing, userRole, technicians, selectedTechnicianId, discenti, selectedDiscenteId, faculty, selectedFacultyId]);
+
   const triggerManualSync = useCallback(() => {
     setIsSyncing(true);
     setLastSyncTimestamp(Date.now());
@@ -1960,6 +2164,17 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsSyncing(false);
     }, 400);
   }, [setCourseMessages]);
+
+  const forceDeviceResync = useCallback(() => {
+    triggerManualSync();
+    if (channelRef.current) {
+      channelRef.current.postMessage({
+        type: 'FORCE_RESYNC',
+        sentAt: Date.now(),
+        from: clientId,
+      });
+    }
+  }, [triggerManualSync, clientId]);
 
   const getRoleLabel = (role: UserRole) => {
     switch (role) {
@@ -2059,6 +2274,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         clearPhaseShiftLogs,
         simulatorPatients: localizedSimulatorPatients,
         updateSimulatorPatient,
+        addSimulatorPatient,
+        deleteSimulatorPatient,
+        resetSimulatorPatients,
         updateTechChecklist,
         teams,
         updateTeam,
@@ -2126,6 +2344,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         syncStatus,
         triggerManualSync,
         sendPing,
+        devicePresenceMap,
+        sendGlobalPing,
+        forceDeviceResync,
         firebaseUser,
         isFirebaseAuthReady,
         isFirebaseCloudConnected,

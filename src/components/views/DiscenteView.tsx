@@ -765,23 +765,23 @@ export const DiscenteView: React.FC = () => {
 
               {/* Countdown widget for Pre-Allerta TCCC or Standby SR */}
               {showCountdown && (
-                <div className="bg-yellow-950/80 border border-yellow-500 p-3 rounded shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
-                  <div className="flex items-center gap-2.5">
-                    <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 animate-bounce" />
-                    <div>
-                      <span className="text-[10px] sm:text-[11px] font-mono font-bold text-yellow-300 uppercase tracking-widest block">
-                        {isPreAllertaTCCC ? (isEn ? 'TCCC PRE-ALERT COUNTDOWN' : 'COUNTDOWN PRE-ALLERTA TCCC') : (isEn ? 'SHOCK ROOM STANDBY COUNTDOWN' : 'COUNTDOWN STANDBY SHOCK ROOM')}
+                <div className="bg-yellow-950/80 border border-yellow-500/80 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 animate-bounce" />
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono font-bold text-yellow-300 uppercase tracking-wider block">
+                        {isPreAllertaTCCC ? (isEn ? 'TCCC PRE-ALERT (T -15)' : 'PRE-ALLERTA TCCC (T -15)') : (isEn ? 'SHOCK ROOM STANDBY' : 'STANDBY SHOCK ROOM')}
                       </span>
-                      <p className="text-xs text-yellow-200 font-medium">
+                      <p className="text-[11px] text-yellow-200/90 truncate font-mono">
                         {isPreAllertaTCCC
                           ? (isEn ? 'TCCC PPE preparation and donning in progress.' : 'Preparazione e vestizione DPI TCCC in corso.')
-                          : (isEn ? 'Equipment check and active standby prior to Shock Room Box handover.' : 'Controllo presidi e standby attivo pre-handover Box Shock Room.')}
+                          : (isEn ? 'Equipment check and active standby prior to Shock Room handover.' : 'Controllo presidi e standby attivo pre-handover Shock Room.')}
                       </p>
                     </div>
                   </div>
-                  <div className="bg-neutral-950 px-3 py-1.5 border border-yellow-500 rounded text-right self-end sm:self-auto">
-                    <span className="text-[9px] font-mono text-neutral-400 uppercase block">{isEn ? 'Time Remaining' : 'Tempo Mancante'}</span>
-                    <span className="text-xl sm:text-2xl font-mono font-black text-yellow-400 tracking-wider">
+                  <div className="bg-neutral-950 px-2.5 py-1 border border-yellow-500/80 rounded text-right self-end sm:self-auto flex items-center gap-2 shrink-0">
+                    <span className="text-[9px] font-mono text-neutral-400 uppercase hidden sm:inline">{isEn ? 'Remaining:' : 'Mancante:'}</span>
+                    <span className="text-base sm:text-lg font-mono font-black text-yellow-400 tracking-wider">
                       {formatTimer(timerSeconds)}
                     </span>
                   </div>

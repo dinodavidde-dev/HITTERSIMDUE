@@ -56,6 +56,7 @@ export function getParticipantPersonalPageUrl(
   const viewParam = category === 'tecnici' ? 'tecnici' 
     : category === 'direttori' ? 'direttori'
     : category === 'discenti' ? 'discente'
+    : category === 'ospiti' ? 'public'
     : category;
 
   const url = new URL(base);

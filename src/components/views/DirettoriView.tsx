@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCourse } from '../../context/CourseContext';
 import {
   Activity,
+  BarChart3,
   CheckCircle2,
   FileText,
   Globe,
@@ -13,15 +14,21 @@ import {
 import { MasterAnagraficaManager } from '../anagrafica/MasterAnagraficaManager';
 import { ScenariMasterListView } from './ScenariMasterListView';
 import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
+import { DirectorPerformanceVisualization } from '../director/DirectorPerformanceVisualization';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
 import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
+import { TcccPreAlertCountdownBanner } from '../common/TcccPreAlertCountdownBanner';
+import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
 
 export const DirettoriView: React.FC = () => {
   const {
     language,
     activeDay,
+    currentSlot,
     filteredSlots,
     activeSlotIndex,
+    timerSeconds,
+    isTimerRunning,
     directors,
     selectedDirectorId,
     setSelectedDirectorId,
@@ -34,6 +41,7 @@ export const DirettoriView: React.FC = () => {
   const [showUnlockModal, setShowUnlockModal] = useState(false);
 
   const isEn = language === 'en';
+  const isPreAllertaTccc = isPreAllertaTcccSlot(currentSlot);
 
   const currentDirector =
     directors.find((d) => d.id === selectedDirectorId) ||
@@ -50,7 +58,7 @@ export const DirettoriView: React.FC = () => {
       isMaster: true,
     };
 
-  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'scenari' | 'anagrafica'>('scenari');
+  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'scenari' | 'performance' | 'anagrafica'>('scenari');
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
 
   const copyPublicUrl = () => {
@@ -78,6 +86,11 @@ export const DirettoriView: React.FC = () => {
               <span className="text-[11px] text-neutral-300 font-mono font-bold px-2.5 py-1 bg-neutral-900 border border-neutral-700">
                 DAY 0{activeDay} • {isEn ? 'SLOT' : 'SLOT'} {activeSlotIndex + 1}/{filteredSlots.length}
               </span>
+              {isPreAllertaTccc && (
+                <span className="bg-amber-500 text-black font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1 shadow-md">
+                  ⚠️ {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')} • {isEn ? 'TCCC PRE-ALERT (T -15)' : 'PRE-ALLERTA TCCC (T -15)'}
+                </span>
+              )}
               {suspensionInfo.isSuspended ? (
                 <span className="bg-red-600 text-white font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1">
                   {isEn ? 'SUSPENDED' : 'SOSPESO'}
@@ -180,9 +193,14 @@ export const DirettoriView: React.FC = () => {
         </div>
       </div>
 
+      {/* TCCC Pre-Alert Flashing Countdown Banner: Specifies in both Italian and English that 15 min remain */}
+      {isPreAllertaTccc && (
+        <TcccPreAlertCountdownBanner role="direttore" />
+      )}
+
       {/* Directors Navigation Menu */}
       <nav aria-label={isEn ? 'Directors Menu' : 'Menu Direttori'} className="bg-neutral-950 border border-neutral-800 p-1 sm:p-1.5 shadow-xl">
-        <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-1.5">
           <button
             onClick={() => setActiveSubTab('timeline')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
@@ -216,6 +234,22 @@ export const DirettoriView: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveSubTab('performance')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'performance'
+                ? 'bg-yellow-500 text-black border-yellow-300 shadow-md font-black'
+                : 'bg-neutral-900 text-yellow-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-yellow-500/50'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-amber-400" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'PERFORMANCE METRICS' : 'METRICHE RECHARTS'}
+              </span>
+            </div>
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('anagrafica')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
               activeSubTab === 'anagrafica'
@@ -242,6 +276,12 @@ export const DirettoriView: React.FC = () => {
       {activeSubTab === 'scenari' && (
         <div className="space-y-6">
           <ScenariMasterListView />
+        </div>
+      )}
+
+      {activeSubTab === 'performance' && (
+        <div className="space-y-6">
+          <DirectorPerformanceVisualization />
         </div>
       )}
 

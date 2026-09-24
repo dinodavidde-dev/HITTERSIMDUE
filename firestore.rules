@@ -291,6 +291,29 @@ service cloud.firestore {
       allow delete: if isValidId(checklistId);
     }
 
+    // --- Device Presence & Monitoring ---
+    function isValidDevicePresence(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('deviceId' in data) || (data.deviceId is string && data.deviceId.size() <= 128)) &&
+        (!('clientId' in data) || (data.clientId is string && data.clientId.size() <= 128)) &&
+        (!('role' in data) || data.role in ['discente', 'tecnico', 'faculty', 'direttore', 'ospite', 'regia']) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 50)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
+        (!('status' in data) || data.status in ['online', 'standby', 'offline', 'warning']) &&
+        (!('lastSeen' in data) || data.lastSeen is number) &&
+        (!('currentSlotIndex' in data) || data.currentSlotIndex is number) &&
+        (!('activeDay' in data) || data.activeDay in [2, 3]) &&
+        (!('latencyMs' in data) || data.latencyMs is number) &&
+        (!('deviceInfo' in data) || (data.deviceInfo is string && data.deviceInfo.size() <= 500));
+    }
+
+    match /device_presence/{presenceId} {
+      allow get: if isValidId(presenceId);
+      allow list: if true;
+      allow create, update: if isValidId(presenceId) && isValidDevicePresence(incoming());
+      allow delete: if isValidId(presenceId);
+    }
+
     // Test connection doc
     match /test/{testId} {
       allow get: if isValidId(testId);

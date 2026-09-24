@@ -30,7 +30,6 @@ import {
   HeartPulse,
   Flame,
   Gauge,
-  Sliders,
 } from 'lucide-react';
 import {
   SimulatorPatient,
@@ -43,6 +42,7 @@ import {
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { useCourse } from '../../context/CourseContext';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
+import { isScenarioSlot } from '../../utils/scenarioStatusHelper';
 
 interface TecniciTimelineAffiancataProps {
   currentTech: Technician;
@@ -57,6 +57,7 @@ interface TecniciTimelineAffiancataProps {
   onOpenProtesiModal: (patient: SimulatorPatient) => void;
   onSendRadioMessage: (message: string) => void;
   onSwitchToRegistro: () => void;
+  onOpenQuadroPubblico?: () => void;
 }
 
 export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps> = ({
@@ -72,12 +73,13 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   onOpenProtesiModal,
   onSendRadioMessage,
   onSwitchToRegistro,
+  onOpenQuadroPubblico,
 }) => {
   const { language } = useCourse();
   const isEn = language === 'en';
 
-  // Visual layout mode: 'parallel' (affiancata 2 colonne), 'tech_only' (focus mansioni), 'public_only' (focus corso)
-  const [layoutMode, setLayoutMode] = useState<'parallel' | 'tech_only' | 'public_only'>('parallel');
+  // Visual layout mode: timeline affiancata su 2 colonne (Quadro Corso + Mansioni Tecniche)
+  const layoutMode = 'parallel';
   const [showCompletedArchive, setShowCompletedArchive] = useState(false);
   const [selectedInspectSlotId, setSelectedInspectSlotId] = useState<string | null>(null);
   const [showDetailedPhases, setShowDetailedPhases] = useState(true);
@@ -288,7 +290,11 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       fullText.includes('shock room') || fullText.includes('abcde') || fullText.includes('box sr');
     const isTccc =
       fullText.includes('tccc') || fullText.includes('stop bleed') || fullText.includes('ambiente tattico');
-    const isPreAllerta = fullText.includes('pre-allerta') || fullText.includes('pre-alert');
+    const isPreAllerta =
+      slot.id.toLowerCase().includes('prealert') ||
+      slot.id.toLowerCase().includes('pre-alert') ||
+      fullText.includes('pre-allerta') ||
+      fullText.includes('pre-alert');
     const isStandbySR = fullText.includes('standby sr') || fullText.includes('standby attivo');
     const isWorkshop =
       fullText.includes('workshop') ||
@@ -651,71 +657,6 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     };
   };
 
-  // Helper: extract course block details for the global stepper
-  const COURSE_BLOCKS = [
-    {
-      id: 'block-1',
-      title: isEn ? 'Block 1' : 'Blocco 1',
-      time: '08:45 - 10:45',
-      slotIds: ['d2-prealert-1', 'd2-b1-tccc', 'd2-b1-handover', 'd2-b1-sr', 'd2-b1-debrief-sr', 'd3-prealert-1', 'd3-b1-ws', 'd3-b1-sr'],
-      summary: activeDay === 2 ? 'ALPHA: TCCC ➔ SR | CHARLIE: SR | BRAVO: WS1 | DELTA: WS2' : 'BRAVO: TCCC | DELTA: SR | ALPHA: WS2 | CHARLIE: WS1',
-    },
-    {
-      id: 'reset-1',
-      title: "Reset 15'",
-      time: '10:45 - 11:00',
-      slotIds: ['d2-b1-reset', 'd3-b1-reset'],
-      summary: isEn
-        ? 'Sanitization Box SR 1-3, blood circuit flushing & pouch refill'
-        : 'Sanificazione Box SR 1-3, spurgo circuiti sangue & ricarica sacche',
-      isReset: true,
-    },
-    {
-      id: 'block-2',
-      title: isEn ? 'Block 2' : 'Blocco 2',
-      time: '11:00 - 13:00',
-      slotIds: ['d2-b2-tccc', 'd2-b2-handover', 'd2-b2-sr', 'd3-b2-tccc', 'd3-b2-handover', 'd3-b2-sr'],
-      summary: activeDay === 2 ? 'DELTA: TCCC ➔ SR | BRAVO: SR | CHARLIE: WS1 | ALPHA: WS2' : 'CHARLIE: TCCC | ALPHA: SR | BRAVO: WS1 | DELTA: WS2',
-    },
-    {
-      id: 'lunch',
-      title: isEn ? 'Lunch' : 'Pranzo',
-      time: '13:00 - 14:00',
-      slotIds: ['d2-lunch', 'd3-lunch'],
-      summary: isEn ? 'Staff meal break & telemetry recharging' : 'Pausa ristoro staff & ricarica telemetrie',
-      isPause: true,
-    },
-    {
-      id: 'block-3',
-      title: isEn ? 'Block 3' : 'Blocco 3',
-      time: '14:00 - 16:00',
-      slotIds: ['d2-b3-tccc', 'd2-b3-handover', 'd2-b3-sr', 'd3-b3-tccc', 'd3-b3-handover', 'd3-b3-sr'],
-      summary: activeDay === 2 ? 'BRAVO: TCCC ➔ SR | DELTA: SR | ALPHA: WS1 | CHARLIE: WS2' : 'ALPHA: TCCC | CHARLIE: SR | DELTA: WS1 | BRAVO: WS2',
-    },
-    {
-      id: 'reset-2',
-      title: "Reset 15'",
-      time: '16:00 - 16:15',
-      slotIds: ['d2-b3-reset', 'd3-b3-reset'],
-      summary: isEn ? 'Quick 15-min turnaround for final Block 4' : 'Turnaround rapido 15 min per il Blocco 4 finale',
-      isReset: true,
-    },
-    {
-      id: 'block-4',
-      title: isEn ? 'Block 4' : 'Blocco 4',
-      time: '16:15 - 18:15',
-      slotIds: ['d2-b4-tccc', 'd2-b4-handover', 'd2-b4-sr', 'd3-b4-tccc', 'd3-b4-handover', 'd3-b4-sr'],
-      summary: activeDay === 2 ? 'CHARLIE: TCCC ➔ SR | ALPHA: SR | DELTA: WS1 | BRAVO: WS2' : 'DELTA: TCCC | BRAVO: SR | CHARLIE: WS2 | ALPHA: WS1',
-    },
-    {
-      id: 'plenary',
-      title: isEn ? 'Plenary' : 'Plenaria',
-      time: '18:15 - 19:00',
-      slotIds: ['d2-debrief-day', 'd3-debrief-finale', 'd2-chiusura', 'd3-chiusura'],
-      summary: isEn ? 'Final collegial debriefing and video review' : 'Debriefing collegiale finale e revisione video',
-    },
-  ];
-
   // Helper for group badges colors and icons
   const getGroupBadgeInfo = (group: GroupType, activity: any) => {
     const actTitle = (activity?.title || '').toLowerCase();
@@ -759,154 +700,40 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
   const currentSlotInfo = getSlotTechActivity(currentSlot);
   const currentPatient = currentSlotInfo.relevantPatient;
-  const showCountdown = currentSlotInfo.isPreAllerta || currentSlotInfo.isStandbySR || currentSlotInfo.isReset;
+  const isScenarioInProgress = isScenarioSlot(currentSlot);
+
+  const isCurrentSlotPreAlert =
+    currentSlotInfo.isPreAllerta ||
+    currentSlot.id.toLowerCase().includes('prealert') ||
+    currentSlot.id.toLowerCase().includes('pre-alert') ||
+    (currentSlot.title || '').toLowerCase().includes('pre-alert') ||
+    (currentSlot.title || '').toLowerCase().includes('pre-allerta');
+
+  const nextScenarioSlot =
+    dayMasterSlots
+      .slice(effectiveCurrentIdx + 1)
+      .find((s) => isScenarioSlot(s)) || null;
+
+  const nextScenarioStartTime = nextScenarioSlot?.timeRange
+    ? nextScenarioSlot.timeRange.split('-')[0].trim()
+    : '';
+
+  const nextScenarioTechInfo = nextScenarioSlot
+    ? getSlotTechActivity(nextScenarioSlot)
+    : null;
+
+  const targetPatient =
+    nextScenarioTechInfo?.relevantPatient ||
+    currentPatient ||
+    assignedPatients[0] ||
+    null;
+
+  const showCountdown = isCurrentSlotPreAlert;
 
   return (
     <div className="space-y-6">
       {/* ========================================================================= */}
-      {/* 1. BARRA DI CONTROLLO & CRONOPROGRAMMA MASTER DELLA GIORNATA (STEPPER) */}
-      {/* ========================================================================= */}
-      <div className="bg-neutral-950 border-2 border-neutral-800 p-3 sm:p-4 rounded-lg shadow-xl space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[10px] uppercase tracking-wider rounded">
-                {isEn ? 'DUAL SYNCHRONIZED STREAM' : 'DOPPIO FLUSSO SINCRONIZZATO'}
-              </span>
-              <span className="text-[11px] font-mono text-neutral-400">
-                {isEn ? 'Control' : 'Regia'} Day 0{activeDay} • {dayMasterSlots.length} {isEn ? 'Total Phases' : 'Fasi Totali'}
-              </span>
-            </div>
-            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <Globe className="w-4 h-4 text-orange-400 shrink-0" />
-              {isEn ? 'Public Timeline & Technical Duties' : 'Timeline Pubblica & Mansioni Tecniche'}
-            </h2>
-            <p className="text-xs text-neutral-300 font-mono">
-              {isEn
-                ? 'Progression of the 4 Macro-Groups (ALPHA, BRAVO, CHARLIE, DELTA) alongside operational tasks'
-                : 'Progressione dei 4 Macro-Gruppi (ALPHA, BRAVO, CHARLIE, DELTA) affiancata ai compiti operativi'}
-            </p>
-          </div>
-
-          {/* Layout Mode Selector Toggle */}
-          <div className="flex items-center bg-neutral-900 border border-neutral-700 p-1 rounded self-stretch sm:self-start md:self-center shrink-0 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setLayoutMode('parallel')}
-              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 rounded whitespace-nowrap ${
-                layoutMode === 'parallel'
-                  ? 'bg-gradient-to-r from-orange-600 to-pink-600 text-white shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title={isEn ? 'View both timelines side by side in 2 columns' : 'Visualizza entrambe le timeline affiancate in 2 colonne'}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isEn ? 'Side-by-Side (2 Columns)' : 'Affiancata (2 Colonne)'}</span>
-              <span className="sm:hidden">{isEn ? '2 Columns' : '2 Colonne'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLayoutMode('tech_only')}
-              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 rounded whitespace-nowrap ${
-                layoutMode === 'tech_only'
-                  ? 'bg-pink-600 text-white shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title={isEn ? 'View technical tasks only with operational focus' : 'Visualizza solo i compiti tecnici con focus operativo'}
-            >
-              <Wrench className="w-3.5 h-3.5" />
-              <span>{isEn ? 'Tasks' : 'Mansioni'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLayoutMode('public_only')}
-              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 rounded whitespace-nowrap ${
-                layoutMode === 'public_only'
-                  ? 'bg-orange-600 text-black shadow-md font-black'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title={isEn ? 'View extended public course timeline' : 'Visualizza la timeline del corso pubblica estesa'}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>{isEn ? 'Course' : 'Corso'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quadro Sinottico Cronoprogramma Macro-Blocchi (Scrubber Rapido del Corso) */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[11px] font-mono flex-wrap gap-1">
-            <span className="text-neutral-400 font-bold uppercase flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-orange-400" /> {isEn ? 'Macro-Blocks Progression:' : 'Progressione Macro-Blocchi:'}
-            </span>
-            <span className="text-orange-400 font-bold">
-              {isEn ? 'Phase:' : 'Fase:'} {effectiveCurrentIdx + 1}/{dayMasterSlots.length} ({currentSlot?.timeRange})
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 font-mono text-[10px]">
-            {COURSE_BLOCKS.map((block) => {
-              const isBlockActive = block.slotIds.includes(currentSlot?.id);
-              return (
-                <div
-                  key={block.id}
-                  className={`p-2 rounded border transition-all ${
-                    isBlockActive
-                      ? 'bg-orange-950/80 border-orange-500 text-white ring-2 ring-orange-500/80 shadow-lg'
-                      : block.isReset
-                      ? 'bg-yellow-950/40 border-yellow-800 text-yellow-300'
-                      : block.isPause
-                      ? 'bg-neutral-900 border-neutral-800 text-neutral-400'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-black uppercase">{block.title}</span>
-                    {isBlockActive && (
-                      <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping shrink-0" />
-                    )}
-                  </div>
-                  <span className="text-[9px] text-neutral-400 block mt-0.5">{block.time}</span>
-                  <p className="text-[9px] truncate text-neutral-300 mt-1" title={block.summary}>
-                    {block.summary}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Compact Tech Context Bar */}
-        <div className="pt-2.5 border-t border-neutral-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs font-mono">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 font-black text-xs uppercase rounded">
-              {currentTech.badgeCode}
-            </span>
-            <span className="text-white font-bold">{currentTech.name}</span>
-            <span className="text-pink-400 text-[11px]">({currentTech.specialty})</span>
-            {partnerTech && (
-              <span className="text-neutral-400 text-[11px]">• {isEn ? 'Pair:' : 'Coppia:'} {partnerTech.name}</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-            <span className="text-neutral-400 text-[10px] uppercase font-bold">{isEn ? 'Station:' : 'Presidio:'}</span>
-            {currentTech.assignedStations?.map((st, i) => (
-              <span key={i} className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 text-pink-300 rounded font-bold text-[10px]">
-                📍 {st}
-              </span>
-            ))}
-            <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-400 rounded text-[10px]">
-              Radio: CH3
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 2. SPECIAL COUNTDOWN MODES (Accoglienza pre 08:30 / Countdown 30 min) */}
+      {/* SPECIAL COUNTDOWN MODES (Accoglienza pre 08:30 / Countdown 30 min) */}
       {/* ========================================================================= */}
       {isDayBefore8 && (
         <div className="bg-neutral-900 border-2 border-orange-500/80 p-5 rounded text-center space-y-3 shadow-xl">
@@ -972,75 +799,113 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
         <div className="flex items-center justify-between border-b border-pink-500/50 pb-2">
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCurrentSlotPreAlert ? 'bg-amber-400' : 'bg-pink-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${isCurrentSlotPreAlert ? 'bg-amber-500' : 'bg-pink-500'}`}></span>
             </span>
-            <span className="text-xs font-mono font-black text-pink-400 uppercase tracking-widest">
-              {isEn ? '🔴 CURRENT PHASE IN PROGRESS • MASTER LIVE CONTROL' : '🔴 FASE ATTUALE IN CORSO • REGIA MASTER LIVE'}
+            <span className={`text-xs font-mono font-black uppercase tracking-widest ${isCurrentSlotPreAlert ? 'text-amber-400' : 'text-pink-400'}`}>
+              {isScenarioInProgress
+                ? (isEn ? '🔴 CURRENT SCENARIO IN PROGRESS • MASTER LIVE' : '🔴 SCENARIO CLINICO IN CORSO • REGIA MASTER LIVE')
+                : isCurrentSlotPreAlert
+                ? (isEn ? '⚠️ OPERATIONAL PRE-ALERT • COUNTDOWN TO SCENARIO START' : '⚠️ PRE-ALLERTA OPERATIVA • COUNTDOWN INIZIO SCENARIO')
+                : (isEn ? '⚙️ CURRENT TECHNICAL PHASE • REGIA MASTER' : '⚙️ FASE TECNICA ASSEGNATA • REGIA MASTER')}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 bg-neutral-950 text-pink-300 border border-pink-600 rounded text-xs font-mono font-bold">
+            <span className={`px-2.5 py-1 bg-neutral-950 rounded text-xs font-mono font-bold border ${isCurrentSlotPreAlert ? 'text-amber-300 border-amber-600' : 'text-pink-300 border-pink-600'}`}>
               {isEn ? 'Phase' : 'Fase'} {effectiveCurrentIdx + 1} {isEn ? 'of' : 'di'} {dayMasterSlots.length} ({currentSlot?.timeRange})
             </span>
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* RIQUADRO LIVE: CRONOMETRO FASE ATTUALE & TEMPI DELLE FASI INDICATE       */}
+        {/* RIQUADRO LIVE: CRONOMETRO FASE CORRENTE (SOLO SCENARIO IN CORSO)         */}
         {/* ========================================================================= */}
-        <div className="bg-neutral-950 border-2 border-pink-500/80 rounded-lg p-4 sm:p-5 shadow-2xl space-y-4 font-sans">
-          {/* RIGA 1: CRONOMETRO DIGITALE FASE CORRENTE CON INDICAZIONE TEMPI */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-pink-950/40 via-neutral-900 to-black p-3.5 border border-pink-500/50">
-            {/* Display Digitale Tempo Rimanente e Trascorso */}
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-pink-500/20 border border-pink-500 text-pink-400 shrink-0">
-                <Timer className="w-7 h-7 animate-pulse" />
+        {isScenarioInProgress ? (
+          <div className="bg-neutral-950 border-2 border-pink-500 rounded-lg p-4 sm:p-5 shadow-2xl space-y-4 font-sans ring-2 ring-pink-500/20">
+            {/* INTESTAZIONE SPECIFICA DI ASSOCIAZIONE ALLO SCENARIO IN CORSO */}
+            <div className="bg-pink-950/40 border border-pink-600/70 p-3 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-pink-600 text-white rounded shrink-0">
+                  <Activity className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-mono font-black text-pink-300 uppercase tracking-widest">
+                      {isEn ? 'CLINICAL SCENARIO IN PROGRESS' : 'SCENARIO CLINICO IN CORSO'}
+                    </span>
+                    <span className="px-2 py-0.5 bg-pink-600 text-white font-mono font-black text-[9px] uppercase rounded">
+                      {currentSlotInfo.isHandover
+                        ? 'HANDOVER 1:1 SBAR'
+                        : currentSlot.id.includes('tccc')
+                        ? 'TCCC ADDESTRAMENTO'
+                        : 'SHOCK ROOM ALTA FEDELTÀ'}
+                    </span>
+                  </div>
+                  <h4 className="text-white font-bold text-sm sm:text-base font-mono">
+                    {currentPatient ? (
+                      <span>
+                        <strong className="text-pink-400">{currentPatient.scenarioCode}</strong>: {currentPatient.title}
+                      </span>
+                    ) : (
+                      currentSlot.title
+                    )}
+                  </h4>
+                </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-black text-pink-400 uppercase tracking-widest">
-                    {isEn ? 'CURRENT PHASE DIGITAL TIMER' : 'CRONOMETRO DIGITALE FASE CORRENTE'}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 text-[9px] font-mono font-bold border flex items-center gap-1 ${
-                      isTimerRunning
-                        ? 'bg-emerald-950 text-emerald-300 border-emerald-600'
-                        : 'bg-amber-950 text-amber-300 border-amber-600'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isTimerRunning ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
-                      }`}
-                    />
-                    {isTimerRunning ? (isEn ? 'AUTOMATION ACTIVE' : 'AUTOMAZIONE ATTIVA') : (isEn ? 'PAUSED (STANDBY)' : 'IN PAUSA (STANDBY)')}
-                  </span>
+              {/* Associazione Postazione & Paziente Presidiato */}
+              <div className="text-left sm:text-right font-mono text-xs border-t sm:border-t-0 sm:border-l border-pink-700/50 pt-2 sm:pt-0 sm:pl-3 shrink-0">
+                <div className="text-[10px] text-pink-300/80 uppercase font-bold">
+                  {isEn ? 'Station & Simulator Pt:' : 'Postazione & Simulatore:'}
                 </div>
-
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <div
-                    className={`text-3xl sm:text-4xl font-mono font-black tracking-wider ${
-                      slotRemainingSeconds <= 180
-                        ? 'text-red-400 animate-pulse'
-                        : slotRemainingSeconds <= 600
-                        ? 'text-amber-400'
-                        : 'text-pink-400'
-                    }`}
-                  >
-                    {formatTimer(slotRemainingSeconds)}
-                  </div>
-                  <div className="text-xs font-mono text-neutral-400">
-                    <span>{isEn ? 'ELAPSED TIME: ' : 'TEMPO TRASCORSO: '}</span>
-                    <strong className="text-white">
-                      {formatTimer(slotElapsedSeconds)}
-                    </strong>{' '}
-                    / <span>{slotDurationMinutes}:00 MIN</span>
-                  </div>
+                <div className="text-white font-bold">
+                  📍 {currentSlotInfo.stationLocation}
                 </div>
+                {currentPatient && (
+                  <div className="text-pink-300 text-[11px]">
+                    Pt. #{currentPatient.id} ({currentPatient.name})
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* RIGA 1: STATO OPERATIVO SCENARIO CORRENTE (Countdown unico visibile nel pannello superiore) */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-pink-950/40 via-neutral-900 to-black p-3.5 border border-pink-500/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-pink-500/20 border border-pink-500 text-pink-400 shrink-0">
+                  <Activity className="w-6 h-6 animate-pulse" />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-mono font-black text-pink-400 uppercase tracking-widest">
+                      {isEn ? 'SCENARIO TIMELINE SYNCHRONIZATION' : 'SINCRONIZZAZIONE SCENARIO LIVE'}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 text-[9px] font-mono font-bold border flex items-center gap-1 ${
+                        isTimerRunning
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-600'
+                          : 'bg-amber-950 text-amber-300 border-amber-600'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          isTimerRunning ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+                        }`}
+                      />
+                      {isTimerRunning ? (isEn ? 'AUTOMATION ACTIVE' : 'AUTOMAZIONE ATTIVA') : (isEn ? 'PAUSED (STANDBY)' : 'IN PAUSA (STANDBY)')}
+                    </span>
+                  </div>
+
+                  <div className="text-xs font-mono text-neutral-300 flex items-center gap-2 flex-wrap">
+                    <span>{isEn ? 'Duration: ' : 'Durata scenario: '} <strong className="text-white">{slotDurationMinutes}:00 min</strong></span>
+                    <span>•</span>
+                    <span className="text-pink-300 text-[11px] font-bold">
+                      {isEn ? '⏱️ Live Countdown in Top Panel' : '⏱️ Countdown Live nel Pannello Superiore'}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
             {/* Avanzamento e Toggle Dettagli */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto justify-between md:justify-end">
@@ -1216,285 +1081,449 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
             </div>
           )}
         </div>
-
-        {/* LIVE CARD DUAL-STREAM CONTAINER */}
-        <div
-          className={`grid gap-4 ${
-            layoutMode === 'parallel'
-              ? 'grid-cols-1 lg:grid-cols-12'
-              : 'grid-cols-1'
-          }`}
-        >
-          {/* ------------------------------------------------------------- */}
-          {/* COLONNA A: TIMELINE PUBBLICA SEMPLIFICATA (QUADRO DEL CORSO) */}
-          {/* ------------------------------------------------------------- */}
-          {(layoutMode === 'parallel' || layoutMode === 'public_only') && (
-            <div
-              className={`${
-                layoutMode === 'parallel' ? 'lg:col-span-6' : 'w-full'
-              } bg-neutral-950 border-2 border-orange-500/80 rounded-lg p-5 shadow-2xl space-y-4 relative overflow-hidden`}
-            >
-              <div className="absolute top-0 right-0 bg-orange-600 text-black font-mono font-black text-[10px] px-3 py-1 uppercase rounded-bl tracking-wider flex items-center gap-1">
-                <Globe className="w-3 h-3" /> {isEn ? 'PUBLIC COURSE OVERVIEW' : 'QUADRO PUBBLICO CORSO'}
+      ) : isCurrentSlotPreAlert ? (
+        /* ========================================================================= */
+        /* FASE PRE-ALLERTA: COUNTDOWN DIGITALE CON SPECIFICA INIZIO DELLO SCENARIO  */
+        /* ========================================================================= */
+        <div className="bg-neutral-950 border-2 border-amber-500 rounded-lg p-4 sm:p-5 shadow-2xl space-y-4 font-sans ring-2 ring-amber-500/20">
+          {/* INTESTAZIONE SPECIFICA DI PRE-ALLERTA CON NOME & ORARIO DELLO SCENARIO IN ARRIVO */}
+          <div className="bg-amber-950/40 border border-amber-600/70 p-3 sm:p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2.5 bg-amber-500 text-black rounded shrink-0 shadow-md">
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 animate-bounce" />
               </div>
-
-              {/* Titolo e Orario Fase Master */}
-              <div className="space-y-1 pr-32">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-orange-950 text-orange-300 border border-orange-700 text-[10px] font-black uppercase rounded">
-                    {isEn ? 'SCHEDULE:' : 'ORARIO:'} {currentSlot?.timeRange} ({currentSlot?.durationMinutes} MIN)
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-mono font-black text-amber-300 uppercase tracking-widest">
+                    {isEn ? 'OPERATIONAL PRE-ALERT (T -15 MIN)' : 'FASE DI PRE-ALLERTA OPERATIVA (T -15 MIN)'}
                   </span>
-                  {currentSlotInfo.isHandover && (
-                    <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-600 text-[10px] font-black uppercase rounded animate-pulse">
-                      🚑 HANDOVER :30
-                    </span>
-                  )}
-                  {currentSlotInfo.isReset && (
-                    <span className="px-2 py-0.5 bg-yellow-950 text-yellow-300 border border-yellow-600 text-[10px] font-black uppercase rounded animate-pulse">
-                      🔧 RESET 15'
+                  <span className="px-2 py-0.5 bg-amber-500 text-black font-mono font-black text-[9px] uppercase rounded">
+                    {isEn ? 'COUNTDOWN TO SCENARIO START' : 'COUNTDOWN ALL\'INIZIO DELLO SCENARIO'}
+                  </span>
+                  {nextScenarioStartTime && (
+                    <span className="px-2 py-0.5 bg-neutral-900 border border-amber-500 text-amber-300 font-mono font-bold text-[9px] uppercase rounded">
+                      {isEn ? `STARTS AT ${nextScenarioStartTime}` : `INIZIO SCENARIO ORE ${nextScenarioStartTime}`}
                     </span>
                   )}
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                  {currentSlot?.title || (isEn ? 'Ongoing Clinical Activity' : 'Attività Clinica in Corso')}
-                </h3>
-                <p className="text-xs text-neutral-300 font-mono">
-                  {currentSlot?.description || (isEn ? 'Educational rotation of the 12 teams across the 4 macro training environments' : 'Rotazione didattica delle 12 squadre sui 4 macro-ambienti addestrativi')}
-                </p>
+                <h4 className="text-white font-bold text-sm sm:text-base font-mono mt-0.5">
+                  {nextScenarioSlot ? (
+                    <span>
+                      {isEn ? 'Target Scenario: ' : 'Scenario in Partenza: '}
+                      <strong className="text-amber-400">{nextScenarioSlot.title}</strong>
+                    </span>
+                  ) : (
+                    currentSlot.title
+                  )}
+                </h4>
+              </div>
+            </div>
+
+            {/* Associazione Postazione & Paziente Target in Arrivo */}
+            <div className="text-left sm:text-right font-mono text-xs border-t sm:border-t-0 sm:border-l border-amber-700/50 pt-2 sm:pt-0 sm:pl-3 shrink-0">
+              <div className="text-[10px] text-amber-300/80 uppercase font-bold">
+                {isEn ? 'Station & Target Pt:' : 'Postazione & Simulatore Target:'}
+              </div>
+              <div className="text-white font-bold">
+                📍 {currentSlotInfo.stationLocation}
+              </div>
+              {targetPatient && (
+                <div className="text-amber-300 text-[11px]">
+                  Pt. #{targetPatient.id} ({targetPatient.scenarioCode} • {targetPatient.name})
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGA 1: STATO OPERATIVO PRE-ALLERTA (Countdown unico visibile nel pannello superiore) */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-amber-950/40 via-neutral-900 to-black p-3.5 border border-amber-500/60">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 border border-amber-500 text-amber-400 shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-400 animate-bounce" />
               </div>
 
-              {/* Distribuzione dei 4 Macro-Gruppi nel corso */}
-              <div className="space-y-2 pt-2 border-t border-neutral-800">
-                <span className="text-[10px] font-mono text-orange-400 uppercase font-bold tracking-widest block flex items-center justify-between">
-                  <span>{isEn ? 'Position & Activity of the 4 Macro-Groups (60 Students):' : 'Posizione & Attività dei 4 Macro-Gruppi (60 Discenti):'}</span>
-                  <span className="text-[9px] text-neutral-500">{isEn ? '15 students / 3 teams per group' : '15 allievi / 3 squadre per gruppo'}</span>
-                </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] sm:text-[11px] font-mono font-black text-amber-400 uppercase tracking-widest">
+                    {isEn ? 'PRE-ALERT TIMELINE STATUS' : 'STATO OPERATIVO PRE-ALLERTA'}
+                  </span>
+                  <span className="px-2 py-0.5 text-[9px] font-mono font-bold border flex items-center gap-1 bg-amber-950 text-amber-300 border-amber-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                    {isEn ? 'PRE-ALERT TIMING ACTIVE' : 'TIMING PRE-ALLERTA ATTIVO'}
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono text-xs">
-                  {(['A', 'B', 'C', 'D'] as GroupType[]).map((grp) => {
-                    const act = currentSlot?.groupActivities?.[grp];
-                    const badgeInfo = getGroupBadgeInfo(grp, act);
-                    const isVisitingTechStation = currentSlotInfo.visitingGroup === grp;
+                <div className="text-xs font-mono text-neutral-300 flex items-center gap-2 flex-wrap">
+                  <span>{isEn ? 'Pre-alert window: ' : 'Finestra pre-allerta: '} <strong className="text-white">{slotDurationMinutes}:00 min</strong></span>
+                  <span>•</span>
+                  <span className="text-amber-300 text-[11px] font-bold">
+                    {isEn ? '⏱️ Live Countdown in Top Panel' : '⏱️ Countdown Live nel Pannello Superiore'}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-                    const groupLabels: Record<GroupType, string> = {
-                      A: 'ALPHA (DISC-01-15)',
-                      B: 'BRAVO (DISC-16-30)',
-                      C: 'CHARLIE (DISC-31-45)',
-                      D: 'DELTA (DISC-46-60)',
-                    };
+            {/* Avanzamento e Toggle Specifiche */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              <div className="text-right font-mono">
+                <div className="text-[10px] text-amber-300/80 uppercase font-bold">{isEn ? 'Pre-Alert Progress' : 'Avanzamento Pre-Allerta'}</div>
+                <div className="text-lg font-black text-amber-300">
+                  {slotProgressPercent}%{' '}
+                  <span className="text-xs font-normal text-neutral-400">
+                    ({Math.floor(slotElapsedMinutes)}/{slotDurationMinutes} min)
+                  </span>
+                </div>
+              </div>
 
-                    return (
-                      <div
-                        key={grp}
-                        className={`p-3 rounded border transition-all ${badgeInfo.bg} ${
-                          isVisitingTechStation ? 'ring-2 ring-pink-400 shadow-md' : ''
-                        }`}
-                      >
-                        <div className="flex items-center justify-between pb-1.5 border-b border-current/20">
-                          <span className="font-black text-xs uppercase flex items-center gap-1.5">
-                            {badgeInfo.icon}
-                            {isEn ? 'Group' : 'Gruppo'} {groupLabels[grp]}
-                          </span>
-                          {isVisitingTechStation && (
-                            <span className="px-1.5 py-0.5 bg-pink-600 text-white font-black text-[9px] uppercase rounded animate-pulse">
-                              {isEn ? 'At Your Station' : 'In Tua Postazione'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="pt-1.5 space-y-0.5">
-                          <p className="font-bold text-white text-xs truncate">
-                            {act?.title || (isEn ? 'Training Activity' : 'Attività Formativa')}
-                          </p>
-                          <p className="text-[11px] text-neutral-300 truncate">
-                            {act?.subtitle || badgeInfo.typeLabel}
-                          </p>
-                          <p className="text-[10px] text-neutral-400 flex items-center gap-1 pt-0.5">
-                            <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
-                            <span className="truncate">{act?.location || (isEn ? 'Location TBD' : 'Sede da definire')}</span>
-                          </p>
-                        </div>
+              <button
+                type="button"
+                onClick={() => setShowDetailedPhases(!showDetailedPhases)}
+                className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-amber-300 hover:text-white border border-amber-600 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <span>{showDetailedPhases ? (isEn ? 'Collapse Specs' : 'Comprimi Dettagli') : (isEn ? 'Expand Specs' : 'Espandi Dettagli')}</span>
+                {showDetailedPhases ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* BARRA DI PROGRESSO COUNTDOWN */}
+          <div className="space-y-1">
+            <div className="h-2.5 w-full bg-neutral-900 border border-neutral-800 rounded-none overflow-hidden flex">
+              <div
+                className={`h-full transition-all duration-300 ${
+                  slotRemainingSeconds <= 180
+                    ? 'bg-red-500 animate-pulse'
+                    : 'bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400'
+                }`}
+                style={{ width: `${slotProgressPercent}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-mono text-neutral-400">
+              <span>00:00 ({isEn ? 'Start Pre-Alert' : 'Inizio Pre-Allerta'})</span>
+              <span className="text-amber-400 font-bold">
+                ⚠️ {isEn ? 'T -7:30 min • Priming & Telemetry Test' : 'T -7:30 min • Innesco Pompe & Test Telemetria'}
+              </span>
+              <span className="text-amber-300 font-bold">
+                🏁 {nextScenarioStartTime ? `${nextScenarioStartTime} ` : ''}({isEn ? 'Scenario Starts' : 'Inizio Scenario'})
+              </span>
+            </div>
+          </div>
+
+          {/* SCHEDA SPECIFICHE AVVIO SCENARIO (DETTAGLI SUL PROSSIMO SCENARIO) */}
+          {showDetailedPhases && (
+            <div className="pt-2 border-t border-amber-900/50 space-y-2">
+              <div className="text-[11px] font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5" />
+                {isEn ? 'UPCOMING SCENARIO SPECIFICATIONS & TECHNICAL READINESS' : 'SPECIFICHE SCENARIO IN ARRIVO & PRONTEZZA TECNICA'}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+                {/* Card 1: Orario e Titolo Scenario */}
+                <div className="bg-neutral-900/90 border border-amber-700/60 p-3 rounded space-y-1">
+                  <span className="text-[10px] text-amber-400 uppercase font-black tracking-wider block flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> {isEn ? 'Start Time & Title:' : 'Orario di Inizio & Titolo:'}
+                  </span>
+                  <div className="text-sm font-bold text-white">
+                    {nextScenarioStartTime ? `Ore ${nextScenarioStartTime}` : currentSlot.timeRange}
+                  </div>
+                  <p className="text-[11px] text-amber-200 font-bold">
+                    {nextScenarioSlot?.title || currentSlot.title}
+                  </p>
+                  {nextScenarioSlot?.description && (
+                    <p className="text-[10px] text-neutral-400 line-clamp-2">
+                      {nextScenarioSlot.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Card 2: Postazione e Discenti in Ingresso */}
+                <div className="bg-neutral-900/90 border border-amber-700/60 p-3 rounded space-y-1">
+                  <span className="text-[10px] text-amber-400 uppercase font-black tracking-wider block flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" /> {isEn ? 'Station & Incoming Team:' : 'Postazione & Squadra in Ingresso:'}
+                  </span>
+                  <div className="text-xs font-bold text-white">
+                    📍 {currentSlotInfo.stationLocation}
+                  </div>
+                  <p className="text-[11px] text-neutral-300">
+                    {nextScenarioTechInfo?.visitingGroup ? (
+                      <span>
+                        {isEn ? 'Incoming Students: ' : 'Discenti attesi: '}
+                        <strong className="text-amber-300">Gruppo {nextScenarioTechInfo.visitingGroup}</strong>
+                      </span>
+                    ) : currentSlotInfo.visitingGroup ? (
+                      <span>Gruppo {currentSlotInfo.visitingGroup}</span>
+                    ) : (
+                      <span>Tutti i Macro-Gruppi (ALPHA, BRAVO, CHARLIE, DELTA)</span>
+                    )}
+                  </p>
+                  <div className="text-[10px] text-neutral-400">
+                    {isEn ? 'Radio CH3 Tech • CH1 Regia Control' : 'Radio CH3 Tecnico • CH1 Regia Master'}
+                  </div>
+                </div>
+
+                {/* Card 3: Paziente Simulatore & Mansione Pre-Allerta */}
+                <div className="bg-neutral-900/90 border border-amber-700/60 p-3 rounded space-y-1">
+                  <span className="text-[10px] text-amber-400 uppercase font-black tracking-wider block flex items-center gap-1">
+                    <Wrench className="w-3.5 h-3.5" /> {isEn ? 'Simulator Pt & Pre-Alert Duty:' : 'Simulatore & Compiti Pre-Allerta:'}
+                  </span>
+                  {targetPatient ? (
+                    <div className="text-xs font-bold text-pink-300">
+                      Pt. #{targetPatient.id} • {targetPatient.scenarioCode}
+                      <div className="text-[10px] text-neutral-300 font-normal truncate">
+                        {targetPatient.name}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-neutral-300">
+                      {isEn ? 'Station Setup Ready' : 'Postazione Pronta'}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-amber-300 leading-tight">
+                    {isEn
+                      ? 'Hydraulic circuit check, bleed pump priming, safety word test.'
+                      : 'Innesco pompe sanguinamento, verifica barelle e conferma luce verde.'}
+                  </p>
                 </div>
-              </div>
-
-              {/* Nota Tattica per il Corso */}
-              <div className="bg-neutral-900/90 p-3 rounded border border-neutral-800 text-xs font-mono text-neutral-300 space-y-1">
-                <span className="text-[10px] text-orange-300 uppercase font-black tracking-wider block">
-                  {isEn ? '💡 Control Room Schedule Alignment & Mandatory Deadlines:' : '💡 Allineamento Orario Regia & Scadenze Tassative:'}
-                </span>
-                <p className="text-[11px] text-neutral-300">
-                  {currentSlotInfo.isHandover
-                    ? (isEn ? 'MANDATORY AT MINUTE :30: Litter transfer from Tactical Environment to Shock Room Box with SBAR report (max 5 min).' : 'TASSATIVO AL MINUTO :30: Travaso barellato da Ambiente Tattico a Box Shock Room con report SBAR (max 5 min).')
-                    : currentSlotInfo.isPreAllerta
-                    ? (isEn ? 'T -15 MINUTES: Shock Room teams enter active standby in Boxes; TCCC teams prepare litter extraction.' : 'T -15 MINUTI: Le squadre Shock Room entrano in standby attivo nei Box; squadre TCCC allestiscono estrazione barellata.')
-                    : currentSlotInfo.isReset
-                    ? (isEn ? 'END OF BLOCK (MIN 75-90): Rapid 15-minute turnaround. All boxes must receive GREEN LIGHT before restart.' : 'FINE BLOCCO (MIN 75-90): Turnaround rapido 15 minuti. Tutti i box devono ricevere LUCE VERDE entro la ripartenza.')
-                    : (isEn ? 'The 4 stations operate continuously in parallel for 90 minutes according to specular clinical rotation.' : 'Le 4 stazioni lavorano in parallelo continuo per 90 minuti secondo la rotazione clinica speculare.')}
-                </p>
               </div>
             </div>
           )}
-
-          {/* ------------------------------------------------------------- */}
-          {/* COLONNA B: TIMELINE MANSIONI TECNICHE (FOCUS OPERATIVO TECH) */}
-          {/* ------------------------------------------------------------- */}
-          {(layoutMode === 'parallel' || layoutMode === 'tech_only') && (
+        </div>
+      ) : (
+        /* ========================================================================= */
+        /* FASE NON-SCENARIO: CRONOMETRO ELIMINATO, PANNELLO OPERATIVO MANSIONI TECH */
+        /* ========================================================================= */
+        <div className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 sm:p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-mono">
+          <div className="flex items-start gap-3.5">
             <div
-              className={`${
-                layoutMode === 'parallel' ? 'lg:col-span-6' : 'w-full'
-              } bg-neutral-950 border-2 border-pink-500 rounded-lg p-5 shadow-2xl space-y-4 relative overflow-hidden`}
+              className={`p-3 rounded border shrink-0 ${
+                currentSlotInfo.isReset
+                  ? 'bg-yellow-950/60 border-yellow-600 text-yellow-400'
+                  : currentSlotInfo.isDebrief
+                  ? 'bg-blue-950/60 border-blue-600 text-blue-400'
+                  : 'bg-neutral-900 border-neutral-700 text-pink-400'
+              }`}
             >
-              <div className="absolute top-0 right-0 bg-pink-600 text-white font-mono font-black text-[10px] px-3 py-1 uppercase rounded-bl tracking-wider flex items-center gap-1">
-                <Wrench className="w-3 h-3" /> {currentTech.badgeCode} ({currentTech.name.split(' ')[0]})
-              </div>
-
-              {/* Titolo e Mansione Principale del Tecnico */}
-              <div className="space-y-1 pr-32">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded border ${currentSlotInfo.techBadgeColor || 'bg-pink-950 text-pink-300 border-pink-700'}`}>
-                    {currentSlotInfo.techBadge}
-                  </span>
-                  <span className="text-xs font-mono text-pink-400 font-bold">
-                    📍 {currentSlotInfo.stationLocation}
-                  </span>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                  {currentSlotInfo.techActivityTitle}
-                </h3>
-              </div>
-
-              {/* Countdown Banner se in Pre-Allerta, Standby o Reset */}
-              {showCountdown && (
-                <div className="bg-yellow-950/90 border-2 border-yellow-500 p-3.5 rounded shadow-lg flex items-center justify-between gap-3 animate-pulse">
-                  <div className="flex items-center gap-2.5">
-                    <AlertTriangle className="w-5 h-5 text-yellow-400 shrink-0 animate-bounce" />
-                    <div>
-                      <span className="text-[10px] font-mono font-bold text-yellow-300 uppercase tracking-widest block">
-                        {currentSlotInfo.isPreAllerta
-                          ? (isEn ? 'PRE-ALERT COUNTDOWN T -15 MIN' : 'COUNTDOWN PRE-ALLERTA T -15 MIN')
-                          : currentSlotInfo.isStandbySR
-                          ? (isEn ? 'SHOCK ROOM BOX ACTIVE STANDBY' : 'STANDBY ATTIVO BOX SHOCK ROOM')
-                          : (isEn ? 'TECHNICAL RESET TURNAROUND 15 MIN' : 'TURNAROUND RESET TECNICO 15 MIN')}
-                      </span>
-                      <p className="text-[11px] text-yellow-100">
-                        {currentSlotInfo.isReset
-                          ? (isEn ? 'Manikin sanitization and blood refill before next block.' : 'Sanificazione manichini e ricarica sangue prima del blocco successivo.')
-                          : (isEn ? 'Hydraulic circuit and pulsating pump check on radio CH3.' : 'Verifica circuiti idraulici e pompe pulsanti su radio CH3.')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-neutral-950 px-3 py-1.5 border border-yellow-500 rounded text-right shrink-0">
-                    <span className="text-[9px] font-mono text-neutral-400 uppercase block">{isEn ? 'Time Left' : 'Tempo Rimasto'}</span>
-                    <span className="text-xl font-mono font-black text-yellow-400">
-                      {formatTimer(timerSeconds)}
-                    </span>
-                  </div>
-                </div>
+              {currentSlotInfo.isReset ? (
+                <Wrench className="w-6 h-6 animate-pulse" />
+              ) : currentSlotInfo.isDebrief ? (
+                <Users className="w-6 h-6" />
+              ) : (
+                <Clock className="w-6 h-6 text-neutral-400" />
               )}
+            </div>
 
-              {/* Postazione, Scenario & Biomodello Assegnato */}
-              <div className="bg-neutral-900/90 p-3.5 border border-neutral-800 rounded space-y-2 text-xs font-mono">
-                <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800">
-                  <span className="text-[10px] text-pink-400 uppercase font-black tracking-wider flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {isEn ? 'Station:' : 'Postazione:'} {currentSlotInfo.stationLocation}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-black uppercase rounded border ${
+                    currentSlotInfo.isReset
+                      ? 'bg-yellow-950 text-yellow-300 border-yellow-600'
+                      : currentSlotInfo.isDebrief
+                      ? 'bg-blue-950 text-blue-300 border-blue-600'
+                      : 'bg-neutral-900 text-neutral-300 border-neutral-700'
+                  }`}
+                >
+                  {currentSlotInfo.isReset
+                    ? (isEn ? 'TECHNICAL RESET TURNAROUND' : 'RESET TECNICO & SANIFICAZIONE')
+                    : currentSlotInfo.isDebrief
+                    ? (isEn ? 'CLINICAL DEBRIEFING PHASE' : 'DEBRIEFING CLINICO COLLEGIALE')
+                    : (isEn ? 'GENERAL TECHNICAL PHASE' : 'FASE TECNICO-LOGISTICA')}
+                </span>
+                <span className="text-[11px] text-neutral-400 font-bold">
+                  {currentSlot?.timeRange} ({currentSlot?.durationMinutes} min)
+                </span>
+                <span className="px-2 py-0.5 text-[9px] bg-neutral-900 text-neutral-400 border border-neutral-800 rounded font-bold">
+                  {isEn ? '⏹️ Scenario Stopwatch: Paused' : '⏹️ Cronometro Scenario: Disattivato'}
+                </span>
+              </div>
+
+              <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                {currentSlot?.title}
+              </h3>
+
+              <p className="text-xs text-neutral-300 max-w-3xl">
+                {currentSlotInfo.isReset
+                  ? (isEn
+                      ? 'Turnaround and station sanitization in progress. Focus on checklist duties, consumables refill, and preparation for next scenario.'
+                      : 'Sanificazione postazioni, ripristino cute, sostituzione consumabili e ricarica sangue prima del blocco successivo.')
+                  : currentSlotInfo.isDebrief
+                  ? (isEn
+                      ? 'Faculty clinical debriefing and NTS video analysis. Assist with PTZ playback and vital sign record archiving.'
+                      : 'Revisione video NTS e debriefing con Faculty. Assistenza tecnica per playback PTZ e archivio tracciati.')
+                  : (isEn
+                      ? 'General logistics and reception. The scenario timer will automatically resume at the start of the next clinical simulation.'
+                      : 'Presidio postazione e allineamento staff. Il cronometro si attiverà automaticamente all\'avvio dello scenario clinico.')}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-neutral-900/90 border border-neutral-800 p-3 rounded text-left md:text-right shrink-0 font-mono space-y-1 w-full md:w-auto">
+            <span className="text-[10px] text-neutral-400 uppercase block font-bold">
+              {isEn ? 'TECHNICAL FOCUS' : 'FOCUS TECNICO'}
+            </span>
+            <div className="text-xs font-bold text-pink-300">
+              📍 {currentSlotInfo.stationLocation}
+            </div>
+            <div className="text-[11px] text-neutral-400">
+              {isEn ? 'Check assigned duties below' : 'Consulta mansioni operative sottostanti'}
+            </div>
+          </div>
+        </div>
+      )}
+
+        {/* LIVE TECHNICAL DUTIES CARD */}
+        <div className="w-full bg-neutral-950 border-2 border-pink-500 rounded-lg p-4 sm:p-5 shadow-2xl space-y-4 relative overflow-hidden">
+          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-pink-500/30 pb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded border ${currentSlotInfo.techBadgeColor || 'bg-pink-950 text-pink-300 border-pink-700'}`}>
+                {currentSlotInfo.techBadge}
+              </span>
+              <span className="text-xs font-mono text-pink-400 font-bold">
+                📍 {currentSlotInfo.stationLocation}
+              </span>
+              {currentSlotInfo.visitingGroup && (
+                <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 font-black text-[10px] rounded">
+                  {isEn ? 'Expected: GROUP' : 'Discenti attesi: GRUPPO'} {currentSlotInfo.visitingGroup}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {onOpenQuadroPubblico && (
+                <button
+                  type="button"
+                  onClick={onOpenQuadroPubblico}
+                  className="px-2.5 py-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-black font-black text-[11px] uppercase rounded transition-all cursor-pointer flex items-center gap-1.5 shadow border border-orange-400"
+                  title={isEn ? 'Open Public Course Overview Menu' : 'Apri Menu Quadro Pubblico del Corso'}
+                >
+                  <Globe className="w-3.5 h-3.5 text-black" />
+                  <span>{isEn ? 'Public Course' : 'Quadro Pubblico Corso'}</span>
+                </button>
+              )}
+              <span className="bg-pink-600 text-white font-mono font-black text-[10px] px-3 py-1 uppercase rounded tracking-wider flex items-center gap-1">
+                <Wrench className="w-3 h-3" /> {currentTech.badgeCode} ({currentTech.name.split(' ')[0]})
+              </span>
+            </div>
+          </div>
+
+          {/* Titolo e Mansione Principale del Tecnico */}
+          <div className="space-y-1">
+            <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+              {currentSlotInfo.techActivityTitle}
+            </h3>
+          </div>
+
+          {/* Due Colonne Affiancate: Postazione & Simulatore a Sinistra, Mansioni a Destra */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Postazione, Scenario & Biomodello Assegnato */}
+            <div className="bg-neutral-900/90 p-3.5 border border-neutral-800 rounded space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800">
+                <span className="text-[10px] text-pink-400 uppercase font-black tracking-wider flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> {isEn ? 'Station:' : 'Postazione:'} {currentSlotInfo.stationLocation}
+                </span>
+                {currentSlotInfo.visitingGroup && (
+                  <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 font-black text-[10px] rounded">
+                    {isEn ? 'Expected students: GROUP' : 'Discenti attesi: GRUPPO'} {currentSlotInfo.visitingGroup}
                   </span>
-                  {currentSlotInfo.visitingGroup && (
-                    <span className="px-2 py-0.5 bg-pink-950 text-pink-300 border border-pink-700 font-black text-[10px] rounded">
-                      {isEn ? 'Expected students: GROUP' : 'Discenti attesi: GRUPPO'} {currentSlotInfo.visitingGroup}
-                    </span>
-                  )}
-                </div>
-
-                {currentPatient ? (
-                  <div className="space-y-1">
-                    <p className="text-white font-bold text-sm">
-                      <span className="text-pink-300">{currentPatient.scenarioCode}</span>: {currentPatient.title}
-                    </p>
-                    <p className="text-neutral-300 text-[11px]">
-                      <strong>{isEn ? 'Simulator:' : 'Simulatore:'}</strong> {currentPatient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')} • <strong>Moulage:</strong> {currentPatient.moulageProtesi || 'Standard'}
-                    </p>
-                    {currentPatient.lesioni && currentPatient.lesioni.length > 0 && (
-                      <p className="text-neutral-400 text-[10px] truncate">
-                        <strong>{isEn ? 'Injuries:' : 'Lesioni:'}</strong> {currentPatient.lesioni.join('; ')}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-neutral-400 text-xs">
-                    {isEn
-                      ? 'Technical floor supervision, backup consumables inventory and CH3 radio coordination.'
-                      : 'Supervisione tecnica di sala, riserva presidi consumabili e coordinamento radio CH3.'}
-                  </p>
                 )}
               </div>
 
-              {/* Mansioni Operative Dettagliate dello Slot */}
-              <div className="space-y-1.5 font-mono text-xs">
-                <span className="text-[10px] text-pink-400 uppercase font-black tracking-widest block flex items-center gap-1.5">
-                  <CheckSquare className="w-3.5 h-3.5 text-pink-400" />
-                  {isEn ? 'Your Technical Tasks for this Phase:' : 'I Tuoi Compiti Tecnici per questa Fase:'}
-                </span>
-                <ul className="space-y-1.5">
-                  {currentSlotInfo.techDuties.map((duty, dIdx) => (
-                    <li
-                      key={dIdx}
-                      className="bg-neutral-900/80 p-2 border border-neutral-800 rounded flex items-start gap-2 text-neutral-200 text-xs"
-                    >
-                      <span className="text-pink-400 font-bold shrink-0">▸</span>
-                      <span>{duty}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Bottoni di Azione Operativa Rapida */}
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-pink-500/30 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {currentPatient && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenProtesiModal(currentPatient)}
-                      className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5 shadow"
-                    >
-                      <ClipboardList className="w-3.5 h-3.5" /> {isEn ? 'Resources' : 'Risorse'}
-                    </button>
+              {currentPatient ? (
+                <div className="space-y-1.5">
+                  <p className="text-white font-bold text-sm">
+                    <span className="text-pink-300">{currentPatient.scenarioCode}</span>: {currentPatient.title}
+                  </p>
+                  <p className="text-neutral-300 text-[11px]">
+                    <strong>{isEn ? 'Simulator:' : 'Simulatore:'}</strong> {currentPatient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')} • <strong>Moulage:</strong> {currentPatient.moulageProtesi || 'Standard'}
+                  </p>
+                  {currentPatient.lesioni && currentPatient.lesioni.length > 0 && (
+                    <p className="text-neutral-400 text-[10px]">
+                      <strong>{isEn ? 'Injuries:' : 'Lesioni:'}</strong> {currentPatient.lesioni.join('; ')}
+                    </p>
                   )}
-                  {currentPatient && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenChecklist(currentPatient)}
-                      className="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5 shadow"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {isEn ? 'Scenario Checklist' : 'Checklist Scenario'}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={onSwitchToRegistro}
-                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold text-xs uppercase rounded cursor-pointer"
-                  >
-                    {isEn ? 'Resource Registry' : 'Registro Risorse'}
-                  </button>
                 </div>
+              ) : (
+                <p className="text-neutral-400 text-xs">
+                  {isEn
+                    ? 'Technical floor supervision, backup consumables inventory and CH3 radio coordination.'
+                    : 'Supervisione tecnica di sala, riserva presidi consumabili e coordinamento radio CH3.'}
+                </p>
+              )}
+            </div>
 
+            {/* Mansioni Operative Dettagliate dello Slot */}
+            <div className="space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-pink-400 uppercase font-black tracking-widest block flex items-center gap-1.5">
+                <CheckSquare className="w-3.5 h-3.5 text-pink-400" />
+                {isEn ? 'Your Technical Tasks for this Phase:' : 'I Tuoi Compiti Tecnici per questa Fase:'}
+              </span>
+              <ul className="space-y-1.5">
+                {currentSlotInfo.techDuties.map((duty, dIdx) => (
+                  <li
+                    key={dIdx}
+                    className="bg-neutral-900/80 p-2 border border-neutral-800 rounded flex items-start gap-2 text-neutral-200 text-xs"
+                  >
+                    <span className="text-pink-400 font-bold shrink-0">▸</span>
+                    <span>{duty}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottoni di Azione Operativa Rapida */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-pink-500/30 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              {currentPatient && (
                 <button
                   type="button"
-                  onClick={() =>
-                    onSendRadioMessage(
-                      isEn
-                        ? `[CH3 STATUS] Station ${currentSlotInfo.stationLocation} ready and manned for Phase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
-                        : `[STATO CH3] Postazione ${currentSlotInfo.stationLocation} pronta e presidiata per Fase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
-                    )
-                  }
-                  className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5"
+                  onClick={() => onOpenProtesiModal(currentPatient)}
+                  className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5 shadow"
                 >
-                  <Radio className="w-3.5 h-3.5 text-pink-400" /> {isEn ? 'Status OK CH3' : 'Stato OK CH3'}
+                  <ClipboardList className="w-3.5 h-3.5" /> {isEn ? 'Resources' : 'Risorse'}
                 </button>
-              </div>
+              )}
+              {currentPatient && (
+                <button
+                  type="button"
+                  onClick={() => onOpenChecklist(currentPatient)}
+                  className="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5 shadow"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {isEn ? 'Scenario Checklist' : 'Checklist Scenario'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onSwitchToRegistro}
+                className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold text-xs uppercase rounded cursor-pointer"
+              >
+                {isEn ? 'Resource Registry' : 'Registro Risorse'}
+              </button>
+              {onOpenQuadroPubblico && (
+                <button
+                  type="button"
+                  onClick={onOpenQuadroPubblico}
+                  className="px-2.5 py-1.5 bg-orange-950 hover:bg-orange-900 text-orange-300 border border-orange-700 font-bold text-xs uppercase rounded cursor-pointer flex items-center gap-1.5"
+                >
+                  <Globe className="w-3.5 h-3.5 text-orange-400" />
+                  <span>{isEn ? 'Public Course' : 'Quadro Pubblico'}</span>
+                </button>
+              )}
             </div>
-          )}
+
+            <button
+              type="button"
+              onClick={() =>
+                onSendRadioMessage(
+                  isEn
+                    ? `[CH3 STATUS] Station ${currentSlotInfo.stationLocation} ready and manned for Phase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
+                    : `[STATO CH3] Postazione ${currentSlotInfo.stationLocation} pronta e presidiata per Fase ${effectiveCurrentIdx + 1} (${currentPatient?.scenarioCode || 'OK'}).`
+                )
+              }
+              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold text-xs uppercase rounded transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Radio className="w-3.5 h-3.5 text-pink-400" /> {isEn ? 'Status OK CH3' : 'Stato OK CH3'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1569,98 +1598,48 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     </div>
                   </div>
 
-                  {/* Dual stream split for each future slot */}
-                  <div className={`grid gap-3 pt-3 ${layoutMode === 'parallel' ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1'}`}>
-                    {/* Public Course Side */}
-                    {(layoutMode === 'parallel' || layoutMode === 'public_only') && (
-                      <div
-                        className={`${
-                          layoutMode === 'parallel' ? 'lg:col-span-6' : 'w-full'
-                        } bg-neutral-950/80 p-3 rounded border border-neutral-800/90 space-y-2 font-mono text-xs`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <Globe className="w-3 h-3" /> {isEn ? 'Course Overview (4 Groups):' : 'Quadro Corso (4 Gruppi):'}
-                          </span>
-                          {slot.description && (
-                            <span className="text-[10px] text-neutral-400 truncate max-w-[200px]">
-                              {slot.description}
-                            </span>
+                  {/* Future slot technical duty card */}
+                  <div className="pt-2.5">
+                    <div className="bg-neutral-950/80 p-3.5 rounded border border-pink-900/40 space-y-2 font-mono text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-pink-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <Wrench className="w-3 h-3" /> {isEn ? 'Technical Duty & Station:' : 'Mansione Tecnica & Postazione:'}
+                        </span>
+                        <span className="text-[11px] text-pink-300 font-bold">
+                          📍 {slotInfo.stationLocation}
+                        </span>
+                      </div>
+
+                      <p className="text-white font-bold text-xs">
+                        {slotInfo.techActivityTitle}
+                      </p>
+
+                      <div className="flex items-center justify-between text-[11px] text-neutral-300 pt-1 border-t border-neutral-800/80">
+                        <span className="truncate max-w-[280px] text-neutral-400">
+                          {slotPatient ? `${isEn ? 'Sim:' : 'Sim:'} ${slotPatient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')}` : (isEn ? 'Logistical support' : 'Supporto logistico')}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {slotPatient && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenProtesiModal(slotPatient)}
+                              className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[10px] font-bold uppercase rounded cursor-pointer"
+                            >
+                              {isEn ? 'Resources' : 'Risorse'}
+                            </button>
+                          )}
+                          {slotPatient && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenChecklist(slotPatient)}
+                              className="px-2.5 py-0.5 bg-pink-950 hover:bg-pink-900 text-pink-300 border border-pink-700 text-[10px] font-bold uppercase rounded cursor-pointer"
+                            >
+                              Checklist
+                            </button>
                           )}
                         </div>
-
-                        {/* 4 Groups Mini Grid */}
-                        <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-                          {(['A', 'B', 'C', 'D'] as GroupType[]).map((grp) => {
-                            const act = slot.groupActivities?.[grp];
-                            const badge = getGroupBadgeInfo(grp, act);
-                            const isHere = slotInfo.visitingGroup === grp;
-
-                            return (
-                              <div
-                                key={grp}
-                                className={`p-1.5 rounded border flex items-center justify-between gap-1 truncate ${badge.bg} ${
-                                  isHere ? 'ring-1 ring-pink-400' : ''
-                                }`}
-                              >
-                                <span className="font-bold shrink-0">G.{grp}:</span>
-                                <span className="truncate text-white" title={`${act?.title} (${act?.location})`}>
-                                  {act?.location || act?.title || (isEn ? 'Clinical' : 'Clinica')}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
                       </div>
-                    )}
-
-                    {/* Tech Duties Side */}
-                    {(layoutMode === 'parallel' || layoutMode === 'tech_only') && (
-                      <div
-                        className={`${
-                          layoutMode === 'parallel' ? 'lg:col-span-6' : 'w-full'
-                        } bg-neutral-950/80 p-3 rounded border border-pink-900/40 space-y-2 font-mono text-xs`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-pink-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <Wrench className="w-3 h-3" /> {isEn ? 'Technical Duty & Station:' : 'Mansione Tecnica & Postazione:'}
-                          </span>
-                          <span className="text-[11px] text-pink-300 font-bold">
-                            📍 {slotInfo.stationLocation}
-                          </span>
-                        </div>
-
-                        <p className="text-white font-bold text-xs truncate">
-                          {slotInfo.techActivityTitle}
-                        </p>
-
-                        <div className="flex items-center justify-between text-[11px] text-neutral-300 pt-1 border-t border-neutral-800/80">
-                          <span className="truncate max-w-[250px] text-neutral-400">
-                            {slotPatient ? `${isEn ? 'Sim:' : 'Sim:'} ${slotPatient.simulatori || (isEn ? 'High Fidelity' : 'Alta Fedeltà')}` : (isEn ? 'Logistical support' : 'Supporto logistico')}
-                          </span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {slotPatient && (
-                              <button
-                                type="button"
-                                onClick={() => onOpenProtesiModal(slotPatient)}
-                                className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[10px] font-bold uppercase rounded cursor-pointer"
-                              >
-                                {isEn ? 'Resources' : 'Risorse'}
-                              </button>
-                            )}
-                            {slotPatient && (
-                              <button
-                                type="button"
-                                onClick={() => onOpenChecklist(slotPatient)}
-                                className="px-2.5 py-0.5 bg-pink-950 hover:bg-pink-900 text-pink-300 border border-pink-700 text-[10px] font-bold uppercase rounded cursor-pointer"
-                              >
-                                Checklist
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1761,7 +1740,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
             <Activity className="w-4 h-4 text-pink-400" /> {isEn ? `Clinical Scenarios Assigned to ${currentTech.badgeCode} (${assignedPatients.length} Patients)` : `Scenari Clinici in Carico a ${currentTech.badgeCode} (${assignedPatients.length} Pazienti)`}
           </h3>
           <span className="text-xs font-mono text-neutral-400">
-            Day 0{activeDay} • {isEn ? 'Assigned stations:' : 'Postazioni assegnate:'} {currentTech.assignedStations?.join(', ') || 'TCCC & SR'}
+            Day 0{activeDay} • {assignedPatients.length} {isEn ? 'Patients in Charge' : 'Pazienti in Carico'}
           </span>
         </div>
 

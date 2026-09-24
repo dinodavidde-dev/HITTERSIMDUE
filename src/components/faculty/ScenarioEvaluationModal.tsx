@@ -71,20 +71,20 @@ export const ScenarioEvaluationModal: React.FC<ScenarioEvaluationModalProps> = (
   const handleSaveSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newEval: TeamEvaluation = {
-      id: existingEvaluation?.id || `eval-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      id: existingEvaluation?.id || `eval-t${teamId}-p${patient.id}-${phase.toLowerCase()}`,
       teamId,
       facultyId: currentFaculty.id,
       day: patient.day,
       period: patient.period,
       patientId: patient.id,
       scenarioCode: patient.scenarioCode,
-      phase: phase as 'EXTRA' | 'INTRA' | 'WORKSHOP',
+      phase: phase as 'EXTRA' | 'INTRA',
       scores,
       proceduresCompleted: selectedProcedures,
       strengths,
       criticalIssues,
       debriefingActionItems,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
     };
 
     onSave(newEval);
@@ -143,7 +143,14 @@ export const ScenarioEvaluationModal: React.FC<ScenarioEvaluationModalProps> = (
 
           {/* Scenario Info Card */}
           <div className="bg-neutral-900 p-4 border border-neutral-800 rounded space-y-2 text-xs">
-            <span className="text-amber-400 font-bold uppercase tracking-wider block">{isEn ? 'Clinical Details & Lesions:' : 'Dettagli Clinici & Lesioni:'}</span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-amber-400 font-bold uppercase tracking-wider block">
+                {isEn ? 'Clinical Scenario Details & Lesions:' : 'Dettagli Scenario Clinico & Lesioni:'}
+              </span>
+              <span className="px-2 py-0.5 bg-neutral-950 text-neutral-400 border border-neutral-800 rounded text-[10px]">
+                {isEn ? '⚠️ Workshops WS1 & WS2 excluded from scoring' : '⚠️ Workshop didattici (WS1 & WS2) esclusi dalla valutazione'}
+              </span>
+            </div>
             <p className="text-white font-medium">{patient.dinamicaDelleLesioni || patient.briefing || (isEn ? 'No dynamics specified.' : 'Nessuna dinamica specificata.')}</p>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {patient.lesioni.map((l, lIdx) => (
@@ -154,42 +161,106 @@ export const ScenarioEvaluationModal: React.FC<ScenarioEvaluationModalProps> = (
             </div>
           </div>
 
-          {/* Scoring Grid (1-5) */}
+          {/* Scoring Grid (1-5) Aligned to Recharts exposed metrics */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 border-b border-neutral-800 pb-2">
-              <Star className="w-4 h-4 text-amber-400" /> {isEn ? 'Operational Evaluation Criteria (Scale 1 - 5)' : 'Criteri di Valutazione Operativa (Scala 1 - 5)'}
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              {[
-                { key: 'abcdeApproach', label: isEn ? '1. Systematic ABCDE Approach' : '1. Approccio Sistematico ABCDE' },
-                { key: 'technicalSkills', label: isEn ? '2. Technical & Manual Skills' : '2. Competenza Tecnica & Manuale' },
-                { key: 'teamworkLeadership', label: isEn ? '3. Teamwork & Leadership' : '3. Teamwork & Leadership' },
-                { key: 'handoverSbar', label: isEn ? '4. Structured SBAR Handover' : '4. Handover SBAR Strutturato' },
-                { key: 'safetyTiming', label: isEn ? '5. Safety & Timing' : '5. Sicurezza & Timing' },
-              ].map(({ key, label }) => (
-                <div key={key} className="bg-neutral-900 p-3 border border-neutral-800 rounded space-y-1.5">
-                  <span className="text-neutral-300 font-bold block">{label}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-2">
+              <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400" /> {isEn ? 'Operational Assessment Parameters (Scale 1 - 5)' : 'Parametri di Valutazione Operativa (Scala 1 - 5)'}
+              </h3>
+              {(() => {
+                const currentComposite = (
+                  (scores.abcdeApproach +
+                    scores.technicalSkills +
+                    scores.teamworkLeadership +
+                    scores.handoverSbar +
+                    scores.safetyTiming) /
+                  5
+                ).toFixed(1);
+                const n = Number(currentComposite);
+                const tier =
+                  n >= 4.4 ? { label: isEn ? 'GOLD / OUTSTANDING' : 'ECCELLENTE / GOLD', cls: 'bg-emerald-950 text-emerald-300 border-emerald-500' }
+                  : n >= 3.8 ? { label: isEn ? 'PROFICIENT / SOLID' : 'SOLIDO / AVANZATO', cls: 'bg-blue-950 text-blue-300 border-blue-500' }
+                  : n >= 3.2 ? { label: isEn ? 'DEVELOPING' : 'IN SVILUPPO', cls: 'bg-amber-950 text-amber-300 border-amber-500' }
+                  : { label: isEn ? 'DEBRIEF FOCUS' : 'FOCUS DEBRIEFING', cls: 'bg-red-950 text-red-300 border-red-500' };
+                return (
                   <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400 font-mono">{isEn ? 'Rubric Score:' : 'Media Scheda:'}</span>
+                    <strong className="text-white text-sm font-black">{currentComposite} / 5.0</strong>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold border rounded ${tier.cls}`}>{tier.label}</span>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 text-xs">
+              {[
+                {
+                  key: 'abcdeApproach' as const,
+                  label: isEn ? '1. Systematic C-ABCDE Approach Protocol' : '1. Approccio Sistematico Algoritmo C-ABCDE',
+                  sub: isEn
+                    ? 'Catastrophic hemorrhage control, airway securing, breathing, circulation, dynamic re-evaluation'
+                    : 'Emostasi prioritaria immediata (Stop the Bleed), pervietà vie aeree, respiro, circolo, rivalutazione dinamica',
+                },
+                {
+                  key: 'technicalSkills' as const,
+                  label: isEn ? '2. Technical Skills & Hemorrhage Control' : '2. Competenze Tecniche & Gestione Emostasi',
+                  sub: isEn
+                    ? 'Tourniquet application <60s, wound packing, junctional tourniquet, needle decompression 14G'
+                    : 'Tourniquet efficace <60s, wound packing emostatico, tourniquet giunzionale, decompressione ago 14G',
+                },
+                {
+                  key: 'teamworkLeadership' as const,
+                  label: isEn ? '3. Teamwork & Leadership CRM' : '3. Teamwork & Leadership CRM (Crisis Resource Management)',
+                  sub: isEn
+                    ? 'Clear leader direction, closed-loop communication, role delegation, avoiding cognitive overload'
+                    : 'Leadership incisiva, comunicazione closed-loop ad anello chiuso, ruoli chiari, controllo sovraccarico',
+                },
+                {
+                  key: 'handoverSbar' as const,
+                  label: isEn ? '4. Structured SBAR Handover (:30 Timing)' : '4. Handover SBAR al Minuto :30 (Consegna 1:1)',
+                  sub: isEn
+                    ? 'Litter handover TCCC to Shock Room within 5 min (:30-:35): Situation, Background, Assessment, Recommendation'
+                    : 'Passaggio barellato 1:1 TCCC/Shock Room entro 5 min (:30-:35): Situation, Background, Assessment, Recommendation',
+                },
+                {
+                  key: 'safetyTiming' as const,
+                  label: isEn ? '5. Operational Safety & Strict Timing' : '5. Sicurezza Operativa & Rispetto dei Tempi',
+                  sub: isEn
+                    ? 'Scene safety, PPE compliance, strict 90-min slot discipline, active standby at T -15 min'
+                    : 'Sicurezza setting/DPI, rispetto del cronoprogramma da 90m, standby attivo nei Box a T -15 minuti',
+                },
+              ].map(({ key, label, sub }) => (
+                <div key={key} className="bg-neutral-900 p-3.5 border border-neutral-800 rounded space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <div>
+                      <span className="text-white font-bold block">{label}</span>
+                      <span className="text-[11px] text-neutral-400 block">{sub}</span>
+                    </div>
+                    <span className="text-amber-400 font-mono font-black text-sm shrink-0">{(scores as any)[key]} / 5.0</span>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
                     {[1, 2, 3, 4, 5].map((val) => {
                       const currentVal = (scores as any)[key];
                       const isSelected = currentVal === val;
+                      const levelDescs = isEn
+                        ? ['1 - Critical Deficit', '2 - Inadequate', '3 - Acceptable', '4 - Proficient', '5 - Gold Standard']
+                        : ['1 - Critico / Non Eseguito', '2 - Insufficiente', '3 - Accettabile', '4 - Avanzato / Ottimo', '5 - Eccellente / Gold'];
                       return (
                         <button
                           key={val}
                           type="button"
+                          title={levelDescs[val - 1]}
                           onClick={() => setScores({ ...scores, [key]: val })}
-                          className={`w-9 h-9 rounded font-black text-xs transition-all cursor-pointer border ${
+                          className={`flex-1 py-2 rounded font-black text-xs transition-all cursor-pointer border text-center ${
                             isSelected
-                              ? 'bg-amber-500 text-black border-amber-400 shadow-md scale-105'
-                              : 'bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-neutral-600'
+                              ? 'bg-amber-500 text-black border-amber-300 shadow-md scale-102 font-black'
+                              : 'bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-neutral-600 hover:text-white'
                           }`}
                         >
                           {val}
                         </button>
                       );
                     })}
-                    <span className="ml-auto text-amber-400 font-bold">{(scores as any)[key]}/5</span>
                   </div>
                 </div>
               ))}

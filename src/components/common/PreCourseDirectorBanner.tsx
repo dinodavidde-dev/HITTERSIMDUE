@@ -70,7 +70,7 @@ export const PreCourseDirectorBanner: React.FC<PreCourseDirectorBannerProps> = (
               <>
                 Data prevista: <strong className="text-amber-300 font-mono">{courseStartSchedule?.scheduledDate}</strong> ore{' '}
                 <strong className="text-amber-300 font-mono">{courseStartSchedule?.scheduledTime || '08:30'}</strong>.
-                I discenti, faculty, tecnici e ospiti che scansionano il proprio QR visualizzano <em>esclusivamente l&apos;anagrafica personale e il countdown</em>.
+                I discenti, faculty e tecnici che scansionano il proprio QR visualizzano <em>esclusivamente l&apos;anagrafica personale e il countdown</em> (mentre gli ospiti visualizzano la visuale pubblica).
               </>
             )}
           </p>

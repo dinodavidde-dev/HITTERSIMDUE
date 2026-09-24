@@ -1,5 +1,55 @@
-import { SimulatorPatient, TeamEvaluation, Faculty } from '../types';
+import { SimulatorPatient, TeamEvaluation, Faculty, TimelineSlot, GroupActivitySlot } from '../types';
 import { INITIAL_TIMELINE_SLOTS } from '../data/initialData';
+
+/**
+ * Determines whether a timeline slot represents an ongoing clinical simulation scenario
+ * (e.g. TCCC under fire, Handover SBAR 1:1, Shock Room high-fidelity ABCDE, WS hands-on simulation).
+ * Returns false for non-scenario phases assigned to technicians (Reset postazioni,
+ * Debriefing clinico, Setup staff, Accoglienza, Pause, Chiusura).
+ */
+export const isScenarioSlot = (slot: TimelineSlot | null | undefined): boolean => {
+  if (!slot) return false;
+  const slotId = (slot.id || '').toLowerCase();
+  const slotTitle = (slot.title || '').toLowerCase();
+
+  // Explicit non-scenario phases assigned to technicians or course events:
+  if (
+    slotId.includes('reset') ||
+    slotId.includes('debrief') ||
+    slotId.includes('setup') ||
+    slotId.includes('welcome') ||
+    slotId.includes('pausa') ||
+    slotId.includes('pranzo') ||
+    slotId.includes('chiusura') ||
+    slotTitle.includes('reset') ||
+    slotTitle.includes('debrief') ||
+    slotTitle.includes('setup') ||
+    slotTitle.includes('accoglienza') ||
+    slotTitle.includes('pausa') ||
+    slotTitle.includes('pranzo') ||
+    slotTitle.includes('chiusura')
+  ) {
+    return false;
+  }
+
+  // Active scenario identifiers:
+  if (slotId.includes('tccc') || slotId.includes('handover') || slotId.includes('sr')) {
+    return true;
+  }
+
+  if (slotTitle.includes('scenario') || slotTitle.includes('handover')) {
+    return true;
+  }
+
+  const acts = slot.groupActivities || {};
+  return (Object.values(acts) as (GroupActivitySlot | undefined)[]).some(
+    (act) =>
+      act &&
+      (act.activityType === 'scenario_extra' ||
+        act.activityType === 'scenario_intra' ||
+        Boolean(act.patientIds && act.patientIds.length > 0))
+  );
+};
 
 export interface ScenarioStatusInfo {
   status: 'DA_FARE' | 'IN_CORSO' | 'DA_VALUTARE' | 'VALUTATO';
@@ -145,4 +195,115 @@ export const getScenarioStatusInfo = (
       };
     }
   }
+};
+
+/**
+ * Determines whether a timeline slot corresponds to a TCCC pre-alert phase
+ * (T -15 minutes window before the scenario start).
+ */
+export const isPreAllertaTcccSlot = (slot: TimelineSlot | null | undefined): boolean => {
+  if (!slot) return false;
+  const slotId = (slot.id || '').toLowerCase();
+  const slotTitle = (slot.title || '').toLowerCase();
+  const slotDesc = (slot.description || '').toLowerCase();
+
+  const isPreAlert =
+    slotId.includes('prealert') ||
+    slotId.includes('pre-alert') ||
+    slotTitle.includes('pre-alert') ||
+    slotTitle.includes('pre-allerta') ||
+    slotTitle.includes('preallerta') ||
+    slotDesc.includes('pre-allerta') ||
+    slotDesc.includes('preallerta') ||
+    slotDesc.includes('pre-alert');
+
+  if (!isPreAlert) {
+    // Check group activities directly for PRE-ALLERTA TCCC
+    const acts = slot.groupActivities || {};
+    return (Object.values(acts) as (GroupActivitySlot | undefined)[]).some((act) => {
+      if (!act) return false;
+      const actTitle = (act.title || '').toLowerCase();
+      const actSub = (act.subtitle || '').toLowerCase();
+      return (
+        (actTitle.includes('pre-allerta') || actTitle.includes('preallerta') || actTitle.includes('pre-alert')) &&
+        (actTitle.includes('tccc') || actSub.includes('tccc'))
+      );
+    });
+  }
+
+  // If it has pre-alert in title/id/desc, check if it refers to TCCC
+  if (
+    slotId.includes('tccc') ||
+    slotTitle.includes('tccc') ||
+    slotDesc.includes('tccc') ||
+    slotDesc.includes('ambienti tattici') ||
+    slotDesc.includes('ambiente tattico')
+  ) {
+    return true;
+  }
+
+  const acts = slot.groupActivities || {};
+  return (Object.values(acts) as (GroupActivitySlot | undefined)[]).some((act) => {
+    if (!act) return false;
+    const actTitle = (act.title || '').toLowerCase();
+    const actSub = (act.subtitle || '').toLowerCase();
+    const actLoc = (act.location || '').toLowerCase();
+    return (
+      actTitle.includes('tccc') ||
+      actSub.includes('tccc') ||
+      actLoc.includes('tattic')
+    );
+  });
+};
+
+/**
+ * Returns incoming scenario details for a TCCC pre-alert slot
+ */
+export const getIncomingTcccScenarioDetails = (
+  slot: TimelineSlot | null | undefined,
+  allSlots: TimelineSlot[] = INITIAL_TIMELINE_SLOTS
+) => {
+  if (!slot) return null;
+  const idx = allSlots.findIndex((s) => s.id === slot.id);
+  // Find next scenario slot after current
+  let nextScenario: TimelineSlot | null = null;
+  if (idx !== -1) {
+    for (let i = idx + 1; i < allSlots.length; i++) {
+      const s = allSlots[i];
+      if (s.day === slot.day && isScenarioSlot(s)) {
+        nextScenario = s;
+        break;
+      }
+    }
+  }
+
+  // Target group entering TCCC
+  let tcccGroup = 'ALPHA (DISC-01 – DISC-15)';
+  let station = 'Ambienti Tattici 1, 2, 3';
+  if (slot.groupActivities) {
+    for (const [grp, act] of Object.entries(slot.groupActivities)) {
+      if (act) {
+        const text = `${act.title} ${act.subtitle || ''} ${act.location || ''}`.toLowerCase();
+        if (text.includes('tccc') || text.includes('tattic')) {
+          tcccGroup =
+            grp === 'A'
+              ? 'ALPHA (DISC-01 – DISC-15)'
+              : grp === 'B'
+              ? 'BRAVO (DISC-16 – DISC-30)'
+              : grp === 'C'
+              ? 'CHARLIE (DISC-31 – DISC-45)'
+              : 'DELTA (DISC-46 – DISC-60)';
+          if (act.location) station = act.location;
+          break;
+        }
+      }
+    }
+  }
+
+  return {
+    nextScenarioTitle: nextScenario?.title || 'Scenario TCCC Under Fire',
+    nextScenarioTime: nextScenario?.timeRange?.split('-')[0]?.trim() || slot.timeRange?.split('-')[1]?.trim() || '09:00',
+    tcccGroup,
+    station,
+  };
 };

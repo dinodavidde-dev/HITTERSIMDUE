@@ -131,7 +131,8 @@ const CourseMainContent: React.FC = () => {
           if (found) setSelectedRegiaId(found.id);
         }
       } else if (viewParam === 'ospite' || viewParam === 'guest' || roleParam === 'ospite' || guestParam) {
-        setCurrentTab('ospite');
+        // Guests are classified to simply view the public timeline
+        setCurrentTab('public');
         setUserRole(isFromAdmin ? (fromParam as any) : 'ospite');
         const target = guestParam || idParam || badgeParam;
         if (target) {
@@ -192,11 +193,11 @@ const CourseMainContent: React.FC = () => {
           return;
         }
 
-        // Check Guests
+        // Check Guests - Simply show the public view
         const foundGuest = guests.find((g) => g.badgeCode?.toLowerCase() === query || g.id.toLowerCase() === query);
         if (foundGuest) {
           setSelectedGuestId(foundGuest.id);
-          setCurrentTab('ospite');
+          setCurrentTab('public');
           setUserRole('ospite');
           return;
         }
@@ -227,7 +228,7 @@ const CourseMainContent: React.FC = () => {
     if (currentTab === 'tecnici') return <TecniciView />;
     if (currentTab === 'regia') return <RegiaView />;
     if (currentTab === 'direttori') return <DirettoriView />;
-    if (currentTab === 'ospite') return <OspiteView />;
+    if (currentTab === 'ospite') return <PublicTimelineView />;
     if (currentTab === 'scenari' || currentTab === 'catalog') return <ScenariMasterListView />;
     if (currentTab === 'protesi') return <ProtesiCatalogView />;
 
@@ -236,7 +237,7 @@ const CourseMainContent: React.FC = () => {
       case 'regia':
         return <RegiaView />;
       case 'ospite':
-        return <OspiteView />;
+        return <PublicTimelineView />;
       case 'direttore':
       default:
         return <DirettoriView />;

@@ -126,7 +126,7 @@ export const DirectorQRLoginGenerator: React.FC = () => {
                 <p className="text-[11px] text-neutral-400">{g.organization}</p>
               </div>
               <a
-                href={`?role=ospite&id=${g.id}`}
+                href={`?view=public&role=ospite&id=${g.id}`}
                 className="p-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

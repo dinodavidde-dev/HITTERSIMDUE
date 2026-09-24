@@ -17,6 +17,8 @@ import {
   CheckCircle2,
   Minimize2,
   Maximize2,
+  Eye,
+  EyeOff,
   Info,
   ShieldAlert,
   Search,
@@ -371,6 +373,8 @@ export const PublicTimelineView: React.FC = () => {
 
   // Overlay state for Handover alert: by default it is open/expanded overlaying the 4 groups
   const [isOverlayMinimized, setIsOverlayMinimized] = useState<boolean>(false);
+  // Transparency HUD state: allows adjusting overlay transparency to reveal underlying public view
+  const [isGhostMode, setIsGhostMode] = useState<boolean>(false);
 
   // Mobile Group Filter: 'ALL' or a specific group 'A' | 'B' | 'C' | 'D'
   const [selectedMobileGroup, setSelectedMobileGroup] = useState<'ALL' | GroupType>('ALL');
@@ -907,7 +911,9 @@ export const PublicTimelineView: React.FC = () => {
                     : 'grid-cols-1 max-w-2xl mx-auto'
                 } ${
                   handoverInfo?.isHandover && !isOverlayMinimized
-                    ? 'opacity-35 filter blur-[0.6px] select-none pointer-events-none'
+                    ? isGhostMode
+                      ? 'opacity-95'
+                      : 'opacity-85'
                     : 'opacity-100'
                 }`}
               >
@@ -1134,16 +1140,30 @@ export const PublicTimelineView: React.FC = () => {
                   className={`transition-all duration-300 ${
                     isOverlayMinimized
                       ? 'sticky top-14 sm:top-16 z-30 mb-3'
-                      : 'fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-y-auto'
+                      : `fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 ${
+                          isGhostMode ? 'bg-black/15 backdrop-blur-none' : 'bg-black/30 backdrop-blur-[1px]'
+                        } overflow-y-auto`
                   }`}
+                  onClick={(e) => {
+                    // Clicking on the translucent backdrop outside the card minimizes the overlay
+                    if (e.target === e.currentTarget && !isOverlayMinimized) {
+                      setIsOverlayMinimized(true);
+                    }
+                  }}
                 >
                   <div
-                    className={`w-full max-w-5xl bg-neutral-950/95 border-2 border-red-500 rounded-xl shadow-2xl shadow-red-950/90 relative overflow-hidden backdrop-blur-md ${
-                      isOverlayMinimized ? 'p-2.5 sm:p-3' : 'p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4 max-h-[92vh] overflow-y-auto'
+                    className={`w-full max-w-5xl transition-all duration-300 ${
+                      isGhostMode
+                        ? 'bg-neutral-950/50 border-2 border-red-500/80 shadow-xl shadow-red-950/40 backdrop-blur-[2px]'
+                        : 'bg-neutral-950/80 border-2 border-red-500/90 shadow-2xl shadow-red-950/60 backdrop-blur-md'
+                    } rounded-xl relative overflow-hidden ${
+                      isOverlayMinimized
+                        ? 'p-2.5 sm:p-3 bg-neutral-950/95'
+                        : 'p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4 max-h-[92vh] overflow-y-auto'
                     }`}
                   >
                     {/* Background tactical red glow */}
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
                     {/* Top Bar: Alert Title, Countdown Timer & Minimize/Expand toggle */}
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 sm:gap-3 border-b border-red-900/80 pb-2.5 sm:pb-3 relative z-10">
@@ -1166,7 +1186,7 @@ export const PublicTimelineView: React.FC = () => {
 
                       <div className="flex items-center gap-2 self-stretch md:self-auto justify-between md:justify-end">
                         {/* CRONOMETRO ASSOCIATO ALL'HANDOVER */}
-                        <div className="bg-neutral-950 border-2 border-red-500 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 shadow-lg">
+                        <div className="bg-neutral-950/80 border-2 border-red-500 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 shadow-lg">
                           <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 animate-spin flex-shrink-0" />
                           <div className="text-left">
                             <span className="text-[8px] sm:text-[9px] font-mono uppercase text-red-300 font-bold block leading-none">
@@ -1190,11 +1210,38 @@ export const PublicTimelineView: React.FC = () => {
                           </div>
                         </div>
 
+                        {/* Ghost Mode (Transparency HUD toggle) */}
+                        {!isOverlayMinimized && (
+                          <button
+                            type="button"
+                            onClick={() => setIsGhostMode(!isGhostMode)}
+                            className={`p-2 border rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                              isGhostMode
+                                ? 'bg-amber-500/25 border-amber-400 text-amber-200'
+                                : 'bg-neutral-900/80 hover:bg-neutral-800 border-neutral-700 text-neutral-300 hover:text-white'
+                            }`}
+                            title={
+                              isGhostMode
+                                ? isEn
+                                  ? 'Standard translucent mode'
+                                  : 'Modalità semi-trasparente standard'
+                                : isEn
+                                  ? 'Ultra-transparent ghost HUD (reveals underlying public view)'
+                                  : 'Modalità Ghost trasparente (massima trasparenza per visuale pubblica sottostante)'
+                            }
+                          >
+                            {isGhostMode ? <EyeOff className="w-4 h-4 text-amber-400" /> : <Eye className="w-4 h-4 text-amber-400" />}
+                            <span className="text-[10px] font-mono font-bold uppercase hidden sm:inline">
+                              {isGhostMode ? (isEn ? 'Ghost HUD' : 'Trasparente') : (isEn ? 'Ghost HUD' : 'Trasparenza')}
+                            </span>
+                          </button>
+                        )}
+
                         {/* Toggle to minimize / expand overlay */}
                         <button
                           type="button"
                           onClick={() => setIsOverlayMinimized(!isOverlayMinimized)}
-                          className="p-2 bg-neutral-900 hover:bg-neutral-800 border border-red-700 text-neutral-300 hover:text-white rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="p-2 bg-neutral-900/80 hover:bg-neutral-800 border border-red-700 text-neutral-300 hover:text-white rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                           title={isOverlayMinimized ? (isEn ? 'Expand overlay across 4 groups' : 'Espandi sovrapposizione sui 4 gruppi') : (isEn ? 'Minimize overlay to bar' : 'Riduci sovrapposizione a barra')}
                         >
                           {isOverlayMinimized ? (
@@ -1216,7 +1263,11 @@ export const PublicTimelineView: React.FC = () => {
                     {!isOverlayMinimized && (
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3 items-center relative z-10 pt-1">
                         {/* 1. GRUPPO CHE CONSEGNA (TCCC) */}
-                        <div className="md:col-span-5 bg-neutral-950/95 border-2 border-orange-500 rounded-lg p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 shadow-inner">
+                        <div
+                          className={`md:col-span-5 ${
+                            isGhostMode ? 'bg-neutral-950/50 border-orange-500/70' : 'bg-neutral-950/75 border-orange-500/90'
+                          } border-2 rounded-lg p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 shadow-lg backdrop-blur-sm`}
+                        >
                           <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
                             <span className="px-2 py-0.5 bg-orange-600 text-black font-black text-[9px] sm:text-[10px] uppercase tracking-wider rounded">
                               {isEn ? 'DELIVERING GROUP (TCCC)' : 'GRUPPO CHE CONSEGNA (TCCC)'}
@@ -1271,7 +1322,11 @@ export const PublicTimelineView: React.FC = () => {
                         </div>
 
                         {/* 3. GRUPPO CHE RICEVE (SHOCK ROOM) */}
-                        <div className="md:col-span-5 bg-neutral-950/95 border-2 border-cyan-500 rounded-lg p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 shadow-inner">
+                        <div
+                          className={`md:col-span-5 ${
+                            isGhostMode ? 'bg-neutral-950/50 border-cyan-500/70' : 'bg-neutral-950/75 border-cyan-500/90'
+                          } border-2 rounded-lg p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 shadow-lg backdrop-blur-sm`}
+                        >
                           <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
                             <span className="px-2 py-0.5 bg-cyan-600 text-black font-black text-[9px] sm:text-[10px] uppercase tracking-wider rounded">
                               {isEn ? 'RECEIVING GROUP (SHOCK ROOM)' : 'GRUPPO CHE RICEVE (SHOCK ROOM)'}

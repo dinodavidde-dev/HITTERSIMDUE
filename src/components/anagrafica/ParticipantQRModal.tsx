@@ -140,7 +140,7 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
     } else if (category === 'ospiti') {
       setSelectedGuestId(person.id);
       setUserRole('ospite');
-      setCurrentTab('ospite');
+      setCurrentTab('public');
     }
     onClose();
   };
