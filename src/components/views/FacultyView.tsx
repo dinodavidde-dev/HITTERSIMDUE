@@ -119,7 +119,10 @@ export const FacultyView: React.FC = () => {
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'FACULTY VIEW' : 'VISUALE FACULTY'}
             </span>
 
-            <DaySelectorToggle variant="public" />
+            <span className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 font-mono text-[11px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+              <span>DAY 0{activeDay}</span>
+            </span>
 
             <span className="px-2.5 py-1 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}

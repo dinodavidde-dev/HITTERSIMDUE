@@ -21,6 +21,7 @@ import {
   UserRole,
   PhaseShiftLogEntry,
   DevicePresenceRecord,
+  ProtesiItem,
 } from '../types';
 import {
   INITIAL_COURSE_MESSAGES,
@@ -34,6 +35,7 @@ import {
   INITIAL_TECHNICIANS,
   INITIAL_TIMELINE_SLOTS,
 } from '../data/initialData';
+import { PROTESI_CATALOG } from '../data/protesiCatalog';
 import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
 import { cleanUndefined } from '../utils/teamUtils';
 import { Language, translations } from '../i18n/translations';
@@ -164,6 +166,19 @@ interface CourseContextType {
   setCurrentTab: (tab: string) => void;
   selectedCatalogPatientId: number | null;
   setSelectedCatalogPatientId: (id: number | null) => void;
+
+  // Protesi Catalog Management
+  protesiCatalog: ProtesiItem[];
+  updateProtesiItem: (id: string, updated: Partial<ProtesiItem>) => void;
+  addProtesiItem: (newItem: ProtesiItem) => void;
+  deleteProtesiItem: (id: string) => void;
+  resetProtesiCatalog: () => void;
+
+  // Back Navigation System
+  canGoBack: boolean;
+  backDestinationLabel: string;
+  navigateBack: () => void;
+  navigateToView: (tab: string, role?: UserRole, origin?: 'regia' | 'direttore') => void;
 
   facultyAuthSession: FacultyAuthSession;
   authorizeFaculty: (pin: string, facultyId?: string) => boolean;
@@ -507,6 +522,164 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return 'public';
   });
   const [selectedCatalogPatientId, setSelectedCatalogPatientId] = useState<number | null>(null);
+
+  // Protesi Catalog State
+  const [protesiCatalog, setProtesiCatalogState] = useState<ProtesiItem[]>(() =>
+    getStoredOrDefault<ProtesiItem[]>('protesiCatalog', PROTESI_CATALOG)
+  );
+
+  const updateProtesiItem = useCallback((id: string, updated: Partial<ProtesiItem>) => {
+    setProtesiCatalogState((prev) => {
+      const next = prev.map((item) => (item.id === id ? { ...item, ...updated } : item));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('protesiCatalog', JSON.stringify(next));
+      }
+      return next;
+    });
+
+    if (db) {
+      setDoc(doc(db, 'protesi_catalog', id), updated, { merge: true }).catch((err) => {
+        console.warn('Failed to update protesi in firestore:', err);
+      });
+    }
+  }, []);
+
+  const addProtesiItem = useCallback((newItem: ProtesiItem) => {
+    setProtesiCatalogState((prev) => {
+      const next = [newItem, ...prev.filter((i) => i.id !== newItem.id)];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('protesiCatalog', JSON.stringify(next));
+      }
+      return next;
+    });
+
+    if (db) {
+      setDoc(doc(db, 'protesi_catalog', newItem.id), newItem, { merge: true }).catch((err) => {
+        console.warn('Failed to add protesi to firestore:', err);
+      });
+    }
+  }, []);
+
+  const deleteProtesiItem = useCallback((id: string) => {
+    setProtesiCatalogState((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('protesiCatalog', JSON.stringify(next));
+      }
+      return next;
+    });
+
+    if (db) {
+      deleteDoc(doc(db, 'protesi_catalog', id)).catch((err) => {
+        console.warn('Failed to delete protesi from firestore:', err);
+      });
+    }
+  }, []);
+
+  const resetProtesiCatalog = useCallback(() => {
+    setProtesiCatalogState(PROTESI_CATALOG);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('protesiCatalog', JSON.stringify(PROTESI_CATALOG));
+    }
+    if (db) {
+      const batch = writeBatch(db);
+      PROTESI_CATALOG.forEach((item) => {
+        batch.set(doc(db, 'protesi_catalog', item.id), item);
+      });
+      batch.commit().catch(() => {});
+    }
+  }, []);
+
+  // Back Navigation History Stack
+  const [navigationHistory, setNavigationHistory] = useState<{ tab: string; role: UserRole }[]>([]);
+  const [lastAdminOrigin, setLastAdminOrigin] = useState<'regia' | 'direttore' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('trauma_opened_by');
+      if (stored === 'regia' || stored === 'direttore') return stored as 'regia' | 'direttore';
+    }
+    return null;
+  });
+
+  // Track admin origin whenever user is in Regia or Direttori
+  useEffect(() => {
+    if (currentTab === 'regia' || userRole === 'regia') {
+      setLastAdminOrigin('regia');
+      setOpenedByRole('regia');
+    } else if (currentTab === 'direttori' || userRole === 'direttore') {
+      setLastAdminOrigin('direttore');
+      setOpenedByRole('direttore');
+    }
+  }, [currentTab, userRole, setOpenedByRole]);
+
+  const navigateToView = useCallback(
+    (tab: string, role?: UserRole, origin?: 'regia' | 'direttore') => {
+      const effectiveOrigin =
+        origin ||
+        (userRole === 'regia' || currentTab === 'regia'
+          ? 'regia'
+          : userRole === 'direttore' || currentTab === 'direttori'
+          ? 'direttore'
+          : null);
+      if (effectiveOrigin) {
+        setOpenedByRole(effectiveOrigin);
+        setLastAdminOrigin(effectiveOrigin);
+      }
+      setNavigationHistory((prev) => [...prev, { tab: currentTab, role: userRole }].slice(-20));
+      if (role) setUserRole(role);
+      setCurrentTab(tab);
+    },
+    [currentTab, userRole, setOpenedByRole]
+  );
+
+  const navigateBack = useCallback(() => {
+    setNavigationHistory((prevStack) => {
+      if (prevStack.length > 0) {
+        const nextStack = [...prevStack];
+        const lastEntry = nextStack.pop()!;
+        setCurrentTab(lastEntry.tab);
+        setUserRole(lastEntry.role);
+        return nextStack;
+      }
+
+      // Fallback if stack is empty
+      const targetOrigin = openedByRole || lastAdminOrigin;
+      if (targetOrigin === 'regia') {
+        setUserRole('regia');
+        setCurrentTab('regia');
+      } else if (targetOrigin === 'direttore') {
+        setUserRole('direttore');
+        setCurrentTab('direttori');
+      } else {
+        setCurrentTab('public');
+      }
+      return [];
+    });
+  }, [openedByRole, lastAdminOrigin]);
+
+  const canGoBack =
+    navigationHistory.length > 0 ||
+    ((Boolean(openedByRole) || Boolean(lastAdminOrigin)) &&
+      currentTab !== 'regia' &&
+      currentTab !== 'direttori');
+
+  const backDestinationLabel = useMemo(() => {
+    if (navigationHistory.length > 0) {
+      const last = navigationHistory[navigationHistory.length - 1];
+      if (last.tab === 'regia' || last.role === 'regia') return 'Regia';
+      if (last.tab === 'direttori' || last.role === 'direttore') return language === 'en' ? 'Directors' : 'Direzione';
+      if (last.tab === 'public') return language === 'en' ? 'Public Timeline' : 'Timeline Pubblica';
+      if (last.tab === 'tecnici') return language === 'en' ? 'Technicians' : 'Tecnici';
+      if (last.tab === 'faculty') return 'Faculty';
+      if (last.tab === 'discente') return language === 'en' ? 'Learners' : 'Discenti';
+      if (last.tab === 'protesi') return language === 'en' ? 'Prosthetics' : 'Protesi';
+      if (last.tab === 'scenari') return language === 'en' ? 'Scenarios' : 'Scenari';
+      return language === 'en' ? 'Previous Screen' : 'Schermata Precedente';
+    }
+    const origin = openedByRole || lastAdminOrigin;
+    if (origin === 'regia') return 'Regia';
+    if (origin === 'direttore') return language === 'en' ? 'Directors' : 'Direzione';
+    return language === 'en' ? 'Previous Screen' : 'Indietro';
+  }, [navigationHistory, openedByRole, lastAdminOrigin, language]);
 
   // Suspension Management State
   const [suspensionInfo, setSuspensionInfo] = useState<CourseSuspensionInfo>(() =>
@@ -2328,6 +2501,15 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCurrentTab,
         selectedCatalogPatientId,
         setSelectedCatalogPatientId,
+        protesiCatalog,
+        updateProtesiItem,
+        addProtesiItem,
+        deleteProtesiItem,
+        resetProtesiCatalog,
+        canGoBack,
+        backDestinationLabel,
+        navigateBack,
+        navigateToView,
         facultyAuthSession,
         authorizeFaculty,
         deauthorizeFaculty,

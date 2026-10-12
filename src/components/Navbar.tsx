@@ -4,6 +4,7 @@ import { UserRole } from '../types';
 import {
   Activity,
   AlertOctagon,
+  ArrowLeft,
   Award,
   BookOpen,
   Check,
@@ -41,10 +42,11 @@ import {
 } from 'lucide-react';
 import { SyncStatusModal } from './SyncStatusModal';
 import { RegiaKeypadModal } from './RegiaKeypadModal';
-
 import { SimulationEngineModal } from './SimulationEngineModal';
 import { EmailAccessModal } from './EmailAccessModal';
+import { AreaDiscentiModal } from './common/AreaDiscentiModal';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { openVisualeInNewWindow } from '../utils/qrCodeUtils';
 
 interface NavbarProps {
   currentTab: string;
@@ -72,11 +74,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     timeMultiplier,
     isSimulationModalOpen,
     setIsSimulationModalOpen,
+    canGoBack,
+    backDestinationLabel,
+    navigateBack,
+    navigateToView,
+    openedByRole,
   } = useCourse();
 
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isEmailAccessModalOpen, setIsEmailAccessModalOpen] = useState(false);
   const [isKeypadModalOpen, setIsKeypadModalOpen] = useState(false);
+  const [isAreaDiscentiModalOpen, setIsAreaDiscentiModalOpen] = useState(false);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const subScrollRef = useRef<HTMLDivElement>(null);
@@ -135,6 +143,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
 
   const hideViewSelectorBar = isDirectorView || isPublicView || isDiscenteView || isTecniciView || isOspitiView;
 
+  const isRegiaOrDirectorScreen =
+    userRole === 'regia' || userRole === 'direttore' || currentTab === 'regia' || currentTab === 'direttori';
+  const currentAdminOrigin: 'regia' | 'direttore' =
+    userRole === 'regia' || currentTab === 'regia' ? 'regia' : 'direttore';
+
+  const handleVisualeClick = (tab: string, role?: UserRole) => {
+    if (isRegiaOrDirectorScreen) {
+      // Quando si seleziona una visuale dalle schermate regia e direttori apri in una nuova finestra
+      openVisualeInNewWindow(tab, currentAdminOrigin);
+    } else {
+      navigateToView(tab, role);
+    }
+  };
+
   return (
     <>
       <header className="bg-neutral-950 border-b-2 border-neutral-800 sticky top-0 z-40 text-neutral-100 shadow-xl">
@@ -150,6 +172,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           >
             <div className="flex items-center justify-between gap-2.5 sm:gap-3.5 min-w-max">
               
+              {/* Back Button (dai la possibilita di tornare indietro) */}
+              {canGoBack && (
+                <button
+                  type="button"
+                  id="navbar-back-btn"
+                  onClick={navigateBack}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded border border-amber-300 shadow-md transition-all cursor-pointer group flex-shrink-0 animate-pulse-slow"
+                  title={language === 'en' ? `Back to ${backDestinationLabel}` : `Torna indietro a: ${backDestinationLabel}`}
+                >
+                  <ArrowLeft className="w-4 h-4 stroke-[3] group-hover:-translate-x-0.5 transition-transform" />
+                  <span>{language === 'en' ? `BACK: ${backDestinationLabel.toUpperCase()}` : `INDIETRO: ${backDestinationLabel.toUpperCase()}`}</span>
+                </button>
+              )}
+
               {/* BLOCK 1: Logo & Home Trigger (HITTER • INTUBATI EM) */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
@@ -177,13 +213,23 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 </button>
               </div>
 
-              {/* Visuale Pubblica Indicator */}
+              {/* Visuale Pubblica Indicator & Area Discenti */}
               {isPublicView && (
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="px-2.5 py-1 bg-orange-600 text-black font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-sm">
                     <Globe className="w-3.5 h-3.5" />
                     <span>{language === 'en' ? 'PUBLIC VIEW' : 'VISUALE PUBBLICA'}</span>
                   </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAreaDiscentiModalOpen(true)}
+                    className="min-h-[30px] px-2.5 sm:px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-mono font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-md border border-cyan-400 cursor-pointer transition-all transform hover:scale-[1.02]"
+                    title={language === 'en' ? 'Learner Area: enter Name & Surname' : 'Area Discenti: inserisci Nome e Cognome'}
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-black" />
+                    <span>{language === 'en' ? 'LEARNER AREA' : 'AREA DISCENTI'}</span>
+                  </button>
                 </div>
               )}
 
@@ -377,9 +423,23 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 
                 {/* Left Side: Navigation Tabs */}
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  {/* Back Button in Subnav */}
+                  {canGoBack && (
+                    <button
+                      type="button"
+                      id="subnav-back-btn"
+                      onClick={navigateBack}
+                      className="flex items-center gap-1 px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border border-amber-300 shadow-xs flex-shrink-0 mr-1"
+                      title={language === 'en' ? `Back to ${backDestinationLabel}` : `Torna indietro a: ${backDestinationLabel}`}
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>{language === 'en' ? 'BACK' : 'TORNA INDIETRO'}</span>
+                    </button>
+                  )}
+
                   <button
                     id="subnav-main-btn"
-                    onClick={() => setCurrentTab('main')}
+                    onClick={() => navigateToView('main')}
                     className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                       currentTab === 'main'
                         ? 'bg-red-600 text-white border-red-600 shadow-xs'
@@ -395,9 +455,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <>
                       <button
                         id="subnav-public-btn"
-                        onClick={() => {
-                          setCurrentTab('public');
-                        }}
+                        onClick={() => handleVisualeClick('public')}
+                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Public View in new window' : 'Apri Visuale Pubblica in una nuova finestra') : undefined}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                           currentTab === 'public'
                             ? 'text-white bg-orange-600 border-orange-500 shadow-xs'
@@ -406,13 +465,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       >
                         <Globe className="w-3 h-3 text-orange-400" />
                         <span>{language === 'en' ? 'PUBLIC LIVE VIEW' : 'VISUALE PUBBLICA LIVE'}</span>
+                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-orange-400" />}
                       </button>
 
                       <button
                         id="subnav-discente-btn"
-                        onClick={() => {
-                          setCurrentTab('discente');
-                        }}
+                        onClick={() => handleVisualeClick('discente', 'discente')}
+                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Learner View in new window' : 'Apri Visuale Discente in una nuova finestra') : undefined}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                           currentTab === 'discente'
                             ? 'text-white bg-cyan-600 border-cyan-500 shadow-xs'
@@ -421,13 +480,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       >
                         <GraduationCap className="w-3 h-3 text-cyan-400" />
                         <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
+                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />}
                       </button>
 
                       <button
                         id="subnav-faculty-btn"
-                        onClick={() => {
-                          setCurrentTab('faculty');
-                        }}
+                        onClick={() => handleVisualeClick('faculty', 'faculty')}
+                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Faculty View in new window' : 'Apri Visuale Faculty in una nuova finestra') : undefined}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                           currentTab === 'faculty'
                             ? 'text-white bg-amber-600 border-amber-500 shadow-xs'
@@ -436,13 +495,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       >
                         <Award className="w-3 h-3 text-amber-400" />
                         <span>{language === 'en' ? 'FACULTY VIEW' : 'VISUALE FACULTY'}</span>
+                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-amber-400" />}
                       </button>
 
                       <button
                         id="subnav-tecnici-btn"
-                        onClick={() => {
-                          setCurrentTab('tecnici');
-                        }}
+                        onClick={() => handleVisualeClick('tecnici', 'tecnico')}
+                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Tech View in new window' : 'Apri Visuale Tecnici in una nuova finestra') : undefined}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                           currentTab === 'tecnici'
                             ? 'text-white bg-pink-600 border-pink-500 shadow-xs'
@@ -451,15 +510,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       >
                         <Wrench className="w-3 h-3 text-pink-400" />
                         <span>{language === 'en' ? 'TECH VIEW' : 'VISUALE TECNICI'}</span>
+                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-pink-400" />}
                       </button>
 
                       {userRole !== 'direttore' && currentTab !== 'direttori' && (
                         <>
                           <button
                             id="subnav-regia-btn"
-                            onClick={() => {
-                              setCurrentTab('regia');
-                            }}
+                            onClick={() => handleVisualeClick('regia', 'regia')}
+                            title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Regia View in new window' : 'Apri Visuale Regia in una nuova finestra') : undefined}
                             className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                               currentTab === 'regia'
                                 ? 'text-white bg-pink-600 border-pink-500 shadow-xs'
@@ -468,13 +527,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                           >
                             <Radio className="w-3 h-3 text-pink-400" />
                             <span>{language === 'en' ? 'REGIA VIEW' : 'VISUALE REGIA'}</span>
+                            {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-pink-400" />}
                           </button>
 
                           <button
                             id="subnav-direttori-btn"
-                            onClick={() => {
-                              setCurrentTab('direttori');
-                            }}
+                            onClick={() => handleVisualeClick('direttori', 'direttore')}
+                            title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Directors View in new window' : 'Apri Visuale Direttori in una nuova finestra') : undefined}
                             className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                               currentTab === 'direttori'
                                 ? 'text-white bg-yellow-600 border-yellow-500 shadow-xs'
@@ -483,15 +542,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                           >
                             <ShieldCheck className="w-3 h-3 text-yellow-400" />
                             <span>{language === 'en' ? 'DIRECTORS VIEW' : 'VISUALE DIRETTORI'}</span>
+                            {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-yellow-400" />}
                           </button>
                         </>
                       )}
 
                       <button
                         id="subnav-ospiti-btn"
-                        onClick={() => {
-                          setCurrentTab('public');
-                        }}
+                        onClick={() => handleVisualeClick('public', 'ospite')}
+                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Guest View in new window' : 'Apri Visuale Ospiti in una nuova finestra') : undefined}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                           currentTab === 'public' && userRole === 'ospite'
                             ? 'text-white bg-emerald-600 border-emerald-500 shadow-xs'
@@ -500,6 +559,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       >
                         <UserCheck className="w-3 h-3 text-emerald-400" />
                         <span>{language === 'en' ? 'GUEST VIEW' : 'VISUALE OSPITI'}</span>
+                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-emerald-400" />}
                       </button>
                     </>
                   )}
@@ -507,7 +567,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   {/* Scenari and Protesi available for all roles */}
                   <button
                     id="subnav-scenari-btn"
-                    onClick={() => setCurrentTab('scenari')}
+                    onClick={() => navigateToView('scenari')}
                     className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                       currentTab === 'scenari' || currentTab === 'catalog'
                         ? 'bg-red-600 text-white border-red-600 shadow-xs'
@@ -520,7 +580,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
 
                   <button
                     id="subnav-protesi-btn"
-                    onClick={() => setCurrentTab('protesi')}
+                    onClick={() => navigateToView('protesi')}
                     className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
                       currentTab === 'protesi'
                         ? 'bg-red-600 text-white border-red-600 shadow-xs'
@@ -592,6 +652,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
       <RegiaKeypadModal
         isOpen={isKeypadModalOpen}
         onClose={() => setIsKeypadModalOpen(false)}
+      />
+
+      {/* Accesso Riservato Discenti Modal (Nome e Cognome) */}
+      <AreaDiscentiModal
+        isOpen={isAreaDiscentiModalOpen}
+        onClose={() => setIsAreaDiscentiModalOpen(false)}
       />
     </>
   );

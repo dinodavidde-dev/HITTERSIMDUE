@@ -131,7 +131,10 @@ export const DiscenteView: React.FC = () => {
               <span className="px-2.5 sm:px-3 py-1 bg-cyan-600 text-black font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded">
                 <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'LEARNER VIEW' : 'VISUALE DISCENTE'}
               </span>
-              <DaySelectorToggle variant="public" />
+              <span className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 font-mono text-[11px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                <span>DAY 0{activeDay}</span>
+              </span>
               <span className="px-2 py-0.5 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}
               </span>
@@ -261,10 +264,9 @@ export const DiscenteView: React.FC = () => {
               <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'LEARNER VIEW' : 'VISUALE DISCENTE'}
             </span>
 
-            <DaySelectorToggle variant="public" />
-
-            <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-[11px] sm:text-xs border border-neutral-800 flex items-center gap-1.5 rounded">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" /> DAY 0{activeDay}
+            <span className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 font-mono text-[11px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>DAY 0{activeDay}</span>
             </span>
             <span className="px-2 py-0.5 bg-neutral-950 text-cyan-400 border border-neutral-800 font-mono text-[11px] sm:text-xs flex items-center gap-1.5 rounded">
               <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-cyan-400 animate-spin' : 'text-neutral-400'}`} /> {isEn ? 'T-Phase:' : 'T-Fase:'} {formatTimer(timerSeconds)}
@@ -528,6 +530,58 @@ export const DiscenteView: React.FC = () => {
         const isWS2 = text.includes('ws2') || text.includes('ecografia') || text.includes('fast') || text.includes('accessi') || text.includes('ultrasound');
         const isWorkshop = actType === 'workshop' || text.includes('workshop') || isWS1 || isWS2;
 
+        // Compute contiguous workshop block (start and end times) for unified single time display
+        let wsStartTime = '';
+        let wsEndTime = '';
+        let wsDuration = 0;
+
+        if (isWorkshop && currentSlot) {
+          const currentSlotIndex = dayMasterSlots.findIndex((s) => s.id === currentSlot.id);
+          if (currentSlotIndex !== -1) {
+            let startIdx = currentSlotIndex;
+            while (startIdx > 0) {
+              const prevSlot = dayMasterSlots[startIdx - 1];
+              const prevAct = prevSlot.groupActivities?.[studentGroup];
+              const prevText = `${prevAct?.title || ''} ${prevAct?.subtitle || ''} ${prevAct?.location || ''}`.toLowerCase();
+              const prevIsWs =
+                (prevAct?.activityType === 'workshop' || prevText.includes('workshop') || prevText.includes('ws1') || prevText.includes('ws2')) &&
+                !prevText.includes('shock') &&
+                !prevText.includes('tccc') &&
+                !prevText.includes('tattic');
+              if (prevIsWs) {
+                startIdx--;
+              } else {
+                break;
+              }
+            }
+
+            let endIdx = currentSlotIndex;
+            while (endIdx < dayMasterSlots.length - 1) {
+              const nextSlot = dayMasterSlots[endIdx + 1];
+              const nextAct = nextSlot.groupActivities?.[studentGroup];
+              const nextText = `${nextAct?.title || ''} ${nextAct?.subtitle || ''} ${nextAct?.location || ''}`.toLowerCase();
+              const nextIsWs =
+                (nextAct?.activityType === 'workshop' || nextText.includes('workshop') || nextText.includes('ws1') || nextText.includes('ws2')) &&
+                !nextText.includes('shock') &&
+                !nextText.includes('tccc') &&
+                !nextText.includes('tattic');
+              if (nextIsWs) {
+                endIdx++;
+              } else {
+                break;
+              }
+            }
+
+            const firstSlot = dayMasterSlots[startIdx];
+            const lastSlot = dayMasterSlots[endIdx];
+            wsStartTime = (firstSlot?.timeRange || '').split('-')[0]?.trim() || '';
+            wsEndTime = (lastSlot?.timeRange || '').split('-')[1]?.trim() || '';
+            for (let k = startIdx; k <= endIdx; k++) {
+              wsDuration += dayMasterSlots[k]?.durationMinutes || 0;
+            }
+          }
+        }
+
         const isPreAllertaTCCC = isTCCC && (
           slotTitle.includes('pre-alert') ||
           slotTitle.includes('pre-allerta') ||
@@ -732,16 +786,42 @@ export const DiscenteView: React.FC = () => {
           <div className="bg-neutral-900 border-2 border-cyan-500/80 p-4 sm:p-5 shadow-xl space-y-4 rounded">
             <div className="border-b border-neutral-800 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
               <div>
-                <span className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-widest block mb-0.5">
-                  {isEn ? 'PHASE TIME:' : 'ORARIO FASE:'} {currentSlot?.timeRange || '08:30 - 08:45'} • DAY 0{activeDay}
-                </span>
-                <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                  <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-pulse" />
-                  {displaySlotTitle}
-                </h2>
+                {isWorkshop ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 bg-emerald-500 text-black font-mono font-black text-[10px] sm:text-xs uppercase tracking-wider rounded shadow-sm">
+                        {isEn ? 'UNIFIED WORKSHOP TIMELINE' : 'TIMELINE WORKSHOP A TEMPO UNICO ACCORPATO'}
+                      </span>
+                      <span className="px-2 py-0.5 bg-neutral-950 border border-emerald-500/60 text-emerald-300 font-mono text-[11px] sm:text-xs font-bold rounded">
+                        {isEn ? 'START:' : 'INIZIO:'} <strong className="text-white">{wsStartTime}</strong> • {isEn ? 'END:' : 'FINE:'} <strong className="text-white">{wsEndTime}</strong> ({wsDuration} min)
+                      </span>
+                      <span className="text-neutral-400 font-mono text-[11px]">DAY 0{activeDay}</span>
+                    </div>
+                    <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                      <Wrench className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
+                      <span>{envConfig.title} • {wsStartTime} - {wsEndTime}</span>
+                    </h2>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-widest block mb-0.5">
+                      {isEn ? 'PHASE TIME:' : 'ORARIO FASE:'} {currentSlot?.timeRange || '08:30 - 08:45'} • DAY 0{activeDay}
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                      <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-pulse" />
+                      {displaySlotTitle}
+                    </h2>
+                  </div>
+                )}
               </div>
               <div className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-xs font-mono text-cyan-300 flex items-center gap-2 rounded">
-                <span>{isEn ? `Phase ${activeSlotIndex + 1}/${dayMasterSlots.length}` : `Fase ${activeSlotIndex + 1}/${dayMasterSlots.length}`}</span>
+                {isWorkshop ? (
+                  <span className="text-emerald-400 font-bold">
+                    {isEn ? `Continuous Block (${wsDuration} min)` : `Blocco Continuo (${wsDuration} min)`}
+                  </span>
+                ) : (
+                  <span>{isEn ? `Phase ${activeSlotIndex + 1}/${dayMasterSlots.length}` : `Fase ${activeSlotIndex + 1}/${dayMasterSlots.length}`}</span>
+                )}
               </div>
             </div>
 
@@ -762,6 +842,42 @@ export const DiscenteView: React.FC = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Box Orario Inizio e Fine Workshop Accorpato (Tempo Unico) */}
+              {isWorkshop && (
+                <div className="p-3 bg-neutral-950/90 border border-emerald-500/50 rounded-lg space-y-2 font-mono">
+                  <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-emerald-400 font-bold uppercase">
+                        {isEn ? 'UNIFIED WORKSHOP SCHEDULE (NO 15-MIN SEGMENTS)' : 'ORARIO WORKSHOP ACCORPATO A TEMPO UNICO'}
+                      </span>
+                    </div>
+                    <span className="text-neutral-400 text-[11px]">
+                      {isEn ? 'Start & End Times Defined' : 'Orario di Inizio e Fine Definiti'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div className="bg-neutral-900 p-2 rounded border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 uppercase block font-semibold">{isEn ? 'Start Time' : 'Orario Inizio'}</span>
+                      <strong className="text-white text-sm sm:text-base">{wsStartTime}</strong>
+                    </div>
+                    <div className="bg-neutral-900 p-2 rounded border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 uppercase block font-semibold">{isEn ? 'End Time' : 'Orario Fine'}</span>
+                      <strong className="text-white text-sm sm:text-base">{wsEndTime}</strong>
+                    </div>
+                    <div className="bg-neutral-900 p-2 rounded border border-neutral-800 col-span-2 sm:col-span-1">
+                      <span className="text-[10px] text-neutral-400 uppercase block font-semibold">{isEn ? 'Total Duration' : 'Durata Totale'}</span>
+                      <strong className="text-emerald-400 text-sm sm:text-base">{wsDuration} min ({isEn ? 'Single Block' : 'Tempo Unico'})</strong>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-neutral-300 italic pt-0.5">
+                    {isEn
+                      ? 'The workshop is structured as a single continuous hands-on session. 15-minute segments are merged for optimal focus.'
+                      : 'Il workshop si svolge come sessione pratica continua. I micro-segmenti da 15 minuti sono accorpati in un tempo unico.'}
+                  </p>
+                </div>
+              )}
 
               {/* Countdown widget for Pre-Allerta TCCC or Standby SR */}
               {showCountdown && (

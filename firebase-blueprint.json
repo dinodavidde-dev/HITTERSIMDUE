@@ -326,9 +326,32 @@
         "deviceInfo": { "type": "string", "maxLength": 500 }
       },
       "required": ["id", "badgeCode", "name", "role", "status", "lastSeen"]
+    },
+    "ProtesiItem": {
+      "title": "ProtesiItem",
+      "description": "Anatomical prosthetics, biological simulators, pressurized vascular circuits and theatrical moulage devices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string", "maxLength": 100 },
+        "name": { "type": "string", "maxLength": 300 },
+        "district": { "type": "string", "enum": ["VIE_AEREE", "TORACE_CUORE", "ADDOME_PELVI", "ARTI_AMPUTAZIONI", "COLLO_VASCOLARE", "MAXILLO_FACCIALE", "USTIONI_BLAST"] },
+        "description": { "type": "string", "maxLength": 3000 },
+        "activeFeatures": { "type": "array", "items": { "type": "string" } },
+        "scenariosUsed": { "type": "array", "items": { "type": "object" } },
+        "requiredProcedures": { "type": "array", "items": { "type": "string" } },
+        "techRequirements": { "type": "string", "maxLength": 2000 },
+        "leadTechnician": { "type": "string", "maxLength": 200 },
+        "consumables": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "code", "name", "district"]
     }
   },
   "firestore": {
+    "/protesi_catalog/{protesiId}": {
+      "schema": "ProtesiItem",
+      "description": "Configurable catalog of anatomical prosthetics, bleeding pumps, and moulage devices"
+    },
     "/course_state/{stateId}": {
       "schema": "CourseState",
       "description": "Global live state of the trauma course simulation (active day, slot, timer, suspension, schedule)"

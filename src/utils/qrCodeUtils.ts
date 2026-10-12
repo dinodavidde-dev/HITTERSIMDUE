@@ -46,7 +46,8 @@ export function computeParticipantDataHash(person: AnyParticipant, category?: st
 export function getParticipantPersonalPageUrl(
   person: AnyParticipant,
   category: ParticipantCategory,
-  customBaseUrl?: string
+  customBaseUrl?: string,
+  originRole?: 'regia' | 'direttore'
 ): string {
   const base = customBaseUrl || (typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : 'https://trauma-sim.med');
   const badge = (person as any).badgeCode || person.id;
@@ -65,8 +66,48 @@ export function getParticipantPersonalPageUrl(
   url.searchParams.set('badge', badge);
   url.searchParams.set('qr', '1');
   url.searchParams.set('h', hash); // Version fingerprint
+  if (originRole) {
+    url.searchParams.set('from', originRole);
+  }
 
   return url.toString();
+}
+
+/**
+ * Builds the canonical URL for any visuale, tagging the origin (e.g. from regia or direttore).
+ */
+export function buildVisualeUrl(
+  view: string,
+  originRole?: 'regia' | 'direttore',
+  extraParams?: Record<string, string>
+): string {
+  const base = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : 'https://trauma-sim.med';
+  const url = new URL(base);
+  url.searchParams.set('view', view);
+  if (originRole) {
+    url.searchParams.set('from', originRole);
+  }
+  if (extraParams) {
+    Object.entries(extraParams).forEach(([k, v]) => {
+      url.searchParams.set(k, v);
+    });
+  }
+  return url.toString();
+}
+
+/**
+ * Opens any visuale in a new browser window/tab tagged with the origin role.
+ */
+export function openVisualeInNewWindow(
+  view: string,
+  originRole?: 'regia' | 'direttore',
+  extraParams?: Record<string, string>
+): Window | null {
+  if (typeof window !== 'undefined') {
+    const url = buildVisualeUrl(view, originRole, extraParams);
+    return window.open(url, '_blank', 'noopener,noreferrer');
+  }
+  return null;
 }
 
 /**

@@ -19,7 +19,7 @@ import { TecniciView } from './components/views/TecniciView';
 
 import { SimulationQuickFloatingBar } from './components/SimulationQuickFloatingBar';
 
-import { Activity, ShieldCheck, HeartPulse, Clock } from 'lucide-react';
+import { Activity, ShieldCheck, HeartPulse, Clock, ArrowLeft } from 'lucide-react';
 
 const CourseMainContent: React.FC = () => {
   const {
@@ -48,6 +48,8 @@ const CourseMainContent: React.FC = () => {
     currentTab,
     setCurrentTab,
     setOpenedByRole,
+    openedByRole,
+    navigateBack,
   } = useCourse();
 
   // Check URL parameters for instant unique QR Code direct navigation
@@ -249,6 +251,38 @@ const CourseMainContent: React.FC = () => {
       {/* Real-time Suspension Emergency Banner (Highest Priority) */}
       <CourseSuspensionBanner />
 
+      {/* Origin Banner when view is opened in a new window from Regia or Direzione */}
+      {openedByRole && (
+        <div className="bg-amber-500 text-black px-3 sm:px-6 py-1.5 font-mono text-xs font-bold flex items-center justify-between border-b-2 border-amber-600 shadow-lg sticky top-0 z-50">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 bg-black text-amber-400 text-[10px] font-black uppercase">
+              {openedByRole === 'regia' ? 'FINESTRA APERTA DA REGIA' : 'FINESTRA APERTA DA DIREZIONE'}
+            </span>
+            <span className="hidden sm:inline text-neutral-900 text-[11px]">
+              {language === 'en'
+                ? 'Dedicated window opened for multi-screen monitoring & station operations.'
+                : 'Finestra indipendente per monitoraggio multi-schermo e supporto postazione.'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={navigateBack}
+              className="px-2.5 py-1 bg-black hover:bg-neutral-800 text-white rounded font-black text-[11px] uppercase tracking-wider cursor-pointer flex items-center gap-1 transition-colors shadow-sm"
+              title={openedByRole === 'regia' ? (language === 'en' ? 'Back to Regia' : 'Torna alla Regia') : (language === 'en' ? 'Back to Directors' : 'Torna ai Direttori')}
+            >
+              <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{openedByRole === 'regia' ? (language === 'en' ? 'Back to Regia' : 'Torna alla Regia') : (language === 'en' ? 'Back to Directors' : 'Torna ai Direttori')}</span>
+            </button>
+            <button
+              onClick={() => window.close()}
+              className="px-2 py-1 bg-neutral-900/15 hover:bg-neutral-900/30 text-black rounded text-[11px] font-bold uppercase cursor-pointer"
+              title={language === 'en' ? 'Close window' : 'Chiudi questa finestra'}
+            >
+              ✕ {language === 'en' ? 'Close' : 'Chiudi'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Simulation Navigation & Control Bar */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />

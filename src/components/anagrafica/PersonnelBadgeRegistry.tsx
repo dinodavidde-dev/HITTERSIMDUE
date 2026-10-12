@@ -55,7 +55,9 @@ export const PersonnelBadgeRegistry: React.FC = () => {
     setSelectedDirectorId,
     setSelectedRegiaId,
     setSelectedGuestId,
+    userRole,
     setUserRole,
+    currentTab,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -204,28 +206,9 @@ export const PersonnelBadgeRegistry: React.FC = () => {
   };
 
   const handleNavigateToPage = (p: RegistryItem) => {
-    if (p.category === 'discenti') {
-      setSelectedDiscenteId(p.id);
-      setCurrentTab('discente');
-    } else if (p.category === 'faculty') {
-      setSelectedFacultyId(p.id);
-      setCurrentTab('faculty');
-    } else if (p.category === 'tecnici') {
-      setSelectedTechnicianId(p.id);
-      setCurrentTab('tecnici');
-    } else if (p.category === 'direttori') {
-      setSelectedDirectorId(p.id);
-      setUserRole('direttore');
-      setCurrentTab('direttori');
-    } else if (p.category === 'regia') {
-      setSelectedRegiaId(p.id);
-      setUserRole('regia');
-      setCurrentTab('regia');
-    } else if (p.category === 'ospiti') {
-      setSelectedGuestId(p.id);
-      setUserRole('ospite');
-      setCurrentTab('public');
-    }
+    const origin = (userRole === 'regia' || currentTab === 'regia') ? 'regia' : 'direttore';
+    const directUrl = getParticipantPersonalPageUrl(p.raw, p.category, undefined, origin);
+    window.open(directUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (

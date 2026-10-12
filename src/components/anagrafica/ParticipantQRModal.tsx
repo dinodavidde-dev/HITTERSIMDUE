@@ -48,7 +48,7 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
   category,
   onOpenEdit,
 }) => {
-  const { language, teams, setCurrentTab, setSelectedDiscenteId, setSelectedFacultyId, setSelectedTechnicianId, setSelectedDirectorId, setSelectedRegiaId, setSelectedGuestId, setUserRole, userRole } = useCourse();
+  const { language, teams, currentTab, setCurrentTab, setSelectedDiscenteId, setSelectedFacultyId, setSelectedTechnicianId, setSelectedDirectorId, setSelectedRegiaId, setSelectedGuestId, setUserRole, userRole } = useCourse();
   const isEn = language === 'en';
 
   const [qrFormat, setQrFormat] = useState<'url' | 'vcard' | 'json'>('url');
@@ -119,29 +119,10 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
   };
 
   const handleOpenPersonalPage = () => {
-    // Navigate in-app or open in new tab
-    if (category === 'discenti') {
-      setSelectedDiscenteId(person.id);
-      setCurrentTab('discente');
-    } else if (category === 'faculty') {
-      setSelectedFacultyId(person.id);
-      setCurrentTab('faculty');
-    } else if (category === 'tecnici') {
-      setSelectedTechnicianId(person.id);
-      setCurrentTab('tecnici');
-    } else if (category === 'direttori') {
-      setSelectedDirectorId(person.id);
-      setUserRole('direttore');
-      setCurrentTab('direttori');
-    } else if (category === 'regia') {
-      setSelectedRegiaId(person.id);
-      setUserRole('regia');
-      setCurrentTab('regia');
-    } else if (category === 'ospiti') {
-      setSelectedGuestId(person.id);
-      setUserRole('ospite');
-      setCurrentTab('public');
-    }
+    // Open in new tab/window tagged with origin
+    const origin = (userRole === 'regia' || currentTab === 'regia') ? 'regia' : (userRole === 'direttore' || currentTab === 'direttori') ? 'direttore' : undefined;
+    const directUrl = getParticipantPersonalPageUrl(person, category, undefined, origin);
+    window.open(directUrl, '_blank', 'noopener,noreferrer');
     onClose();
   };
 

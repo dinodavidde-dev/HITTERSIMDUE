@@ -314,6 +314,22 @@ service cloud.firestore {
       allow delete: if isValidId(presenceId);
     }
 
+    // --- Protesi Catalog ---
+    function isValidProtesi(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+        (!('code' in data) || (data.code is string && data.code.size() <= 100)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 300)) &&
+        (!('district' in data) || data.district in ['VIE_AEREE', 'TORACE_CUORE', 'ADDOME_PELVI', 'ARTI_AMPUTAZIONI', 'COLLO_VASCOLARE', 'MAXILLO_FACCIALE', 'USTIONI_BLAST']) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 3000));
+    }
+
+    match /protesi_catalog/{protesiId} {
+      allow get: if isValidId(protesiId);
+      allow list: if true;
+      allow create, update: if isValidId(protesiId) && isValidProtesi(incoming());
+      allow delete: if isValidId(protesiId);
+    }
+
     // Test connection doc
     match /test/{testId} {
       allow get: if isValidId(testId);

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useCourse } from '../../context/CourseContext';
 import { Activity, Lock, Clock, AlertTriangle, Radio } from 'lucide-react';
-import { DaySelectorToggle } from '../DaySelectorToggle';
 
 export const formatGateCountdown = (ms: number, isEn: boolean = false) => {
   if (ms <= 0) return '00:00';
@@ -22,12 +21,10 @@ export const formatGateCountdown = (ms: number, isEn: boolean = false) => {
 
 interface PreCoursePublicCountdownProps {
   customMessage?: string;
-  showDaySelector?: boolean;
 }
 
 export const PreCoursePublicCountdown: React.FC<PreCoursePublicCountdownProps> = ({
   customMessage,
-  showDaySelector = true,
 }) => {
   const { courseStartSchedule, timeRemainingMs, language, activeDay } = useCourse();
   const isEn = language === 'en';
@@ -44,11 +41,12 @@ export const PreCoursePublicCountdown: React.FC<PreCoursePublicCountdownProps> =
               <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
               <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
             </div>
-            {showDaySelector && (
-              <div className="flex items-center gap-2">
-                <DaySelectorToggle variant="public" />
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                <span>DAY 0{activeDay}</span>
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1">

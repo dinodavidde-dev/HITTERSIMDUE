@@ -28,11 +28,11 @@ import {
   Layers,
   Sparkles,
   FileText,
+  GraduationCap,
 } from 'lucide-react';
 import { GroupType } from '../../types';
 import { useCourse } from '../../context/CourseContext';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
-import { DaySelectorToggle } from '../DaySelectorToggle';
 import { getGroupPhaseDetails, GroupPhaseEnrichedDetails } from '../../utils/groupPhaseDetails';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 
@@ -363,6 +363,8 @@ export const PublicTimelineView: React.FC = () => {
     discenti,
     setCurrentTab,
     setUserRole,
+    setSelectedDiscenteId,
+    navigateToView,
     courseStartSchedule,
     timeRemainingMs,
     isCourseStarted,
@@ -493,7 +495,10 @@ export const PublicTimelineView: React.FC = () => {
                       <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DaySelectorToggle variant="public" />
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                        <span>DAY 0{activeDay}</span>
+                      </span>
                     </div>
                   </div>
                   
@@ -570,7 +575,10 @@ export const PublicTimelineView: React.FC = () => {
                       <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DaySelectorToggle variant="public" />
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                        <span>DAY 0{activeDay}</span>
+                      </span>
                     </div>
                   </div>
                   
@@ -628,7 +636,10 @@ export const PublicTimelineView: React.FC = () => {
                       <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DaySelectorToggle variant="public" />
+                      <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                        <span>DAY 0{activeDay}</span>
+                      </span>
                     </div>
                   </div>
                   
@@ -706,7 +717,6 @@ export const PublicTimelineView: React.FC = () => {
                 </h2>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <DaySelectorToggle variant="public" />
                 {handoverInfo?.isHandover && (
                   <span className="px-3 py-1 bg-red-600 text-white font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 animate-pulse shadow">
                     <AlertTriangle className="w-3.5 h-3.5" /> HANDOVER LIVE (:30-:35)
@@ -765,21 +775,23 @@ export const PublicTimelineView: React.FC = () => {
                   })}
                 </div>
 
-                {/* Quick Toggle for Discente Finder */}
-                <button
-                  type="button"
-                  onClick={() => setIsFinderOpen(!isFinderOpen)}
-                  className={`min-h-[38px] px-3 py-1.5 text-xs font-mono font-bold rounded border transition-colors flex items-center gap-1.5 justify-center cursor-pointer flex-shrink-0 self-stretch sm:self-auto ${
-                    isFinderOpen
-                      ? 'bg-amber-950/80 text-amber-300 border-amber-500'
-                      : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-800'
-                  }`}
-                  title={isEn ? 'Search by student ID or name' : 'Cerca per matricola studente o nome'}
-                >
-                  <Search className="w-3.5 h-3.5 text-orange-400" />
-                  <span>{isEn ? 'FIND YOUR ID (DISC)' : 'TROVA TUA MATRICOLA (DISC)'}</span>
-                  {isFinderOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
+                <div className="flex items-center gap-1.5 flex-wrap self-stretch sm:self-auto shrink-0">
+                  {/* Quick Toggle for Discente Finder */}
+                  <button
+                    type="button"
+                    onClick={() => setIsFinderOpen(!isFinderOpen)}
+                    className={`min-h-[38px] px-3 py-1.5 text-xs font-mono font-bold rounded border transition-colors flex items-center gap-1.5 justify-center cursor-pointer ${
+                      isFinderOpen
+                        ? 'bg-amber-950/80 text-amber-300 border-amber-500'
+                        : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-800'
+                    }`}
+                    title={isEn ? 'Search by student ID or name' : 'Cerca per matricola studente o nome'}
+                  >
+                    <Search className="w-3.5 h-3.5 text-orange-400" />
+                    <span>{isEn ? 'FIND ID (DISC)' : 'TROVA MATRICOLA'}</span>
+                    {isFinderOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                </div>
               </div>
 
               {/* Collapsible Quick-Finder Panel */}
@@ -857,17 +869,33 @@ export const PublicTimelineView: React.FC = () => {
                                 </div>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedMobileGroup(discGrp);
-                                  setIsFinderOpen(false);
-                                }}
-                                className="min-h-[34px] px-3 py-1 bg-orange-500 hover:bg-orange-400 text-black font-mono font-black rounded text-xs flex items-center justify-center gap-1 cursor-pointer self-start sm:self-auto flex-shrink-0"
-                              >
-                                <span>{isEn ? `GO TO GROUP ${discGrp}` : `VAI AL GRUPPO ${discGrp}`}</span>
-                                <ArrowRight className="w-3 h-3" />
-                              </button>
+                              <div className="flex items-center gap-1.5 flex-wrap self-start sm:self-auto shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDiscenteId(disc.id);
+                                    setUserRole('discente');
+                                    setCurrentTab('discente');
+                                  }}
+                                  className="min-h-[34px] px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-black font-mono font-black rounded text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-sm"
+                                  title={isEn ? 'Access personal reserved learner area' : 'Accedi alla tua area riservata discente'}
+                                >
+                                  <GraduationCap className="w-3.5 h-3.5" />
+                                  <span>{isEn ? 'MY AREA' : 'ACCEDI AREA'}</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedMobileGroup(discGrp);
+                                    setIsFinderOpen(false);
+                                  }}
+                                  className="min-h-[34px] px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-mono font-bold rounded text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors border border-neutral-700"
+                                >
+                                  <span>{isEn ? `GROUP ${discGrp}` : `GRUPPO ${discGrp}`}</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           );
                         })

@@ -542,19 +542,14 @@ export const RegiaDeviceStatusDashboard: React.FC = () => {
   };
 
   const handleOpenDeviceConsole = (d: FleetDeviceItem) => {
-    if (d.role === 'tecnico') {
-      setSelectedTechnicianId(d.id);
-      setUserRole('tecnico');
-      setCurrentTab('tecnici');
-    } else if (d.role === 'discente') {
-      setSelectedDiscenteId(d.id);
-      setUserRole('discente');
-      setCurrentTab('discente');
-    } else if (d.role === 'faculty') {
-      setSelectedFacultyId(d.id);
-      setUserRole('faculty');
-      setCurrentTab('faculty');
-    }
+    const category = d.role === 'discente' ? 'discenti' : d.role === 'tecnico' ? 'tecnici' : 'faculty';
+    const targetUrl = getParticipantPersonalPageUrl(
+      d.rawPerson || { id: d.id, name: d.name, badgeCode: d.badgeCode, role: d.categoryLabel },
+      category,
+      undefined,
+      'regia'
+    );
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleOpenQrPass = (d: FleetDeviceItem) => {

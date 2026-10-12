@@ -30,7 +30,8 @@ import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
 import { TcccPreAlertCountdownBanner } from '../common/TcccPreAlertCountdownBanner';
 import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
 import { RegiaDeviceStatusDashboard } from '../regia/RegiaDeviceStatusDashboard';
-import { Wifi } from 'lucide-react';
+import { Wifi, Monitor, ExternalLink, ChevronDown } from 'lucide-react';
+import { openVisualeInNewWindow } from '../../utils/qrCodeUtils';
 
 export const RegiaView: React.FC = () => {
   const {
@@ -177,17 +178,62 @@ export const RegiaView: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => {
-                setUserRole('direttore');
-                setCurrentTab('direttori');
-              }}
-              className="px-3 py-1.5 bg-yellow-950 hover:bg-yellow-900 text-yellow-300 font-black text-xs uppercase tracking-wider border border-yellow-600 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+              onClick={() => openVisualeInNewWindow('direttori', 'regia')}
+              className="px-3 py-1.5 bg-yellow-950 hover:bg-yellow-900 text-yellow-300 font-black text-xs uppercase tracking-wider border border-yellow-600 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+              title={isEn ? 'Open Directors view in new window' : 'Apri visuale Direttori in una nuova finestra'}
             >
-              <Users className="w-3 h-3 text-yellow-400" />
+              <Users className="w-3.5 h-3.5 text-yellow-400" />
               <span>{isEn ? 'DIRECTORS' : 'DIRETTORI'}</span>
+              <ExternalLink className="w-3 h-3 text-yellow-400" />
             </button>
+
+            {/* Quick Visuali Dropdown: Opens in New Window */}
+            <div className="relative group">
+              <button
+                type="button"
+                className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-bold text-xs uppercase border border-neutral-700 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                title={isEn ? 'Open participant/public view in new window' : 'Apri visuali e postazioni in nuova finestra'}
+              >
+                <Monitor className="w-3.5 h-3.5 text-pink-400" />
+                <span>{isEn ? 'Open View' : 'Apri Visuale'}</span>
+                <ChevronDown className="w-3 h-3 text-neutral-400" />
+              </button>
+              <div className="absolute right-0 mt-1 w-52 bg-neutral-950 border border-neutral-700 shadow-2xl py-1 hidden group-hover:block z-50">
+                <div className="px-3 py-1 text-[10px] font-mono text-neutral-400 uppercase border-b border-neutral-850">
+                  {isEn ? 'Open in New Window (from Regia)' : 'Nuova Finestra (da Regia)'}
+                </div>
+                <button
+                  onClick={() => openVisualeInNewWindow('public', 'regia')}
+                  className="w-full text-left px-3 py-1.5 text-xs text-orange-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
+                >
+                  <span>{isEn ? 'Public Live View' : 'Visuale Pubblica'}</span>
+                  <ExternalLink className="w-3 h-3 text-orange-400" />
+                </button>
+                <button
+                  onClick={() => openVisualeInNewWindow('discente', 'regia')}
+                  className="w-full text-left px-3 py-1.5 text-xs text-cyan-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
+                >
+                  <span>{isEn ? 'Learner View' : 'Visuale Discenti'}</span>
+                  <ExternalLink className="w-3 h-3 text-cyan-400" />
+                </button>
+                <button
+                  onClick={() => openVisualeInNewWindow('faculty', 'regia')}
+                  className="w-full text-left px-3 py-1.5 text-xs text-amber-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
+                >
+                  <span>{isEn ? 'Faculty View' : 'Visuale Faculty'}</span>
+                  <ExternalLink className="w-3 h-3 text-amber-400" />
+                </button>
+                <button
+                  onClick={() => openVisualeInNewWindow('tecnici', 'regia')}
+                  className="w-full text-left px-3 py-1.5 text-xs text-pink-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
+                >
+                  <span>{isEn ? 'Technician View' : 'Visuale Tecnici'}</span>
+                  <ExternalLink className="w-3 h-3 text-pink-400" />
+                </button>
+              </div>
+            </div>
 
             <button
               onClick={copyPublicUrl}

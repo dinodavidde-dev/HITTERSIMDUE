@@ -115,10 +115,12 @@ const getGroupTheme = (grp: GroupType, isEn: boolean) => {
 
 interface RegiaVisualTimelineBoardProps {
   isMaster?: boolean;
+  showRadioPanel?: boolean;
 }
 
 export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> = ({
   isMaster = true,
+  showRadioPanel = isMaster,
 }) => {
   const {
     activeDay,
@@ -778,17 +780,19 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
         )}
 
         {/* REGIA RADIO COORDINATION PANEL (TIMELINE_REGIA_COORDINAMENTO) */}
-        <RegiaRadioCoordinationPanel
-          currentSlot={currentSlot}
-          activeDay={activeDay}
-          onJumpToSlot={(targetSlotId) => {
-            const globalIdx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === targetSlotId);
-            if (globalIdx !== -1) {
-              setActiveSlotIndex(globalIdx);
-            }
-          }}
-          isMaster={isMaster}
-        />
+        {showRadioPanel && (
+          <RegiaRadioCoordinationPanel
+            currentSlot={currentSlot}
+            activeDay={activeDay}
+            onJumpToSlot={(targetSlotId) => {
+              const globalIdx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === targetSlotId);
+              if (globalIdx !== -1) {
+                setActiveSlotIndex(globalIdx);
+              }
+            }}
+            isMaster={isMaster}
+          />
+        )}
 
         {/* HORIZONTAL COURSE TIMELINE SCROLLER (INTERACTIVE SCHEDULE STRIP) */}
         <div className="bg-neutral-950 border border-neutral-800 p-2 space-y-1.5">

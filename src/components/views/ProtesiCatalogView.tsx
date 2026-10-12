@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCourse } from '../../context/CourseContext';
-import { PROTESI_CATALOG } from '../../data/protesiCatalog';
 import { ProtesiItem } from '../../types';
+import { ProtesiEditModal } from '../protesi/ProtesiEditModal';
 import {
   Activity,
   AlertTriangle,
@@ -26,18 +26,28 @@ import {
   Wrench,
   Zap,
   Lock,
-  FileText
+  FileText,
+  Plus,
+  Edit,
+  RotateCcw,
+  Trash2,
+  AlertCircle,
 } from 'lucide-react';
 
 export const ProtesiCatalogView: React.FC = () => {
-  const { language, userRole } = useCourse();
+  const { language, userRole, protesiCatalog, resetProtesiCatalog } = useCourse();
   const isEn = language === 'en';
-  const isRegia = userRole === 'regia';
+  const isStaff = ['regia', 'direttore', 'tecnico'].includes(userRole);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [selectedDay, setSelectedDay] = useState<string>('ALL');
   const [selectedModalItem, setSelectedModalItem] = useState<ProtesiItem | null>(null);
+
+  // Edit / Creation Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<ProtesiItem | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   const districts = [
     { id: 'ALL', label: isEn ? 'ALL DISTRICTS' : 'TUTTI I DISTRETTI' },
@@ -50,20 +60,23 @@ export const ProtesiCatalogView: React.FC = () => {
     { id: 'USTIONI_BLAST', label: isEn ? 'BURNS & NIGHT BLAST' : 'USTIONI & BLAST NOTTURNO' },
   ];
 
-  const filteredProtesi = PROTESI_CATALOG.filter((item) => {
+  // Dynamic catalog from CourseContext
+  const currentCatalog = protesiCatalog && protesiCatalog.length > 0 ? protesiCatalog : [];
+
+  const filteredProtesi = currentCatalog.filter((item) => {
     const matchSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.requiredProcedures.some((p) => p.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      item.leadTechnician.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.requiredProcedures && item.requiredProcedures.some((p) => p.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+      (item.leadTechnician && item.leadTechnician.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchDistrict = selectedDistrict === 'ALL' || item.district === selectedDistrict;
 
     const matchDay =
       selectedDay === 'ALL' ||
-      (selectedDay === 'DAY2' && item.scenariosUsed.some((s) => s.day === 2)) ||
-      (selectedDay === 'DAY3' && item.scenariosUsed.some((s) => s.day === 3));
+      (selectedDay === 'DAY2' && item.scenariosUsed && item.scenariosUsed.some((s) => s.day === 2)) ||
+      (selectedDay === 'DAY3' && item.scenariosUsed && item.scenariosUsed.some((s) => s.day === 3));
 
     return matchSearch && matchDistrict && matchDay;
   });
@@ -90,7 +103,7 @@ export const ProtesiCatalogView: React.FC = () => {
   };
 
   const handleExportProsthetics = () => {
-    const jsonStr = JSON.stringify(PROTESI_CATALOG, null, 2);
+    const jsonStr = JSON.stringify(currentCatalog, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -98,6 +111,22 @@ export const ProtesiCatalogView: React.FC = () => {
     link.download = `catalogo_protesi_moulage_${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleOpenCreateModal = () => {
+    setItemToEdit(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenEditModal = (item: ProtesiItem) => {
+    setItemToEdit(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleConfirmReset = () => {
+    resetProtesiCatalog();
+    setIsResetConfirmOpen(false);
+    setSelectedModalItem(null);
   };
 
   return (
@@ -113,7 +142,10 @@ export const ProtesiCatalogView: React.FC = () => {
                 {isEn ? 'PROSTHETICS & MOULAGE' : 'PROTESI & MOULAGE'}
               </span>
               <span className="text-neutral-400 font-mono text-[11px] sm:text-xs">
-                {PROTESI_CATALOG.length} {isEn ? 'ACTIVE DEVICES' : 'DISPOSITIVI ATTIVI'}
+                {currentCatalog.length} {isEn ? 'CONFIGURED DEVICES' : 'DISPOSITIVI A CATALOGO'}
+              </span>
+              <span className="px-2 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-700 text-[10px] font-bold uppercase">
+                {isEn ? 'EDITABLE REGISTRY' : 'REGISTRO EDITABILE'}
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-2 sm:gap-3">
@@ -122,16 +154,36 @@ export const ProtesiCatalogView: React.FC = () => {
             </h1>
             <p className="text-neutral-300 text-xs sm:text-sm mt-1 max-w-3xl">
               {isEn
-                ? 'All anatomical prosthetics, biological soft-chest simulators, pressurized vascular circuits and theatrical moulage used across clinical scenarios.'
-                : 'Tutte le protesi anatomiche, simulatori biologici a torace morbido, circuiti vascolari pressurizzati e moulage impiegati negli scenari.'}
+                ? 'All anatomical prosthetics, biological soft-chest simulators, pressurized vascular circuits and theatrical moulage. Fully editable by technical team & directors.'
+                : 'Tutte le protesi anatomiche, simulatori biologici a torace morbido, circuiti vascolari pressurizzati e moulage. Elenco interamente editabile e sincronizzato.'}
             </p>
           </div>
+
+          {/* Action Buttons: Add, Reset, Export */}
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={handleExportProsthetics}
-              className="w-full sm:w-auto min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/20"
+              onClick={handleOpenCreateModal}
+              className="w-full sm:w-auto min-h-[40px] px-3.5 sm:px-4 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-orange-600/30"
+              title={isEn ? 'Create new prosthesis item' : 'Aggiungi nuova protesi al catalogo'}
             >
-              <Download className="w-4 h-4" />
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>{isEn ? 'New Prosthesis' : 'Nuova Protesi'}</span>
+            </button>
+
+            <button
+              onClick={() => setIsResetConfirmOpen(true)}
+              className="w-full sm:w-auto min-h-[40px] px-3 sm:px-3.5 py-2 bg-neutral-850 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              title={isEn ? 'Reset catalog to defaults' : 'Ripristina catalogo originale'}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
+              <span>{isEn ? 'Reset Defaults' : 'Ripristina'}</span>
+            </button>
+
+            <button
+              onClick={handleExportProsthetics}
+              className="w-full sm:w-auto min-h-[40px] px-3 sm:px-3.5 py-2 bg-neutral-850 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-orange-400" />
               <span>{isEn ? 'Export JSON' : 'Esporta JSON'}</span>
             </button>
           </div>
@@ -145,7 +197,7 @@ export const ProtesiCatalogView: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
-              placeholder={isEn ? 'Search prosthesis, code...' : 'Cerca protesi, codice, procedura...'}
+              placeholder={isEn ? 'Search prosthesis, code, procedure...' : 'Cerca protesi, codice, procedura...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 pl-9 pr-3 py-2 text-xs uppercase placeholder:text-neutral-600 focus:outline-none focus:border-orange-500"
@@ -180,19 +232,32 @@ export const ProtesiCatalogView: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-between pt-1 text-xs text-neutral-400 font-mono flex-wrap gap-2">
-          <span>{isEn ? `Showing ${filteredProtesi.length} devices` : `Visualizzati ${filteredProtesi.length} dispositivi anatomici`}</span>
-          {searchQuery || selectedDistrict !== 'ALL' || selectedDay !== 'ALL' ? (
+          <div className="flex items-center gap-2">
+            <span>{isEn ? `Showing ${filteredProtesi.length} of ${currentCatalog.length} devices` : `Visualizzati ${filteredProtesi.length} di ${currentCatalog.length} dispositivi anatomici`}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {searchQuery || selectedDistrict !== 'ALL' || selectedDay !== 'ALL' ? (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedDistrict('ALL');
+                  setSelectedDay('ALL');
+                }}
+                className="text-orange-400 hover:underline uppercase text-[11px] font-bold cursor-pointer"
+              >
+                {isEn ? 'Reset Filters' : 'Resetta Filtri'}
+              </button>
+            ) : null}
+
             <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedDistrict('ALL');
-                setSelectedDay('ALL');
-              }}
-              className="text-orange-400 hover:underline uppercase text-[11px] font-bold cursor-pointer"
+              onClick={handleOpenCreateModal}
+              className="text-orange-400 hover:text-orange-300 font-bold uppercase text-[11px] flex items-center gap-1 cursor-pointer"
             >
-              {isEn ? 'Reset Filters' : 'Resetta Filtri'}
+              <Plus className="w-3.5 h-3.5" />
+              <span>{isEn ? 'Add New' : 'Aggiungi'}</span>
             </button>
-          ) : null}
+          </div>
         </div>
       </div>
 
@@ -208,7 +273,7 @@ export const ProtesiCatalogView: React.FC = () => {
                 {getDistrictBadge(item.district)}
               </div>
               <span className="text-[10px] text-neutral-400 font-mono">
-                {item.scenariosUsed.length} {isEn ? 'Scenarios' : 'Scenari'}
+                {item.scenariosUsed?.length || 0} {isEn ? 'Scenarios' : 'Scenari'}
               </span>
             </div>
 
@@ -224,28 +289,52 @@ export const ProtesiCatalogView: React.FC = () => {
             <div className="bg-neutral-900 p-2.5 border border-neutral-800 space-y-1.5 text-xs">
               <div>
                 <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Guided Procedure:' : 'Procedura Guidata:'}</span>
-                <span className="text-orange-400 font-bold text-xs">{item.requiredProcedures[0] || (isEn ? 'Guided Procedure' : 'Procedura Guidata')}</span>
+                <span className="text-orange-400 font-bold text-xs">{item.requiredProcedures?.[0] || (isEn ? 'Guided Procedure' : 'Procedura Guidata')}</span>
               </div>
               <div>
                 <span className="text-neutral-400 text-[10px] uppercase block">{isEn ? 'Function / Feature:' : 'Funzione / Feature:'}</span>
-                <span className="text-neutral-200 text-xs">{item.activeFeatures[0]}</span>
+                <span className="text-neutral-200 text-xs">{item.activeFeatures?.[0] || 'Standard Tissue'}</span>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-neutral-800 text-[11px]">
                 <span className="text-neutral-400">Lead Tech: <strong className="text-amber-300">{item.leadTechnician}</strong></span>
-                <span className="text-neutral-400 font-mono">{item.consumables.length} {isEn ? 'consumables' : 'consumabili'}</span>
+                <span className="text-neutral-400 font-mono">{item.consumables?.length || 0} {isEn ? 'consumables' : 'consumabili'}</span>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setSelectedModalItem(item)}
-              className="w-full min-h-[40px] py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-neutral-700"
-            >
-              <FileText className="w-3.5 h-3.5 text-orange-400" />
-              <span>{isEn ? 'View Prosthesis Sheet' : 'Visualizza Scheda Protesi'}</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setSelectedModalItem(item)}
+                className="min-h-[40px] py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-neutral-700"
+              >
+                <FileText className="w-3.5 h-3.5 text-orange-400" />
+                <span>{isEn ? 'Sheet' : 'Scheda'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenEditModal(item)}
+                className="min-h-[40px] py-2 bg-neutral-850 hover:bg-orange-950/80 text-orange-300 hover:text-white font-bold uppercase text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-orange-600/60"
+              >
+                <Edit className="w-3.5 h-3.5 text-orange-400" />
+                <span>{isEn ? 'Edit' : 'Modifica'}</span>
+              </button>
+            </div>
           </div>
         ))}
+
+        {filteredProtesi.length === 0 && (
+          <div className="bg-neutral-900 border border-neutral-800 p-8 text-center text-neutral-400 space-y-3">
+            <Package className="w-10 h-10 text-neutral-600 mx-auto" />
+            <p className="text-sm uppercase font-bold">{isEn ? 'No prosthetics match filter' : 'Nessuna protesi trovata per i filtri selezionati'}</p>
+            <button
+              onClick={handleOpenCreateModal}
+              className="px-4 py-2 bg-orange-600 text-black font-black text-xs uppercase cursor-pointer"
+            >
+              + {isEn ? 'Create New Prosthesis' : 'Aggiungi Nuova Protesi'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* DESKTOP Prosthetics Master Table (>= md) */}
@@ -283,18 +372,18 @@ export const ProtesiCatalogView: React.FC = () => {
                   </td>
                   <td className="p-3 max-w-xs">
                     <div className="text-orange-400 font-bold text-[11px] mb-0.5">
-                      {item.requiredProcedures[0] || (isEn ? 'Guided Procedure' : 'Procedura Guidata')}
+                      {item.requiredProcedures?.[0] || (isEn ? 'Guided Procedure' : 'Procedura Guidata')}
                     </div>
                     <div className="text-neutral-300 text-[10px] line-clamp-2">
-                      {item.activeFeatures[0]}
+                      {item.activeFeatures?.[0]}
                     </div>
                   </td>
                   <td className="p-3 font-mono">
                     <div className="text-white font-bold">
-                      {item.scenariosUsed.length} {isEn ? 'Scenarios' : 'Scenari'}
+                      {item.scenariosUsed?.length || 0} {isEn ? 'Scenarios' : 'Scenari'}
                     </div>
                     <div className="text-neutral-400 text-[10px] truncate max-w-[180px]">
-                      {item.scenariosUsed.map(s => s.scenarioCode).join(', ')}
+                      {item.scenariosUsed?.map(s => s.scenarioCode).join(', ') || '-'}
                     </div>
                   </td>
                   <td className="p-3 font-mono">
@@ -302,26 +391,54 @@ export const ProtesiCatalogView: React.FC = () => {
                       {item.leadTechnician}
                     </div>
                     <div className="text-neutral-400 text-[10px]">
-                      {item.consumables.length} {isEn ? 'consumables' : 'consumabili'}
+                      {item.consumables?.length || 0} {isEn ? 'consumables' : 'consumabili'}
                     </div>
                   </td>
                   <td className="p-3 text-right">
-                    <button
-                      onClick={() => setSelectedModalItem(item)}
-                      className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1"
-                    >
-                      <FileText className="w-3 h-3 text-orange-400" />
-                      {isEn ? 'Sheet' : 'Scheda'}
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => setSelectedModalItem(item)}
+                        className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1 border border-neutral-700"
+                        title={isEn ? 'View prosthesis sheet' : 'Visualizza scheda tecnica'}
+                      >
+                        <FileText className="w-3 h-3 text-orange-400" />
+                        <span>{isEn ? 'Sheet' : 'Scheda'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenEditModal(item)}
+                        className="px-2.5 py-1 bg-orange-950/80 hover:bg-orange-900 border border-orange-600 text-orange-300 hover:text-white font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer inline-flex items-center gap-1"
+                        title={isEn ? 'Edit prosthesis' : 'Modifica parametri protesi'}
+                      >
+                        <Edit className="w-3 h-3 text-orange-400" />
+                        <span>{isEn ? 'Edit' : 'Modifica'}</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
             })}
+            {filteredProtesi.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-neutral-400">
+                  <div className="space-y-3">
+                    <Package className="w-10 h-10 text-neutral-600 mx-auto" />
+                    <p className="text-xs uppercase font-bold">{isEn ? 'No prosthetics found' : 'Nessuna protesi trovata per i criteri specificati'}</p>
+                    <button
+                      onClick={handleOpenCreateModal}
+                      className="px-4 py-2 bg-orange-600 text-black font-black text-xs uppercase cursor-pointer"
+                    >
+                      + {isEn ? 'Create New Prosthesis' : 'Crea Nuova Protesi'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Detailed Modal */}
+      {/* Detailed Sheet Modal */}
       {selectedModalItem && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-neutral-900 border-2 border-orange-500/60 max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative space-y-6">
@@ -356,7 +473,7 @@ export const ProtesiCatalogView: React.FC = () => {
                     <Droplet className="w-4 h-4" /> {isEn ? 'Circulatory Features' : 'Funzionalità Circolatorie'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
-                    {selectedModalItem.activeFeatures.map((f, idx) => (
+                    {selectedModalItem.activeFeatures?.map((f, idx) => (
                       <li key={idx}>{f}</li>
                     ))}
                   </ul>
@@ -366,7 +483,7 @@ export const ProtesiCatalogView: React.FC = () => {
                     <Wrench className="w-4 h-4" /> {isEn ? 'Guided Procedures' : 'Procedure Guidate'}
                   </h4>
                   <ul className="list-disc pl-4 space-y-1 text-neutral-200 text-xs">
-                    {selectedModalItem.requiredProcedures.map((p, idx) => (
+                    {selectedModalItem.requiredProcedures?.map((p, idx) => (
                       <li key={idx}>{p}</li>
                     ))}
                   </ul>
@@ -376,15 +493,18 @@ export const ProtesiCatalogView: React.FC = () => {
               {/* Scenari di impiego */}
               <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-2">
                 <h4 className="text-neutral-300 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-orange-400" /> {isEn ? `Scenarios of Use (${selectedModalItem.scenariosUsed.length})` : `Scenari di Impiego (${selectedModalItem.scenariosUsed.length})`}
+                  <ClipboardList className="w-4 h-4 text-orange-400" /> {isEn ? `Scenarios of Use (${selectedModalItem.scenariosUsed?.length || 0})` : `Scenari di Impiego (${selectedModalItem.scenariosUsed?.length || 0})`}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {selectedModalItem.scenariosUsed.map((scen, idx) => (
+                  {selectedModalItem.scenariosUsed?.map((scen, idx) => (
                     <div key={idx} className="bg-neutral-900 p-2.5 border border-neutral-800 font-mono text-[11px] space-y-0.5">
                       <div className="text-orange-400 font-bold">Pat. #{scen.patientId} • {scen.scenarioCode}</div>
                       <div className="text-neutral-300">Day {scen.day} • TCCC Extra: Sq. {scen.teamExtra} | ShockRoom: Sq. {scen.teamIntra}</div>
                     </div>
                   ))}
+                  {(!selectedModalItem.scenariosUsed || selectedModalItem.scenariosUsed.length === 0) && (
+                    <span className="text-xs text-neutral-500 italic p-2">{isEn ? 'No scenarios assigned.' : 'Nessun scenario associato.'}</span>
+                  )}
                 </div>
               </div>
 
@@ -398,7 +518,7 @@ export const ProtesiCatalogView: React.FC = () => {
                 <div className="bg-neutral-950 p-4 border border-neutral-800 space-y-1">
                   <span className="text-neutral-400 font-bold uppercase text-[10px]">{isEn ? 'Required Consumables:' : 'Consumabili Necessari:'}</span>
                   <ul className="list-disc pl-4 space-y-0.5 text-neutral-200 text-xs font-mono">
-                    {selectedModalItem.consumables.map((c, idx) => (
+                    {selectedModalItem.consumables?.map((c, idx) => (
                       <li key={idx}>{c}</li>
                     ))}
                   </ul>
@@ -406,12 +526,62 @@ export const ProtesiCatalogView: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-neutral-800 flex justify-end">
+            <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  const target = selectedModalItem;
+                  setSelectedModalItem(null);
+                  handleOpenEditModal(target);
+                }}
+                className="px-4 py-2 bg-orange-950/80 hover:bg-orange-900 border border-orange-600 text-orange-300 hover:text-white font-bold uppercase text-xs tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Edit className="w-3.5 h-3.5 text-orange-400" />
+                <span>{isEn ? 'Edit this Prosthesis' : 'Modifica questa Protesi'}</span>
+              </button>
+
               <button
                 onClick={() => setSelectedModalItem(null)}
                 className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-black font-black uppercase text-xs tracking-wider cursor-pointer"
               >
                 {isEn ? 'Close Sheet' : 'Chiudi Scheda'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit / Create Modal */}
+      <ProtesiEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        itemToEdit={itemToEdit}
+      />
+
+      {/* Reset Confirmation Dialog */}
+      {isResetConfirmOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border-2 border-amber-500 max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2.5 text-amber-400 font-black uppercase text-sm">
+              <AlertCircle className="w-5 h-5 text-amber-400" />
+              <span>{isEn ? 'Reset Prosthetics Catalog?' : 'Ripristinare Catalogo Protesi?'}</span>
+            </div>
+            <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+              {isEn
+                ? 'This will restore the 8 official master prosthetics of the Advanced Trauma Course. Any custom prosthetics added or modified will be reset to default.'
+                : 'Verranno ripristinate le 8 protesi e simulatori master ufficiali del Corso Avanzato Trauma. Tutte le modifiche o nuove protesi create torneranno ai valori predefiniti.'}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+              <button
+                onClick={() => setIsResetConfirmOpen(false)}
+                className="px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase cursor-pointer"
+              >
+                {isEn ? 'Cancel' : 'Annulla'}
+              </button>
+              <button
+                onClick={handleConfirmReset}
+                className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase cursor-pointer"
+              >
+                {isEn ? 'Confirm Reset' : 'Conferma Ripristino'}
               </button>
             </div>
           </div>
