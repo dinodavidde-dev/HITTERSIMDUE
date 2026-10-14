@@ -252,8 +252,45 @@ function getStoredOrDefault<T>(key: string, defaultVal: T): T {
 }
 
 export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => getStoredOrDefault<Language>('language', 'en'));
-  const [userRole, setUserRole] = useState<UserRole>('regia');
+  const [language, setLanguageState] = useState<Language>(() => getStoredOrDefault<Language>('language', 'it'));
+  const [userRole, setUserRole] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
+      const roleParam = (params.get('role') || '').toLowerCase();
+
+      // If explicitly public or guest
+      if (
+        viewParam === 'public' ||
+        viewParam === 'pubblico' ||
+        viewParam === 'true' ||
+        viewParam === '1' ||
+        viewParam === 'ospite' ||
+        roleParam === 'ospite'
+      ) {
+        return 'ospite';
+      }
+
+      if (roleParam === 'discente' || params.get('discente') || params.get('student')) return 'discente';
+      if (roleParam === 'faculty' || params.get('faculty') || params.get('tutor')) return 'faculty';
+      if (roleParam === 'tecnico' || params.get('tecnico') || params.get('tech')) return 'tecnico';
+      if (roleParam === 'direttore' || params.get('direttore')) return 'direttore';
+      if (roleParam === 'regia' || params.get('regia')) return 'regia';
+
+      // If stored role exists, use it
+      const stored = localStorage.getItem(STORAGE_KEY_PREFIX + 'userRole');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'string') return parsed as UserRole;
+        } catch (e) {}
+      }
+
+      // Default safe entrance: ospite (Public View)
+      return 'ospite';
+    }
+    return 'ospite';
+  });
   const [openedByRole, setOpenedByRoleState] = useState<'regia' | 'direttore' | null>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -502,8 +539,16 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentTab, setCurrentTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const viewParam = params.get('view') || params.get('public');
-      if (viewParam === 'public' || viewParam === 'true') return 'public';
+      const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
+      if (
+        viewParam === 'public' ||
+        viewParam === 'pubblico' ||
+        viewParam === 'true' ||
+        viewParam === '1' ||
+        viewParam === 'ospite'
+      ) {
+        return 'public';
+      }
       if (viewParam) return viewParam;
       const hasSpecificParam =
         params.get('discente') ||
@@ -2272,11 +2317,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       senderId: 'sim-regia',
       senderName: 'Simulatore Regia Trauma',
       senderRole: 'direttore',
-      recipientTarget: 'ALL',
+      type: evt.priority === 'critical' ? 'emergency' : 'warning',
       subject: evt.title,
-      message: evt.msg,
-      priority: evt.priority === 'critical' ? 'urgent' : 'normal',
-      category: 'clinical_alert',
+      content: evt.msg,
     });
     playBroadcastSound(evt.priority === 'critical' ? 'emergency' : 'warning');
   }, [sendCourseMessage]);

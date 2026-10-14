@@ -118,9 +118,9 @@ export const ScenarioComprehensiveReportModal: React.FC<ScenarioComprehensiveRep
             <p className="text-sm font-bold text-white">
               {groupActivity.subtitle || (isEn ? 'No subtitle specified.' : 'Nessun sottotitolo specificato.')}
             </p>
-            {groupActivity.description && (
+            {(groupActivity as any).description && (
               <p className="text-xs text-neutral-300 leading-relaxed pt-1 border-t border-neutral-800">
-                {groupActivity.description}
+                {(groupActivity as any).description}
               </p>
             )}
           </div>

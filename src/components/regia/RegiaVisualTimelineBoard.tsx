@@ -1410,7 +1410,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                             <span>{isEn ? 'Simulators, Patients & Station Technicians:' : 'Simulatori, Pazienti & Tecnici di Postazione:'}</span>
                           </span>
                           <button
-                            onClick={() => setSelectedProtesiModal({ groupId: grpId, groupActivity: activeActivity })}
+                            onClick={() => setSelectedProtesiModal({ groupId: grpId, groupActivity: activeActivity, timeRange: currentSlot.timeRange })}
                             className="px-2 py-0.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 font-mono text-[10px] uppercase font-bold flex items-center gap-1 cursor-pointer transition-colors"
                           >
                             <ClipboardList className="w-3 h-3" />

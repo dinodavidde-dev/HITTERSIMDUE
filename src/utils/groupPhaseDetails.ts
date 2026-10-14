@@ -215,12 +215,15 @@ export function getGroupPhaseDetails(
   }
 
   // 2. Associazione Pazienti Simulatori & Attori
+  const safePatients = Array.isArray(simulatorPatients) ? simulatorPatients : [];
+  const safeTechs = Array.isArray(technicians) ? technicians : [];
+
   let relevantPatient: SimulatorPatient | undefined = undefined;
   if (activity.patientIds && activity.patientIds.length > 0) {
-    relevantPatient = simulatorPatients.find(p => activity.patientIds!.includes(p.id));
+    relevantPatient = safePatients.find(p => p && activity.patientIds!.includes(p.id));
   }
   if (!relevantPatient) {
-    relevantPatient = simulatorPatients.find(p => p.day === activeDay && (p.groupExtraAssigned === group || p.groupIntraAssigned === group));
+    relevantPatient = safePatients.find(p => p && p.day === activeDay && (p.groupExtraAssigned === group || p.groupIntraAssigned === group));
   }
 
   const hasSimulators = Boolean(relevantPatient) || text.includes('simulatore') || text.includes('manichino') || text.includes('workshop') || text.includes('tccc') || text.includes('shock room');
@@ -260,23 +263,27 @@ export function getGroupPhaseDetails(
 
   // 3. Associazione Team Tecnico (TECH)
   const loc = (activity.location || '').toLowerCase();
-  let assignedTech = technicians.find(t => {
-    return t.assignedStations.some(s => loc.includes(s.toLowerCase()) || s.toLowerCase().includes(loc));
+  let assignedTech = safeTechs.find(t => {
+    return Boolean(
+      t &&
+      Array.isArray(t.assignedStations) &&
+      t.assignedStations.some(s => s && (loc.includes(s.toLowerCase()) || s.toLowerCase().includes(loc)))
+    );
   });
 
   if (!assignedTech) {
     if (loc.includes('postazione 1') || loc.includes('box shock room 1') || loc.includes('ambiente tattico 1')) {
-      assignedTech = technicians.find(t => t.badgeCode === 'TECH-01' || t.id === 'tech-1');
+      assignedTech = safeTechs.find(t => t?.badgeCode === 'TECH-01' || t?.id === 'tech-1');
     } else if (loc.includes('postazione 2') || loc.includes('box shock room 2') || loc.includes('ambiente tattico 2')) {
-      assignedTech = technicians.find(t => t.badgeCode === 'TECH-02' || t.id === 'tech-2');
+      assignedTech = safeTechs.find(t => t?.badgeCode === 'TECH-02' || t?.id === 'tech-2');
     } else if (loc.includes('postazione 3') || loc.includes('box shock room 3') || loc.includes('ambiente tattico 3')) {
-      assignedTech = technicians.find(t => t.badgeCode === 'TECH-03' || t.id === 'tech-3');
+      assignedTech = safeTechs.find(t => t?.badgeCode === 'TECH-03' || t?.id === 'tech-3');
     } else if (text.includes('ws1') || loc.includes('ws1')) {
-      assignedTech = technicians.find(t => t.badgeCode === 'TECH-10' || t.id === 'tech-10');
+      assignedTech = safeTechs.find(t => t?.badgeCode === 'TECH-10' || t?.id === 'tech-10');
     } else if (text.includes('ws2') || loc.includes('ws2')) {
-      assignedTech = technicians.find(t => t.badgeCode === 'TECH-11' || t.id === 'tech-11');
+      assignedTech = safeTechs.find(t => t?.badgeCode === 'TECH-11' || t?.id === 'tech-11');
     } else {
-      assignedTech = technicians[0];
+      assignedTech = safeTechs[0];
     }
   }
 

@@ -136,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
 
   // Specific views where the view selector navigation bar must be hidden
   const isDirectorView = currentTab === 'direttori' || (currentTab === 'main' && userRole === 'direttore');
-  const isPublicView = currentTab === 'public';
+  const isPublicView = currentTab === 'public' || currentTab === 'ospite' || userRole === 'ospite';
   const isDiscenteView = currentTab === 'discente' || (currentTab === 'main' && userRole === 'discente');
   const isTecniciView = currentTab === 'tecnici' || (currentTab === 'main' && userRole === 'tecnico');
   const isOspitiView = currentTab === 'ospite' || (currentTab === 'main' && userRole === 'ospite');
@@ -228,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     title={language === 'en' ? 'Learner Area: enter Name & Surname' : 'Area Discenti: inserisci Nome e Cognome'}
                   >
                     <GraduationCap className="w-3.5 h-3.5 text-black" />
-                    <span>{language === 'en' ? 'LEARNER AREA' : 'AREA DISCENTI'}</span>
+                    <span>AREA DISCENTI</span>
                   </button>
                 </div>
               )}
@@ -552,7 +552,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                         onClick={() => handleVisualeClick('public', 'ospite')}
                         title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Guest View in new window' : 'Apri Visuale Ospiti in una nuova finestra') : undefined}
                         className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'public' && userRole === 'ospite'
+                          currentTab === 'public' && (userRole as string) === 'ospite'
                             ? 'text-white bg-emerald-600 border-emerald-500 shadow-xs'
                             : 'text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/40 hover:border-emerald-500'
                         }`}

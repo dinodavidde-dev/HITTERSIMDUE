@@ -205,19 +205,29 @@ export const DirectorPerformanceVisualization: React.FC = () => {
 
       // Discenti for this team (1 TL + 4 Op)
       const teamDiscenti = (discenti || []).filter((d) => Number(d.teamId) === teamId);
-      const teamLeader = teamDiscenti[0] || {
-        id: `disc-${(teamId - 1) * 5 + 1}`,
-        badgeCode: `DISC-${String((teamId - 1) * 5 + 1).padStart(2, '0')}`,
-        name: isEn ? `Team Leader Team ${teamId}` : `Team Leader Sq. ${teamId}`,
-      };
-      const operators = teamDiscenti.slice(1);
+      const teamLeader = teamDiscenti[0]
+        ? {
+            id: teamDiscenti[0].id,
+            badgeCode: teamDiscenti[0].badgeCode || `DISC-${String((teamId - 1) * 5 + 1).padStart(2, '0')}`,
+            name: teamDiscenti[0].name,
+          }
+        : {
+            id: `disc-${(teamId - 1) * 5 + 1}`,
+            badgeCode: `DISC-${String((teamId - 1) * 5 + 1).padStart(2, '0')}`,
+            name: isEn ? `Team Leader Team ${teamId}` : `Team Leader Sq. ${teamId}`,
+          };
+      const rawOperators = teamDiscenti.slice(1).map((op, opIdx) => ({
+        id: op.id,
+        badgeCode: op.badgeCode || `DISC-${String((teamId - 1) * 5 + 2 + opIdx).padStart(2, '0')}`,
+        name: op.name,
+      }));
       const fullOperators =
-        operators.length >= 4
-          ? operators
+        rawOperators.length >= 4
+          ? rawOperators
           : [
-              ...operators,
-              ...Array.from({ length: Math.max(0, 4 - operators.length) }, (_, opIdx) => {
-                const opNum = (teamId - 1) * 5 + 2 + operators.length + opIdx;
+              ...rawOperators,
+              ...Array.from({ length: Math.max(0, 4 - rawOperators.length) }, (_, opIdx) => {
+                const opNum = (teamId - 1) * 5 + 2 + rawOperators.length + opIdx;
                 return {
                   id: `disc-${opNum}`,
                   badgeCode: `DISC-${String(opNum).padStart(2, '0')}`,
@@ -229,22 +239,24 @@ export const DirectorPerformanceVisualization: React.FC = () => {
             ];
 
       // Dedicated Faculty & Tech (1:1 ratio)
-      const tutor =
+      const rawTutor =
         (faculty || []).find((f) => f.assignedTeamId === teamId) ||
-        (faculty || [])[teamId - 1] || {
-          id: `fac-${teamId}`,
-          badgeCode: `FAC-${String(teamId).padStart(2, '0')}`,
-          name: `Tutor FAC-${String(teamId).padStart(2, '0')}`,
-        };
-      const tech =
+        (faculty || [])[teamId - 1];
+      const tutor = {
+        id: rawTutor?.id || `fac-${teamId}`,
+        badgeCode: rawTutor?.badgeCode || `FAC-${String(teamId).padStart(2, '0')}`,
+        name: rawTutor?.name || `Tutor FAC-${String(teamId).padStart(2, '0')}`,
+      };
+      const rawTech =
         (technicians || []).find(
           (t) => t.id === `tech-${teamId}` || (t as any).assignedTeamId === teamId
         ) ||
-        (technicians || [])[teamId - 1] || {
-          id: `tech-${teamId}`,
-          badgeCode: `TECH-${String(teamId).padStart(2, '0')}`,
-          name: `Tecnico TECH-${String(teamId).padStart(2, '0')}`,
-        };
+        (technicians || [])[teamId - 1];
+      const tech = {
+        id: rawTech?.id || `tech-${teamId}`,
+        badgeCode: rawTech?.badgeCode || `TECH-${String(teamId).padStart(2, '0')}`,
+        name: rawTech?.name || `Tecnico TECH-${String(teamId).padStart(2, '0')}`,
+      };
 
       // Filter real evaluations submitted by Faculty for this team
       const teamEvals = (evaluations || []).filter((ev) => {

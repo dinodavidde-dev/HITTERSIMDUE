@@ -44,9 +44,9 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   const title = discente?.name || faculty?.name || technician?.name || director?.name || guest?.name || (isEn ? 'Tactical Trauma Pass' : 'Pass Trauma Tattico');
   const studentRole = isEn ? (discente?.role === 'Operatore' ? 'Operator' : discente?.role) : discente?.role;
   const teamName = team?.name ? (isEn ? team.name.replace('Squadra', 'Team') : team.name) : (isEn ? 'Team' : 'Squadra');
-  const techRole = isEn ? (technician?.role === 'Tecnico' ? 'Technician' : technician?.role) : technician?.role;
+  const techRole = isEn ? (technician?.specialty || 'Technician') : (technician?.specialty || 'Tecnico');
   const subtitle = discente 
-    ? `${discente.group} • ${teamName} • ${studentRole}`
+    ? `${team?.groupId || 'A'} • ${teamName} • ${studentRole}`
     : faculty 
     ? (isEn ? `Faculty Tutor • ${faculty.specialty || 'TCCC & Trauma'}` : `Tutor Didattico • ${faculty.specialty || 'TCCC & Trauma'}`)
     : technician

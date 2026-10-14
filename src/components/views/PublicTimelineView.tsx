@@ -35,6 +35,7 @@ import { useCourse } from '../../context/CourseContext';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { getGroupPhaseDetails, GroupPhaseEnrichedDetails } from '../../utils/groupPhaseDetails';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
+import { RomaSudWeatherTicker } from '../public/RomaSudWeatherTicker';
 
 // Metadata for the 4 macro-groups
 const GROUP_META: Record<
@@ -336,10 +337,13 @@ const GroupScrollingTicker: React.FC<{
           onClick={onOpenDetails}
           className="overflow-hidden whitespace-nowrap flex-1 relative w-full cursor-pointer"
         >
-          {/* Dual marquee block for continuous seamless scroll */}
+          {/* Dual marquee block for continuous seamless scroll (slowed down for comfortable reading) */}
           <div
-            className="animate-marquee inline-flex"
-            style={{ animationPlayState: isPaused ? 'paused' : undefined }}
+            className="animate-marquee-slow inline-flex"
+            style={{
+              animationPlayState: isPaused ? 'paused' : undefined,
+              animationDuration: '80s',
+            }}
           >
             {renderContent()}
             {renderContent()}
@@ -455,18 +459,26 @@ export const PublicTimelineView: React.FC = () => {
     D: { bg: 'bg-purple-500', text: 'text-white', border: 'border-purple-400' },
   };
 
+  // Safe memoized arrays for participants
+  const safeFaculty = useMemo(() => (Array.isArray(faculty) ? faculty : []), [faculty]);
+  const safeTechs = useMemo(() => (Array.isArray(technicians) ? technicians : []), [technicians]);
+  const safePatients = useMemo(() => (Array.isArray(simulatorPatients) ? simulatorPatients : []), [simulatorPatients]);
+  const safeDiscenti = useMemo(() => (Array.isArray(discenti) ? discenti : []), [discenti]);
+
   // Discente Search Resolution
   const searchedDiscenti = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase().trim();
-    return (discenti || []).filter(
+    return safeDiscenti.filter(
       (d) =>
-        d.id.toLowerCase().includes(q) ||
-        (d.badgeCode || '').toLowerCase().includes(q) ||
-        d.name.toLowerCase().includes(q) ||
-        (d.specialty || '').toLowerCase().includes(q)
+        d && (
+          (d.id || '').toLowerCase().includes(q) ||
+          (d.badgeCode || '').toLowerCase().includes(q) ||
+          (d.name || '').toLowerCase().includes(q) ||
+          (d.specialty || '').toLowerCase().includes(q)
+        )
     ).slice(0, 5);
-  }, [searchQuery, discenti]);
+  }, [searchQuery, safeDiscenti]);
 
   const getDiscenteGroup = (teamId: number): GroupType => {
     if (teamId <= 3) return 'A';
@@ -475,231 +487,237 @@ export const PublicTimelineView: React.FC = () => {
     return 'D';
   };
 
+  // Se il Gate è abilitato e il corso non è ancora iniziato (countdown attivo)
+  const isScheduledGateWaiting = courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0;
+  const isDayBefore8 = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 0;
+  const isMorningCountdown = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 1;
+  const isNightToMorningCountdown = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
+
+  const renderCountdownBanner = () => {
+    if (isScheduledGateWaiting) {
+      return (
+        <div className="bg-neutral-950 border-2 sm:border-3 border-amber-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-transparent to-red-500/10 pointer-events-none" />
+          <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+            {/* Course Name in First Plane / Primo Piano */}
+            <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                  <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                  <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    <span>DAY 0{activeDay}</span>
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
+                  HITTER
+                </h1>
+                <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
+                  High Intensive Training Trauma Emergency Response
+                </p>
+              </div>
+            </div>
+
+            {/* Event Phase: Countdown Apertura Gate */}
+            <div className="space-y-1">
+              <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
+                {isEn ? 'ACCESS STATUS: PRE-COURSE' : 'STATO ACCESSO: PRE-CORSO'}
+              </span>
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
+                {isEn ? 'GATE OPENING COUNTDOWN' : 'COUNTDOWN APERTURA GATE'}
+              </h2>
+            </div>
+
+            <div className="bg-amber-950/80 border-2 border-amber-500 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 uppercase tracking-widest block mb-1.5 flex items-center justify-center gap-1.5">
+                <Lock className="w-4 h-4 text-amber-400" />
+                <span>{isEn ? 'OFFICIAL CONTROL ROOM NOTICE • SCHEDULED OPENING' : 'AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA'}</span>
+              </span>
+              <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
+                {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ORE ${courseStartSchedule?.scheduledTime || '08:30'}`}
+              </p>
+              <p className="text-[11px] sm:text-xs font-mono text-amber-200 mt-1.5">
+                {isEn ? `Scheduled date: ${courseStartSchedule?.scheduledDate || ''} • Access reserved for assigned teams` : `Data prevista: ${courseStartSchedule?.scheduledDate || ''} • Accesso riservato ai team assegnati`}
+              </p>
+            </div>
+
+            <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
+              <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
+                {isEn ? 'TIME REMAINING UNTIL GATE OPENING' : "TEMPO RIMANENTE ALL'APERTURA DEL GATE"}
+              </span>
+              <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
+                {formatGateCountdown(timeRemainingMs)}
+              </div>
+            </div>
+
+            <div className="pt-1 sm:pt-2 space-y-2">
+              <p className="text-base sm:text-xl md:text-2xl font-black text-amber-300 uppercase tracking-wider italic">
+                {isEn ? '"Verify individual equipment, contact Faculty and align Teams."' : '"Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."'}
+              </p>
+              <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
+                {isEn ? 'Centralized time synchronization from Control Room • Full course timeline & rotations available below' : 'Sincronizzazione oraria centralizzata dalla Regia Operativa • Cronoprogramma completo e rotazioni consultabili sotto'}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isDayBefore8) {
+      return (
+        <div className="bg-neutral-950 border-2 sm:border-3 border-orange-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-red-500/10 pointer-events-none" />
+          <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+            {/* Course Name in First Plane */}
+            <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                  <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                  <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    <span>DAY 0{activeDay}</span>
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
+                  HITTER
+                </h1>
+                <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
+                  High Intensive Training Trauma Emergency Response
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
+                {isEn ? 'OPERATIONAL STATUS: PRE-OPENING' : 'STATO OPERATIVO: PRE-APERTURA'}
+              </span>
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
+                {isEn ? 'AWAITING COURSE OPENING' : 'ATTESA APERTURA CORSO'}
+              </h2>
+            </div>
+
+            <div className="bg-red-950/80 border-2 border-red-600 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-1.5">
+                {isEn ? `OFFICIAL CONTROL ROOM NOTICE • DAY 0${activeDay}` : `AVVISO UFFICIALE REGIA • DAY 0${activeDay}`}
+              </span>
+              <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
+                {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ${courseStartSchedule?.scheduledTime || '08:30'}`}
+              </p>
+            </div>
+
+            <div className="pt-1 sm:pt-2 space-y-2">
+              <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
+                {isEn ? '"Station setup and faculty briefing in progress. Stand by."' : '"Preparazione postazioni e briefing faculty in corso. Tenetevi pronti."'}
+              </p>
+              <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
+                {isEn ? `Day ${activeDay} • Awaiting official opening at ${courseStartSchedule?.scheduledTime || '08:30'}` : `Day ${activeDay} • Attesa apertura ufficiale ore ${courseStartSchedule?.scheduledTime || '08:30'}`}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isMorningCountdown || isNightToMorningCountdown) {
+      return (
+        <div className="bg-neutral-950 border-2 sm:border-3 border-orange-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-red-500/10 pointer-events-none" />
+          <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+            {/* Course Name in First Plane */}
+            <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                  <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                  <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    <span>DAY 0{activeDay}</span>
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
+                  HITTER
+                </h1>
+                <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
+                  High Intensive Training Trauma Emergency Response
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
+                {isEn ? 'OPERATIONAL STATUS: TEAM DEPLOYMENT' : 'STATO OPERATIVO: DEPLOYMENT SQUADRE'}
+              </span>
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
+                {isMorningCountdown ? (isEn ? `COUNTDOWN TO OPENING (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN VERSO APERTURA (${courseStartSchedule?.scheduledTime || '08:30'})`) : (isEn ? 'UPCOMING ACTIVITY' : 'ATTIVITÀ IN ARRIVO')}
+              </h2>
+            </div>
+
+            {isMorningCountdown && (
+              <div className="bg-orange-950/80 border-2 border-orange-500 p-4 sm:p-5 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+                <span className="text-[10px] sm:text-xs font-mono font-bold text-orange-300 uppercase tracking-widest block mb-1">
+                  {isEn ? 'OFFICIAL CONTROL ROOM DIRECTIVE' : 'DISPOSIZIONE UFFICIALE REGIA'}
+                </span>
+                <p className="text-xs sm:text-base font-black text-white uppercase tracking-wide leading-snug">
+                  {isEn ? 'Each team is requested to assemble and reach their assigned Faculty.' : 'Ogni squadra è invitata a raggrupparsi ed a raggiungere il proprio Faculty assegnato.'}
+                </p>
+              </div>
+            )}
+
+            <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-orange-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
+              <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
+                {isMorningCountdown ? (isEn ? 'TIME REMAINING UNTIL START' : "TEMPO RIMANENTE ALL'AVVIO") : (isEn ? 'BLOCK COUNTDOWN' : 'COUNTDOWN BLOCCO')}
+              </span>
+              <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-orange-400 animate-pulse tracking-wider break-words">
+                {courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0
+                  ? formatGateCountdown(timeRemainingMs)
+                  : formatCumulativeTimer(getCumulativeSeconds(isMorningCountdown, isNightToMorningCountdown))}
+              </div>
+            </div>
+
+            <div className="pt-1 sm:pt-2 space-y-2">
+              <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
+                "{isMorningCountdown ? (isEn ? 'Team assembly and Faculty contact in progress' : 'Raggruppamento squadre e contatto Faculty in corso') : (isEn ? 'Block Start' : 'Avvio Blocco')}"
+              </p>
+              <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
+                {isMorningCountdown && (isEn ? `Day ${activeDay} • Countdown to opening at ${courseStartSchedule?.scheduledTime || '08:30'}` : `Day ${activeDay} • Countdown verso l'apertura delle ore ${courseStartSchedule?.scheduledTime || '08:30'}`)}
+                {isNightToMorningCountdown && (isEn ? `Transition Day 2 ➔ Day 3 (Deadline ${courseStartSchedule?.scheduledTime || '08:30'})` : `Transizione Day 2 ➔ Day 3 (Scadenza ore ${courseStartSchedule?.scheduledTime || '08:30'})`)}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="space-y-3 sm:space-y-4 pb-12 w-full max-w-full 2xl:max-w-[1850px] mx-auto px-1.5 sm:px-3 md:px-4">
-      {/* COUNTDOWN / WAITING SCREENS OR ACTIVE ACTIVITIES */}
-      {(() => {
-        // Se il Gate è abilitato e il corso non è ancora iniziato (countdown attivo)
-        const isScheduledGateWaiting = courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0;
+      {/* Real-time Weather Telemetry Scrolling Bar for Roma Sud (EUR / Cecchignola tactical grounds) */}
+      <RomaSudWeatherTicker language={language} />
 
-        if (isScheduledGateWaiting) {
-          return (
-            <div className="bg-neutral-950 border-2 sm:border-3 border-amber-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-transparent to-red-500/10 pointer-events-none" />
-              <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
-                {/* Course Name in First Plane / Primo Piano */}
-                <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
-                      <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                      <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                        <span>DAY 0{activeDay}</span>
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                      HITTER
-                    </h1>
-                    <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
-                      High Intensive Training Trauma Emergency Response
-                    </p>
-                  </div>
-                </div>
+      {/* 1. Official Pre-Course or Scheduled Countdown Alert Banner */}
+      {renderCountdownBanner()}
 
-                {/* Event Phase: Countdown Apertura Gate */}
-                <div className="space-y-1">
-                  <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                    {isEn ? 'ACCESS STATUS: PRE-COURSE' : 'STATO ACCESSO: PRE-CORSO'}
-                  </span>
-                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                    {isEn ? 'GATE OPENING COUNTDOWN' : 'COUNTDOWN APERTURA GATE'}
-                  </h2>
-                </div>
-
-                <div className="bg-amber-950/80 border-2 border-amber-500 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
-                  <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 uppercase tracking-widest block mb-1.5 flex items-center justify-center gap-1.5">
-                    <Lock className="w-4 h-4 text-amber-400" />
-                    <span>{isEn ? 'OFFICIAL CONTROL ROOM NOTICE • SCHEDULED OPENING' : 'AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA'}</span>
-                  </span>
-                  <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
-                    {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule.scheduledTime}` : `IL GATE DISCENTI APRE ALLE ORE ${courseStartSchedule.scheduledTime}`}
-                  </p>
-                  <p className="text-[11px] sm:text-xs font-mono text-amber-200 mt-1.5">
-                    {isEn ? `Scheduled date: ${courseStartSchedule.scheduledDate} • Access reserved for assigned teams` : `Data prevista: ${courseStartSchedule.scheduledDate} • Accesso riservato ai team assegnati`}
-                  </p>
-                </div>
-
-                <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
-                  <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
-                    {isEn ? 'TIME REMAINING UNTIL GATE OPENING' : "TEMPO RIMANENTE ALL'APERTURA DEL GATE"}
-                  </span>
-                  <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
-                    {formatGateCountdown(timeRemainingMs)}
-                  </div>
-                </div>
-
-                <div className="pt-1 sm:pt-2 space-y-2">
-                  <p className="text-base sm:text-xl md:text-2xl font-black text-amber-300 uppercase tracking-wider italic">
-                    {isEn ? '"Verify individual equipment, contact Faculty and align Teams."' : '"Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."'}
-                  </p>
-                  <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
-                    {isEn ? 'Centralized time synchronization from Control Room' : 'Sincronizzazione oraria centralizzata dalla Regia Operativa'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        const isDayBefore8 = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 0;
-        const isMorningCountdown = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 1;
-        const isNightToMorningCountdown = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
-
-        // Prima della fase 2 (slot 0), mostra solo il messaggio di attesa senza countdown
-        if (isDayBefore8) {
-          return (
-            <div className="bg-neutral-950 border-2 sm:border-3 border-orange-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-red-500/10 pointer-events-none" />
-              <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
-                {/* Course Name in First Plane */}
-                <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
-                      <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                      <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                        <span>DAY 0{activeDay}</span>
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                      HITTER
-                    </h1>
-                    <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
-                      High Intensive Training Trauma Emergency Response
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                    {isEn ? 'OPERATIONAL STATUS: PRE-OPENING' : 'STATO OPERATIVO: PRE-APERTURA'}
-                  </span>
-                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                    {isEn ? 'AWAITING COURSE OPENING' : 'ATTESA APERTURA CORSO'}
-                  </h2>
-                </div>
-
-                <div className="bg-red-950/80 border-2 border-red-600 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
-                  <span className="text-[10px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-1.5">
-                    {isEn ? `OFFICIAL CONTROL ROOM NOTICE • DAY 0${activeDay}` : `AVVISO UFFICIALE REGIA • DAY 0${activeDay}`}
-                  </span>
-                  <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
-                    {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ${courseStartSchedule?.scheduledTime || '08:30'}`}
-                  </p>
-                </div>
-
-                <div className="pt-1 sm:pt-2 space-y-2">
-                  <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
-                    {isEn ? '"Station setup and faculty briefing in progress. Stand by."' : '"Preparazione postazioni e briefing faculty in corso. Tenetevi pronti."'}
-                  </p>
-                  <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
-                    {isEn ? `Day ${activeDay} • Awaiting official opening at ${courseStartSchedule?.scheduledTime || '08:30'}` : `Day ${activeDay} • Attesa apertura ufficiale ore ${courseStartSchedule?.scheduledTime || '08:30'}`}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        if (isMorningCountdown || isNightToMorningCountdown) {
-          return (
-            <div className="bg-neutral-950 border-2 sm:border-3 border-orange-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-red-500/10 pointer-events-none" />
-              <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
-                {/* Course Name in First Plane */}
-                <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
-                      <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                      <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                        <span>DAY 0{activeDay}</span>
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                      HITTER
-                    </h1>
-                    <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
-                      High Intensive Training Trauma Emergency Response
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                    {isEn ? 'OPERATIONAL STATUS: TEAM DEPLOYMENT' : 'STATO OPERATIVO: DEPLOYMENT SQUADRE'}
-                  </span>
-                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                    {isMorningCountdown ? (isEn ? `COUNTDOWN TO OPENING (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN VERSO APERTURA (${courseStartSchedule?.scheduledTime || '08:30'})`) : (isEn ? 'UPCOMING ACTIVITY' : 'ATTIVITÀ IN ARRIVO')}
-                  </h2>
-                </div>
-
-                {isMorningCountdown && (
-                  <div className="bg-orange-950/80 border-2 border-orange-500 p-4 sm:p-5 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
-                    <span className="text-[10px] sm:text-xs font-mono font-bold text-orange-300 uppercase tracking-widest block mb-1">
-                      {isEn ? 'OFFICIAL CONTROL ROOM DIRECTIVE' : 'DISPOSIZIONE UFFICIALE REGIA'}
-                    </span>
-                    <p className="text-xs sm:text-base font-black text-white uppercase tracking-wide leading-snug">
-                      {isEn ? 'Each team is requested to assemble and reach their assigned Faculty.' : 'Ogni squadra è invitata a raggrupparsi ed a raggiungere il proprio Faculty assegnato.'}
-                    </p>
-                  </div>
-                )}
-
-                <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-orange-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
-                  <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
-                    {isMorningCountdown ? (isEn ? 'TIME REMAINING UNTIL START' : "TEMPO RIMANENTE ALL'AVVIO") : (isEn ? 'BLOCK COUNTDOWN' : 'COUNTDOWN BLOCCO')}
-                  </span>
-                  <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-orange-400 animate-pulse tracking-wider break-words">
-                    {courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0
-                      ? formatGateCountdown(timeRemainingMs)
-                      : formatCumulativeTimer(getCumulativeSeconds(isMorningCountdown, isNightToMorningCountdown))}
-                  </div>
-                </div>
-
-                <div className="pt-1 sm:pt-2 space-y-2">
-                  <p className="text-base sm:text-xl md:text-2xl font-black text-orange-300 uppercase tracking-wider italic">
-                    "{isMorningCountdown ? (isEn ? 'Team assembly and Faculty contact in progress' : 'Raggruppamento squadre e contatto Faculty in corso') : (isEn ? 'Block Start' : 'Avvio Blocco')}"
-                  </p>
-                  <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
-                    {isMorningCountdown && (isEn ? `Day ${activeDay} • Countdown to opening at ${courseStartSchedule?.scheduledTime || '08:30'}` : `Day ${activeDay} • Countdown verso l'apertura delle ore ${courseStartSchedule?.scheduledTime || '08:30'}`)}
-                    {isNightToMorningCountdown && (isEn ? `Transition Day 2 ➔ Day 3 (Deadline ${courseStartSchedule?.scheduledTime || '08:30'})` : `Transizione Day 2 ➔ Day 3 (Scadenza ore ${courseStartSchedule?.scheduledTime || '08:30'})`)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        return (
-          <div className="bg-neutral-900 border-2 border-orange-500/80 p-3.5 sm:p-5 shadow-2xl space-y-4">
+      {/* 2. Main Public Operational Timeline & Groups Board */}
+      <div className="bg-neutral-900 border-2 border-orange-500/80 p-3.5 sm:p-5 shadow-2xl space-y-4">
             {/* Slot Time & Title Header */}
             <div className="border-b border-neutral-800 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
@@ -842,7 +860,7 @@ export const PublicTimelineView: React.FC = () => {
                         searchedDiscenti.map((disc) => {
                           const discGrp = getDiscenteGroup(disc.teamId);
                           const discAct = currentSlot?.groupActivities?.[discGrp];
-                          const facMatch = faculty.find((f) => f.assignedTeamId === disc.teamId) || faculty[disc.teamId - 1];
+                          const facMatch = safeFaculty.find((f) => f && f.assignedTeamId === disc.teamId) || safeFaculty[disc.teamId - 1];
                           const isLeader = disc.role?.toLowerCase().includes('leader') || disc.id.endsWith('01') || disc.id.endsWith('06') || disc.id.endsWith('11');
 
                           return (
@@ -946,8 +964,13 @@ export const PublicTimelineView: React.FC = () => {
                 }`}
               >
                 {(selectedMobileGroup === 'ALL' ? ALL_GROUPS : [selectedMobileGroup]).map((g) => {
-                  const act = currentSlot?.groupActivities?.[g];
-                  if (!act) return null;
+                  const fallbackAct = {
+                    title: g === 'A' ? 'Ambiente Tattico 1 (TCCC)' : g === 'B' ? 'Skill Workshop 1 (WS1)' : g === 'C' ? 'Box Shock Room 1 (ABCDE)' : 'Skill Workshop 2 (WS2)',
+                    subtitle: g === 'A' ? 'Stop the Bleed & Estrazione ferito under fire' : g === 'B' ? 'Vie Aeree Avanzate & Cricotiroidotomia' : g === 'C' ? 'Approccio ABCDE & Supporto Emodinamico' : 'Ecografia Clinica Avanzata & e-FAST',
+                    location: g === 'A' ? 'Ambiente Tattico 1' : g === 'B' ? 'Aula WS1' : g === 'C' ? 'Box Shock Room 1' : 'Aula WS2',
+                    activityType: (g === 'A' ? 'scenario_extra' : g === 'C' ? 'scenario_intra' : 'workshop') as any,
+                  };
+                  const act = currentSlot?.groupActivities?.[g] || fallbackAct;
 
                   const slotTitle = (currentSlot?.title || '').toLowerCase();
                   const text = `${act.title} ${act.subtitle} ${act.location}`.toLowerCase();
@@ -1054,8 +1077,8 @@ export const PublicTimelineView: React.FC = () => {
                     act,
                     currentSlot,
                     activeDay,
-                    simulatorPatients,
-                    technicians,
+                    safePatients,
+                    safeTechs,
                     language
                   );
 
@@ -1117,7 +1140,7 @@ export const PublicTimelineView: React.FC = () => {
                         <div className="space-y-1">
                           {squadNumbers.map((sqNum) => {
                             const facMatch =
-                              faculty.find((f) => f.assignedTeamId === sqNum) || faculty[sqNum - 1];
+                              safeFaculty.find((f) => f && f.assignedTeamId === sqNum) || safeFaculty[sqNum - 1];
                             const facName = facMatch ? facMatch.name : `Faculty Sq ${sqNum}`;
                             const facCode = facMatch?.badgeCode || `FAC-${sqNum < 10 ? '0' + sqNum : sqNum}`;
                             return (
@@ -1400,8 +1423,6 @@ export const PublicTimelineView: React.FC = () => {
               )}
             </div>
           </div>
-        );
-      })()}
 
       {/* ========================================================================= */}
       {/* MODALE SCHEDA OPERATIVA DETTAGLIATA (OTTIMIZZATA PER SMARTPHONE & DESKTOP) */}
@@ -1415,11 +1436,11 @@ export const PublicTimelineView: React.FC = () => {
           act,
           currentSlot,
           activeDay,
-          simulatorPatients,
-          technicians,
+          safePatients,
+          safeTechs,
           language
         );
-        const groupDiscenti = (discenti || []).filter((d) => getDiscenteGroup(d.teamId) === g);
+        const groupDiscenti = safeDiscenti.filter((d) => d && getDiscenteGroup(d.teamId) === g);
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -1517,7 +1538,7 @@ export const PublicTimelineView: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {meta.squads.map((sqNum) => {
-                    const facMatch = faculty.find((f) => f.assignedTeamId === sqNum) || faculty[sqNum - 1];
+                    const facMatch = safeFaculty.find((f) => f && f.assignedTeamId === sqNum) || safeFaculty[sqNum - 1];
                     const squadMembers = groupDiscenti.filter((d) => d.teamId === sqNum);
                     const teamLeader = squadMembers.find(
                       (d) => d.role?.toLowerCase().includes('leader') || d.id.endsWith('01') || d.id.endsWith('06') || d.id.endsWith('11')

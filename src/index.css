@@ -68,10 +68,20 @@
 .animate-marquee {
   display: inline-flex;
   white-space: nowrap;
-  animation: marquee 30s linear infinite;
+  animation: marquee 80s linear infinite;
 }
 
 .animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-slow {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 85s linear infinite;
+}
+
+.animate-marquee-slow:hover {
   animation-play-state: paused;
 }
 

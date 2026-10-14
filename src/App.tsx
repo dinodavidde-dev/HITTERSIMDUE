@@ -18,6 +18,7 @@ import { FacultyView } from './components/views/FacultyView';
 import { TecniciView } from './components/views/TecniciView';
 
 import { SimulationQuickFloatingBar } from './components/SimulationQuickFloatingBar';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 import { Activity, ShieldCheck, HeartPulse, Clock, ArrowLeft } from 'lucide-react';
 
@@ -71,14 +72,30 @@ const CourseMainContent: React.FC = () => {
       const idParam = params.get('id');
       const badgeParam = params.get('badge') || params.get('qr');
       const roleParam = params.get('role');
-      const viewParam = params.get('view') || params.get('public');
+      const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
 
       // 1. Check explicit view or role parameter
-      if (viewParam === 'public' || viewParam === 'true') {
+      const isPublicViewParam =
+        viewParam === 'public' ||
+        viewParam === 'pubblico' ||
+        viewParam === 'true' ||
+        viewParam === '1' ||
+        viewParam === 'ospite' ||
+        params.get('public') === 'true' ||
+        params.get('public') === '1' ||
+        params.get('public') === '';
+
+      if (isPublicViewParam) {
         setCurrentTab('public');
+        if (!roleParam) {
+          setUserRole('ospite');
+        }
       } else if (!viewParam && !roleParam && !discenteParam && !facultyParam && !techParam && !direttoreParam && !regiaParam && !guestParam && !idParam && !badgeParam) {
         // Default directly to Public View
         setCurrentTab('public');
+        if (!isFromAdmin && !roleParam) {
+          setUserRole('ospite');
+        }
       } else if (viewParam === 'discente' || viewParam === 'student' || roleParam === 'discente' || discenteParam) {
         setCurrentTab('discente');
         setUserRole(isFromAdmin ? (fromParam as any) : 'discente');
@@ -289,7 +306,9 @@ const CourseMainContent: React.FC = () => {
 
       {/* Dynamic Content Body - Fluid & Adaptive across Mobile, Tablet, and Desktop */}
       <main className="flex-1 w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4 pb-12 transition-all">
-        {renderActiveView()}
+        <ErrorBoundary>
+          {renderActiveView()}
+        </ErrorBoundary>
       </main>
 
       {/* Floating Simulation Quick Bar when acceleration is active */}
@@ -331,8 +350,10 @@ const CourseMainContent: React.FC = () => {
 
 export default function App() {
   return (
-    <CourseProvider>
-      <CourseMainContent />
-    </CourseProvider>
+    <ErrorBoundary fallbackTitle="Visuale Pubblica • Trauma Sim HITTER">
+      <CourseProvider>
+        <CourseMainContent />
+      </CourseProvider>
+    </ErrorBoundary>
   );
 }
