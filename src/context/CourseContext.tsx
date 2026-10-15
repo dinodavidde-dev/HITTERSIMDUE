@@ -232,8 +232,15 @@ interface CourseContextType {
   triggerSimulatedClinicalEvent: () => void;
 
   resetAllData: () => void;
+  resetSimulationSession: () => void;
 
   isBeeping: boolean;
+
+  // Free Direct Access System (Accesso Libero per Discenti)
+  freeAccessEnabled: boolean;
+  setFreeAccessEnabled: (enabled: boolean) => void;
+  isAreaDiscentiModalOpen: boolean;
+  setIsAreaDiscentiModalOpen: (open: boolean) => void;
 }
 
 const CourseContext = createContext<CourseContextType | null>(null);
@@ -783,20 +790,53 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, 3000);
   }, []);
 
+  // Track previous course start state and processed signal timestamps to play the opening sound synchronously across all profiles
+  const prevCourseStartedRef = useRef<boolean>(isCourseStarted);
+  const lastProcessedStartSignalRef = useRef<number>(0);
+  const isFirstMountCourseRef = useRef<boolean>(true);
+
+  // Synchronized Course Opening Sound across ALL connected profiles (Regia, Direzione, Discenti, Faculty, Tecnici, Ospiti)
+  useEffect(() => {
+    // If an explicit start signal was broadcast via Firestore within the last 45 seconds and hasn't been played locally
+    const signalTs = courseStartSchedule.courseStartSignalTimestamp;
+    if (signalTs && signalTs > 0 && signalTs !== lastProcessedStartSignalRef.current) {
+      const now = Date.now();
+      const ageMs = Math.abs(now - signalTs);
+      // Play if signal is fresh (within 45 seconds of emission)
+      if (ageMs <= 45000) {
+        lastProcessedStartSignalRef.current = signalTs;
+        triggerLongBeepWithAnimation();
+      } else {
+        lastProcessedStartSignalRef.current = signalTs;
+      }
+    }
+
+    // Also trigger if client is connected during countdown finish (transition from false to true in real time)
+    if (isFirstMountCourseRef.current) {
+      isFirstMountCourseRef.current = false;
+      prevCourseStartedRef.current = isCourseStarted;
+      return;
+    }
+
+    if (!prevCourseStartedRef.current && isCourseStarted) {
+      // Natural countdown completion or gate unlock
+      triggerLongBeepWithAnimation();
+    }
+    prevCourseStartedRef.current = isCourseStarted;
+  }, [isCourseStarted, courseStartSchedule.courseStartSignalTimestamp, triggerLongBeepWithAnimation]);
+
   useEffect(() => {
     if (courseStartSchedule.isGateEnabled && timeRemainingMs > 0) {
       const totalSecs = Math.floor(timeRemainingMs / 1000);
       if (totalSecs <= 1800 && totalSecs >= 1785 && !hasPlayed30MinBeep) {
-        if (userRole !== 'tecnico' && userRole !== 'direttore') {
-          triggerLongBeepWithAnimation();
-        }
+        triggerLongBeepWithAnimation();
         setHasPlayed30MinBeep(true);
       }
       if (totalSecs > 1815) {
         setHasPlayed30MinBeep(false);
       }
     }
-  }, [timeRemainingMs, courseStartSchedule.isGateEnabled, hasPlayed30MinBeep, triggerLongBeepWithAnimation, userRole]);
+  }, [timeRemainingMs, courseStartSchedule.isGateEnabled, hasPlayed30MinBeep, triggerLongBeepWithAnimation]);
 
   // Course Field Messages (Private to Directors and Faculty)
   const [courseMessages, setCourseMessages] = useState<CourseMessage[]>(() =>
@@ -818,6 +858,32 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [autoAdvancePhases, setAutoAdvancePhasesState] = useState<boolean>(() => getStoredOrDefault('autoAdvancePhases', true));
   const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
 
+  // Free Direct Access State (Accesso Libero per Discenti)
+  const [freeAccessEnabled, setFreeAccessEnabledState] = useState<boolean>(() =>
+    getStoredOrDefault<boolean>('freeAccessEnabled', false)
+  );
+  const [isAreaDiscentiModalOpen, setIsAreaDiscentiModalOpen] = useState<boolean>(false);
+
+  const setFreeAccessEnabled = useCallback((enabled: boolean) => {
+    setFreeAccessEnabledState(enabled);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'freeAccessEnabled', JSON.stringify(enabled));
+      } catch (e) {}
+    }
+    if (db) {
+      setDoc(
+        doc(db, 'course_state', 'current_state'),
+        {
+          freeAccessEnabled: enabled,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch((err) => {
+        handleFirestoreError(err, OperationType.UPDATE, 'course_state/current_state');
+      });
+    }
+  }, []);
 
   // Real-Time Mesh Synchronization State
   const [clientId] = useState<string>(() => {
@@ -862,6 +928,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (typeof data.autoAdvancePhases === 'boolean') setAutoAdvancePhasesState(data.autoAdvancePhases);
             if (data.suspensionInfo) setSuspensionInfo(data.suspensionInfo);
             if (data.courseStartSchedule) setCourseStartSchedule(data.courseStartSchedule);
+            if (typeof data.freeAccessEnabled === 'boolean') setFreeAccessEnabledState(data.freeAccessEnabled);
             if (data.language === 'it' || data.language === 'en') {
               setLanguageState((prevLang) => {
                 if (prevLang !== data.language) {
@@ -886,6 +953,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               autoAdvancePhases: true,
               suspensionInfo: { isSuspended: false, reason: '' },
               courseStartSchedule: getDefaultCourseSchedule(),
+              freeAccessEnabled: false,
               updatedAt: new Date().toISOString(),
             };
             setDoc(doc(db, courseStatePath, 'current_state'), initialCourseState).catch((err) => {
@@ -937,6 +1005,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             snapshot.forEach((d) => evalsList.push(d.data() as TeamEvaluation));
             setEvaluations(evalsList);
             setLastSyncTimestamp(Date.now());
+          } else {
+            setEvaluations([]);
           }
         },
         (error) => {
@@ -2031,6 +2101,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const startCourseImmediately = useCallback(() => {
     const now = new Date();
+    const nowEpoch = now.getTime();
     const pad = (n: number) => String(n).padStart(2, '0');
     const d = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const t = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -2040,11 +2111,15 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       scheduledTime: t,
       isoTimestamp: now.toISOString(),
       isGateEnabled: false,
+      isGatePaused: false,
+      pausedRemainingMs: undefined,
+      courseStartSignalTimestamp: nowEpoch,
+      isOfficialStartTriggered: true,
     };
     setCourseStartSchedule(updated);
     syncCourseStateToFirestore({ courseStartSchedule: updated });
     triggerLongBeepWithAnimation();
-  }, [courseStartSchedule, syncCourseStateToFirestore]);
+  }, [courseStartSchedule, syncCourseStateToFirestore, triggerLongBeepWithAnimation]);
 
   const resetCourseScheduleToFuture = useCallback((minutesFromNow: number = 10) => {
     const future = new Date(Date.now() + minutesFromNow * 60 * 1000);
@@ -2452,6 +2527,90 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsTimerRunning(false);
   }, []);
 
+  const resetSimulationSession = useCallback(() => {
+    // 1. Clear temporary evaluations / team scores
+    setEvaluations([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'evaluations');
+    } catch (e) {}
+
+    try {
+      getDocs(collection(db, 'evaluations')).then((snapshot) => {
+        if (!snapshot.empty) {
+          const batch = writeBatch(db);
+          snapshot.forEach((d) => batch.delete(d.ref));
+          batch.commit().catch(() => {});
+        }
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 2. Clear temporary session broadcast messages
+    setCourseMessages([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'courseMessages');
+    } catch (e) {}
+    try {
+      getDocs(collection(db, 'course_messages')).then((snapshot) => {
+        if (!snapshot.empty) {
+          const batch = writeBatch(db);
+          snapshot.forEach((d) => batch.delete(d.ref));
+          batch.commit().catch(() => {});
+        }
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 3. Clear temporary phase shift logs
+    setPhaseShiftLogs([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'phaseShiftLogs');
+    } catch (e) {}
+
+    // 4. Reset patient runtime checklist and temporary readiness flags, PRESERVING all core configurations
+    setSimulatorPatients((prev) => {
+      const updated = prev.map((p) => ({
+        ...p,
+        readinessStatus: 'ready' as const,
+        criticalityNotes: undefined,
+        criticalityReportedBy: undefined,
+        criticalityTimestamp: undefined,
+        techChecklist: {
+          preDone: false,
+          intraDone: false,
+          postDone: false,
+          verifiedAt: undefined,
+        },
+      }));
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'simulatorPatients', JSON.stringify(updated));
+      } catch (e) {}
+      try {
+        const batch = writeBatch(db);
+        updated.forEach((p) => {
+          batch.set(doc(db, 'simulator_patients', String(p.id)), p, { merge: true });
+        });
+        batch.commit().catch(() => {});
+      } catch (e) {}
+      return updated;
+    });
+
+    // 5. Reset simulation acceleration & auto-advance
+    setTimeMultiplier(1);
+    setAutoAdvancePhases(false);
+    setIsTimerRunning(false);
+
+    // Reset phase timer to default slot duration
+    if (currentSlot) {
+      const slotSecs = getSlotDurationSeconds(currentSlot);
+      setTimerSeconds(slotSecs);
+      syncCourseStateToFirestore({
+        isTimerRunning: false,
+        timerSeconds: slotSecs,
+        timeMultiplier: 1,
+        autoAdvancePhases: false,
+      });
+    }
+  }, [currentSlot, getSlotDurationSeconds, syncCourseStateToFirestore]);
+
   return (
     <CourseContext.Provider
       value={{
@@ -2586,7 +2745,12 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         jumpToTimelinePoint,
         triggerSimulatedClinicalEvent,
         resetAllData,
+        resetSimulationSession,
         isBeeping,
+        freeAccessEnabled,
+        setFreeAccessEnabled,
+        isAreaDiscentiModalOpen,
+        setIsAreaDiscentiModalOpen,
       }}
     >
       {children}

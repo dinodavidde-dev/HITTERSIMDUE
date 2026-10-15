@@ -191,3 +191,45 @@ export function playAirRaidSiren() {
     // Gracefully handle browser auto-play limitations
   }
 }
+
+/**
+ * Play a discreet system sound effect ('beep' di sistema)
+ * Designed to gently attract trainees' attention in the public view
+ * when Free Access transitions from disabled to enabled.
+ */
+export function playSystemBeep() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+
+    // Discreet dual-tone tactical system beep (880Hz -> 1046.5Hz)
+    const tones = [
+      { freq: 880, start: 0, duration: 0.09 },
+      { freq: 1046.5, start: 0.12, duration: 0.11 },
+    ];
+
+    tones.forEach(({ freq, start, duration }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + start);
+
+      // Smooth attack and soft decay to keep it pleasant and discreet
+      gain.gain.setValueAtTime(0, now + start);
+      gain.gain.linearRampToValueAtTime(0.18, now + start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + start);
+      osc.stop(now + start + duration + 0.02);
+    });
+  } catch {
+    // Gracefully handle browser auto-play limitations
+  }
+}
+

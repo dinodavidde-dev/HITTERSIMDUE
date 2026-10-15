@@ -19,6 +19,7 @@ import {
   Layers,
   Lock,
   LogOut,
+  Menu,
   MessageSquare,
   Monitor,
   Package,
@@ -38,6 +39,7 @@ import {
   Wifi,
   WifiOff,
   Wrench,
+  X,
   Zap,
 } from 'lucide-react';
 import { SyncStatusModal } from './SyncStatusModal';
@@ -79,12 +81,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     navigateBack,
     navigateToView,
     openedByRole,
+    freeAccessEnabled,
+    isAreaDiscentiModalOpen,
+    setIsAreaDiscentiModalOpen,
   } = useCourse();
 
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isEmailAccessModalOpen, setIsEmailAccessModalOpen] = useState(false);
   const [isKeypadModalOpen, setIsKeypadModalOpen] = useState(false);
-  const [isAreaDiscentiModalOpen, setIsAreaDiscentiModalOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const subScrollRef = useRef<HTMLDivElement>(null);
@@ -186,8 +191,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 </button>
               )}
 
-              {/* BLOCK 1: Logo & Home Trigger (HITTER • INTUBATI EM) */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              {/* BLOCK 1: Logo, Home Trigger & Mobile Drawer Trigger */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                {/* Mobile Drawer Trigger (visible on small/medium screens) */}
+                <button
+                  type="button"
+                  id="navbar-mobile-drawer-btn"
+                  onClick={() => setIsMobileDrawerOpen((prev) => !prev)}
+                  className="flex lg:hidden items-center justify-center w-8 h-8 rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white transition-all cursor-pointer shadow-xs"
+                  aria-label={isMobileDrawerOpen ? (language === 'en' ? 'Close menu' : 'Chiudi menu') : (language === 'en' ? 'Open role & views menu' : 'Apri menu viste e ruoli')}
+                  title={language === 'en' ? 'Role & Views Menu' : 'Menu Viste & Ruoli'}
+                >
+                  {isMobileDrawerOpen ? (
+                    <X className="w-4 h-4 text-amber-400 stroke-[2.5]" />
+                  ) : (
+                    <Menu className="w-4 h-4 text-neutral-300 stroke-[2.5]" />
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setCurrentTab('public')}
@@ -213,21 +234,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 </button>
               </div>
 
-              {/* Visuale Pubblica Indicator & Area Discenti */}
-              {isPublicView && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="px-2.5 py-1 bg-orange-600 text-black font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-sm">
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>{language === 'en' ? 'PUBLIC VIEW' : 'VISUALE PUBBLICA'}</span>
-                  </span>
-
+              {/* Pulsante Area Discenti nella barra di navigazione: visibile SOLO attraverso comando Accesso Libero dalla Regia */}
+              {freeAccessEnabled && (
+                <div className="flex items-center gap-2 flex-shrink-0 animate-fadeIn">
                   <button
                     type="button"
+                    id="navbar-area-discenti-btn"
                     onClick={() => setIsAreaDiscentiModalOpen(true)}
-                    className="min-h-[30px] px-2.5 sm:px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-mono font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-md border border-cyan-400 cursor-pointer transition-all transform hover:scale-[1.02]"
+                    className="min-h-[30px] px-2.5 sm:px-3 py-1 bg-gradient-to-r from-cyan-500 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-black font-mono font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 shadow-md border border-cyan-300 cursor-pointer transition-all transform hover:scale-[1.02] animate-pulse-slow"
                     title={language === 'en' ? 'Learner Area: enter Name & Surname' : 'Area Discenti: inserisci Nome e Cognome'}
                   >
-                    <GraduationCap className="w-3.5 h-3.5 text-black" />
+                    <GraduationCap className="w-3.5 h-3.5 text-black stroke-[2.5]" />
                     <span>AREA DISCENTI</span>
                   </button>
                 </div>
@@ -453,35 +470,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   {/* Public, Discente, Faculty quick buttons for staff */}
                   {['tecnico', 'regia', 'direttore', 'ospite'].includes(userRole) && (
                     <>
-                      <button
-                        id="subnav-public-btn"
-                        onClick={() => handleVisualeClick('public')}
-                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Public View in new window' : 'Apri Visuale Pubblica in una nuova finestra') : undefined}
-                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'public'
-                            ? 'text-white bg-orange-600 border-orange-500 shadow-xs'
-                            : 'text-orange-300 hover:text-white bg-neutral-900 border-orange-600/40 hover:border-orange-500'
-                        }`}
-                      >
-                        <Globe className="w-3 h-3 text-orange-400" />
-                        <span>{language === 'en' ? 'PUBLIC LIVE VIEW' : 'VISUALE PUBBLICA LIVE'}</span>
-                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-orange-400" />}
-                      </button>
 
-                      <button
-                        id="subnav-discente-btn"
-                        onClick={() => handleVisualeClick('discente', 'discente')}
-                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Learner View in new window' : 'Apri Visuale Discente in una nuova finestra') : undefined}
-                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'discente'
-                            ? 'text-white bg-cyan-600 border-cyan-500 shadow-xs'
-                            : 'text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500'
-                        }`}
-                      >
-                        <GraduationCap className="w-3 h-3 text-cyan-400" />
-                        <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
-                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />}
-                      </button>
+                      {/* Learner button: visible ONLY when freeAccessEnabled is true via Regia command */}
+                      {freeAccessEnabled && (
+                        <button
+                          id="subnav-discente-btn"
+                          onClick={() => handleVisualeClick('discente', 'discente')}
+                          title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Learner View in new window' : 'Apri Visuale Discente in una nuova finestra') : undefined}
+                          className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                            currentTab === 'discente'
+                              ? 'text-white bg-cyan-600 border-cyan-500 shadow-xs'
+                              : 'text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500'
+                          }`}
+                        >
+                          <GraduationCap className="w-3 h-3 text-cyan-400" />
+                          <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
+                          {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />}
+                        </button>
+                      )}
 
                       <button
                         id="subnav-faculty-btn"
@@ -546,21 +552,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                           </button>
                         </>
                       )}
-
-                      <button
-                        id="subnav-ospiti-btn"
-                        onClick={() => handleVisualeClick('public', 'ospite')}
-                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Guest View in new window' : 'Apri Visuale Ospiti in una nuova finestra') : undefined}
-                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                          currentTab === 'public' && (userRole as string) === 'ospite'
-                            ? 'text-white bg-emerald-600 border-emerald-500 shadow-xs'
-                            : 'text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/40 hover:border-emerald-500'
-                        }`}
-                      >
-                        <UserCheck className="w-3 h-3 text-emerald-400" />
-                        <span>{language === 'en' ? 'GUEST VIEW' : 'VISUALE OSPITI'}</span>
-                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-emerald-400" />}
-                      </button>
                     </>
                   )}
 
@@ -626,6 +617,304 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   </div>
                 </div>
 
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Mobile Collapsible Drawer Menu (Smooth overlay + slide-in panel) */}
+        {isMobileDrawerOpen && (
+          <div className="fixed inset-0 top-[49px] z-50 flex lg:hidden animate-fadeIn">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsMobileDrawerOpen(false)}
+              aria-hidden="true"
+            />
+
+            {/* Drawer Content */}
+            <div className="relative w-full max-w-xs sm:max-w-sm bg-neutral-950 border-r-2 border-neutral-800 h-full overflow-y-auto shadow-2xl flex flex-col justify-between p-4 z-10 text-neutral-100 font-mono">
+              <div className="space-y-4">
+                {/* Header Drawer Info */}
+                <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center font-black text-white text-xs">
+                      H
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-white uppercase tracking-wider">TRAUMA SIM DIRECTOR</div>
+                      <div className="text-[10px] text-neutral-400">
+                        {language === 'en' ? 'Mobile Navigation Hub' : 'Hub Navigazione Mobile'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="p-1 rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Current Active Status Card */}
+                <div className="p-2.5 bg-neutral-900/90 rounded border border-neutral-800 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase text-neutral-400">{language === 'en' ? 'Active View' : 'Visuale Attiva'}:</span>
+                    <span className="px-1.5 py-0.5 bg-neutral-800 text-amber-400 font-bold rounded uppercase text-[10px]">
+                      {currentTab}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase text-neutral-400">{language === 'en' ? 'Current Role' : 'Ruolo Profilo'}:</span>
+                    <span className="px-1.5 py-0.5 bg-neutral-800 text-emerald-400 font-bold rounded uppercase text-[10px]">
+                      {userRole}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase text-neutral-400">{language === 'en' ? 'Course Phase' : 'Fase Corso'}:</span>
+                    <span className="text-slate-300 font-mono text-[10px]">
+                      {language === 'en' ? `Day ${activeDay} • Slot ${activeSlotIndex + 1}` : `Giorno ${activeDay} • Fase ${activeSlotIndex + 1}`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Section 1: Main Views Navigation */}
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">
+                    {language === 'en' ? 'Role-Based Views' : 'Visuali di Ruolo'}
+                  </div>
+
+                  {/* Public View */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateToView('public', 'ospite');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'public'
+                        ? 'bg-neutral-800 text-white border-neutral-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-neutral-300 border-neutral-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Monitor className="w-4 h-4 text-emerald-400" />
+                      <span>{language === 'en' ? 'PUBLIC TIMELINE' : 'SCHERMO PUBBLICO'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+                  </button>
+
+                  {/* Discente View (When Free Access enabled or open to discenti) */}
+                  {(freeAccessEnabled || userRole === 'discente' || isRegiaOrDirectorScreen) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleVisualeClick('discente', 'discente');
+                        setIsMobileDrawerOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                        currentTab === 'discente'
+                          ? 'bg-cyan-950 text-cyan-200 border-cyan-600'
+                          : 'bg-neutral-900/60 hover:bg-neutral-900 text-cyan-300 border-cyan-900/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-cyan-400" />
+                        <span>{language === 'en' ? 'LEARNER VIEW' : 'VISUALE DISCENTE'}</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-cyan-500" />
+                    </button>
+                  )}
+
+                  {/* Faculty View */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleVisualeClick('faculty', 'faculty');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'faculty'
+                        ? 'bg-amber-950 text-amber-200 border-amber-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-amber-300 border-amber-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-amber-400" />
+                      <span>{language === 'en' ? 'FACULTY & TUTORS' : 'VISUALE TUTOR & FACULTY'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-amber-500" />
+                  </button>
+
+                  {/* Tech View */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleVisualeClick('tecnici', 'tecnico');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'tecnici'
+                        ? 'bg-pink-950 text-pink-200 border-pink-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-pink-300 border-pink-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-4 h-4 text-pink-400" />
+                      <span>{language === 'en' ? 'TECH TEAM VIEW' : 'VISUALE TEAM TECNICO'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-pink-500" />
+                  </button>
+
+                  {/* Regia View */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (userRole === 'regia' || currentTab === 'regia') {
+                        navigateToView('regia', 'regia');
+                      } else {
+                        handleRoleSelection('regia');
+                      }
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'regia'
+                        ? 'bg-pink-900 text-white border-pink-500'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-pink-300 border-pink-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-pink-400" />
+                      <span>{language === 'en' ? 'CONTROL ROOM (REGIA)' : 'CENTRALE REGIA'}</span>
+                    </div>
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                  </button>
+
+                  {/* Direttori View */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (userRole === 'direttore' || currentTab === 'direttori') {
+                        navigateToView('direttori', 'direttore');
+                      } else {
+                        handleRoleSelection('direttore');
+                      }
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'direttori'
+                        ? 'bg-yellow-950 text-yellow-200 border-yellow-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-yellow-300 border-yellow-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-yellow-400" />
+                      <span>{language === 'en' ? 'SCIENTIFIC DIRECTION' : 'DIREZIONE SCIENTIFICA'}</span>
+                    </div>
+                    <Lock className="w-3.5 h-3.5 text-yellow-400" />
+                  </button>
+                </div>
+
+                {/* Section 2: Clinical Scenarios & Prosthetics */}
+                <div className="space-y-1.5 pt-2 border-t border-neutral-800">
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">
+                    {language === 'en' ? 'Clinical Catalogues' : 'Cataloghi & Didattica'}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateToView('scenari');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'scenari' || currentTab === 'catalog'
+                        ? 'bg-orange-950 text-orange-200 border-orange-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-orange-300 border-orange-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-orange-400" />
+                      <span>{language === 'en' ? '24 TRAUMA SCENARIOS' : '24 SCENARI CLINICI'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateToView('protesi');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'protesi'
+                        ? 'bg-cyan-950 text-cyan-200 border-cyan-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-cyan-300 border-cyan-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-cyan-400" />
+                      <span>{language === 'en' ? 'PROSTHETICS & MOULAGE' : 'PROTESI & MOULAGE'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+                  </button>
+                </div>
+
+                {/* Section 3: Quick Utilities */}
+                <div className="space-y-2 pt-2 border-t border-neutral-800">
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">
+                    {language === 'en' ? 'Utilities & Access' : 'Strumenti & Accesso'}
+                  </div>
+
+                  {freeAccessEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAreaDiscentiModalOpen(true);
+                        setIsMobileDrawerOpen(false);
+                      }}
+                      className="w-full py-2 px-3 bg-gradient-to-r from-cyan-600 to-emerald-600 text-black font-black text-xs uppercase tracking-wider rounded flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                    >
+                      <GraduationCap className="w-4 h-4 text-black stroke-[2.5]" />
+                      <span>AREA DISCENTI (NOME/COGNOME)</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsKeypadModalOpen(true);
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className="w-full py-2 px-3 bg-red-950 hover:bg-red-900 text-red-200 border border-red-700 font-bold text-xs uppercase tracking-wider rounded flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-red-400" />
+                    <span>{language === 'en' ? 'PIN KEYPAD ACCESS' : 'ACCESSO PIN RISERVATO'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSyncModalOpen(true);
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className="w-full py-1.5 px-3 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 border border-neutral-700 text-xs rounded flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>{language === 'en' ? 'Network & Sync Status' : 'Stato Sincronizzazione'}</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-bold">
+                      {syncStatus.isOnline ? 'LIVE' : 'OFFLINE'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="pt-4 border-t border-neutral-800 text-[10px] text-neutral-500 text-center space-y-1">
+                <div>HITTER INTUBATI EM • ADVANCED TRAUMA</div>
+                <div className="text-[9px] text-neutral-600 font-mono">Real-Time Mobile Synchronized Console</div>
               </div>
             </div>
           </div>

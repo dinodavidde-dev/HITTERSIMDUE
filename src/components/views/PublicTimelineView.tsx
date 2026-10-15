@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Activity,
   Calendar,
@@ -36,6 +36,8 @@ import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { getGroupPhaseDetails, GroupPhaseEnrichedDetails } from '../../utils/groupPhaseDetails';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 import { RomaSudWeatherTicker } from '../public/RomaSudWeatherTicker';
+import { EmergencyAccessQRCard } from '../public/EmergencyAccessQRCard';
+import { playSystemBeep } from '../../utils/audio';
 
 // Metadata for the 4 macro-groups
 const GROUP_META: Record<
@@ -373,9 +375,38 @@ export const PublicTimelineView: React.FC = () => {
     timeRemainingMs,
     isCourseStarted,
     language,
+    freeAccessEnabled,
+    setIsAreaDiscentiModalOpen,
   } = useCourse();
 
   const isEn = language === 'en';
+
+  // Dynamic direct link for learner free access & emergency QR (?accesso=libero)
+  const directAccessUrl = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      const baseUrl = `${window.location.origin}${window.location.pathname}`;
+      return `${baseUrl}?accesso=libero`;
+    }
+    return 'https://ais-dev-g6diswz5dmttn7dixahrpb-714965592473.europe-west2.run.app?accesso=libero';
+  }, []);
+
+  // Discreet system beep sound: played exactly once in the public view when Free Access transitions from disabled to enabled
+  const prevFreeAccessRef = useRef<boolean>(freeAccessEnabled);
+  const isFirstMountRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      prevFreeAccessRef.current = freeAccessEnabled;
+      return;
+    }
+
+    // Play once exactly at the moment Free Access turns from disabled (false) to enabled (true)
+    if (!prevFreeAccessRef.current && freeAccessEnabled) {
+      playSystemBeep();
+    }
+    prevFreeAccessRef.current = freeAccessEnabled;
+  }, [freeAccessEnabled]);
 
   // Overlay state for Handover alert: by default it is open/expanded overlaying the 4 groups
   const [isOverlayMinimized, setIsOverlayMinimized] = useState<boolean>(false);
@@ -492,6 +523,9 @@ export const PublicTimelineView: React.FC = () => {
   const isDayBefore8 = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 0;
   const isMorningCountdown = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 1;
   const isNightToMorningCountdown = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
+  const isCountdownActive = Boolean(
+    isScheduledGateWaiting || isDayBefore8 || isMorningCountdown || isNightToMorningCountdown
+  );
 
   const renderCountdownBanner = () => {
     if (isScheduledGateWaiting) {
@@ -716,8 +750,105 @@ export const PublicTimelineView: React.FC = () => {
       {/* 1. Official Pre-Course or Scheduled Countdown Alert Banner */}
       {renderCountdownBanner()}
 
-      {/* 2. Main Public Operational Timeline & Groups Board */}
-      <div className="bg-neutral-900 border-2 border-orange-500/80 p-3.5 sm:p-5 shadow-2xl space-y-4">
+      {/* QR CODE DI EMERGENZA (Attivo nella visuale pubblica al di sopra dei dati esposti - stile Handover) */}
+      {freeAccessEnabled && (
+        <EmergencyAccessQRCard
+          directUrl={directAccessUrl}
+          onOpenAreaDiscenti={() => setIsAreaDiscentiModalOpen(true)}
+          language={language}
+        />
+      )}
+
+      {/* Quando il countdown è attivo: mostra solo countdown, meteo e info essenziali; nascondi lo schema orario */}
+      {isCountdownActive ? (
+        <div className="bg-neutral-900 border-2 border-amber-500/80 p-4 sm:p-6 rounded-xl shadow-2xl space-y-5 animate-fadeIn font-mono">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+              <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+                {isEn ? 'ESSENTIAL COURSE INFORMATION • HITTER INTUBATI EM' : 'INFO ESSENZIALI & ASSETTO CORSO • HITTER INTUBATI EM'}
+              </h3>
+            </div>
+            <span className="px-2.5 py-0.5 bg-neutral-950 border border-neutral-800 text-amber-400 text-xs font-bold rounded">
+              {isEn ? 'PHASE SCHEDULE LOCKED DURING COUNTDOWN' : 'SCHEMA ORARIO FASE BLOCCATO DURANTE IL COUNTDOWN'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
+            {/* Box 1: Discenti & Gruppi */}
+            <div className="bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-cyan-400 font-bold uppercase text-[11px]">
+                <Users className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <span>{isEn ? '60 Trainees (4 Groups)' : '60 Discenti (4 Gruppi)'}</span>
+              </div>
+              <ul className="space-y-1 text-neutral-300 text-[11px] font-sans">
+                <li><strong className="font-mono text-cyan-300">ALPHA:</strong> DISC-01 – DISC-15 (Sq. 1, 2, 3)</li>
+                <li><strong className="font-mono text-amber-300">BRAVO:</strong> DISC-16 – DISC-30 (Sq. 4, 5, 6)</li>
+                <li><strong className="font-mono text-emerald-300">CHARLIE:</strong> DISC-31 – DISC-45 (Sq. 7, 8, 9)</li>
+                <li><strong className="font-mono text-purple-300">DELTA:</strong> DISC-46 – DISC-60 (Sq. 10, 11, 12)</li>
+              </ul>
+              <p className="text-[10px] text-neutral-400 pt-1 border-t border-neutral-850">
+                {isEn ? '12 Teams of 5 (1 Team Leader + 4 Operators)' : '12 Squadre da 5 (1 Team Leader + 4 Operatori)'}
+              </p>
+            </div>
+
+            {/* Box 2: Faculty & Tech */}
+            <div className="bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-[11px]">
+                <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span>{isEn ? 'Faculty & Tech Team' : 'Faculty & Team Tecnico'}</span>
+              </div>
+              <p className="text-neutral-300 text-[11px] font-sans leading-relaxed">
+                <strong>12 Tutor Faculty (FAC-01 – FAC-12):</strong> Rapporto 1:1 costante per squadra e paziente dedicato per l&apos;intero blocco clinico.
+              </p>
+              <p className="text-neutral-300 text-[11px] font-sans leading-relaxed">
+                <strong>12 Tecnici (TECH-01 – TECH-12):</strong> Presidio simulatori avanzati, regia A/V e turnaround rapido dei consumabili.
+              </p>
+            </div>
+
+            {/* Box 3: Postazioni Addestrative */}
+            <div className="bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-red-400 font-bold uppercase text-[11px]">
+                <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span>{isEn ? '4 Training Settings' : '4 Setting Addestrativi'}</span>
+              </div>
+              <ul className="space-y-1 text-neutral-300 text-[11px] font-sans">
+                <li><strong>TCCC:</strong> 3 Ambienti Tattici (Stop the Bleed & barellamento)</li>
+                <li><strong>Shock Room:</strong> 3 Box Ospedale da Campo (ABCDE, Eco-FAST)</li>
+                <li><strong>WS1:</strong> Vie Aeree Difficili & Cricotiroidotomia</li>
+                <li><strong>WS2:</strong> Ecografia Clinica Avanzata & Accessi Vascolari</li>
+              </ul>
+            </div>
+
+            {/* Box 4: Regola Oraria Cardine */}
+            <div className="bg-neutral-950/80 border border-amber-600/50 p-3.5 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-amber-300 font-bold uppercase text-[11px]">
+                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span>{isEn ? 'Timing Rules & Handover' : 'Regole Temporali & Handover'}</span>
+              </div>
+              <p className="text-neutral-300 text-[11px] font-sans leading-relaxed">
+                Blocchi da <strong>90 minuti</strong> suddivisi in slot rigidi da 15 minuti.
+              </p>
+              <div className="bg-red-950/70 border border-red-600/60 p-2 rounded text-[11px] text-red-200">
+                <strong>Tassativo Ore :30:</strong> HANDOVER 1:1 barellato TCCC ➔ Shock Room con report strutturato SBAR (:30–:35).
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-neutral-950 border border-neutral-800 p-3 rounded-lg flex items-center justify-between gap-3 text-xs text-neutral-400">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span>
+                {isEn
+                  ? 'The dynamic phase schedule and detailed rotation boards will automatically unlock once the countdown reaches zero or when officially started.'
+                  : 'Lo schema orario dinamico della fase e le postazioni operative si sbloccheranno automaticamente al termine del countdown o con avvio ufficiale dalla Regia.'}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* 2. Main Public Operational Timeline & Groups Board (Visibile quando il countdown NON è attivo) */
+        <div className="bg-neutral-900 border-2 border-orange-500/80 p-3.5 sm:p-5 shadow-2xl space-y-4">
             {/* Slot Time & Title Header */}
             <div className="border-b border-neutral-800 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
@@ -1423,6 +1554,7 @@ export const PublicTimelineView: React.FC = () => {
               )}
             </div>
           </div>
+        )}
 
       {/* ========================================================================= */}
       {/* MODALE SCHEDA OPERATIVA DETTAGLIATA (OTTIMIZZATA PER SMARTPHONE & DESKTOP) */}

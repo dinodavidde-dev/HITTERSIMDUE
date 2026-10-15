@@ -30,6 +30,9 @@ import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
 import { TcccPreAlertCountdownBanner } from '../common/TcccPreAlertCountdownBanner';
 import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
 import { RegiaDeviceStatusDashboard } from '../regia/RegiaDeviceStatusDashboard';
+import { FreeAccessAuthorizationModal } from '../regia/FreeAccessAuthorizationModal';
+import { StartStopConfirmationModal } from '../regia/StartStopConfirmationModal';
+import { RegiaSimulaPanel } from '../regia/RegiaSimulaPanel';
 import { Wifi, Monitor, ExternalLink, ChevronDown } from 'lucide-react';
 import { openVisualeInNewWindow } from '../../utils/qrCodeUtils';
 
@@ -60,6 +63,7 @@ export const RegiaView: React.FC = () => {
     resetCourseScheduleToFuture,
     timeRemainingMs,
     isCourseStarted,
+    freeAccessEnabled,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -80,9 +84,47 @@ export const RegiaView: React.FC = () => {
       isMaster: true,
     };
 
-  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'scenari' | 'suspension' | 'anagrafica'>('timeline');
+  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'scenari' | 'suspension' | 'simula' | 'anagrafica'>('timeline');
   const [isSuspensionModalOpen, setIsSuspensionModalOpen] = useState(false);
+  const [isFreeAccessModalOpen, setIsFreeAccessModalOpen] = useState(false);
+  const [isStartStopConfirmOpen, setIsStartStopConfirmOpen] = useState(false);
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
+
+  // Navigazione menu START & STOP: se il corso è attivo, chiedi conferma preventiva prima di accedere
+  const handleSelectStartStop = () => {
+    const isCourseActive = isCourseStarted || isTimerRunning;
+    if (isCourseActive && activeSubTab !== 'suspension') {
+      setIsStartStopConfirmOpen(true);
+    } else {
+      setActiveSubTab('suspension');
+    }
+  };
+
+  // Gestione pulsante di avvio/arresto (PAUSA/START) con conferma se il corso è attivo
+  const handleToggleTimer = () => {
+    if (isCourseStarted && isTimerRunning) {
+      const confirmed = window.confirm(
+        isEn
+          ? 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler mettere in PAUSA il timer del corso?'
+          : 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler mettere in PAUSA il timer del corso?'
+      );
+      if (!confirmed) return;
+    }
+    toggleTimer();
+  };
+
+  // Gestione pulsante RESET timer con conferma se il corso è attivo
+  const handleResetTimer = () => {
+    if (isCourseStarted) {
+      const confirmed = window.confirm(
+        isEn
+          ? 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler AZZERARE il timer all\'inizio della sessione?'
+          : 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler AZZERARE il timer all\'inizio della sessione?'
+      );
+      if (!confirmed) return;
+    }
+    resetTimer();
+  };
 
   const copyPublicUrl = () => {
     const url = `${window.location.origin}${window.location.pathname}?view=public`;
@@ -303,7 +345,7 @@ export const RegiaView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('suspension')}
+            onClick={handleSelectStartStop}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
               activeSubTab === 'suspension'
                 ? 'bg-red-600 text-white border-red-400 shadow-md font-black'
@@ -314,6 +356,22 @@ export const RegiaView: React.FC = () => {
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
                 {isEn ? 'START & STOP' : 'START & STOP'}
+              </span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('simula')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'simula'
+                ? 'bg-orange-600 text-white border-orange-400 shadow-md font-black'
+                : 'bg-neutral-900 text-orange-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-orange-500/50'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                SIMULA
               </span>
             </div>
           </button>
@@ -330,6 +388,34 @@ export const RegiaView: React.FC = () => {
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
                 {isEn ? 'REGIA ROSTER' : 'ANAGRAFICA REGIA'}
+              </span>
+            </div>
+          </button>
+
+          {/* Comando Regia: Accesso Libero (posizionato affianco all'anagrafica) */}
+          <button
+            type="button"
+            id="regia-accesso-libero-btn"
+            onClick={() => setIsFreeAccessModalOpen(true)}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              freeAccessEnabled
+                ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white border-emerald-300 shadow-md ring-2 ring-emerald-400 font-black'
+                : 'bg-neutral-900 text-cyan-400 border-cyan-800/80 hover:text-white hover:bg-neutral-850 hover:border-cyan-500'
+            }`}
+            title={
+              freeAccessEnabled
+                ? (isEn ? 'Free Access Active: Trainees can login with Name & Surname' : 'Accesso Libero ATTIVO: Discenti possono accedere con Nome e Cognome')
+                : (isEn ? 'Control Room: Authorize Free Direct Access for Trainees' : 'Comando Regia: Autorizza Accesso Libero Diretto per Discenti')
+            }
+          >
+            {freeAccessEnabled ? (
+              <Unlock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-emerald-200" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-cyan-400" />
+            )}
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {freeAccessEnabled ? (isEn ? 'ACCESSO LIBERO: ON' : 'ACCESSO LIBERO: ON') : (isEn ? 'ACCESSO LIBERO' : 'ACCESSO LIBERO')}
               </span>
             </div>
           </button>
@@ -558,144 +644,27 @@ export const RegiaView: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-neutral-900 border-2 border-orange-500/80 p-6 shadow-xl space-y-6">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-orange-500 text-black border border-orange-300">
-                  <Zap className="w-5 h-5 fill-current animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black uppercase text-white tracking-wide">
-                    {isEn ? 'COURSE AUTOMATION TOOL & TIME ACCELERATOR' : 'STRUMENTO DI AUTOMAZIONE CORSO & ACCELERATORE TEMPO'}
-                  </h3>
-                  <p className="text-xs text-neutral-400 font-mono">
-                    {isEn
-                      ? 'Stress test engine for timeline simulation, speed multipliers and time jumps'
-                      : 'Motore di stress test per simulazione timeline, moltiplicatori velocità e salti temporali'}
-                  </p>
-                </div>
-              </div>
-            </div>
+        </div>
+      )}
 
-            <div className="bg-neutral-950 border border-neutral-800 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
-                  {isEn ? 'CURRENT DAY & PHASE' : 'GIORNO & FASE CORRENTE'}
-                </span>
-                <div className="font-mono font-black text-sm text-orange-400 mt-0.5">
-                  {isEn ? 'DAY' : 'GIORNO'} {activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{INITIAL_TIMELINE_SLOTS.length}
-                </div>
-                <div className="text-xs text-neutral-300 font-mono truncate">{currentSlot?.title}</div>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold">
-                  {isEn ? 'TIMER & STATUS' : 'TIMER & STATO'}
-                </span>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span
-                    className={`font-mono text-base font-black px-2 py-0.5 border ${
-                      isPreAllertaTccc
-                        ? 'bg-amber-950 text-amber-300 border-amber-400 animate-pulse ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.6)]'
-                        : 'bg-black text-white border-neutral-700'
-                    }`}
-                  >
-                    {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
-                  </span>
-                  {isPreAllertaTccc ? (
-                    <span className="bg-amber-500 text-black font-black text-[10px] uppercase px-2 py-0.5 border border-amber-300 animate-pulse flex items-center gap-1">
-                      ⚠️ PRE-ALLERTA TCCC (T -15 MIN)
-                    </span>
-                  ) : (
-                    <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border ${isTimerRunning ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-pulse' : 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
-                      {isTimerRunning ? 'RUNNING' : (isEn ? 'PAUSED' : 'PAUSA')}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between sm:justify-end gap-3">
-                <button
-                  onClick={toggleTimer}
-                  className={`px-4 py-2 font-black text-xs uppercase tracking-wider border-2 cursor-pointer transition-all flex items-center gap-1.5 ${
-                    isTimerRunning ? 'bg-amber-600 hover:bg-amber-500 text-black border-amber-400' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400'
-                  }`}
-                >
-                  {isTimerRunning ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                  <span>{isTimerRunning ? (isEn ? 'PAUSE' : 'PAUSA') : (isEn ? 'START' : 'AVVIA')}</span>
-                </button>
-                <button
-                  onClick={() => resetTimer()}
-                  className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs uppercase border border-neutral-700 cursor-pointer flex items-center gap-1"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>RESET</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-xs font-black uppercase text-neutral-300 tracking-wider">
-                {isEn ? 'SELECT SPEED MULTIPLIER' : 'SELEZIONA MOLTIPLICATORE VELOCITÀ'}
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                {[1, 5, 15, 30, 60, 120, 300].map((spd) => {
-                  const isSelected = timeMultiplier === spd;
-                  return (
-                    <button
-                      key={spd}
-                      onClick={() => setTimeMultiplier(spd)}
-                      className={`p-2.5 text-center border-2 transition-all cursor-pointer ${
-                        isSelected ? 'border-pink-500 bg-pink-950/80 text-pink-300 font-black shadow-md' : 'border-neutral-800 bg-neutral-950 text-neutral-300 hover:bg-neutral-850'
-                      }`}
-                    >
-                      <div className="font-mono font-black text-sm">{spd}x</div>
-                      <div className="text-[9px] text-neutral-400 font-mono mt-0.5">{spd === 1 ? (isEn ? '1:1 Real' : '1:1 Reale') : `${spd}x`}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-xs font-black uppercase text-neutral-300 tracking-wider">
-                {isEn ? 'QUICK JUMP TO CRITICAL POINTS' : 'SALTO RAPIDO AI PUNTI CRITICI'}
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => jumpToTimelinePoint('pre_start_15m')}
-                  className="p-3 bg-neutral-950 hover:bg-neutral-850 border border-neutral-700 text-left cursor-pointer transition-all"
-                >
-                  <div className="font-mono font-black text-xs text-amber-300 flex items-center gap-1.5">
-                    <Bell className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{isEn ? 'TEST 15 MIN ALERT' : 'TEST AVVISO 15 MIN'}</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    {isEn ? 'Set countdown to 15 min to test assembly banner' : 'Imposta countdown a 15 minuti per testare banner raduno'}
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => jumpToTimelinePoint('pre_start_5m')}
-                  className="p-3 bg-neutral-950 hover:bg-neutral-850 border border-neutral-700 text-left cursor-pointer transition-all"
-                >
-                  <div className="font-mono font-black text-xs text-red-300 flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                    <span>{isEn ? 'TEST 5 MIN ALERT' : 'TEST ALLERTA 5 MIN'}</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    {isEn ? 'Set countdown to 5 min to test red urgency' : 'Imposta countdown a 5 minuti per testare urgenza rossa'}
-                  </p>
-                </button>
-              </div>
-            </div>
-          </div>
+      {activeSubTab === 'simula' && (
+        <div className="space-y-6">
+          <RegiaSimulaPanel />
         </div>
       )}
 
       {activeSubTab === 'anagrafica' && <MasterAnagraficaManager initialSection="regia" />}
 
       <CourseSuspensionModal isOpen={isSuspensionModalOpen} onClose={() => setIsSuspensionModalOpen(false)} />
+      <FreeAccessAuthorizationModal isOpen={isFreeAccessModalOpen} onClose={() => setIsFreeAccessModalOpen(false)} />
+      <StartStopConfirmationModal
+        isOpen={isStartStopConfirmOpen}
+        onClose={() => setIsStartStopConfirmOpen(false)}
+        onConfirm={() => {
+          setActiveSubTab('suspension');
+          setIsStartStopConfirmOpen(false);
+        }}
+      />
     </div>
   );
 };

@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { CourseProvider, useCourse } from './context/CourseContext';
 import { Navbar } from './components/Navbar';
+import { FreeAccessBanner } from './components/FreeAccessBanner';
 import { CourseSuspensionBanner } from './components/CourseSuspensionBanner';
 import { DirettoriView } from './components/views/DirettoriView';
 import { RegiaView } from './components/views/RegiaView';
@@ -51,6 +52,7 @@ const CourseMainContent: React.FC = () => {
     setOpenedByRole,
     openedByRole,
     navigateBack,
+    setIsAreaDiscentiModalOpen,
   } = useCourse();
 
   // Check URL parameters for instant unique QR Code direct navigation
@@ -61,6 +63,18 @@ const CourseMainContent: React.FC = () => {
       const isFromAdmin = fromParam === 'regia' || fromParam === 'direttore';
       if (isFromAdmin) {
         setOpenedByRole(fromParam as 'regia' | 'direttore');
+      }
+
+      // Check if student arrived via Free Access direct link / Emergency QR
+      const freeAccessParam =
+        params.get('free_access') === '1' ||
+        params.get('freeAccess') === 'true' ||
+        params.get('mode') === 'free_access' ||
+        params.get('accesso') === 'libero';
+
+      if (freeAccessParam) {
+        setCurrentTab('public');
+        setIsAreaDiscentiModalOpen(true);
       }
 
       const discenteParam = params.get('discente') || params.get('student');
@@ -303,6 +317,9 @@ const CourseMainContent: React.FC = () => {
 
       {/* Main Simulation Navigation & Control Bar */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
+
+      {/* Free Direct Access Banner (Visible ONLY in Public View reachable via direct link when freeAccessEnabled is true) */}
+      {(currentTab === 'public' || currentTab === 'ospite') && <FreeAccessBanner />}
 
       {/* Dynamic Content Body - Fluid & Adaptive across Mobile, Tablet, and Desktop */}
       <main className="flex-1 w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4 pb-12 transition-all">

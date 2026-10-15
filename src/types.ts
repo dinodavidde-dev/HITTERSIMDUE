@@ -188,6 +188,8 @@ export interface CourseStartSchedule {
   pausedRemainingMs?: number;
   gateMode?: 'start' | 'lunch';
   lunchTime?: string;
+  courseStartSignalTimestamp?: number; // Epoch ms timestamp broadcast when the course is officially started
+  isOfficialStartTriggered?: boolean;
 }
 
 export interface CourseMessage {

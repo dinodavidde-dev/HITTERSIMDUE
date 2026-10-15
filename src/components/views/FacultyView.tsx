@@ -12,6 +12,7 @@ import { useCourse } from '../../context/CourseContext';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { FacultyScenariValutazioniModal } from '../faculty/FacultyScenariValutazioniModal';
+import { FacultySkillStationTimer } from '../faculty/FacultySkillStationTimer';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
 import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
@@ -20,6 +21,7 @@ export const FacultyView: React.FC = () => {
   const {
     activeDay,
     activeSlotIndex,
+    currentSlot,
     timerSeconds,
     isTimerRunning,
     faculty,
@@ -402,6 +404,20 @@ export const FacultyView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* TIMER SKILL-STATION & WORKSHOP DI SQUADRA */}
+      <FacultySkillStationTimer
+        assignedTeamId={currentFaculty.assignedTeamId}
+        facultyBadgeCode={currentFaculty.badgeCode || 'FAC-01'}
+        facultyName={currentFaculty.name}
+        facultyGroup={facultyGroup}
+        activeDay={activeDay}
+        currentSlot={currentSlot || dayMasterSlots[activeSlotIndex]}
+        timerSeconds={timerSeconds}
+        isTimerRunning={isTimerRunning}
+        language={language}
+        assignedTeamDiscenti={assignedTeamDiscenti}
+      />
 
       {/* TIMELINE INDIVIDUALE FACULTY */}
       <div className="bg-neutral-900 border-2 border-amber-500/80 p-3 sm:p-6 shadow-2xl space-y-4 sm:space-y-6">
