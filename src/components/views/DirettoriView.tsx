@@ -23,6 +23,9 @@ import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
 import { TcccPreAlertCountdownBanner } from '../common/TcccPreAlertCountdownBanner';
 import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
 import { openVisualeInNewWindow } from '../../utils/qrCodeUtils';
+import { TimelineSyncNavigator } from '../common/TimelineSyncNavigator';
+import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
+import { TimelineSlot } from '../../types';
 
 export const DirettoriView: React.FC = () => {
   const {
@@ -63,7 +66,12 @@ export const DirettoriView: React.FC = () => {
     };
 
   const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'scenari' | 'performance' | 'anagrafica'>('scenari');
+  const [inspectedSlot, setInspectedSlot] = useState<TimelineSlot | null>(null);
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
+
+  const liveMasterSlot = currentSlot || INITIAL_TIMELINE_SLOTS[0];
+  const effectiveSlot = inspectedSlot || liveMasterSlot;
+  const isLiveSync = !inspectedSlot || inspectedSlot.id === liveMasterSlot.id;
 
   const copyPublicUrl = () => {
     const url = `${window.location.origin}${window.location.pathname}?view=public`;
@@ -71,6 +79,9 @@ export const DirettoriView: React.FC = () => {
     setCopiedPublicLink(true);
     setTimeout(() => setCopiedPublicLink(false), 3000);
   };
+
+  const currentSlotInDayIdx = filteredSlots.findIndex((s) => s.id === currentSlot?.id);
+  const effectiveSlotInDay = currentSlotInDayIdx >= 0 ? currentSlotInDayIdx : 0;
 
   return (
     <div className="space-y-4 pb-12 px-2 sm:px-4 max-w-7xl mx-auto font-mono">
@@ -88,7 +99,7 @@ export const DirettoriView: React.FC = () => {
               </span>
 
               <span className="text-[11px] text-neutral-300 font-mono font-bold px-2.5 py-1 bg-neutral-900 border border-neutral-700">
-                DAY 0{activeDay} • {isEn ? 'SLOT' : 'SLOT'} {activeSlotIndex + 1}/{filteredSlots.length}
+                DAY 0{activeDay} • {isEn ? 'SLOT' : 'SLOT'} {effectiveSlotInDay + 1}/{filteredSlots.length}
               </span>
               {isPreAllertaTccc && (
                 <span className="bg-amber-500 text-black font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1 shadow-md">
@@ -121,9 +132,11 @@ export const DirettoriView: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 pt-1 text-xs font-mono">
-              <span className="text-yellow-200/90 font-medium">
-                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentDirector.role || currentDirector.title}</strong>
-              </span>
+              {(currentDirector.role || currentDirector.title) && (
+                <span className="text-yellow-200/90 font-medium">
+                  {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentDirector.role || currentDirector.title}</strong>
+                </span>
+              )}
               {currentDirector.organization && (
                 <>
                   <span className="text-neutral-600 hidden sm:inline">•</span>
@@ -136,8 +149,12 @@ export const DirettoriView: React.FC = () => {
                   <span className="text-neutral-400">Email: <span className="text-yellow-300">{currentDirector.email}</span></span>
                 </>
               )}
-              <span className="text-neutral-600 hidden sm:inline">•</span>
-              <span className="text-neutral-300">{isEn ? 'Phone:' : 'Tel:'} <span className="text-yellow-400 font-bold">{currentDirector.phone}</span></span>
+              {currentDirector.phone && (
+                <>
+                  <span className="text-neutral-600 hidden sm:inline">•</span>
+                  <span className="text-neutral-300">{isEn ? 'Phone:' : 'Tel:'} <span className="text-yellow-400 font-bold">{currentDirector.phone}</span></span>
+                </>
+              )}
             </div>
 
             {canSelectOperator && directors.length > 0 ? (
@@ -317,7 +334,16 @@ export const DirettoriView: React.FC = () => {
       </nav>
 
       {activeSubTab === 'timeline' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          <TimelineSyncNavigator
+            currentSlot={effectiveSlot}
+            masterCurrentSlot={liveMasterSlot}
+            isLiveSync={isLiveSync}
+            onSelectSlot={(slot) => setInspectedSlot(slot)}
+            onSyncToLive={() => setInspectedSlot(null)}
+            roleLabel={isEn ? `Scientific Director (${currentDirector.badgeCode})` : `Direttore Scientifico (${currentDirector.badgeCode})`}
+            stationContext={isEn ? 'Supervision & Clinical Oversight' : 'Supervisione Didattica & Regia Clinica'}
+          />
           <RegiaVisualTimelineBoard isMaster={false} showRadioPanel={false} />
         </div>
       )}

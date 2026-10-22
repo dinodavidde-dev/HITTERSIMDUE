@@ -19,8 +19,10 @@ import {
   Layers,
   Lock,
   LogOut,
+  Maximize2,
   Menu,
   MessageSquare,
+  Minimize2,
   Monitor,
   Package,
   Pause,
@@ -28,6 +30,7 @@ import {
   QrCode,
   Radio,
   RotateCcw,
+  Scale,
   Send,
   ShieldAlert,
   ShieldCheck,
@@ -41,14 +44,18 @@ import {
   Wrench,
   X,
   Zap,
+  FileText,
+  Compass,
+  Map as MapIcon,
 } from 'lucide-react';
 import { SyncStatusModal } from './SyncStatusModal';
 import { RegiaKeypadModal } from './RegiaKeypadModal';
-import { SimulationEngineModal } from './SimulationEngineModal';
 import { EmailAccessModal } from './EmailAccessModal';
 import { AreaDiscentiModal } from './common/AreaDiscentiModal';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { openVisualeInNewWindow } from '../utils/qrCodeUtils';
+import { EventPauseButton } from './schedule/EventPauseButton';
+import { NetworkStatusBadge } from './offline/NetworkStatusBadge';
 
 interface NavbarProps {
   currentTab: string;
@@ -74,8 +81,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     syncStatus,
     suspensionInfo,
     timeMultiplier,
-    isSimulationModalOpen,
-    setIsSimulationModalOpen,
     canGoBack,
     backDestinationLabel,
     navigateBack,
@@ -84,6 +89,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     freeAccessEnabled,
     isAreaDiscentiModalOpen,
     setIsAreaDiscentiModalOpen,
+    isFullscreenMode,
+    toggleFullscreenMode,
+    setIsAuditLogOpen,
+    setIsIntentReviewOpen,
+    isTacticalMapOpen,
+    setIsTacticalMapOpen,
   } = useCourse();
 
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -125,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
   ];
 
   const handleRoleSelection = (targetRole: UserRole) => {
-    if (targetRole === 'regia' || targetRole === 'direttore') {
+    if (targetRole === 'regia' || targetRole === 'direttore' || targetRole === 'master') {
       setIsKeypadModalOpen(true);
       return;
     }
@@ -140,18 +151,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
   const currentRoleObj = roleOptions.find((r) => r.role === userRole) || roleOptions[0];
 
   // Specific views where the view selector navigation bar must be hidden
+  const isMasterView = currentTab === 'master' || (currentTab === 'main' && userRole === 'master');
   const isDirectorView = currentTab === 'direttori' || (currentTab === 'main' && userRole === 'direttore');
+  const isRegiaView = currentTab === 'regia' || (currentTab === 'main' && userRole === 'regia');
   const isPublicView = currentTab === 'public' || currentTab === 'ospite' || userRole === 'ospite';
   const isDiscenteView = currentTab === 'discente' || (currentTab === 'main' && userRole === 'discente');
   const isTecniciView = currentTab === 'tecnici' || (currentTab === 'main' && userRole === 'tecnico');
   const isOspitiView = currentTab === 'ospite' || (currentTab === 'main' && userRole === 'ospite');
 
-  const hideViewSelectorBar = isDirectorView || isPublicView || isDiscenteView || isTecniciView || isOspitiView;
+  const hideViewSelectorBar = isMasterView || isDirectorView || isRegiaView || isPublicView || isDiscenteView || isTecniciView || isOspitiView;
 
   const isRegiaOrDirectorScreen =
-    userRole === 'regia' || userRole === 'direttore' || currentTab === 'regia' || currentTab === 'direttori';
-  const currentAdminOrigin: 'regia' | 'direttore' =
-    userRole === 'regia' || currentTab === 'regia' ? 'regia' : 'direttore';
+    userRole === 'master' || userRole === 'regia' || userRole === 'direttore' || currentTab === 'master' || currentTab === 'regia' || currentTab === 'direttori';
+  const currentAdminOrigin: 'regia' | 'direttore' | 'master' =
+    userRole === 'master' || currentTab === 'master'
+      ? 'master'
+      : userRole === 'regia' || currentTab === 'regia'
+      ? 'regia'
+      : 'direttore';
 
   const handleVisualeClick = (tab: string, role?: UserRole) => {
     if (isRegiaOrDirectorScreen) {
@@ -164,10 +181,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
 
   return (
     <>
-      <header className="bg-neutral-950 border-b-2 border-neutral-800 sticky top-0 z-40 text-neutral-100 shadow-xl">
-        
-        {/* Tier 1: Main Control Header - Horizontally Scrollable without truncation */}
-        <div className="relative w-full border-b border-neutral-850">
+      {!isFullscreenMode && (
+        <header className="bg-neutral-950 border-b-2 border-neutral-800 sticky top-0 z-40 text-neutral-100 shadow-xl">
+          
+          {/* Tier 1: Main Control Header - Horizontally Scrollable without truncation */}
+          <div className="relative w-full border-b border-neutral-850">
           
           {/* Scroll container */}
           <div
@@ -245,7 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     title={language === 'en' ? 'Learner Area: enter Name & Surname' : 'Area Discenti: inserisci Nome e Cognome'}
                   >
                     <GraduationCap className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-                    <span>AREA DISCENTI</span>
+                    <span>{language === 'en' ? 'LEARNER AREA' : 'AREA DISCENTI'}</span>
                   </button>
                 </div>
               )}
@@ -316,7 +334,85 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
               )}
 
               {/* Conditional Controls for Staff / Directors */}
-              <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+                {/* Quick Navigation Buttons in Main Navbar: Mappa, Scenari, Protesi, Visuale Trucco, Regia Asset */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    id="navbar-top-map-btn"
+                    onClick={() => setIsTacticalMapOpen(true)}
+                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded border font-mono text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-md ${
+                      isTacticalMapOpen
+                        ? 'bg-emerald-500 text-black border-emerald-300 ring-2 ring-emerald-400'
+                        : 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 hover:text-white border-emerald-500/70 hover:border-emerald-400 animate-pulse-slow'
+                    }`}
+                    title={
+                      language === 'en'
+                        ? 'Open Tactical Combat Map & Compound Multi-Layer Blueprint'
+                        : 'Apri Mappa Tattica Operativa e Comprensorio Addestrativo Multi-Livello'
+                    }
+                  >
+                    <Compass className="w-3.5 h-3.5 stroke-[2.5] text-emerald-400" />
+                    <span>{language === 'en' ? 'MAP' : 'MAPPA'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="navbar-top-scenari-btn"
+                    onClick={() => navigateToView('scenari')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded border font-mono text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
+                      currentTab === 'scenari' || currentTab === 'catalog'
+                        ? 'bg-orange-500 text-black border-orange-300 shadow-md'
+                        : 'bg-neutral-900 hover:bg-neutral-800 text-orange-300 border-orange-600/60 hover:border-orange-400'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>{language === 'en' ? 'SCENARIOS' : 'SCENARI'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="navbar-top-protesi-btn"
+                    onClick={() => navigateToView('protesi')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded border font-mono text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
+                      currentTab === 'protesi'
+                        ? 'bg-cyan-500 text-black border-cyan-300 shadow-md'
+                        : 'bg-neutral-900 hover:bg-neutral-800 text-cyan-300 border-cyan-600/60 hover:border-cyan-400'
+                    }`}
+                  >
+                    <Package className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>{language === 'en' ? 'PROSTHETICS' : 'PROTESI'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="navbar-top-trucco-btn"
+                    onClick={() => navigateToView('trucco')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded border font-mono text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
+                      currentTab === 'trucco' || currentTab === 'moulage'
+                        ? 'bg-pink-600 text-white border-pink-300 shadow-md'
+                        : 'bg-pink-950/80 hover:bg-pink-900 text-pink-300 border-pink-600/70 hover:border-pink-400'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 stroke-[2.5] text-pink-400" />
+                    <span>{language === 'en' ? 'MAKEUP VIEW' : 'VISUALE TRUCCO'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="navbar-top-regia-asset-btn"
+                    onClick={() => navigateToView('regia_asset')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded border font-mono text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
+                      currentTab === 'regia_asset' || currentTab === 'asset'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black border-emerald-300 shadow-md ring-1 ring-emerald-300'
+                        : 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-600/70 hover:border-emerald-400'
+                    }`}
+                    title={language === 'en' ? 'Control Room Asset Workload Dashboard' : 'Dashboard Regia Asset & Controllo Carichi'}
+                  >
+                    <Scale className="w-3.5 h-3.5 stroke-[2.5] text-emerald-400" />
+                    <span>{language === 'en' ? 'REGIA ASSET' : 'REGIA ASSET'}</span>
+                  </button>
+                </div>
 
               {/* BLOCK 3: Timer & Live Phase Controller */}
               <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900/90 border border-slate-700 shadow-inner rounded flex-shrink-0">
@@ -366,6 +462,47 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 )}
               </div>
 
+              {/* Transversal Flexibility: Event Pause Button (⏸ / ▶) */}
+              <EventPauseButton />
+
+              {/* Transversal Offline Mode Status Badge */}
+              <NetworkStatusBadge onOpenIntentReview={() => setIsIntentReviewOpen(true)} />
+
+                {/* Transversal Audit Log Button */}
+                <button
+                  type="button"
+                  id="navbar-audit-log-btn"
+                  onClick={() => setIsAuditLogOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-amber-300 hover:text-amber-200 border border-amber-600/60 hover:border-amber-400 font-mono text-[11px] font-bold uppercase rounded transition-all cursor-pointer shadow-xs flex-shrink-0"
+                  title={language === 'en' ? 'Open Schedule Change Audit Log' : 'Registro Modifiche e Audit Log Cronoprogramma'}
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
+                  <span className="hidden sm:inline">AUDIT</span>
+                </button>
+
+              {/* BLOCK 5.4: Fullscreen Mode Toggle Button for Training Rooms */}
+              <button
+                type="button"
+                id="navbar-fullscreen-toggle-btn"
+                onClick={toggleFullscreenMode}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border font-mono text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs flex-shrink-0 ${
+                  isFullscreenMode
+                    ? 'bg-orange-500 text-black border-orange-300 shadow-md'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-amber-400 border-amber-500/60 hover:border-amber-400'
+                }`}
+                title={
+                  language === 'en'
+                    ? 'Toggle Fullscreen Training Room Mode (Hide navigation bar & footer)'
+                    : 'Attiva Modalità Schermo Intero Aula (Nascondi barra e footer ed espandi a tutto schermo)'
+                }
+              >
+                {isFullscreenMode ? (
+                  <Minimize2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                ) : (
+                  <Maximize2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                )}
+                <span>{language === 'en' ? 'FULLSCREEN' : 'SCHERMO INTERO'}</span>
+              </button>
 
               {/* BLOCK 5.5: Language Selector */}
               <LanguageSwitcher variant="badge" />
@@ -409,7 +546,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 id="header-right-intubati-em-btn"
                 onClick={() => setIsKeypadModalOpen(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1 bg-red-950/90 hover:bg-red-900 text-white font-black text-xs uppercase tracking-wider rounded border border-red-600 hover:border-red-400 transition-all cursor-pointer shadow-md group flex-shrink-0"
-                title={language === 'en' ? 'Protected Area Access • PIN 9438 (Control Room) / 0118 (Direction)' : 'Accesso Area Riservata • PIN 9438 (Regia) / 0118 (Direzione)'}
+                title={language === 'en' ? 'Protected Area Access • PIN 9438 (Control Room) / 0118 (Direction) / 251201 (Master)' : 'Accesso Area Riservata • PIN 9438 (Regia) / 0118 (Direzione) / 251201 (Master)'}
               >
                 <div className="w-5 h-5 bg-red-600 text-white flex items-center justify-center font-black rounded group-hover:bg-red-500 transition-colors shadow-xs">
                   <Lock className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -471,23 +608,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   {['tecnico', 'regia', 'direttore', 'ospite'].includes(userRole) && (
                     <>
 
-                      {/* Learner button: visible ONLY when freeAccessEnabled is true via Regia command */}
-                      {freeAccessEnabled && (
-                        <button
-                          id="subnav-discente-btn"
-                          onClick={() => handleVisualeClick('discente', 'discente')}
-                          title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Learner View in new window' : 'Apri Visuale Discente in una nuova finestra') : undefined}
-                          className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
-                            currentTab === 'discente'
-                              ? 'text-white bg-cyan-600 border-cyan-500 shadow-xs'
-                              : 'text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500'
-                          }`}
-                        >
-                          <GraduationCap className="w-3 h-3 text-cyan-400" />
-                          <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
-                          {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />}
-                        </button>
-                      )}
+                      {/* Learner button: always accessible for staff to inspect trainee view */}
+                      <button
+                        id="subnav-discente-btn"
+                        onClick={() => handleVisualeClick('discente', 'discente')}
+                        title={isRegiaOrDirectorScreen ? (language === 'en' ? 'Open Learner View in new window' : 'Apri Visuale Discente in una nuova finestra') : undefined}
+                        className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                          currentTab === 'discente'
+                            ? 'text-white bg-cyan-600 border-cyan-500 shadow-xs'
+                            : 'text-cyan-300 hover:text-white bg-neutral-900 border-cyan-600/40 hover:border-cyan-500'
+                        }`}
+                      >
+                        <GraduationCap className="w-3 h-3 text-cyan-400" />
+                        <span>{language === 'en' ? 'STUDENT VIEW' : 'VISUALE DISCENTE'}</span>
+                        {isRegiaOrDirectorScreen && <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />}
+                      </button>
 
                       <button
                         id="subnav-faculty-btn"
@@ -580,6 +715,32 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   >
                     <Package className="w-3 h-3 text-cyan-400" />
                     <span>{language === 'en' ? 'PROSTHETICS' : 'PROTESI'}</span>
+                  </button>
+
+                  <button
+                    id="subnav-trucco-btn"
+                    onClick={() => navigateToView('trucco')}
+                    className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                      currentTab === 'trucco' || currentTab === 'moulage'
+                        ? 'bg-pink-600 text-white border-pink-500 shadow-xs'
+                        : 'text-pink-300 hover:text-white bg-neutral-900 border-pink-600/50 hover:border-pink-400'
+                    }`}
+                  >
+                    <Sparkles className="w-3 h-3 text-pink-400" />
+                    <span>{language === 'en' ? 'MAKEUP TIMELINE' : 'VISUALE TRUCCO'}</span>
+                  </button>
+
+                  <button
+                    id="subnav-regia-asset-btn"
+                    onClick={() => navigateToView('regia_asset')}
+                    className={`flex items-center gap-1 px-2.5 py-0.5 font-bold uppercase text-[11px] tracking-wider rounded transition-all cursor-pointer border flex-shrink-0 ${
+                      currentTab === 'regia_asset' || currentTab === 'asset'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-black font-black border-emerald-400 shadow-xs'
+                        : 'text-emerald-300 hover:text-white bg-neutral-900 border-emerald-600/50 hover:border-emerald-400'
+                    }`}
+                  >
+                    <Scale className="w-3 h-3 text-emerald-400" />
+                    <span>{language === 'en' ? 'REGIA ASSET' : 'REGIA ASSET'}</span>
                   </button>
 
                   {!isCurrentUnlocked && (
@@ -813,13 +974,51 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     </div>
                     <Lock className="w-3.5 h-3.5 text-yellow-400" />
                   </button>
+
+                  {/* Regia Asset View */}
+                  <button
+                    type="button"
+                    id="mobile-drawer-regia-asset-btn"
+                    onClick={() => {
+                      navigateToView('regia_asset');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'regia_asset' || currentTab === 'asset'
+                        ? 'bg-emerald-950 text-emerald-200 border-emerald-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-emerald-300 border-emerald-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Scale className="w-4 h-4 text-emerald-400" />
+                      <span>{language === 'en' ? 'REGIA ASSET CONTROL' : 'REGIA ASSET & CARICHI'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-emerald-500" />
+                  </button>
                 </div>
 
-                {/* Section 2: Clinical Scenarios & Prosthetics */}
+                {/* Section 2: Clinical Scenarios & Prosthetics & Tactical Map */}
                 <div className="space-y-1.5 pt-2 border-t border-neutral-800">
                   <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-1">
-                    {language === 'en' ? 'Clinical Catalogues' : 'Cataloghi & Didattica'}
+                    {language === 'en' ? 'Tactical Map & Catalogues' : 'Mappa Tattica & Didattica'}
                   </div>
+
+                  {/* Tactical Map Drawer Item */}
+                  <button
+                    type="button"
+                    id="mobile-drawer-map-btn"
+                    onClick={() => {
+                      setIsTacticalMapOpen(true);
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-700/70"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Compass className="w-4 h-4 text-emerald-400" />
+                      <span>{language === 'en' ? 'TACTICAL COMBAT MAP' : 'MAPPA TATTICA OPERATIVA'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-emerald-500" />
+                  </button>
 
                   <button
                     type="button"
@@ -854,7 +1053,26 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   >
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-cyan-400" />
-                      <span>{language === 'en' ? 'PROSTHETICS & MOULAGE' : 'PROTESI & MOULAGE'}</span>
+                      <span>{language === 'en' ? 'PROSTHETICS & MOULAGE' : 'MENU PROTESI (BLOCCHI 1–4)'}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateToView('trucco');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded flex items-center justify-between text-xs font-bold transition-all border ${
+                      currentTab === 'trucco' || currentTab === 'moulage'
+                        ? 'bg-pink-950 text-pink-200 border-pink-600'
+                        : 'bg-neutral-900/60 hover:bg-neutral-900 text-pink-300 border-pink-900/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-pink-400" />
+                      <span>{language === 'en' ? 'MAKEUP & TIMELINE VIEW' : 'VISUALE TRUCCO & TIMELINE'}</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
                   </button>
@@ -908,6 +1126,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                       {syncStatus.isOnline ? 'LIVE' : 'OFFLINE'}
                     </span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleFullscreenMode();
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className="w-full py-2 px-3 bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-500/70 font-bold text-xs uppercase tracking-wider rounded flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{language === 'en' ? 'TRAINING ROOM FULLSCREEN' : 'SCHERMO INTERO AULA'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -919,17 +1149,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             </div>
           </div>
         )}
-      </header>
+        </header>
+      )}
 
       {/* Real-time Connectivity & Sync Status Modal */}
       <SyncStatusModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} />
-
-
-      {/* Simulation Engine & Time Acceleration Modal */}
-      <SimulationEngineModal
-        isOpen={isSimulationModalOpen}
-        onClose={() => setIsSimulationModalOpen(false)}
-      />
 
       {/* First Access Email Login / Verification Modal */}
       <EmailAccessModal

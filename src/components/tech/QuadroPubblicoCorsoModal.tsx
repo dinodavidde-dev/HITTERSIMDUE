@@ -74,12 +74,12 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
     return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Group metadata
+  // Group metadata HITTER 70
   const groupLabels: Record<GroupType, { title: string; range: string; squads: string }> = {
-    A: { title: 'ALPHA', range: 'DISC-01 – DISC-15', squads: isEn ? 'Squads 1, 2, 3' : 'Squadre 1, 2, 3' },
-    B: { title: 'BRAVO', range: 'DISC-16 – DISC-30', squads: isEn ? 'Squads 4, 5, 6' : 'Squadre 4, 5, 6' },
-    C: { title: 'CHARLIE', range: 'DISC-31 – DISC-45', squads: isEn ? 'Squads 7, 8, 9' : 'Squadre 7, 8, 9' },
-    D: { title: 'DELTA', range: 'DISC-46 – DISC-60', squads: isEn ? 'Squads 10, 11, 12' : 'Squadre 10, 11, 12' },
+    A: { title: 'ALPHA', range: 'DISC-01 – DISC-18', squads: isEn ? 'Squads 1, 2, 3 (6 members each)' : 'Squadre 1, 2, 3 (6 allievi ciascuna)' },
+    B: { title: 'BRAVO', range: 'DISC-19 – DISC-36', squads: isEn ? 'Squads 4, 5, 6 (6 members each)' : 'Squadre 4, 5, 6 (6 allievi ciascuna)' },
+    C: { title: 'CHARLIE', range: 'DISC-37 – DISC-54', squads: isEn ? 'Squads 7, 8, 9 (6 members each)' : 'Squadre 7, 8, 9 (6 allievi ciascuna)' },
+    D: { title: 'DELTA', range: 'DISC-55 – DISC-70', squads: isEn ? 'Squads 10 (6), 11 & 12 (5 each)' : 'Squadra 10 (6), 11 e 12 (5 ciascuna)' },
   };
 
   // Helper for group badge colors and icons
@@ -418,10 +418,10 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                     <div>
                       <span className="text-xs font-black text-emerald-400 uppercase tracking-wide">
-                        GRUPPO ALPHA (DISC-01 – DISC-15)
+                        GRUPPO ALPHA (DISC-01 – DISC-18)
                       </span>
                       <span className="text-[10px] text-neutral-400 block">
-                        {isEn ? 'Squads 1, 2, 3 • 1 TL + 4 Operators per squad' : 'Squadre 1, 2, 3 • 1 Team Leader + 4 Operatori per squadra'}
+                        {isEn ? 'Squads 1, 2, 3 • 1 TL + 5 Operators per squad (6 trainees)' : 'Squadre 1, 2, 3 • 1 Team Leader + 5 Operatori per squadra (6 discenti)'}
                       </span>
                     </div>
                     <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 text-[10px] font-bold rounded border border-emerald-700">
@@ -430,13 +430,13 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 2 Sequence:</span>
+                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 1 Sequence (24 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 TCCC ➔ Blocco 2 WS2 ➔ Blocco 3 WS1 ➔ Blocco 4 Shock Room
                       </p>
                     </div>
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 3 Sequence (Specular):</span>
+                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 2 Sequence (Specular - 25 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 WS2 ➔ Blocco 2 Shock Room ➔ Blocco 3 TCCC ➔ Blocco 4 WS1
                       </p>
@@ -449,10 +449,10 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                     <div>
                       <span className="text-xs font-black text-red-400 uppercase tracking-wide">
-                        GRUPPO BRAVO (DISC-16 – DISC-30)
+                        GRUPPO BRAVO (DISC-19 – DISC-36)
                       </span>
                       <span className="text-[10px] text-neutral-400 block">
-                        {isEn ? 'Squads 4, 5, 6 • 1 TL + 4 Operators per squad' : 'Squadre 4, 5, 6 • 1 Team Leader + 4 Operatori per squadra'}
+                        {isEn ? 'Squads 4, 5, 6 • 1 TL + 5 Operators per squad (6 trainees)' : 'Squadre 4, 5, 6 • 1 Team Leader + 5 Operatori per squadra (6 discenti)'}
                       </span>
                     </div>
                     <span className="px-2 py-0.5 bg-red-950 text-red-300 text-[10px] font-bold rounded border border-red-700">
@@ -461,13 +461,13 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 2 Sequence:</span>
+                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 1 Sequence (24 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 WS1 ➔ Blocco 2 Shock Room ➔ Blocco 3 TCCC ➔ Blocco 4 WS2
                       </p>
                     </div>
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 3 Sequence (Specular):</span>
+                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 2 Sequence (Specular - 25 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 TCCC ➔ Blocco 2 WS1 ➔ Blocco 3 WS2 ➔ Blocco 4 Shock Room
                       </p>
@@ -480,10 +480,10 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                     <div>
                       <span className="text-xs font-black text-purple-400 uppercase tracking-wide">
-                        GRUPPO CHARLIE (DISC-31 – DISC-45)
+                        GRUPPO CHARLIE (DISC-37 – DISC-54)
                       </span>
                       <span className="text-[10px] text-neutral-400 block">
-                        {isEn ? 'Squads 7, 8, 9 • 1 TL + 4 Operators per squad' : 'Squadre 7, 8, 9 • 1 Team Leader + 4 Operatori per squadra'}
+                        {isEn ? 'Squads 7, 8, 9 • 1 TL + 5 Operators per squad (6 trainees)' : 'Squadre 7, 8, 9 • 1 Team Leader + 5 Operatori per squadra (6 discenti)'}
                       </span>
                     </div>
                     <span className="px-2 py-0.5 bg-purple-950 text-purple-300 text-[10px] font-bold rounded border border-purple-700">
@@ -492,13 +492,13 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 2 Sequence:</span>
+                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 1 Sequence (24 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 Shock Room ➔ Blocco 2 WS1 ➔ Blocco 3 WS2 ➔ Blocco 4 TCCC
                       </p>
                     </div>
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 3 Sequence (Specular):</span>
+                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 2 Sequence (Specular - 25 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 WS1 ➔ Blocco 2 TCCC ➔ Blocco 3 Shock Room ➔ Blocco 4 WS2
                       </p>
@@ -511,10 +511,10 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                     <div>
                       <span className="text-xs font-black text-cyan-400 uppercase tracking-wide">
-                        GRUPPO DELTA (DISC-46 – DISC-60)
+                        GRUPPO DELTA (DISC-55 – DISC-70)
                       </span>
                       <span className="text-[10px] text-neutral-400 block">
-                        {isEn ? 'Squads 10, 11, 12 • 1 TL + 4 Operators per squad' : 'Squadre 10, 11, 12 • 1 Team Leader + 4 Operatori per squadra'}
+                        {isEn ? 'Squad 10 (6 members) • Squads 11 & 12 (5 members each)' : 'Squadra 10 (6 discenti) • Squadre 11 e 12 (5 discenti ciascuna)'}
                       </span>
                     </div>
                     <span className="px-2 py-0.5 bg-cyan-950 text-cyan-300 text-[10px] font-bold rounded border border-cyan-700">
@@ -523,13 +523,13 @@ export const QuadroPubblicoCorsoModal: React.FC<QuadroPubblicoCorsoModalProps> =
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 2 Sequence:</span>
+                      <span className="text-[10px] text-orange-400 uppercase font-bold block">Day 1 Sequence (24 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 WS2 ➔ Blocco 2 TCCC ➔ Blocco 3 Shock Room ➔ Blocco 4 WS1
                       </p>
                     </div>
                     <div className="bg-neutral-950 p-3 rounded border border-neutral-800 space-y-1">
-                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 3 Sequence (Specular):</span>
+                      <span className="text-[10px] text-cyan-400 uppercase font-bold block">Day 2 Sequence (Specular - 25 Ott):</span>
                       <p className="text-white font-bold">
                         Blocco 1 Shock Room ➔ Blocco 2 WS2 ➔ Blocco 3 WS1 ➔ Blocco 4 TCCC
                       </p>

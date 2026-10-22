@@ -62,7 +62,9 @@ import {
   Sliders,
   Flag,
   Moon,
+  Lock,
 } from 'lucide-react';
+import { useCourseAuthorization } from '../../hooks/useCourseAuthorization';
 import {
   ActivityType,
   CourseDay,
@@ -83,6 +85,8 @@ import { RegiaRadioCoordinationPanel } from './RegiaRadioCoordinationPanel';
 import { INITIAL_TIMELINE_SLOTS, INITIAL_TEAMS, INITIAL_FACULTY } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
 import { translateSlot, translateMedicalText } from '../../utils/courseTranslation';
+import { RegiaMascalCountdownBadge } from './RegiaMascalCountdownBadge';
+import { SlotActionsMenu } from '../schedule/SlotActionsMenu';
 
 const GROUP_THEMES: Record<GroupType, { label: string; name: string; border: string; bg: string; text: string; badgeBg: string }> = {
   A: { label: 'ROSSO', name: 'Triage & TCCC', border: '#ef4444', bg: 'bg-red-950/30', text: 'text-red-400', badgeBg: 'bg-red-600' },
@@ -157,7 +161,16 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
     startCourseImmediately,
     resetCourseScheduleToFuture,
     language,
+    isMacroBlockAwaitingAuth,
+    setIsScenarioBlockConfirmationModalOpen,
   } = useCourse();
+
+  const {
+    isTimelineInteractionLocked,
+    lockReason,
+    isGateExpiredAwaitingAuth,
+    setIsStartModalOpen,
+  } = useCourseAuthorization();
 
   const isEn = language === 'en';
 
@@ -529,6 +542,22 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               {/* Day Switcher Component */}
               <DaySelectorToggle variant="regia" />
 
+              {/* Top header bar WAITING FOR AUTHORIZATION badge */}
+              {(!isCourseStarted || isTimelineInteractionLocked) && (
+                <span
+                  className="px-2.5 py-0.5 bg-amber-950/90 border border-amber-500 text-amber-300 font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-wider rounded flex items-center gap-1.5 shadow-sm animate-pulse"
+                  title={lockReason || (isEn ? 'Waiting for authorization' : 'In attesa di autorizzazione')}
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{isEn ? 'WAITING FOR AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE'}</span>
+                  {!isMaster && (
+                    <span className="text-[9px] px-1 py-0.2 bg-amber-900/60 text-amber-200 rounded font-normal hidden sm:inline">
+                      {isEn ? 'READ-ONLY' : 'SOLA LETTURA'}
+                    </span>
+                  )}
+                </span>
+              )}
+
               {/* Auto Advance toggle */}
               <button
                 type="button"
@@ -562,7 +591,24 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
           </div>
 
           {/* Master Countdown Timer & Controls */}
-          <div className={`flex items-center gap-2 self-stretch sm:self-auto ${isMaster ? 'justify-between sm:justify-end' : 'justify-end lg:ml-auto w-full lg:w-auto'}`}>
+          <div className={`flex items-center gap-2.5 self-stretch sm:self-auto flex-wrap ${isMaster ? 'justify-between sm:justify-end' : 'justify-end lg:ml-auto w-full lg:w-auto'}`}>
+            {/* Optional Day 2 MASCAL 21:00-23:00 Countdown Badge */}
+            <RegiaMascalCountdownBadge variant="board" className="min-w-[170px]" />
+
+            {/* Rotational Macro-Block Start Authorization Button (Pulsing if awaiting Regia confirm) */}
+            {isMacroBlockAwaitingAuth && (
+              <button
+                type="button"
+                id="regia-authorize-macro-block-btn"
+                onClick={() => setIsScenarioBlockConfirmationModalOpen(true)}
+                className="px-3 py-2 bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 hover:from-orange-500 hover:to-amber-500 text-black font-mono font-black text-xs uppercase tracking-wider rounded border border-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.8)] animate-pulse flex items-center gap-1.5 cursor-pointer"
+                title={isEn ? 'Scenario block awaiting authorization: click to confirm and start timer' : 'Blocco scenario in attesa di autorizzazione: clicca per confermare e avviare il timer'}
+              >
+                <ShieldAlert className="w-4 h-4 text-black stroke-[2.5]" />
+                <span>{isEn ? 'AUTHORIZE SCENARIO BLOCK' : 'AUTORIZZA AVVIO BLOCCO'}</span>
+              </button>
+            )}
+
             <div
               className={`px-4 py-1.5 text-center min-w-[140px] shadow-md transition-all ${
                 isPreAllertaTccc
@@ -596,13 +642,50 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
               )}
             </div>
 
+            {/* WAITING FOR AUTHORIZATION Badge beside the timer */}
+            {(!isCourseStarted || isTimelineInteractionLocked) && (
+              isMaster ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isGateExpiredAwaitingAuth || !isCourseStarted) {
+                      setIsStartModalOpen(true);
+                    } else if (isMacroBlockAwaitingAuth) {
+                      setIsScenarioBlockConfirmationModalOpen(true);
+                    }
+                  }}
+                  className="px-2.5 py-1.5 bg-amber-950/90 border-2 border-amber-500/80 text-amber-300 font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-amber-900/90 transition-colors animate-pulse rounded"
+                  title={lockReason || (isEn ? 'Awaiting authorization: click to authorize' : 'In attesa di autorizzazione: clicca per autorizzare')}
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
+                  <span>{isEn ? 'WAITING FOR AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE'}</span>
+                </button>
+              ) : (
+                <span
+                  className="px-2.5 py-1.5 bg-amber-950/90 border-2 border-amber-500/80 text-amber-300 font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm animate-pulse rounded"
+                  title={lockReason || (isEn ? 'Awaiting authorization (read-only mode)' : 'In attesa di autorizzazione (modalità sola lettura)')}
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
+                  <span>{isEn ? 'WAITING FOR AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE'}</span>
+                  <span className="text-[9px] px-1 py-0.2 bg-amber-900/60 text-amber-200 rounded font-normal hidden sm:inline">
+                    {isEn ? 'READ-ONLY' : 'SOLA LETTURA'}
+                  </span>
+                </span>
+              )
+            )}
+
             {isMaster && (
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={toggleTimer}
-                  className="p-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs uppercase cursor-pointer transition-colors shadow"
-                  title={isTimerRunning ? (isEn ? 'Pause Timer' : 'Pausa Timer') : (isEn ? 'Start Timer' : 'Avvia Timer')}
+                  disabled={!isCourseStarted || isTimelineInteractionLocked}
+                  className={`p-2 font-black text-xs uppercase transition-colors shadow ${
+                    !isCourseStarted || isTimelineInteractionLocked
+                      ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                      : 'bg-yellow-500 hover:bg-yellow-400 text-black cursor-pointer'
+                  }`}
+                  title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : isTimerRunning ? (isEn ? 'Pause Timer' : 'Pausa Timer') : (isEn ? 'Start Timer' : 'Avvia Timer')}
                 >
                   {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                 </button>
@@ -610,8 +693,13 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                 <button
                   type="button"
                   onClick={() => resetTimer()}
-                  className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase cursor-pointer border border-neutral-700"
-                  title={isEn ? 'Reset Slot Timer' : 'Reset Timer Slot'}
+                  disabled={!isCourseStarted || isTimelineInteractionLocked}
+                  className={`p-2 font-bold text-xs uppercase transition-colors border ${
+                    !isCourseStarted || isTimelineInteractionLocked
+                      ? 'bg-neutral-900 text-neutral-600 border-neutral-800 cursor-not-allowed opacity-50'
+                      : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border-neutral-700 cursor-pointer'
+                  }`}
+                  title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isEn ? 'Reset Slot Timer' : 'Reset Timer Slot')}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                 </button>
@@ -620,16 +708,26 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <button
                     type="button"
                     onClick={() => adjustTimer(-60)}
-                    className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
-                    title={isEn ? '-1 minute' : '-1 minuto'}
+                    disabled={!isCourseStarted || isTimelineInteractionLocked}
+                    className={`px-1 py-0.5 font-bold border ${
+                      !isCourseStarted || isTimelineInteractionLocked
+                        ? 'bg-neutral-950 text-neutral-600 border-neutral-900 cursor-not-allowed opacity-40'
+                        : 'bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border-neutral-800 cursor-pointer'
+                    }`}
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isEn ? '-1 minute' : '-1 minuto')}
                   >
                     -1m
                   </button>
                   <button
                     type="button"
                     onClick={() => adjustTimer(60)}
-                    className="px-1 py-0.5 bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border border-neutral-800 font-bold cursor-pointer"
-                    title={isEn ? '+1 minute' : '+1 minuto'}
+                    disabled={!isCourseStarted || isTimelineInteractionLocked}
+                    className={`px-1 py-0.5 font-bold border ${
+                      !isCourseStarted || isTimelineInteractionLocked
+                        ? 'bg-neutral-950 text-neutral-600 border-neutral-900 cursor-not-allowed opacity-40'
+                        : 'bg-neutral-950 hover:bg-neutral-800 text-neutral-400 border-neutral-800 cursor-pointer'
+                    }`}
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isEn ? '+1 minute' : '+1 minuto')}
                   >
                     +1m
                   </button>
@@ -679,9 +777,9 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <button
                     type="button"
                     onClick={prevSlot}
-                    disabled={activeSlotIndex <= 0}
-                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
-                    title={isEn ? 'Previous Phase / Slot' : 'Fase Precedente'}
+                    disabled={activeSlotIndex <= 0 || !isCourseStarted || isTimelineInteractionLocked}
+                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isEn ? 'Previous Phase / Slot' : 'Fase Precedente')}
                   >
                     <ChevronLeft className="w-4 h-4 text-yellow-400" />
                     <span>{isEn ? 'Prev' : 'Indietro'}</span>
@@ -690,9 +788,9 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <button
                     type="button"
                     onClick={prevSlot}
-                    disabled={activeSlotIndex <= 0}
-                    className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 disabled:opacity-40 font-bold text-xs uppercase border border-amber-700/60 flex items-center gap-1 cursor-pointer"
-                    title={isEn ? 'Revert last course phase / milestone' : 'Annulla ultima fase e torna indietro'}
+                    disabled={activeSlotIndex <= 0 || !isCourseStarted || isTimelineInteractionLocked}
+                    className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-xs uppercase border border-amber-700/60 flex items-center gap-1 cursor-pointer"
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isEn ? 'Revert last course phase / milestone' : 'Annulla ultima fase e torna indietro')}
                   >
                     <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
                     <span>{isEn ? 'Revert Phase' : 'Revert Fasi'}</span>
@@ -701,12 +799,15 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <button
                     type="button"
                     onClick={toggleTimer}
-                    className={`px-3 py-1.5 font-black text-xs uppercase flex items-center gap-1.5 cursor-pointer transition-all shadow ${
-                      isTimerRunning
-                        ? 'bg-amber-500 hover:bg-amber-400 text-black'
-                        : 'bg-yellow-500 hover:bg-yellow-400 text-black'
+                    disabled={!isCourseStarted || isTimelineInteractionLocked}
+                    className={`px-3 py-1.5 font-black text-xs uppercase flex items-center gap-1.5 transition-all shadow ${
+                      !isCourseStarted || isTimelineInteractionLocked
+                        ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-50'
+                        : isTimerRunning
+                        ? 'bg-amber-500 hover:bg-amber-400 text-black cursor-pointer'
+                        : 'bg-yellow-500 hover:bg-yellow-400 text-black cursor-pointer'
                     }`}
-                    title={isTimerRunning ? 'Pausa Timer Corso' : 'Avvia Timer Corso'}
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isTimerRunning ? 'Pausa Timer Corso' : 'Avvia Timer Corso')}
                   >
                     {isTimerRunning ? (
                       <>
@@ -724,9 +825,9 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                   <button
                     type="button"
                     onClick={nextSlot}
-                    disabled={activeSlotIndex >= INITIAL_TIMELINE_SLOTS.length - 1}
-                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
-                    title={isEn ? 'Next Phase / Slot' : 'Fase Successiva'}
+                    disabled={activeSlotIndex >= INITIAL_TIMELINE_SLOTS.length - 1 || !isCourseStarted || isTimelineInteractionLocked}
+                    className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-xs uppercase border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : (isEn ? 'Next Phase / Slot' : 'Fase Successiva')}
                   >
                     <span>{isEn ? 'Next' : 'Avanti'}</span>
                     <ChevronRight className="w-4 h-4 text-yellow-400" />
@@ -744,6 +845,7 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     id="jump-to-phase-select"
                     aria-label={isEn ? 'Jump to phase' : 'Vai a fase'}
                     value={currentFilteredIndex}
+                    disabled={!isCourseStarted || isTimelineInteractionLocked}
                     onChange={(e) => {
                       const localIdx = Number(e.target.value);
                       const targetSlot = filteredSlots[localIdx];
@@ -752,7 +854,8 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                         if (globalIdx !== -1) setActiveSlotIndex(globalIdx);
                       }
                     }}
-                    className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 font-mono text-xs px-2 py-1.5 focus:outline-none focus:border-yellow-500 truncate"
+                    className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 font-mono text-xs px-2 py-1.5 focus:outline-none focus:border-yellow-500 truncate disabled:opacity-45 disabled:cursor-not-allowed"
+                    title={!isCourseStarted || isTimelineInteractionLocked ? (lockReason || '') : undefined}
                   >
                     {filteredSlots.map((s, idx) => (
                       <option key={s.id} value={idx}>
@@ -856,17 +959,20 @@ export const RegiaVisualTimelineBoard: React.FC<RegiaVisualTimelineBoardProps> =
                     <span className="px-1 py-0.2 bg-neutral-800 text-neutral-300 font-bold">
                       {isEn ? 'Phase' : 'Fase'} {sIdx + 1}/{filteredSlots.length}
                     </span>
-                    {isCurrent ? (
-                      <span className="px-1 py-0.2 bg-yellow-500 text-black font-black font-mono animate-pulse">
-                        ★ LIVE T0
-                      </span>
-                    ) : isNext ? (
-                      <span className="px-1 py-0.2 bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 font-mono">
-                        {isEn ? 'T+1 NEXT' : 'T+1 PROSSIMO'}
-                      </span>
-                    ) : (
-                      <span className="text-neutral-500 font-mono">{slot.durationMinutes}m</span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {isCurrent ? (
+                        <span className="px-1 py-0.2 bg-yellow-500 text-black font-black font-mono animate-pulse">
+                          ★ LIVE T0
+                        </span>
+                      ) : isNext ? (
+                        <span className="px-1 py-0.2 bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 font-mono">
+                          {isEn ? 'T+1 NEXT' : 'T+1 PROSSIMO'}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-500 font-mono">{slot.durationMinutes}m</span>
+                      )}
+                      <SlotActionsMenu slot={slot} />
+                    </div>
                   </div>
 
                   {/* Time Range & Title */}

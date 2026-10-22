@@ -95,6 +95,23 @@
   animation-play-state: paused;
 }
 
+@keyframes tacticalAlertBlink {
+  0%, 100% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4), 0 10px 25px -5px rgba(245, 158, 11, 0.3);
+    background-color: rgba(69, 26, 3, 0.35);
+  }
+  50% {
+    border-color: #ea580c;
+    box-shadow: 0 0 0 6px rgba(234, 88, 12, 0.7), 0 20px 35px -5px rgba(234, 88, 12, 0.55);
+    background-color: rgba(124, 45, 18, 0.65);
+  }
+}
+
+.tactical-box-alert-blink {
+  animation: tacticalAlertBlink 1.3s ease-in-out infinite;
+}
+
 /* Custom scrollbars for industrial bold theme */
 ::-webkit-scrollbar {
   width: 6px;

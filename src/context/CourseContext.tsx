@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
+  ActorProgressStatus,
+  CourseActor,
   CourseDay,
   CourseMessage,
   CourseSuspensionInfo,
@@ -8,6 +10,7 @@ import {
   RegiaStaff,
   Faculty,
   Guest,
+  MakeupArtist,
   SimulatorPatient,
   SyncStatusInfo,
   ConnectedPeer,
@@ -18,28 +21,50 @@ import {
   Technician,
   TimelineSlot,
   TriageCategory,
+  CriticalLsiType,
+  MascalTeamTriageRecord,
+  MascalTeamCasualtyAssessment,
   UserRole,
   PhaseShiftLogEntry,
   DevicePresenceRecord,
   ProtesiItem,
+  ScenarioType,
+  GroupType,
+  SimulationPhase,
 } from '../types';
 import {
+  DEFAULT_PATIENT_TRUCCO_ASSIGNMENTS,
+  INITIAL_ACTORS,
   INITIAL_COURSE_MESSAGES,
   INITIAL_DIRECTORS,
   INITIAL_REGIA_STAFF,
   INITIAL_DISCENTI,
   INITIAL_FACULTY,
   INITIAL_GUESTS,
+  INITIAL_MAKEUP_ARTISTS,
   INITIAL_SIMULATOR_PATIENTS,
   INITIAL_TEAMS,
   INITIAL_TECHNICIANS,
   INITIAL_TIMELINE_SLOTS,
 } from '../data/initialData';
+import { computeHomogeneousTruccoDistribution } from '../utils/truccoBalancer';
 import { PROTESI_CATALOG } from '../data/protesiCatalog';
-import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
 import { cleanUndefined } from '../utils/teamUtils';
 import { Language, translations } from '../i18n/translations';
 import { translateSlot, translatePatient } from '../utils/courseTranslation';
+import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
+import { db as localDb } from '../offline/db';
+import { applyScheduleChange, rollbackLastScheduleChange } from '../schedule/scheduleFlexibility';
+import { type SlotChangeProposal } from '../schedule/scheduleValidator';
+import { getMacroBlockInfo } from '../utils/macroBlockHelper';
+import { logAuditAction } from '../schedule/auditLogStore';
+import {
+  checkAndAutoAssignMissingRoles,
+  detectDebriefingOrCompletedForGroup,
+  cleanupDiscentiAssignedRolesInFirestore,
+  CleanupRolesOptions,
+  GROUP_TEAM_IDS,
+} from '../utils/scenarioRoleHelper';
 import {
   db,
   auth,
@@ -47,6 +72,9 @@ import {
   handleFirestoreError,
   signInWithGoogle as fbSignInWithGoogle,
   logOut as fbLogOut,
+  isQuotaExhausted,
+  markQuotaExhausted,
+  resetQuotaStatus,
 } from '../firebase';
 import {
   doc,
@@ -57,8 +85,15 @@ import {
   deleteDoc,
   getDocs,
   writeBatch,
+  query,
+  where,
 } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import {
+  buildSimulatedRoleState,
+  SimulationRoleState,
+  ParallelGroupTrackInfo,
+} from '../utils/simulationRoleEngine';
 
 interface CourseContextType {
   language: Language;
@@ -68,8 +103,8 @@ interface CourseContextType {
 
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
-  openedByRole: 'regia' | 'direttore' | null;
-  setOpenedByRole: (role: 'regia' | 'direttore' | null) => void;
+  openedByRole: 'regia' | 'direttore' | 'master' | null;
+  setOpenedByRole: (role: 'regia' | 'direttore' | 'master' | null) => void;
   canSelectOperator: boolean;
   unlockOperatorSelection: (pin: string) => boolean;
   activeDay: CourseDay;
@@ -113,33 +148,80 @@ interface CourseContextType {
 
   discenti: Discente[];
   updateDiscente: (id: string, updates: Partial<Discente>) => void;
+  bulkUpdateDiscenti: (updatedList: Discente[]) => Promise<void>;
   addDiscente: (newDiscente: Omit<Discente, 'id'>) => void;
   deleteDiscente: (id: string) => void;
+  assignScenarioRoles: (
+    assignments: {
+      discenteId: string;
+      role: string;
+      scenarioType: ScenarioType;
+      slotId?: string;
+      assignedByFacultyBadge?: string;
+    }[]
+  ) => void;
+  clearScenarioRolesForTeam: (teamId: number) => void;
+  cleanupAssignedRoles: (
+    optionsOrPhase?: CleanupRolesOptions | 'debriefing' | 'completed' | string,
+    targetGroup?: GroupType
+  ) => Promise<{ success: boolean; count: number }>;
+  resetAssignedRolesInFirestore: (
+    optionsOrPhase?: CleanupRolesOptions | 'debriefing' | 'completed' | string,
+    targetGroup?: GroupType
+  ) => Promise<{ success: boolean; count: number }>;
+  simulationPhase: SimulationPhase;
+  setSimulationPhase: (
+    phase: SimulationPhase,
+    target?: { group?: GroupType; teamId?: number; all?: boolean }
+  ) => Promise<void>;
 
   faculty: Faculty[];
   updateFaculty: (id: string, updates: Partial<Faculty>) => void;
+  bulkUpdateFaculty: (updatedList: Faculty[]) => Promise<void>;
   addFaculty: (newFaculty: Omit<Faculty, 'id'>) => void;
   deleteFaculty: (id: string) => void;
 
   technicians: Technician[];
   updateTechnician: (id: string, updates: Partial<Technician>) => void;
+  bulkUpdateTechnicians: (updatedList: Technician[]) => Promise<void>;
   addTechnician: (newTech: Omit<Technician, 'id'>) => void;
   deleteTechnician: (id: string) => void;
 
   directors: Director[];
   updateDirector: (id: string, updates: Partial<Director>) => void;
+  bulkUpdateDirectors: (updatedList: Director[]) => Promise<void>;
   addDirector: (newDirector: Omit<Director, 'id'>) => void;
   deleteDirector: (id: string) => void;
 
   regiaStaff: RegiaStaff[];
   updateRegiaStaff: (id: string, updates: Partial<RegiaStaff>) => void;
+  bulkUpdateRegiaStaff: (updatedList: RegiaStaff[]) => Promise<void>;
   addRegiaStaff: (newRegia: Omit<RegiaStaff, 'id'>) => void;
   deleteRegiaStaff: (id: string) => void;
 
   guests: Guest[];
   updateGuest: (id: string, updates: Partial<Guest>) => void;
+  bulkUpdateGuests: (updatedList: Guest[]) => Promise<void>;
   addGuest: (newGuest: Omit<Guest, 'id'>) => void;
   deleteGuest: (id: string) => void;
+
+  // Anagrafica Attori (8 Slot Principali ATT-01 - ATT-08) & Anagrafica Truccatori (TRUC-01 - TRUC-08)
+  actors: CourseActor[];
+  updateActor: (id: string, updates: Partial<CourseActor>) => void;
+  addActor: (newActor: Omit<CourseActor, 'id'>) => void;
+  deleteActor: (id: string) => void;
+  makeupArtists: MakeupArtist[];
+  updateMakeupArtist: (id: string, updates: Partial<MakeupArtist>) => void;
+  addMakeupArtist: (newArtist: Omit<MakeupArtist, 'id'>) => void;
+  deleteMakeupArtist: (id: string) => void;
+  linkActorToMakeupArtist: (actorId: string, makeupArtistId: string, propagateToScenarios?: boolean) => void;
+  assignTruccoToPatient: (patientId: number, actorId: string, makeupArtistId?: string) => void;
+  rebalanceTruccoWorkload: () => void;
+  updateActorProgressStatus: (
+    actorId: string,
+    status: ActorProgressStatus,
+    options?: { patientId?: number; updatedBy?: string; notifyRegia?: boolean }
+  ) => void;
 
   evaluations: TeamEvaluation[];
   saveEvaluation: (evalData: Omit<TeamEvaluation, 'id' | 'timestamp'>) => void;
@@ -178,7 +260,7 @@ interface CourseContextType {
   canGoBack: boolean;
   backDestinationLabel: string;
   navigateBack: () => void;
-  navigateToView: (tab: string, role?: UserRole, origin?: 'regia' | 'direttore') => void;
+  navigateToView: (tab: string, role?: UserRole, origin?: 'regia' | 'direttore' | 'master') => void;
 
   facultyAuthSession: FacultyAuthSession;
   authorizeFaculty: (pin: string, facultyId?: string) => boolean;
@@ -193,7 +275,7 @@ interface CourseContextType {
   resetCourseScheduleToFuture: (minutesFromNow?: number) => void;
   setGatePaused: (paused: boolean) => void;
   toggleGatePause: () => void;
-  setGateMode: (mode: 'start' | 'lunch', customTime?: string) => void;
+  setGateMode: (mode: 'start' | 'lunch' | 'night' | 'day3', customTime?: string) => void;
 
   syncStatus: SyncStatusInfo;
   triggerManualSync: () => void;
@@ -206,8 +288,17 @@ interface CourseContextType {
   firebaseUser: FirebaseUser | null;
   isFirebaseAuthReady: boolean;
   isFirebaseCloudConnected: boolean;
+  isQuotaExhausted: boolean;
+  retryCloudConnection: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutFirebase: () => Promise<void>;
+
+  // Full App Simulation Engine (Simulazione Attività Intera App dall'Apertura Gate 08:30)
+  isFullAppSimulating: boolean;
+  simulatedClockTime: string;
+  simulatedRoleState: SimulationRoleState | null;
+  startFullAppSimulationFromGate: (initialSpeed?: number) => void;
+  stopFullAppSimulation: () => void;
 
   // Simulation Engine & Time Acceleration
   timeMultiplier: number;
@@ -241,6 +332,41 @@ interface CourseContextType {
   setFreeAccessEnabled: (enabled: boolean) => void;
   isAreaDiscentiModalOpen: boolean;
   setIsAreaDiscentiModalOpen: (open: boolean) => void;
+
+  // Fullscreen View Mode for Training Rooms
+  isFullscreenMode: boolean;
+  setIsFullscreenMode: (val: boolean) => void;
+  toggleFullscreenMode: () => void;
+
+  // MASCAL Triage Faculty Tracking
+  mascalTriageRecords: Record<number, MascalTeamTriageRecord>;
+  saveMascalTeamAssessment: (teamId: number, assessment: MascalTeamCasualtyAssessment) => void;
+  resetMascalTeamTriage: (teamId?: number) => void;
+
+  // Schedule Flexibility & Offline Audit
+  timelineSlots: TimelineSlot[];
+  setTimelineSlots: React.Dispatch<React.SetStateAction<TimelineSlot[]>>;
+  applyScheduleModification: (proposal: SlotChangeProposal) => Promise<{ success: boolean; issues?: string[] }>;
+  rollbackScheduleModification: () => Promise<boolean>;
+  isAuditLogOpen: boolean;
+  setIsAuditLogOpen: (open: boolean) => void;
+  isIntentReviewOpen: boolean;
+  setIsIntentReviewOpen: (open: boolean) => void;
+  activeRollbackToast: { visible: boolean; description: string; timestamp: number } | null;
+  dismissRollbackToast: () => void;
+
+  // Gate Authorization & Scenario Block Start Confirmation
+  isGateExpiredAwaitingAuth: boolean;
+  authorizeCourseStart: (byBadge?: string) => Promise<void>;
+  isMacroBlockAwaitingAuth: boolean;
+  authorizedMacroBlocks: Record<string, boolean>;
+  authorizeScenarioBlockStart: (slotId: string, byBadge?: string) => Promise<void>;
+  isScenarioBlockConfirmationModalOpen: boolean;
+  setIsScenarioBlockConfirmationModalOpen: (open: boolean) => void;
+
+  // Tactical Multi-Layer Map Modal
+  isTacticalMapOpen: boolean;
+  setIsTacticalMapOpen: (open: boolean) => void;
 }
 
 const CourseContext = createContext<CourseContextType | null>(null);
@@ -259,7 +385,29 @@ function getStoredOrDefault<T>(key: string, defaultVal: T): T {
 }
 
 export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => getStoredOrDefault<Language>('language', 'it'));
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlLang = params.get('lang');
+      if (urlLang === 'it' || urlLang === 'en') return urlLang;
+
+      const langMigration = localStorage.getItem('trauma_lang_migrated_en');
+      if (!langMigration) {
+        localStorage.setItem('trauma_lang_migrated_en', 'true');
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'language', JSON.stringify('en'));
+        return 'en';
+      }
+
+      const stored = localStorage.getItem(STORAGE_KEY_PREFIX + 'language');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed === 'it' || parsed === 'en') return parsed;
+        } catch (e) {}
+      }
+    }
+    return 'en';
+  });
   const [userRole, setUserRole] = useState<UserRole>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -278,6 +426,15 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return 'ospite';
       }
 
+      if (
+        roleParam === 'master' ||
+        params.get('master') ||
+        params.get('pin') === '251201' ||
+        params.get('code') === '251201' ||
+        viewParam === 'master'
+      ) {
+        return 'master';
+      }
       if (roleParam === 'discente' || params.get('discente') || params.get('student')) return 'discente';
       if (roleParam === 'faculty' || params.get('faculty') || params.get('tutor')) return 'faculty';
       if (roleParam === 'tecnico' || params.get('tecnico') || params.get('tech')) return 'tecnico';
@@ -298,18 +455,18 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return 'ospite';
   });
-  const [openedByRole, setOpenedByRoleState] = useState<'regia' | 'direttore' | null>(() => {
+  const [openedByRole, setOpenedByRoleState] = useState<'regia' | 'direttore' | 'master' | null>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const fromParam = params.get('from') || params.get('openedBy') || params.get('source');
-      if (fromParam === 'regia' || fromParam === 'direttore') return fromParam;
+      if (fromParam === 'regia' || fromParam === 'direttore' || fromParam === 'master') return fromParam;
       const stored = sessionStorage.getItem('trauma_opened_by');
-      if (stored === 'regia' || stored === 'direttore') return stored as 'regia' | 'direttore';
+      if (stored === 'regia' || stored === 'direttore' || stored === 'master') return stored as 'regia' | 'direttore' | 'master';
     }
     return null;
   });
 
-  const setOpenedByRole = useCallback((role: 'regia' | 'direttore' | null) => {
+  const setOpenedByRole = useCallback((role: 'regia' | 'direttore' | 'master' | null) => {
     setOpenedByRoleState(role);
     if (typeof window !== 'undefined') {
       if (role) {
@@ -323,8 +480,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const unlockOperatorSelection = useCallback(
     (pin: string): boolean => {
       const clean = pin.trim();
-      const validPins = ['118', '2026', '112', '9999', '0000'];
-      if (validPins.includes(clean) || clean.toLowerCase() === 'regia' || clean.toLowerCase() === 'direttore') {
+      const validPins = ['118', '2026', '112', '9999', '0000', '251201', '9438', '0118'];
+      if (
+        validPins.includes(clean) ||
+        clean.toLowerCase() === 'regia' ||
+        clean.toLowerCase() === 'direttore' ||
+        clean.toLowerCase() === 'master'
+      ) {
         setOpenedByRole('regia');
         return true;
       }
@@ -336,10 +498,15 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const canSelectOperator =
     userRole === 'regia' ||
     userRole === 'direttore' ||
+    userRole === 'master' ||
     openedByRole === 'regia' ||
-    openedByRole === 'direttore';
+    openedByRole === 'direttore' ||
+    openedByRole === 'master';
 
-  const [activeDay, setActiveDayState] = useState<CourseDay>(() => getStoredOrDefault('activeDay', 2));
+  const [activeDay, setActiveDayState] = useState<CourseDay>(() => {
+    const stored = getStoredOrDefault('activeDay', 1);
+    return stored === 1 || stored === 2 ? stored : 1;
+  });
   const [activeSlotIndex, setActiveSlotIndexState] = useState<number>(() => getStoredOrDefault('activeSlotIndex', 0));
 
   // Firebase Auth State
@@ -378,6 +545,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Helper to persist course state changes to Firestore
   const syncCourseStateToFirestore = useCallback(
     async (partialState: Record<string, any>) => {
+      if (isQuotaExhausted()) return;
       const statePath = 'course_state/current_state';
       try {
         await setDoc(
@@ -394,6 +562,11 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     },
     []
   );
+
+  const retryCloudConnection = useCallback(async () => {
+    await resetQuotaStatus();
+    setIsFirebaseCloudConnected(true);
+  }, []);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
@@ -437,6 +610,30 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         } catch (e) {}
       }
+      if (event.key === STORAGE_KEY_PREFIX + 'activeSlotIndex' && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (typeof parsed === 'number' && parsed >= 0) {
+            setActiveSlotIndexState(parsed);
+          }
+        } catch (e) {}
+      }
+      if (event.key === STORAGE_KEY_PREFIX + 'activeDay' && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (parsed === 2 || parsed === 3) {
+            setActiveDayState(parsed);
+          }
+        } catch (e) {}
+      }
+      if (event.key === STORAGE_KEY_PREFIX + 'mascalTriageRecords' && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (parsed && typeof parsed === 'object') {
+            setMascalTriageRecordsState(parsed);
+          }
+        } catch (e) {}
+      }
     };
 
     const handleCustomLang = (event: Event) => {
@@ -446,12 +643,41 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
+    const handleTimelineChange = (event: Event) => {
+      const ce = event as CustomEvent<{ activeSlotIndex?: number; activeDay?: CourseDay; timerSeconds?: number; isTimerRunning?: boolean }>;
+      if (ce.detail) {
+        if (typeof ce.detail.activeSlotIndex === 'number') setActiveSlotIndexState(ce.detail.activeSlotIndex);
+        if (typeof ce.detail.activeDay === 'number') setActiveDayState(ce.detail.activeDay);
+        if (typeof ce.detail.timerSeconds === 'number') setTimerSeconds(ce.detail.timerSeconds);
+        if (typeof ce.detail.isTimerRunning === 'boolean') setIsTimerRunning(ce.detail.isTimerRunning);
+      }
+    };
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('trauma_timeline_channel');
+        bc.onmessage = (event) => {
+          if (event.data) {
+            if (typeof event.data.activeSlotIndex === 'number') setActiveSlotIndexState(event.data.activeSlotIndex);
+            if (typeof event.data.activeDay === 'number') setActiveDayState(event.data.activeDay);
+            if (typeof event.data.timerSeconds === 'number') setTimerSeconds(event.data.timerSeconds);
+            if (typeof event.data.isTimerRunning === 'boolean') setIsTimerRunning(event.data.isTimerRunning);
+            if (event.data.mascalTriageRecords) setMascalTriageRecordsState(event.data.mascalTriageRecords);
+          }
+        };
+      } catch (e) {}
+    }
+
     window.addEventListener('storage', handleStorage);
     window.addEventListener('trauma_language_change', handleCustomLang);
+    window.addEventListener('trauma_timeline_change', handleTimelineChange);
 
     return () => {
+      if (bc) bc.close();
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('trauma_language_change', handleCustomLang);
+      window.removeEventListener('trauma_timeline_change', handleTimelineChange);
     };
   }, []);
 
@@ -461,18 +687,70 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return item[language] || item['en'] || defaultText || key;
   }, [language]);
 
+  // Reactive Timeline Slots with IndexedDB Offline/Flexibility Persistence
+  const [timelineSlots, setTimelineSlots] = useState<TimelineSlot[]>(() => INITIAL_TIMELINE_SLOTS);
+
+  // Load cached slots from IndexedDB on startup if available
+  useEffect(() => {
+    localDb.cachedSlots.toArray().then((saved) => {
+      if (saved && saved.length > 0) {
+        setTimelineSlots(saved.sort((a, b) => (a.day - b.day) || (a.startMinutes - b.startMinutes)));
+      }
+    }).catch((err) => {
+      console.warn('Failed to load cached slots from IndexedDB:', err);
+    });
+  }, []);
+
   const localizedTimelineSlots = useMemo(() => {
-    return INITIAL_TIMELINE_SLOTS.map((slot) => translateSlot(slot, language));
-  }, [language]);
+    return timelineSlots.map((slot) => translateSlot(slot, language));
+  }, [timelineSlots, language]);
   const filteredSlots = useMemo(() => {
     return localizedTimelineSlots.filter((s) => s.day === activeDay);
   }, [localizedTimelineSlots, activeDay]);
   const currentSlot = localizedTimelineSlots[activeSlotIndex] || localizedTimelineSlots[0];
 
+  // Schedule Flexibility & Audit Modals & Quick Rollback State
+  const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
+  const [isIntentReviewOpen, setIsIntentReviewOpen] = useState<boolean>(false);
+  const [activeRollbackToast, setActiveRollbackToast] = useState<{ visible: boolean; description: string; timestamp: number } | null>(null);
+
+  const dismissRollbackToast = useCallback(() => {
+    setActiveRollbackToast(null);
+  }, []);
+
+  const applyScheduleModification = useCallback(async (proposal: SlotChangeProposal): Promise<{ success: boolean; issues?: string[] }> => {
+    const userBadge = openedByRole === 'master' ? 'MASTER-01' : 'REGIA-01';
+    const result = await applyScheduleChange(proposal, timelineSlots, userBadge, 'Console Direzione / Regia');
+    if (result.success && result.newSlots) {
+      setTimelineSlots(result.newSlots);
+      const actionLabel = proposal.type === 'extend' ? `+${proposal.deltaMinutes}m` : proposal.type === 'reduce' ? `-${proposal.deltaMinutes}m` : `Spostato a ${proposal.newStartTime}`;
+      setActiveRollbackToast({
+        visible: true,
+        description: `Slot ${proposal.slotId}: ${actionLabel}`,
+        timestamp: Date.now(),
+      });
+      return { success: true };
+    }
+    return { success: false, issues: result.issues };
+  }, [timelineSlots, openedByRole]);
+
+  const rollbackScheduleModification = useCallback(async (): Promise<boolean> => {
+    const userBadge = openedByRole === 'master' ? 'MASTER-01' : 'REGIA-01';
+    const restored = await rollbackLastScheduleChange(userBadge);
+    if (restored) {
+      setTimelineSlots(restored);
+      setActiveRollbackToast(null);
+      return true;
+    }
+    return false;
+  }, [openedByRole]);
+
   const getSlotDurationSeconds = (slot: TimelineSlot) => {
     if (slot.id === 'd2-setup-1' || slot.id === 'd2-setup-2') return 1800; // 30 mins (08:00 - 08:30)
-    if (slot.id === 'd2-chiusura' || slot.id === 'd3-setup-1') return 52200; // 14h 30m (18:00 Day 2 to 08:30 Day 3)
+    if (slot.id === 'd2-chiusura' || slot.id === 'd3-setup-1') return 34200; // 9h 30m (23:00 Day 2 to 08:30 Day 3)
     if (slot.id === 'd3-chiusura') return 9000; // 2h 30m (18:00 to 20:30 Day 3)
+    if (slot.id === 'd2-mascal-scenario') return 7200; // 120 mins (21:00 - 23:00)
+    if (slot.id === 'd2-pausa-cena') return 7200; // 120 mins (18:00 - 20:00)
     return slot.durationMinutes * 60;
   };
 
@@ -487,15 +765,54 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 
   const [simulatorPatients, setSimulatorPatients] = useState<SimulatorPatient[]>(() => {
+    const withDefaultTrucco = INITIAL_SIMULATOR_PATIENTS.map((p) => {
+      const def = DEFAULT_PATIENT_TRUCCO_ASSIGNMENTS[p.id];
+      const defaultStatus: ActorProgressStatus = p.techChecklist?.preDone
+        ? 'PRONTO_T0'
+        : p.id === 1 || p.id === 2
+        ? 'IN_PREPARAZIONE'
+        : 'STANDBY';
+      return {
+        ...p,
+        assignedActorId: p.assignedActorId || def?.assignedActorId || 'actor-1',
+        assignedMakeupArtistId: p.assignedMakeupArtistId || def?.assignedMakeupArtistId || 'truc-1',
+        actorProgressStatus: p.actorProgressStatus || defaultStatus,
+      };
+    });
     try {
-      const stored = getStoredOrDefault('simulatorPatients', INITIAL_SIMULATOR_PATIENTS);
+      const stored = getStoredOrDefault('simulatorPatients', withDefaultTrucco);
       if (!stored || stored.length < 24) {
         localStorage.removeItem(STORAGE_KEY_PREFIX + 'simulatorPatients');
-        return INITIAL_SIMULATOR_PATIENTS;
+        return withDefaultTrucco;
       }
-      return stored;
+      // Always synchronize official rotation assignments and ensure default actor/makeup artist
+      return withDefaultTrucco.map((canonical) => {
+        const found = stored.find((p) => p.id === canonical.id);
+        if (!found) return canonical;
+        const hasLegacyArtist =
+          found.assignedMakeupArtistId &&
+          ['truc-5', 'truc-6', 'truc-7', 'truc-8'].includes(found.assignedMakeupArtistId);
+        return {
+          ...found,
+          day: canonical.day,
+          period: canonical.period,
+          groupExtraAssigned: canonical.groupExtraAssigned,
+          groupIntraAssigned: canonical.groupIntraAssigned,
+          teamExtraAssigned: canonical.teamExtraAssigned,
+          teamIntraAssigned: canonical.teamIntraAssigned,
+          assignedActorId: hasLegacyArtist
+            ? canonical.assignedActorId
+            : found.assignedActorId || canonical.assignedActorId,
+          assignedMakeupArtistId: hasLegacyArtist
+            ? canonical.assignedMakeupArtistId
+            : found.assignedMakeupArtistId || canonical.assignedMakeupArtistId,
+          actorProgressStatus:
+            found.actorProgressStatus ||
+            (found.techChecklist?.preDone ? 'PRONTO_T0' : canonical.actorProgressStatus),
+        };
+      });
     } catch (e) {
-      return INITIAL_SIMULATOR_PATIENTS;
+      return withDefaultTrucco;
     }
   });
 
@@ -503,25 +820,108 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return simulatorPatients.map((p) => translatePatient(p, language));
   }, [simulatorPatients, language]);
 
-  const [teams, setTeams] = useState<Team[]>(() => getStoredOrDefault('teams', INITIAL_TEAMS));
+  const [teams, setTeams] = useState<Team[]>(() => {
+    if (typeof window !== 'undefined') {
+      const rosterRev = localStorage.getItem(STORAGE_KEY_PREFIX + 'roster_rev_9240629a');
+      if (!rosterRev) {
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'teams', JSON.stringify(INITIAL_TEAMS));
+        } catch (e) {}
+        return INITIAL_TEAMS;
+      }
+    }
+    const stored = getStoredOrDefault('teams', INITIAL_TEAMS);
+    return INITIAL_TEAMS.map((canonical) => {
+      const found = stored.find((t) => t.id === canonical.id);
+      if (!found) return canonical;
+      return {
+        ...found,
+        name: canonical.name,
+        groupId: canonical.groupId,
+        notes: canonical.notes,
+      };
+    });
+  });
   const [discenti, setDiscenti] = useState<Discente[]>(() => {
-    // Recreate entire discenti registry from scratch using INITIAL_DISCENTI
-    try {
-      localStorage.removeItem(STORAGE_KEY_PREFIX + 'discenti');
-    } catch (e) {
-      // ignore
+    if (typeof window !== 'undefined') {
+      const rosterRev = localStorage.getItem(STORAGE_KEY_PREFIX + 'roster_rev_9240629a');
+      const stored = getStoredOrDefault('discenti', INITIAL_DISCENTI);
+      if (!rosterRev || !stored || stored.length !== 68 || stored[0]?.name !== 'Ahern Ellen') {
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(INITIAL_DISCENTI));
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'roster_rev_9240629a', 'rev_9240629a');
+        } catch (e) {}
+        return INITIAL_DISCENTI;
+      }
+      return stored;
     }
     return INITIAL_DISCENTI;
   });
-  const [faculty, setFaculty] = useState<Faculty[]>(() => getStoredOrDefault('faculty', INITIAL_FACULTY));
+  const [faculty, setFaculty] = useState<Faculty[]>(() => {
+    if (typeof window !== 'undefined') {
+      const rosterRev = localStorage.getItem(STORAGE_KEY_PREFIX + 'roster_rev_faculty_23');
+      const stored = getStoredOrDefault('faculty', INITIAL_FACULTY);
+      if (!rosterRev || !stored || stored.length !== 23 || !stored.some((f) => f.badgeCode === 'FAC-LEAD')) {
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(INITIAL_FACULTY));
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'roster_rev_faculty_23', 'rev_23');
+        } catch (e) {}
+        return INITIAL_FACULTY;
+      }
+      return stored;
+    }
+    return INITIAL_FACULTY;
+  });
   const [technicians, setTechnicians] = useState<Technician[]>(() => getStoredOrDefault('technicians', INITIAL_TECHNICIANS));
   const [directors, setDirectors] = useState<Director[]>(() => getStoredOrDefault('directors', INITIAL_DIRECTORS));
   const [regiaStaff, setRegiaStaff] = useState<RegiaStaff[]>(() => getStoredOrDefault('regiaStaff', INITIAL_REGIA_STAFF));
   const [guests, setGuests] = useState<Guest[]>(() => getStoredOrDefault('guests', INITIAL_GUESTS));
+  const [actors, setActors] = useState<CourseActor[]>(() => {
+    const stored = getStoredOrDefault('actors', INITIAL_ACTORS);
+    if (
+      !stored ||
+      stored.length !== 8 ||
+      stored.filter((a) => a.physicalStatus === 'AMPUTATO').length !== 1 ||
+      stored.some((a) => a.badgeCode?.startsWith('ATT-'))
+    ) {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'actors', JSON.stringify(INITIAL_ACTORS));
+      } catch (e) {}
+      return INITIAL_ACTORS;
+    }
+    return stored.map((found) => {
+      const canonical = INITIAL_ACTORS.find((a) => a.id === found.id);
+      if (!canonical) return found;
+      return {
+        ...canonical,
+        ...found,
+        physicalStatus: canonical.physicalStatus,
+        progressStatus: found.progressStatus || canonical.progressStatus || 'STANDBY',
+        progressUpdatedAt: found.progressUpdatedAt || canonical.progressUpdatedAt,
+        progressUpdatedBy: found.progressUpdatedBy || canonical.progressUpdatedBy,
+      };
+    });
+  });
+  const [makeupArtists, setMakeupArtists] = useState<MakeupArtist[]>(() => {
+    const stored = getStoredOrDefault('makeupArtists', INITIAL_MAKEUP_ARTISTS);
+    if (
+      !stored ||
+      stored.length !== 3 ||
+      stored.some((m) => m.badgeCode?.startsWith('TRUC-') || m.id === 'truc-4')
+    ) {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'makeupArtists', JSON.stringify(INITIAL_MAKEUP_ARTISTS));
+      } catch (e) {}
+      return INITIAL_MAKEUP_ARTISTS;
+    }
+    return stored;
+  });
 
   const [evaluations, setEvaluations] = useState<TeamEvaluation[]>(() =>
     getStoredOrDefault('evaluations', [])
   );
+
+  const [simulationPhase, setSimulationPhaseState] = useState<SimulationPhase>('idle');
 
   const [activeFacultyTeamId, setActiveFacultyTeamId] = useState<number>(1);
   const [activeTechPatientId, setActiveTechPatientId] = useState<number>(1);
@@ -543,8 +943,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedGuestId, setSelectedGuestId] = useState<string>(() =>
     getStoredOrDefault('selectedGuestId', 'guest-1')
   );
-  const [currentTab, setCurrentTab] = useState<string>(() => {
+  const [currentTab, setCurrentTabState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
+      const storedTab = localStorage.getItem(STORAGE_KEY_PREFIX + 'active_tab');
       const params = new URLSearchParams(window.location.search);
       const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
       if (
@@ -570,15 +971,44 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (hasSpecificParam) {
         return 'public'; // Will be resolved by App.tsx
       }
+      if (storedTab) {
+        try {
+          const parsed = JSON.parse(storedTab);
+          if (parsed && typeof parsed === 'string') return parsed;
+        } catch (e) {}
+      }
     }
     return 'public';
   });
+
+  const setCurrentTab = useCallback((tab: string) => {
+    setCurrentTabState(tab);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'active_tab', JSON.stringify(tab));
+      } catch (e) {}
+    }
+  }, []);
+
   const [selectedCatalogPatientId, setSelectedCatalogPatientId] = useState<number | null>(null);
 
-  // Protesi Catalog State
-  const [protesiCatalog, setProtesiCatalogState] = useState<ProtesiItem[]>(() =>
-    getStoredOrDefault<ProtesiItem[]>('protesiCatalog', PROTESI_CATALOG)
-  );
+  // MASCAL Triage Records per Team (Synced in Real-Time across Faculty Tutors)
+  const [mascalTriageRecords, setMascalTriageRecordsState] = useState<Record<number, MascalTeamTriageRecord>>(() => {
+    return getStoredOrDefault<Record<number, MascalTeamTriageRecord>>('mascalTriageRecords', {});
+  });
+
+  // Protesi Catalog State (always sync scenariosUsed with official Day 2 / Day 3 rotations)
+  const [protesiCatalog, setProtesiCatalogState] = useState<ProtesiItem[]>(() => {
+    const stored = getStoredOrDefault<ProtesiItem[]>('protesiCatalog', PROTESI_CATALOG);
+    return PROTESI_CATALOG.map((canonical) => {
+      const found = stored.find((p) => p.id === canonical.id);
+      if (!found) return canonical;
+      return {
+        ...found,
+        scenariosUsed: canonical.scenariosUsed,
+      };
+    });
+  });
 
   const updateProtesiItem = useCallback((id: string, updated: Partial<ProtesiItem>) => {
     setProtesiCatalogState((prev) => {
@@ -644,17 +1074,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Back Navigation History Stack
   const [navigationHistory, setNavigationHistory] = useState<{ tab: string; role: UserRole }[]>([]);
-  const [lastAdminOrigin, setLastAdminOrigin] = useState<'regia' | 'direttore' | null>(() => {
+  const [lastAdminOrigin, setLastAdminOrigin] = useState<'regia' | 'direttore' | 'master' | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem('trauma_opened_by');
-      if (stored === 'regia' || stored === 'direttore') return stored as 'regia' | 'direttore';
+      if (stored === 'regia' || stored === 'direttore' || stored === 'master') return stored as 'regia' | 'direttore' | 'master';
     }
     return null;
   });
 
-  // Track admin origin whenever user is in Regia or Direttori
+  // Track admin origin whenever user is in Master, Regia or Direttori
   useEffect(() => {
-    if (currentTab === 'regia' || userRole === 'regia') {
+    if (currentTab === 'master' || userRole === 'master') {
+      setLastAdminOrigin('master');
+      setOpenedByRole('master');
+    } else if (currentTab === 'regia' || userRole === 'regia') {
       setLastAdminOrigin('regia');
       setOpenedByRole('regia');
     } else if (currentTab === 'direttori' || userRole === 'direttore') {
@@ -664,10 +1097,12 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [currentTab, userRole, setOpenedByRole]);
 
   const navigateToView = useCallback(
-    (tab: string, role?: UserRole, origin?: 'regia' | 'direttore') => {
+    (tab: string, role?: UserRole, origin?: 'regia' | 'direttore' | 'master') => {
       const effectiveOrigin =
         origin ||
-        (userRole === 'regia' || currentTab === 'regia'
+        (userRole === 'master' || currentTab === 'master'
+          ? 'master'
+          : userRole === 'regia' || currentTab === 'regia'
           ? 'regia'
           : userRole === 'direttore' || currentTab === 'direttori'
           ? 'direttore'
@@ -695,7 +1130,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       // Fallback if stack is empty
       const targetOrigin = openedByRole || lastAdminOrigin;
-      if (targetOrigin === 'regia') {
+      if (targetOrigin === 'master') {
+        setUserRole('master');
+        setCurrentTab('master');
+      } else if (targetOrigin === 'regia') {
         setUserRole('regia');
         setCurrentTab('regia');
       } else if (targetOrigin === 'direttore') {
@@ -711,12 +1149,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const canGoBack =
     navigationHistory.length > 0 ||
     ((Boolean(openedByRole) || Boolean(lastAdminOrigin)) &&
+      currentTab !== 'master' &&
       currentTab !== 'regia' &&
       currentTab !== 'direttori');
 
   const backDestinationLabel = useMemo(() => {
     if (navigationHistory.length > 0) {
       const last = navigationHistory[navigationHistory.length - 1];
+      if (last.tab === 'master' || last.role === 'master') return 'Master';
       if (last.tab === 'regia' || last.role === 'regia') return 'Regia';
       if (last.tab === 'direttori' || last.role === 'direttore') return language === 'en' ? 'Directors' : 'Direzione';
       if (last.tab === 'public') return language === 'en' ? 'Public Timeline' : 'Timeline Pubblica';
@@ -724,10 +1164,12 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (last.tab === 'faculty') return 'Faculty';
       if (last.tab === 'discente') return language === 'en' ? 'Learners' : 'Discenti';
       if (last.tab === 'protesi') return language === 'en' ? 'Prosthetics' : 'Protesi';
+      if (last.tab === 'trucco' || last.tab === 'moulage') return language === 'en' ? 'Makeup & Moulage' : 'Visuale Trucco';
       if (last.tab === 'scenari') return language === 'en' ? 'Scenarios' : 'Scenari';
       return language === 'en' ? 'Previous Screen' : 'Schermata Precedente';
     }
     const origin = openedByRole || lastAdminOrigin;
+    if (origin === 'master') return 'Master';
     if (origin === 'regia') return 'Regia';
     if (origin === 'direttore') return language === 'en' ? 'Directors' : 'Direzione';
     return language === 'en' ? 'Previous Screen' : 'Indietro';
@@ -772,12 +1214,35 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => window.clearInterval(interval);
   }, []);
 
+  // Full App Simulation permanently disabled
+  const [isFullAppSimulating] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'isFullAppSimulating');
+    } catch (e) {}
+  }, []);
+
   const targetStartTimeMs = new Date(courseStartSchedule.isoTimestamp).getTime() || 0;
   const rawRemainingMs = Math.max(0, targetStartTimeMs - currentTime);
   const timeRemainingMs = courseStartSchedule.isGatePaused 
     ? (courseStartSchedule.pausedRemainingMs ?? rawRemainingMs)
     : rawRemainingMs;
-  const isCourseStarted = !courseStartSchedule.isGateEnabled || targetStartTimeMs <= currentTime;
+
+  // Gate Authorization Protocol:
+  // When gate countdown is enabled and reaches 00:00, the course does NOT start automatically.
+  // It enters isGateExpiredAwaitingAuth until the Regia / Direction explicitly authorizes the start.
+  const isGateExpiredAwaitingAuth =
+    Boolean(courseStartSchedule.isGateEnabled) &&
+    rawRemainingMs === 0 &&
+    !courseStartSchedule.isStartAuthorizedByRegia;
+
+  const isCourseStarted =
+    !courseStartSchedule.isGateEnabled ||
+    Boolean(courseStartSchedule.isStartAuthorizedByRegia) ||
+    Boolean(courseStartSchedule.isOfficialStartTriggered);
+
+  const simulatedClockTime = '';
 
   const [hasPlayed30MinBeep, setHasPlayed30MinBeep] = useState(false);
   const [isBeeping, setIsBeeping] = useState<boolean>(false);
@@ -843,6 +1308,10 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     getStoredOrDefault('courseMessages', INITIAL_COURSE_MESSAGES)
   );
 
+  const simulatedRoleState: SimulationRoleState | null = null;
+  const effectiveCourseMessages = courseMessages;
+  const effectiveEvaluations = evaluations;
+
   // Faculty Authorization Session State
   const [facultyAuthSession, setFacultyAuthSession] = useState<FacultyAuthSession>(() => {
     return getStoredOrDefault<FacultyAuthSession>('facultyAuthSession', {
@@ -863,6 +1332,58 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     getStoredOrDefault<boolean>('freeAccessEnabled', false)
   );
   const [isAreaDiscentiModalOpen, setIsAreaDiscentiModalOpen] = useState<boolean>(false);
+
+  // Tactical Multi-Layer Map Modal State
+  const [isTacticalMapOpen, setIsTacticalMapOpen] = useState<boolean>(false);
+
+  // Fullscreen View Mode State for Training Rooms
+  const [isFullscreenMode, setIsFullscreenModeState] = useState<boolean>(false);
+
+  const setIsFullscreenMode = useCallback((val: boolean) => {
+    setIsFullscreenModeState(val);
+    if (typeof document !== 'undefined') {
+      if (val) {
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {
+            // Fallback to viewport-expanded mode when browser blocks native fullscreen in iframe
+          });
+        }
+      } else {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+  }, []);
+
+  const toggleFullscreenMode = useCallback(() => {
+    setIsFullscreenMode(!isFullscreenMode);
+  }, [isFullscreenMode, setIsFullscreenMode]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreenModeState(false);
+      } else {
+        setIsFullscreenModeState(true);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreenMode) {
+        setIsFullscreenMode(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreenMode, setIsFullscreenMode]);
 
   const setFreeAccessEnabled = useCallback((enabled: boolean) => {
     setFreeAccessEnabledState(enabled);
@@ -905,12 +1426,29 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [peersMap, setPeersMap] = useState<Record<string, { role: UserRole; lastSeen: number }>>({});
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [devicePresenceMap, setDevicePresenceMap] = useState<Record<string, DevicePresenceRecord>>({});
+  const hasSeededPatientsRef = useRef<boolean>(false);
 
   // -------------------------------------------------------------
   // FIRESTORE REAL-TIME SYNCHRONIZATION LISTENERS
   // -------------------------------------------------------------
   useEffect(() => {
+    if (isQuotaExhausted()) {
+      setIsFirebaseCloudConnected(false);
+      return;
+    }
+
     const unsubscribers: (() => void)[] = [];
+
+    const handleSnapshotError = (err: unknown, op: OperationType, path: string) => {
+      setIsFirebaseCloudConnected(false);
+      handleFirestoreError(err, op, path);
+      if (isQuotaExhausted()) {
+        unsubscribers.forEach((u) => {
+          try { u(); } catch (e) {}
+        });
+        unsubscribers.length = 0;
+      }
+    };
 
     // 1. Listen to Course State
     const courseStatePath = 'course_state';
@@ -928,7 +1466,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (typeof data.autoAdvancePhases === 'boolean') setAutoAdvancePhasesState(data.autoAdvancePhases);
             if (data.suspensionInfo) setSuspensionInfo(data.suspensionInfo);
             if (data.courseStartSchedule) setCourseStartSchedule(data.courseStartSchedule);
+            if (data.authorizedMacroBlocks) setAuthorizedMacroBlocks(data.authorizedMacroBlocks);
             if (typeof data.freeAccessEnabled === 'boolean') setFreeAccessEnabledState(data.freeAccessEnabled);
+            if (typeof data.simulationPhase === 'string') setSimulationPhaseState(data.simulationPhase as SimulationPhase);
             if (data.language === 'it' || data.language === 'en') {
               setLanguageState((prevLang) => {
                 if (prevLang !== data.language) {
@@ -943,26 +1483,28 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setLastSyncTimestamp(Date.now());
             setIsFirebaseCloudConnected(true);
           } else {
-            // Document does not exist yet; initialize it in Firestore
-            const initialCourseState = {
-              activeDay: 2,
-              activeSlotIndex: 0,
-              isTimerRunning: false,
-              timerSeconds: 30 * 60,
-              timeMultiplier: 1,
-              autoAdvancePhases: true,
-              suspensionInfo: { isSuspended: false, reason: '' },
-              courseStartSchedule: getDefaultCourseSchedule(),
-              freeAccessEnabled: false,
-              updatedAt: new Date().toISOString(),
-            };
-            setDoc(doc(db, courseStatePath, 'current_state'), initialCourseState).catch((err) => {
-              handleFirestoreError(err, OperationType.CREATE, `${courseStatePath}/current_state`);
-            });
+            // Document does not exist yet; initialize it in Firestore if not quota exhausted
+            if (!isQuotaExhausted()) {
+              const initialCourseState = {
+                activeDay: 1,
+                activeSlotIndex: 0,
+                isTimerRunning: false,
+                timerSeconds: 30 * 60,
+                timeMultiplier: 1,
+                autoAdvancePhases: true,
+                suspensionInfo: { isSuspended: false, reason: '' },
+                courseStartSchedule: getDefaultCourseSchedule(),
+                freeAccessEnabled: false,
+                updatedAt: new Date().toISOString(),
+              };
+              setDoc(doc(db, courseStatePath, 'current_state'), initialCourseState).catch((err) => {
+                handleFirestoreError(err, OperationType.CREATE, `${courseStatePath}/current_state`);
+              });
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.GET, `${courseStatePath}/current_state`);
+          handleSnapshotError(error, OperationType.GET, `${courseStatePath}/current_state`);
         }
       );
       unsubscribers.push(unsubState);
@@ -986,7 +1528,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, messagesPath);
+          handleSnapshotError(error, OperationType.LIST, messagesPath);
         }
       );
       unsubscribers.push(unsubMessages);
@@ -1010,7 +1552,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, evalsPath);
+          handleSnapshotError(error, OperationType.LIST, evalsPath);
         }
       );
       unsubscribers.push(unsubEvals);
@@ -1032,20 +1574,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               setSimulatorPatients(patientsList);
             } else {
               setSimulatorPatients(INITIAL_SIMULATOR_PATIENTS);
+              if (!isQuotaExhausted() && !hasSeededPatientsRef.current) {
+                hasSeededPatientsRef.current = true;
+                INITIAL_SIMULATOR_PATIENTS.forEach((p) => {
+                  setDoc(doc(db, patientsPath, p.id.toString()), p).catch(() => {});
+                });
+              }
+            }
+            setLastSyncTimestamp(Date.now());
+          } else {
+            if (!isQuotaExhausted() && !hasSeededPatientsRef.current) {
+              hasSeededPatientsRef.current = true;
               INITIAL_SIMULATOR_PATIENTS.forEach((p) => {
                 setDoc(doc(db, patientsPath, p.id.toString()), p).catch(() => {});
               });
             }
-            setLastSyncTimestamp(Date.now());
-          } else {
-            INITIAL_SIMULATOR_PATIENTS.forEach((p) => {
-              setDoc(doc(db, patientsPath, p.id.toString()), p).catch(() => {});
-            });
             setSimulatorPatients(INITIAL_SIMULATOR_PATIENTS);
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, patientsPath);
+          handleSnapshotError(error, OperationType.LIST, patientsPath);
         }
       );
       unsubscribers.push(unsubPatients);
@@ -1075,7 +1623,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, teamsPath);
+          handleSnapshotError(error, OperationType.LIST, teamsPath);
         }
       );
       unsubscribers.push(unsubTeams);
@@ -1091,13 +1639,29 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Discente[] = [];
-            snapshot.forEach((d) => list.push(d.data() as Discente));
-            setDiscenti(list);
-            setLastSyncTimestamp(Date.now());
+            snapshot.forEach((d) => {
+              const data = d.data() as Partial<Discente>;
+              const safeId = String(data.id || d.id || '').trim();
+              if (safeId) {
+                list.push({
+                  ...data,
+                  id: safeId,
+                  name: data.name || 'Discente',
+                  role: data.role || 'Operatore',
+                  teamId: Number(data.teamId) || 1,
+                  nationality: data.nationality || 'Italiana',
+                  badgeCode: data.badgeCode || safeId.toUpperCase(),
+                } as Discente);
+              }
+            });
+            if (list.length > 0) {
+              setDiscenti(list);
+              setLastSyncTimestamp(Date.now());
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, discentiPath);
+          handleSnapshotError(error, OperationType.LIST, discentiPath);
         }
       );
       unsubscribers.push(unsubDiscenti);
@@ -1113,13 +1677,31 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Faculty[] = [];
-            snapshot.forEach((d) => list.push(d.data() as Faculty));
-            setFaculty(list);
-            setLastSyncTimestamp(Date.now());
+            snapshot.forEach((d) => {
+              const data = d.data() as Partial<Faculty>;
+              const safeId = String(data.id || d.id || '').trim();
+              if (safeId) {
+                list.push({
+                  ...data,
+                  id: safeId,
+                  name: data.name || 'Faculty',
+                  title: data.title || 'Docente',
+                  specialty: data.specialty || '',
+                  nationality: data.nationality || 'Italiana',
+                  assignedTeamId: Number(data.assignedTeamId) || 1,
+                  phone: data.phone || '',
+                  badgeCode: data.badgeCode || safeId.toUpperCase(),
+                } as Faculty);
+              }
+            });
+            if (list.length > 0) {
+              setFaculty(list);
+              setLastSyncTimestamp(Date.now());
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, facultyPath);
+          handleSnapshotError(error, OperationType.LIST, facultyPath);
         }
       );
       unsubscribers.push(unsubFaculty);
@@ -1135,13 +1717,30 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Technician[] = [];
-            snapshot.forEach((d) => list.push(d.data() as Technician));
-            setTechnicians(list);
-            setLastSyncTimestamp(Date.now());
+            snapshot.forEach((d) => {
+              const data = d.data() as Partial<Technician>;
+              const safeId = String(data.id || d.id || '').trim();
+              if (safeId) {
+                list.push({
+                  ...data,
+                  id: safeId,
+                  name: data.name || 'Tecnico',
+                  specialty: data.specialty || '',
+                  nationality: data.nationality || 'Italiana',
+                  phone: data.phone || '',
+                  assignedStations: data.assignedStations || [],
+                  badgeCode: data.badgeCode || safeId.toUpperCase(),
+                } as Technician);
+              }
+            });
+            if (list.length > 0) {
+              setTechnicians(list);
+              setLastSyncTimestamp(Date.now());
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, techsPath);
+          handleSnapshotError(error, OperationType.LIST, techsPath);
         }
       );
       unsubscribers.push(unsubTechs);
@@ -1157,13 +1756,28 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Director[] = [];
-            snapshot.forEach((d) => list.push(d.data() as Director));
-            setDirectors(list);
-            setLastSyncTimestamp(Date.now());
+            snapshot.forEach((d) => {
+              const data = d.data() as Partial<Director>;
+              const safeId = String(data.id || d.id || '').trim();
+              if (safeId) {
+                list.push({
+                  ...data,
+                  id: safeId,
+                  name: data.name || 'Direttore',
+                  title: data.title || '',
+                  nationality: data.nationality || 'Italiana',
+                  badgeCode: data.badgeCode || safeId.toUpperCase(),
+                } as Director);
+              }
+            });
+            if (list.length > 0) {
+              setDirectors(list);
+              setLastSyncTimestamp(Date.now());
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, directorsPath);
+          handleSnapshotError(error, OperationType.LIST, directorsPath);
         }
       );
       unsubscribers.push(unsubDirs);
@@ -1179,13 +1793,28 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: RegiaStaff[] = [];
-            snapshot.forEach((d) => list.push(d.data() as RegiaStaff));
-            setRegiaStaff(list);
-            setLastSyncTimestamp(Date.now());
+            snapshot.forEach((d) => {
+              const data = d.data() as Partial<RegiaStaff>;
+              const safeId = String(data.id || d.id || '').trim();
+              if (safeId) {
+                list.push({
+                  ...data,
+                  id: safeId,
+                  name: data.name || 'Staff Regia',
+                  role: data.role || '',
+                  nationality: data.nationality || 'Italiana',
+                  badgeCode: data.badgeCode || safeId.toUpperCase(),
+                } as RegiaStaff);
+              }
+            });
+            if (list.length > 0) {
+              setRegiaStaff(list);
+              setLastSyncTimestamp(Date.now());
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, regiaPath);
+          handleSnapshotError(error, OperationType.LIST, regiaPath);
         }
       );
       unsubscribers.push(unsubRegia);
@@ -1201,13 +1830,29 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Guest[] = [];
-            snapshot.forEach((d) => list.push(d.data() as Guest));
-            setGuests(list);
-            setLastSyncTimestamp(Date.now());
+            snapshot.forEach((d) => {
+              const data = d.data() as Partial<Guest>;
+              const safeId = String(data.id || d.id || '').trim();
+              if (safeId) {
+                list.push({
+                  ...data,
+                  id: safeId,
+                  name: data.name || 'Ospite',
+                  title: data.title || 'Osservatore',
+                  organization: (data as any).organization || (data as any).affiliation || 'Ente Ospite',
+                  nationality: data.nationality || 'Italiana',
+                  badgeCode: data.badgeCode || safeId.toUpperCase(),
+                } as Guest);
+              }
+            });
+            if (list.length > 0) {
+              setGuests(list);
+              setLastSyncTimestamp(Date.now());
+            }
           }
         },
         (error) => {
-          handleFirestoreError(error, OperationType.LIST, guestsPath);
+          handleSnapshotError(error, OperationType.LIST, guestsPath);
         }
       );
       unsubscribers.push(unsubGuests);
@@ -1233,7 +1878,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setLastSyncTimestamp(Date.now());
         },
         (error) => {
-          console.warn('Device presence listener error:', error);
+          handleSnapshotError(error, OperationType.LIST, devicePresencePath);
         }
       );
       unsubscribers.push(unsubPresence);
@@ -1241,7 +1886,35 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to device_presence:', err);
     }
 
-
+    // 13. Listen to MASCAL Triage Records
+    const mascalTriagePath = 'mascal_triage_records';
+    try {
+      const unsubMascal = onSnapshot(
+        collection(db, mascalTriagePath),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const map: Record<number, MascalTeamTriageRecord> = {};
+            snapshot.forEach((d) => {
+              const rec = d.data() as MascalTeamTriageRecord;
+              if (rec && typeof rec.teamId === 'number') {
+                map[rec.teamId] = rec;
+              }
+            });
+            setMascalTriageRecordsState(map);
+            try {
+              localStorage.setItem(STORAGE_KEY_PREFIX + 'mascalTriageRecords', JSON.stringify(map));
+            } catch (e) {}
+            setLastSyncTimestamp(Date.now());
+          }
+        },
+        (error) => {
+          handleSnapshotError(error, OperationType.LIST, mascalTriagePath);
+        }
+      );
+      unsubscribers.push(unsubMascal);
+    } catch (err) {
+      console.warn('Failed to listen to mascal_triage_records:', err);
+    }
 
     return () => {
       unsubscribers.forEach((u) => u());
@@ -1270,6 +1943,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                   ...prev,
                   [msg.from]: { role: msg.role || 'public', lastSeen: Date.now() },
                 }));
+                if (msg.payload && (msg.payload.badgeCode || msg.payload.id)) {
+                  const key = (msg.payload.badgeCode || msg.payload.id).toUpperCase();
+                  setDevicePresenceMap((prev) => ({
+                    ...prev,
+                    [key]: msg.payload,
+                  }));
+                }
                 bc.postMessage({
                   type: 'HEARTBEAT_ACK',
                   from: clientId,
@@ -1285,6 +1965,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                   ...prev,
                   [msg.from]: { role: msg.role || 'public', lastSeen: Date.now() },
                 }));
+                if (msg.payload && (msg.payload.badgeCode || msg.payload.id)) {
+                  const key = (msg.payload.badgeCode || msg.payload.id).toUpperCase();
+                  setDevicePresenceMap((prev) => ({
+                    ...prev,
+                    [key]: msg.payload,
+                  }));
+                }
               }
               break;
             }
@@ -1345,6 +2032,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // Continuous real-time device heartbeat publisher to Firestore
+  const lastFirestorePresenceWriteRef = useRef<number>(0);
   useEffect(() => {
     let activeDeviceId = '';
     let badgeCode = '';
@@ -1364,7 +2052,11 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const f = faculty.find((fac) => fac.id === selectedFacultyId) || faculty[0];
       activeDeviceId = f?.id || 'fac-01';
       badgeCode = f?.badgeCode || 'FAC-01';
-      displayName = f?.name || 'Faculty';
+    } else if (userRole === 'master') {
+      const r = regiaStaff.find((reg) => reg.isMaster) || regiaStaff[0];
+      activeDeviceId = r?.id || 'master-01';
+      badgeCode = 'MASTER-01';
+      displayName = r?.name ? `★ ${r.name} (Master)` : '★ Master Control';
     } else if (userRole === 'regia') {
       const r = regiaStaff.find((reg) => reg.id === selectedRegiaId) || regiaStaff[0];
       activeDeviceId = r?.id || 'regia-01';
@@ -1400,12 +2092,25 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           deviceInfo: typeof navigator !== 'undefined' ? `${navigator.platform || 'Client'} (${window.innerWidth}x${window.innerHeight})` : 'Client',
         };
 
-        setDoc(doc(db, 'device_presence', deviceDocId), payload, { merge: true }).catch(() => {});
+        // Broadcast presence locally via BroadcastChannel mesh (zero Firestore quota cost)
+        channelRef.current?.postMessage({
+          type: 'HEARTBEAT',
+          from: clientId,
+          role: userRole,
+          payload,
+        });
+
+        // Write to Firestore presence at throttled 60s intervals only if cloud is active
+        const now = Date.now();
+        if (isFirebaseCloudConnected && db && now - lastFirestorePresenceWriteRef.current >= 60000) {
+          lastFirestorePresenceWriteRef.current = now;
+          setDoc(doc(db, 'device_presence', deviceDocId), payload, { merge: true }).catch(() => {});
+        }
       } catch (e) {}
     };
 
     sendHeartbeat();
-    const interval = setInterval(sendHeartbeat, 10000);
+    const interval = setInterval(sendHeartbeat, 60000);
 
     return () => {
       clearInterval(interval);
@@ -1441,6 +2146,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.setItem(STORAGE_KEY_PREFIX + 'technicians', JSON.stringify(technicians));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(directors));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'guests', JSON.stringify(guests));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'actors', JSON.stringify(actors));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'makeupArtists', JSON.stringify(makeupArtists));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'evaluations', JSON.stringify(evaluations));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'suspensionInfo', JSON.stringify(suspensionInfo));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'courseStartSchedule', JSON.stringify(courseStartSchedule));
@@ -1461,6 +2168,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     technicians,
     directors,
     guests,
+    actors,
+    makeupArtists,
     evaluations,
     suspensionInfo,
     courseStartSchedule,
@@ -1515,6 +2224,27 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [isTimerRunning, timeMultiplier, autoAdvancePhases, syncCourseStateToFirestore]);
 
+  const broadcastTimelineUpdate = useCallback(
+    (detail: { activeSlotIndex?: number; activeDay?: CourseDay; timerSeconds?: number; isTimerRunning?: boolean }) => {
+      if (typeof window === 'undefined') return;
+      try {
+        if (detail.activeSlotIndex !== undefined) {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'activeSlotIndex', JSON.stringify(detail.activeSlotIndex));
+        }
+        if (detail.activeDay !== undefined) {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'activeDay', JSON.stringify(detail.activeDay));
+        }
+        window.dispatchEvent(new CustomEvent('trauma_timeline_change', { detail }));
+        if (typeof BroadcastChannel !== 'undefined') {
+          const bc = new BroadcastChannel('trauma_timeline_channel');
+          bc.postMessage(detail);
+          bc.close();
+        }
+      } catch (e) {}
+    },
+    []
+  );
+
   const setActiveDay = useCallback((day: CourseDay) => {
     setActiveDayState(day);
     const firstIdx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.day === day);
@@ -1524,6 +2254,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const newSecs = getSlotDurationSeconds(slot);
       setTimerSeconds(newSecs);
       setIsTimerRunning(false);
+      broadcastTimelineUpdate({ activeDay: day, activeSlotIndex: firstIdx, timerSeconds: newSecs, isTimerRunning: false });
       syncCourseStateToFirestore({
         activeDay: day,
         activeSlotIndex: firstIdx,
@@ -1531,7 +2262,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isTimerRunning: false,
       });
     }
-  }, [syncCourseStateToFirestore]);
+  }, [syncCourseStateToFirestore, broadcastTimelineUpdate]);
 
   const setActiveSlotIndex = useCallback((idx: number) => {
     if (idx >= 0 && idx < INITIAL_TIMELINE_SLOTS.length) {
@@ -1541,6 +2272,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const newSecs = getSlotDurationSeconds(slot);
       setTimerSeconds(newSecs);
       setIsTimerRunning(false);
+      broadcastTimelineUpdate({ activeSlotIndex: idx, activeDay: slot.day, timerSeconds: newSecs, isTimerRunning: false });
       syncCourseStateToFirestore({
         activeSlotIndex: idx,
         activeDay: slot.day,
@@ -1548,7 +2280,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isTimerRunning: false,
       });
     }
-  }, [syncCourseStateToFirestore]);
+  }, [syncCourseStateToFirestore, broadcastTimelineUpdate]);
 
   const nextSlot = useCallback(() => {
     setActiveSlotIndexState((prev) => {
@@ -1560,6 +2292,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setTimerSeconds(newSecs);
         setIsTimerRunning(false);
         playBroadcastSound('phase_change');
+        broadcastTimelineUpdate({ activeSlotIndex: next, activeDay: slot.day, timerSeconds: newSecs, isTimerRunning: false });
         syncCourseStateToFirestore({
           activeSlotIndex: next,
           activeDay: slot.day,
@@ -1570,7 +2303,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       return prev;
     });
-  }, [syncCourseStateToFirestore]);
+  }, [syncCourseStateToFirestore, broadcastTimelineUpdate]);
 
   const prevSlot = useCallback(() => {
     setActiveSlotIndexState((prev) => {
@@ -1580,6 +2313,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const newSecs = getSlotDurationSeconds(slot);
       setTimerSeconds(newSecs);
       setIsTimerRunning(false);
+      broadcastTimelineUpdate({ activeSlotIndex: next, activeDay: slot.day, timerSeconds: newSecs, isTimerRunning: false });
       syncCourseStateToFirestore({
         activeSlotIndex: next,
         activeDay: slot.day,
@@ -1588,7 +2322,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
       return next;
     });
-  }, [syncCourseStateToFirestore]);
+  }, [syncCourseStateToFirestore, broadcastTimelineUpdate]);
 
   const toggleTimer = useCallback(() => {
     setIsTimerRunning((prev) => {
@@ -1773,17 +2507,30 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const updateTechChecklist = useCallback(
     (patientId: number, phase: 'preDone' | 'intraDone' | 'postDone', val: boolean, notes?: string) => {
+      const timeStr = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      let linkedActorId: string | undefined;
+
       setSimulatorPatients((prev) =>
         prev.map((p) => {
           if (p.id !== patientId) return p;
+          linkedActorId = p.assignedActorId;
           const updatedChecklist = {
             ...p.techChecklist,
             [phase]: val,
-            verifiedAt: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+            verifiedAt: timeStr,
           };
-          const updatedPatient = {
+          const nextActorProgress: ActorProgressStatus | undefined =
+            phase === 'preDone'
+              ? val
+                ? 'PRONTO_T0'
+                : 'IN_PREPARAZIONE'
+              : p.actorProgressStatus;
+
+          const updatedPatient: SimulatorPatient = {
             ...p,
             techChecklist: updatedChecklist,
+            actorProgressStatus: nextActorProgress,
+            actorProgressUpdatedAt: phase === 'preDone' ? timeStr : p.actorProgressUpdatedAt,
             techNotes: notes !== undefined ? notes : p.techNotes,
           };
 
@@ -1794,6 +2541,21 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return updatedPatient;
         })
       );
+
+      if (phase === 'preDone' && linkedActorId) {
+        const targetId = linkedActorId;
+        setActors((prev) =>
+          prev.map((a) =>
+            a.id === targetId
+              ? {
+                  ...a,
+                  progressStatus: val ? 'PRONTO_T0' : 'IN_PREPARAZIONE',
+                  progressUpdatedAt: timeStr,
+                }
+              : a
+          )
+        );
+      }
     },
     []
   );
@@ -1840,6 +2602,119 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       handleFirestoreError(err, OperationType.CREATE, `evaluations/${newEval.id}`);
     });
   }, []);
+
+  const saveMascalTeamAssessment = useCallback(
+    (teamId: number, assessment: MascalTeamCasualtyAssessment) => {
+      setMascalTriageRecordsState((prev) => {
+        const existing = prev[teamId] || {
+          teamId,
+          assessments: {},
+          totalAssessed: 0,
+          totalCorrect: 0,
+          accuracyPercent: 0,
+          underTriageCount: 0,
+          overTriageCount: 0,
+          averageSecondsPerCasualty: 0,
+          totalLsiCompleted: 0,
+          lastUpdated: Date.now(),
+        };
+
+        const updatedAssessments = {
+          ...existing.assessments,
+          [assessment.casualtyId]: assessment,
+        };
+
+        const entries = Object.values(updatedAssessments);
+        const totalAssessed = entries.filter((a) => Boolean(a.assignedCategory)).length;
+        const totalCorrect = entries.filter((a) => a.isCorrect === true).length;
+        const underTriageCount = entries.filter((a) => a.isUnderTriage === true).length;
+        const overTriageCount = entries.filter((a) => a.isOverTriage === true).length;
+        const accuracyPercent = totalAssessed > 0 ? Math.round((totalCorrect / totalAssessed) * 100) : 0;
+
+        const timedEntries = entries.filter(
+          (a) => typeof a.secondsToCategorize === 'number' && a.secondsToCategorize > 0
+        );
+        const averageSecondsPerCasualty =
+          timedEntries.length > 0
+            ? Math.round(
+                timedEntries.reduce((sum, a) => sum + (a.secondsToCategorize || 0), 0) / timedEntries.length
+              )
+            : 0;
+
+        const totalLsiCompleted = entries.reduce(
+          (sum, a) => sum + (a.performedLsi ? a.performedLsi.length : 0),
+          0
+        );
+
+        const newRecord: MascalTeamTriageRecord = {
+          teamId,
+          assessments: updatedAssessments,
+          totalAssessed,
+          totalCorrect,
+          accuracyPercent,
+          underTriageCount,
+          overTriageCount,
+          averageSecondsPerCasualty,
+          totalLsiCompleted,
+          lastUpdated: Date.now(),
+        };
+
+        const nextState = {
+          ...prev,
+          [teamId]: newRecord,
+        };
+
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_KEY_PREFIX + 'mascalTriageRecords', JSON.stringify(nextState));
+            const bc = new BroadcastChannel('trauma_timeline_channel');
+            bc.postMessage({ mascalTriageRecords: nextState });
+            bc.close();
+          } catch (e) {}
+        }
+
+        if (db) {
+          setDoc(doc(db, 'mascal_triage_records', `team_${teamId}`), newRecord, { merge: true }).catch((err) => {
+            handleFirestoreError(err, OperationType.UPDATE, `mascal_triage_records/team_${teamId}`);
+          });
+        }
+
+        return nextState;
+      });
+    },
+    [handleFirestoreError]
+  );
+
+  const resetMascalTeamTriage = useCallback((teamId?: number) => {
+    setMascalTriageRecordsState((prev) => {
+      let nextState: Record<number, MascalTeamTriageRecord>;
+      if (typeof teamId === 'number') {
+        nextState = { ...prev };
+        delete nextState[teamId];
+        if (db) {
+          deleteDoc(doc(db, 'mascal_triage_records', `team_${teamId}`)).catch(() => {});
+        }
+      } else {
+        nextState = {};
+        if (db) {
+          for (let i = 1; i <= 12; i++) {
+            deleteDoc(doc(db, 'mascal_triage_records', `team_${i}`)).catch(() => {});
+          }
+        }
+      }
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'mascalTriageRecords', JSON.stringify(nextState));
+          const bc = new BroadcastChannel('trauma_timeline_channel');
+          bc.postMessage({ mascalTriageRecords: nextState });
+          bc.close();
+        } catch (e) {}
+      }
+      return nextState;
+    });
+  }, []);
+
 
   const bulkSaveEvaluations = useCallback((evalsData: Omit<TeamEvaluation, 'id' | 'timestamp'>[]) => {
     const timestamp = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
@@ -1917,6 +2792,243 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const assignScenarioRoles = useCallback(
+    (
+      assignments: {
+        discenteId: string;
+        role: string;
+        scenarioType: ScenarioType;
+        slotId?: string;
+        assignedByFacultyBadge?: string;
+      }[]
+    ) => {
+      const nowIso = new Date().toISOString();
+      const assignmentMap = new Map<
+        string,
+        {
+          role: string;
+          scenarioType: ScenarioType;
+          slotId?: string;
+          assignedByFacultyBadge?: string;
+        }
+      >();
+
+      assignments.forEach((a) => {
+        assignmentMap.set(a.discenteId, {
+          role: a.role,
+          scenarioType: a.scenarioType,
+          slotId: a.slotId,
+          assignedByFacultyBadge: a.assignedByFacultyBadge,
+        });
+      });
+
+      setDiscenti((prev) =>
+        prev.map((d) => {
+          const assign = assignmentMap.get(d.id);
+          if (assign) {
+            return {
+              ...d,
+              assignedRole: assign.role,
+              activeScenarioRole: assign.role,
+              activeScenarioType: assign.scenarioType,
+              activeScenarioSlotId: assign.slotId,
+              activeScenarioAssignedAt: nowIso,
+              activeScenarioAssignedBy: assign.assignedByFacultyBadge,
+            };
+          }
+          return d;
+        })
+      );
+
+      // Persist to Firestore in batch
+      try {
+        const batch = writeBatch(db);
+        assignments.forEach((a) => {
+          const dRef = doc(db, 'discenti', a.discenteId);
+          batch.set(
+            dRef,
+            {
+              assignedRole: a.role,
+              activeScenarioRole: a.role,
+              activeScenarioType: a.scenarioType,
+              activeScenarioSlotId: a.slotId || null,
+              activeScenarioAssignedAt: nowIso,
+              activeScenarioAssignedBy: a.assignedByFacultyBadge || null,
+            },
+            { merge: true }
+          );
+        });
+        batch.commit().catch((err) => {
+          handleFirestoreError(err, OperationType.UPDATE, 'discenti/batch_scenario_roles');
+        });
+      } catch (err) {
+        console.error('Error committing scenario role assignments to Firestore:', err);
+      }
+    },
+    []
+  );
+
+  const clearScenarioRolesForTeam = useCallback((teamId: number) => {
+    setDiscenti((prev) =>
+      prev.map((d) => {
+        if (d.teamId === teamId) {
+          return {
+            ...d,
+            assignedRole: undefined,
+            activeScenarioRole: undefined,
+            activeScenarioType: undefined,
+            activeScenarioSlotId: undefined,
+            activeScenarioAssignedAt: undefined,
+            activeScenarioAssignedBy: undefined,
+          };
+        }
+        return d;
+      })
+    );
+
+    try {
+      getDocs(query(collection(db, 'discenti'), where('teamId', '==', teamId)))
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            const batch = writeBatch(db);
+            snapshot.forEach((dDoc) => {
+              batch.set(
+                dDoc.ref,
+                {
+                  assignedRole: null,
+                  activeScenarioRole: null,
+                  activeScenarioType: null,
+                  activeScenarioSlotId: null,
+                  activeScenarioAssignedAt: null,
+                  activeScenarioAssignedBy: null,
+                },
+                { merge: true }
+              );
+            });
+            batch.commit().catch((err) => {
+              handleFirestoreError(err, OperationType.UPDATE, `discenti/team_${teamId}_roles_clear`);
+            });
+          }
+        })
+        .catch((e) => {
+          console.warn('Could not query discenti by teamId for clearing roles:', e);
+        });
+    } catch (err) {
+      console.warn('Error clearing scenario roles in Firestore:', err);
+    }
+  }, []);
+
+  /**
+   * Automatically resets the 'assignedRole' field in the Firestore 'discenti' collection
+   * once the simulation phase is marked as 'debriefing' or 'completed' to ensure a clean state for the next group.
+   */
+  const cleanupAssignedRoles = useCallback(
+    async (
+      optionsOrPhase?: CleanupRolesOptions | 'debriefing' | 'completed' | string,
+      targetGroup?: GroupType
+    ) => {
+      let opts: CleanupRolesOptions = {};
+      if (typeof optionsOrPhase === 'string') {
+        opts = { phase: optionsOrPhase, group: targetGroup };
+      } else if (optionsOrPhase && typeof optionsOrPhase === 'object') {
+        opts = optionsOrPhase;
+      } else {
+        opts = { phase: 'completed' };
+      }
+
+      const { phase = 'completed', group, teamId, all } = opts;
+
+      // 1. Immediately reset roles in local state
+      setDiscenti((prev) =>
+        prev.map((d) => {
+          const matchesTeam = teamId !== undefined ? d.teamId === teamId : true;
+          const matchesGroup = group && GROUP_TEAM_IDS[group] ? GROUP_TEAM_IDS[group].includes(d.teamId) : true;
+          if ((all || (matchesTeam && matchesGroup)) && (d.assignedRole || d.activeScenarioRole)) {
+            return {
+              ...d,
+              assignedRole: undefined,
+              activeScenarioRole: undefined,
+              activeScenarioType: undefined,
+              activeScenarioSlotId: undefined,
+              activeScenarioAssignedAt: undefined,
+              activeScenarioAssignedBy: undefined,
+            };
+          }
+          return d;
+        })
+      );
+
+      // 2. Perform Firestore batch reset on 'discenti' collection
+      const result = await cleanupDiscentiAssignedRolesInFirestore(db, opts);
+      return result;
+    },
+    []
+  );
+
+  const setSimulationPhase = useCallback(
+    async (
+      phase: SimulationPhase,
+      target?: { group?: GroupType; teamId?: number; all?: boolean }
+    ) => {
+      setSimulationPhaseState(phase);
+
+      if (db) {
+        setDoc(
+          doc(db, 'course_state', 'current_state'),
+          {
+            simulationPhase: phase,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        ).catch(() => {});
+      }
+
+      // Automatically reset 'assignedRole' field in Firestore 'discenti' collection
+      // once simulation phase is marked as 'debriefing' or 'completed'
+      if (phase === 'debriefing' || phase === 'completed') {
+        await cleanupAssignedRoles({
+          phase,
+          group: target?.group,
+          teamId: target?.teamId,
+          all: target?.all ?? (!target?.group && !target?.teamId),
+        });
+      }
+    },
+    [cleanupAssignedRoles]
+  );
+
+  // Tracks already cleaned slot phases to prevent duplicate Firestore batch writes
+  const cleanedSlotPhasesRef = useRef<Set<string>>(new Set());
+
+  // Automatically monitor timeline slots: when a group enters 'debriefing' or 'completed',
+  // automatically trigger the cleanup function on Firestore 'discenti' collection
+  useEffect(() => {
+    if (!currentSlot) return;
+
+    const groups: GroupType[] = ['A', 'B', 'C', 'D'];
+    groups.forEach((grp) => {
+      const isDebriefOrCompleted = detectDebriefingOrCompletedForGroup(currentSlot, grp);
+      if (isDebriefOrCompleted) {
+        const cleanKey = `${currentSlot.id}_${grp}_cleaned`;
+        if (!cleanedSlotPhasesRef.current.has(cleanKey)) {
+          cleanedSlotPhasesRef.current.add(cleanKey);
+          cleanupAssignedRoles({
+            phase: 'debriefing',
+            group: grp,
+          }).catch((err) => {
+            console.warn(`[Cleanup] Error auto-resetting assignedRole for group ${grp}:`, err);
+          });
+        }
+      }
+    });
+  }, [currentSlot, cleanupAssignedRoles]);
+
+  // Ensure practical scenario roles are automatically assigned at RANDOM if not sent during Pre-Allerta T-15
+  useEffect(() => {
+    if (!currentSlot) return;
+    checkAndAutoAssignMissingRoles(discenti, currentSlot, assignScenarioRoles);
+  }, [currentSlot, discenti, assignScenarioRoles]);
+
   // Faculty CRUD
   const updateFaculty = useCallback((id: string, updates: Partial<Faculty>) => {
     setFaculty((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)));
@@ -1965,6 +3077,48 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const bulkUpdateTechnicians = useCallback(async (updatedList: Technician[]) => {
+    setTechnicians(updatedList);
+    try {
+      const batch = writeBatch(db);
+      updatedList.forEach((t) => {
+        const ref = doc(db, 'technicians', t.id);
+        batch.set(ref, t, { merge: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch update technicians error in firestore:', err);
+    }
+  }, []);
+
+  const bulkUpdateFaculty = useCallback(async (updatedList: Faculty[]) => {
+    setFaculty(updatedList);
+    try {
+      const batch = writeBatch(db);
+      updatedList.forEach((f) => {
+        const ref = doc(db, 'faculty', f.id);
+        batch.set(ref, f, { merge: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch update faculty error in firestore:', err);
+    }
+  }, []);
+
+  const bulkUpdateDiscenti = useCallback(async (updatedList: Discente[]) => {
+    setDiscenti(updatedList);
+    try {
+      const batch = writeBatch(db);
+      updatedList.forEach((d) => {
+        const ref = doc(db, 'discenti', d.id);
+        batch.set(ref, d, { merge: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch update discenti error in firestore:', err);
+    }
+  }, []);
+
   // Director CRUD
   const updateDirector = useCallback((id: string, updates: Partial<Director>) => {
     if (updates.isMaster) {
@@ -2005,6 +3159,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     deleteDoc(doc(db, 'directors', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `directors/${id}`);
     });
+  }, []);
+
+  const bulkUpdateDirectors = useCallback(async (updatedList: Director[]) => {
+    setDirectors(updatedList);
+    try {
+      const batch = writeBatch(db);
+      updatedList.forEach((d) => {
+        const ref = doc(db, 'directors', d.id);
+        batch.set(ref, d, { merge: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch update directors error in firestore:', err);
+    }
   }, []);
 
   // Regia Staff CRUD
@@ -2048,6 +3216,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  const bulkUpdateRegiaStaff = useCallback(async (updatedList: RegiaStaff[]) => {
+    setRegiaStaff(updatedList);
+    try {
+      const batch = writeBatch(db);
+      updatedList.forEach((r) => {
+        const ref = doc(db, 'regiaStaff', r.id);
+        batch.set(ref, r, { merge: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch update regiaStaff error in firestore:', err);
+    }
+  }, []);
+
   // Guests CRUD
   const updateGuest = useCallback((id: string, updates: Partial<Guest>) => {
     setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, ...updates } : g)));
@@ -2071,6 +3253,237 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       handleFirestoreError(err, OperationType.DELETE, `guests/${id}`);
     });
   }, []);
+
+  const bulkUpdateGuests = useCallback(async (updatedList: Guest[]) => {
+    setGuests(updatedList);
+    try {
+      const batch = writeBatch(db);
+      updatedList.forEach((g) => {
+        const ref = doc(db, 'guests', g.id);
+        batch.set(ref, g, { merge: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch update guests error in firestore:', err);
+    }
+  }, []);
+
+  // Helper to apply homogeneous workload distribution across current or updated actors & makeup artists
+  const applyDynamicTruccoBalance = useCallback(
+    (nextActors: CourseActor[], nextArtists: MakeupArtist[]) => {
+      setSimulatorPatients((prevPatients) => {
+        const { updatedActors, updatedPatients } = computeHomogeneousTruccoDistribution(
+          nextActors,
+          nextArtists,
+          prevPatients
+        );
+        setActors(updatedActors);
+        return updatedPatients;
+      });
+    },
+    []
+  );
+
+  const rebalanceTruccoWorkload = useCallback(() => {
+    applyDynamicTruccoBalance(actors, makeupArtists);
+  }, [actors, makeupArtists, applyDynamicTruccoBalance]);
+
+  // Actors (8 Slot Principali ATT-01 - ATT-08 + dinamici) CRUD with automatic workload rebalancing
+  const updateActor = useCallback((id: string, updates: Partial<CourseActor>) => {
+    setActors((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+  }, []);
+
+  const addActor = useCallback(
+    (newActor: Omit<CourseActor, 'id'>) => {
+      const id = `actor-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const fullActor: CourseActor = {
+        ...newActor,
+        id,
+        progressStatus: newActor.progressStatus || 'STANDBY',
+      };
+      const nextActors = [...actors, fullActor];
+      applyDynamicTruccoBalance(nextActors, makeupArtists);
+    },
+    [actors, makeupArtists, applyDynamicTruccoBalance]
+  );
+
+  const deleteActor = useCallback(
+    (id: string) => {
+      const nextActors = actors.filter((a) => a.id !== id);
+      applyDynamicTruccoBalance(nextActors, makeupArtists);
+    },
+    [actors, makeupArtists, applyDynamicTruccoBalance]
+  );
+
+  // Makeup Artists (4 Truccatori Base TRUC-01 - TRUC-04 + dinamici) CRUD with automatic workload rebalancing
+  const updateMakeupArtist = useCallback((id: string, updates: Partial<MakeupArtist>) => {
+    setMakeupArtists((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
+  }, []);
+
+  const addMakeupArtist = useCallback(
+    (newArtist: Omit<MakeupArtist, 'id'>) => {
+      const id = `truc-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const fullArtist: MakeupArtist = { ...newArtist, id };
+      const nextArtists = [...makeupArtists, fullArtist];
+      setMakeupArtists(nextArtists);
+      applyDynamicTruccoBalance(actors, nextArtists);
+    },
+    [actors, makeupArtists, applyDynamicTruccoBalance]
+  );
+
+  const deleteMakeupArtist = useCallback(
+    (id: string) => {
+      const nextArtists = makeupArtists.filter((m) => m.id !== id);
+      if (nextArtists.length === 0) return;
+      setMakeupArtists(nextArtists);
+      applyDynamicTruccoBalance(actors, nextArtists);
+    },
+    [actors, makeupArtists, applyDynamicTruccoBalance]
+  );
+
+  // Link an Actor to a Makeup Artist in Anagrafica Trucco (and optionally update patients where that actor is assigned)
+  const linkActorToMakeupArtist = useCallback(
+    (actorId: string, makeupArtistId: string, propagateToScenarios: boolean = true) => {
+      setActors((prev) =>
+        prev.map((a) => (a.id === actorId ? { ...a, assignedMakeupArtistId: makeupArtistId } : a))
+      );
+      if (propagateToScenarios) {
+        setSimulatorPatients((prev) =>
+          prev.map((p) =>
+            p.assignedActorId === actorId ? { ...p, assignedMakeupArtistId: makeupArtistId } : p
+          )
+        );
+      }
+    },
+    []
+  );
+
+  // Assign an Actor and/or Makeup Artist to a specific SimulatorPatient in a Block/Scenario
+  const assignTruccoToPatient = useCallback(
+    (patientId: number, actorId: string, makeupArtistId?: string) => {
+      const targetActor = actors.find((a) => a.id === actorId);
+      const resolvedMakeupId =
+        makeupArtistId || targetActor?.assignedMakeupArtistId || 'truc-1';
+
+      setSimulatorPatients((prev) =>
+        prev.map((p) =>
+          p.id === patientId
+            ? {
+                ...p,
+                assignedActorId: actorId,
+                assignedMakeupArtistId: resolvedMakeupId,
+              }
+            : p
+        )
+      );
+    },
+    [actors]
+  );
+
+  // Update 5-stage progress status for an Actor (and synchronize Patient Pre-Scenario Checklist + Regia Alert on PRONTO_T0)
+  const updateActorProgressStatus = useCallback(
+    (
+      actorId: string,
+      status: ActorProgressStatus,
+      options?: { patientId?: number; updatedBy?: string; notifyRegia?: boolean }
+    ) => {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(
+        now.getMinutes()
+      ).padStart(2, '0')}`;
+
+      const targetActor = actors.find((a) => a.id === actorId);
+      const pairedArtist = makeupArtists.find(
+        (m) => m.id === targetActor?.assignedMakeupArtistId
+      );
+      const authorLabel =
+        options?.updatedBy ||
+        (pairedArtist
+          ? `${pairedArtist.badgeCode} • ${pairedArtist.name}`
+          : 'TRUC-01 • Silvia Rossi');
+
+      // 1. Update CourseActor state
+      setActors((prev) =>
+        prev.map((a) =>
+          a.id === actorId
+            ? {
+                ...a,
+                progressStatus: status,
+                progressUpdatedAt: timeStr,
+                progressUpdatedBy: authorLabel,
+              }
+            : a
+        )
+      );
+
+      // 2. Synchronize SimulatorPatient(s) and techChecklist.preDone
+      const isReadyState = status === 'PRONTO_T0' || status === 'IN_SCENARIO';
+      let affectedPatientIds: number[] = [];
+
+      setSimulatorPatients((prev) =>
+        prev.map((p) => {
+          const matchesTarget =
+            options?.patientId !== undefined
+              ? p.id === options.patientId
+              : p.assignedActorId === actorId && p.day === activeDay;
+
+          if (!matchesTarget) return p;
+
+          affectedPatientIds.push(p.id);
+          const updatedChecklist = {
+            ...p.techChecklist,
+            preDone:
+              status === 'PRONTO_T0' || status === 'IN_SCENARIO'
+                ? true
+                : status === 'STANDBY' || status === 'IN_PREPARAZIONE'
+                ? false
+                : p.techChecklist?.preDone || false,
+            verifiedAt: timeStr,
+          };
+
+          const updatedPatient: SimulatorPatient = {
+            ...p,
+            actorProgressStatus: status,
+            actorProgressUpdatedAt: timeStr,
+            actorProgressUpdatedBy: authorLabel,
+            readinessStatus: isReadyState
+              ? 'ready'
+              : status === 'IN_PREPARAZIONE'
+              ? 'preparing'
+              : p.readinessStatus,
+            techChecklist: updatedChecklist,
+          };
+
+          setDoc(doc(db, 'simulator_patients', String(p.id)), updatedPatient, {
+            merge: true,
+          }).catch(() => {});
+
+          return updatedPatient;
+        })
+      );
+
+      // 3. When status reaches PRONTO_T0, automatically send radio notification to Regia (CH-3)
+      if (status === 'PRONTO_T0' && options?.notifyRegia !== false && targetActor) {
+        const pzLabel =
+          options?.patientId !== undefined
+            ? `Paziente #${options.patientId}`
+            : affectedPatientIds.length > 0
+            ? `Pazienti #${affectedPatientIds.join(', #')}`
+            : `Slot ${targetActor.badgeCode}`;
+
+        sendCourseMessage({
+          senderId: pairedArtist?.badgeCode || 'TRUC-01',
+          senderName: authorLabel,
+          senderRole: 'tecnico',
+          senderStation: pairedArtist?.assignedStation || 'Lab Moulage CH-3',
+          type: 'info',
+          subject: `ATTORE PRONTO T0 • ${targetActor.badgeCode} (${targetActor.name}) [${targetActor.physicalStatus}]`,
+          content: `Truccatore ${authorLabel} conferma stato PRONTO T0 per ${targetActor.badgeCode} (${targetActor.name} - ${targetActor.physicalStatus}, Taglia ${targetActor.clothingSize}) su ${pzLabel}. Checklist Pre-Scenario sincronizzata e figurante pronto per ingaggio.`,
+        });
+      }
+    },
+    [actors, makeupArtists, activeDay, sendCourseMessage]
+  );
 
 
 
@@ -2099,7 +3512,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, [syncCourseStateToFirestore]);
 
-  const startCourseImmediately = useCallback(() => {
+  const authorizeCourseStart = useCallback(async (byBadge: string = 'REGIA-01') => {
     const now = new Date();
     const nowEpoch = now.getTime();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -2115,11 +3528,27 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       pausedRemainingMs: undefined,
       courseStartSignalTimestamp: nowEpoch,
       isOfficialStartTriggered: true,
+      isStartAuthorizedByRegia: true,
+      authorizedAt: now.toISOString(),
+      authorizedBy: byBadge,
     };
     setCourseStartSchedule(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'courseStartSchedule', JSON.stringify(updated));
+    } catch (e) {}
     syncCourseStateToFirestore({ courseStartSchedule: updated });
+
+    logAuditAction('resume', 'Apertura Gate & Avvio Corso Autorizzato', byBadge, {
+      reason: 'Autorizzazione ufficiale apertura gate e avvio corso trasmessa dalla Regia/Direzione',
+      synced: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    });
+
     triggerLongBeepWithAnimation();
   }, [courseStartSchedule, syncCourseStateToFirestore, triggerLongBeepWithAnimation]);
+
+  const startCourseImmediately = useCallback(() => {
+    authorizeCourseStart('REGIA-01');
+  }, [authorizeCourseStart]);
 
   const resetCourseScheduleToFuture = useCallback((minutesFromNow: number = 10) => {
     const future = new Date(Date.now() + minutesFromNow * 60 * 1000);
@@ -2134,10 +3563,68 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isGateEnabled: true,
       isGatePaused: false,
       pausedRemainingMs: undefined,
+      isStartAuthorizedByRegia: false,
+      isOfficialStartTriggered: false,
+      authorizedAt: undefined,
+      authorizedBy: undefined,
     };
     setCourseStartSchedule(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'courseStartSchedule', JSON.stringify(updated));
+    } catch (e) {}
     syncCourseStateToFirestore({ courseStartSchedule: updated });
   }, [courseStartSchedule, syncCourseStateToFirestore]);
+
+  // 4 Rotational Macro-Blocks of 90 min (Blocco 1, 2, 3, 4) Start Confirmation State
+  const [authorizedMacroBlocks, setAuthorizedMacroBlocks] = useState<Record<string, boolean>>(() =>
+    getStoredOrDefault('authorizedMacroBlocks', {})
+  );
+
+  const currentMacroBlockInfo = useMemo(() => getMacroBlockInfo(currentSlot), [currentSlot]);
+
+  // Is current slot a macro-block start that hasn't been authorized yet?
+  const isMacroBlockAwaitingAuth = useMemo(() => {
+    if (!currentMacroBlockInfo.isMacroBlock) return false;
+    return !authorizedMacroBlocks[currentSlot.id];
+  }, [currentMacroBlockInfo, authorizedMacroBlocks, currentSlot.id]);
+
+  const [isScenarioBlockConfirmationModalOpen, setIsScenarioBlockConfirmationModalOpen] = useState<boolean>(false);
+
+  // When a macro block is awaiting confirmation, lock timer at full slot duration and freeze it
+  useEffect(() => {
+    if (isMacroBlockAwaitingAuth) {
+      if (isTimerRunning) {
+        setIsTimerRunning(false);
+      }
+      const dur = getSlotDurationSeconds(currentSlot);
+      setTimerSeconds(dur);
+    }
+  }, [isMacroBlockAwaitingAuth, currentSlot]);
+
+  const authorizeScenarioBlockStart = useCallback(async (slotId: string, byBadge: string = 'REGIA-01') => {
+    const updated = {
+      ...authorizedMacroBlocks,
+      [slotId]: true,
+    };
+    setAuthorizedMacroBlocks(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'authorizedMacroBlocks', JSON.stringify(updated));
+    } catch (e) {}
+
+    setIsTimerRunning(true);
+
+    syncCourseStateToFirestore({
+      authorizedMacroBlocks: updated,
+      isTimerRunning: true,
+    });
+
+    logAuditAction('resume', `Avvio Blocco Scenario: ${slotId}`, byBadge, {
+      reason: `Autorizzazione avvio macro-blocco scenario 90 min (${currentSlot.title}) confermata dalla Regia`,
+      synced: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    });
+
+    playBroadcastSound('phase_change');
+  }, [authorizedMacroBlocks, currentSlot.title, syncCourseStateToFirestore]);
 
   const setGatePaused = useCallback((paused: boolean) => {
     setCourseStartSchedule((prev) => {
@@ -2165,7 +3652,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setGatePaused(!courseStartSchedule.isGatePaused);
   }, [courseStartSchedule.isGatePaused, setGatePaused]);
 
-  const setGateMode = useCallback((mode: 'start' | 'lunch', customTime?: string) => {
+  const setGateMode = useCallback((mode: 'start' | 'lunch' | 'night' | 'day3', customTime?: string) => {
     setCourseStartSchedule((prev) => {
       let tTime = customTime;
       let title = prev.title;
@@ -2174,6 +3661,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         tTime = customTime || '13:00';
         title = 'PAUSA PRANZO • GATE CHIUSO IN STANDBY';
         location = 'Ristorante Centro Simulazione / Mensa (12:00 - 13:00)';
+      } else if (mode === 'night') {
+        tTime = customTime || '20:30';
+        title = 'SCENARIO NOTTURNO MASCAL • APERTURA GATE ORE 20:30';
+        location = 'Gate Centrale & Piazzale Operativo (Briefing Verbale sul Posto)';
+      } else if (mode === 'day3') {
+        tTime = customTime || '08:30';
+        title = 'DAY 3 • SKILLS & SCENARI CLINICI • INTUBATI EM';
+        location = 'Centro di Simulazione Avanzata e Medicina Tattica';
       } else {
         tTime = customTime || '08:30';
         title = 'HITTER • High Intensive Training Trauma Emergency Response • INTUBATI EM';
@@ -2265,6 +3760,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         | 'day1_intro'
         | 'day2_morning'
         | 'day2_afternoon'
+        | 'night_scenario'
         | 'day3_exams'
         | 'next_slot'
         | 'prev_slot'
@@ -2300,6 +3796,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setTimerSeconds(secs);
           setIsTimerRunning(true);
           playBroadcastSound('phase_change');
+          broadcastTimelineUpdate({ activeDay: 2, activeSlotIndex: 0, timerSeconds: secs, isTimerRunning: true });
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: 0, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -2313,6 +3810,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setTimerSeconds(secs);
           setIsTimerRunning(true);
           triggerLongBeepWithAnimation();
+          broadcastTimelineUpdate({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -2326,7 +3824,23 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setTimerSeconds(secs);
           setIsTimerRunning(true);
           triggerLongBeepWithAnimation();
+          broadcastTimelineUpdate({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
+          break;
+        }
+        case 'night_scenario': {
+          setActiveDayState(2);
+          const idx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd2-mascal-scenario');
+          const targetIdx = idx !== -1 ? idx : INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd2-gate-discenti-notturno');
+          const resolvedIdx = targetIdx !== -1 ? targetIdx : 0;
+          setActiveSlotIndexState(resolvedIdx);
+          const s = INITIAL_TIMELINE_SLOTS[resolvedIdx];
+          const secs = s ? s.durationMinutes * 60 : 7200;
+          setTimerSeconds(secs);
+          setIsTimerRunning(true);
+          playAirRaidSiren();
+          broadcastTimelineUpdate({ activeDay: 2, activeSlotIndex: resolvedIdx, timerSeconds: secs, isTimerRunning: true });
+          syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: resolvedIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
 
@@ -2340,6 +3854,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setTimerSeconds(secs);
           setIsTimerRunning(true);
           playBroadcastSound('phase_change');
+          broadcastTimelineUpdate({ activeDay: 3, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           syncCourseStateToFirestore({ activeDay: 3, activeSlotIndex: targetIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
@@ -2355,49 +3870,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
     },
-    [nextSlot, prevSlot, syncCourseStateToFirestore]
+    [nextSlot, prevSlot, syncCourseStateToFirestore, broadcastTimelineUpdate]
   );
 
-  const triggerSimulatedClinicalEvent = useCallback(() => {
-    const randomEvents = [
-      {
-        title: '⚡ ARRESTO CARDIACO TRAUMATICO IN SHOCK ROOM',
-        msg: 'Paziente 2 in Shock Room 2 presenta ritmo FV/TV senza polso improvviso! Richiesta defibrillazione immediata e massaggio cardiaco!',
-        priority: 'critical' as const,
-      },
-      {
-        title: '🩸 EMORRAGIA MASSIVA & DISLOCAZIONE TOURNIQUET',
-        msg: 'Postazione Extra 1: Il tourniquet si è allentato durante il trasporto barella. Sanguinamento a getto massivo su arto inferiore Paziente 1!',
-        priority: 'critical' as const,
-      },
-      {
-        title: '🫁 PNEUMOTORACE IPERTESO ACUTO IN VOLO/TRASPORTO',
-        msg: 'Paziente 3: Caduta saturazione a 72%, deviazione tracheale e assenza murmure emitorace dx. Necessaria toracostomia con ago/dito immediata!',
-        priority: 'high' as const,
-      },
-      {
-        title: '🔬 ECO FAST POSITIVA & RICHIESTA REBOA ZONE 1',
-        msg: 'Shock Room 3: E-FAST positiva in spazio epato-renale (Morrison) con collasso pressorio 60/30. Indicazione posizionamento catetere REBOA!',
-        priority: 'high' as const,
-      },
-      {
-        title: '💥 EMERGENZA VIE AEREE: EDEMA MASSIVO CRICO',
-        msg: 'Postazione 4: Impossibile intubare, impossibile ventilare. Attivato protocollo CICO (Cannot Intubate Cannot Oxygenate) per cricotirotomia!',
-        priority: 'critical' as const,
-      },
-    ];
+  const startFullAppSimulationFromGate = useCallback((_initialSpeed: number = 1) => {
+    // Funzione di simulazione rimossa su richiesta dell'utente
+  }, []);
 
-    const evt = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-    sendCourseMessage({
-      senderId: 'sim-regia',
-      senderName: 'Simulatore Regia Trauma',
-      senderRole: 'direttore',
-      type: evt.priority === 'critical' ? 'emergency' : 'warning',
-      subject: evt.title,
-      content: evt.msg,
-    });
-    playBroadcastSound(evt.priority === 'critical' ? 'emergency' : 'warning');
-  }, [sendCourseMessage]);
+  const stopFullAppSimulation = useCallback(() => {
+    // Funzione di simulazione rimossa su richiesta dell'utente
+  }, []);
+
+  const triggerSimulatedClinicalEvent = useCallback(() => {
+    // Funzione di simulazione rimossa su richiesta dell'utente
+  }, []);
 
   const sendPing = useCallback(() => {
     if (channelRef.current) {
@@ -2472,6 +3958,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       case 'discente': return 'Discente Badge';
       case 'tecnico': return 'Console Tecnico';
       case 'faculty': return 'Istruttore Faculty';
+      case 'master': return 'Master Control';
       case 'direttore': return 'Regia Direttore';
       case 'regia': return 'Staff Regia';
       case 'ospite': return 'Ospite / VIP';
@@ -2593,7 +4080,24 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return updated;
     });
 
-    // 5. Reset simulation acceleration & auto-advance
+    // 5. Reset active scenario roles on all learners
+    setDiscenti((prev) =>
+      prev.map((d) => ({
+        ...d,
+        activeScenarioRole: undefined,
+        activeScenarioType: undefined,
+        activeScenarioSlotId: undefined,
+        activeScenarioAssignedAt: undefined,
+        activeScenarioAssignedBy: undefined,
+      }))
+    );
+
+    // 6. Reset simulation acceleration & auto-advance
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY_PREFIX + 'isFullAppSimulating');
+      } catch (e) {}
+    }
     setTimeMultiplier(1);
     setAutoAdvancePhases(false);
     setIsTimerRunning(false);
@@ -2603,6 +4107,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const slotSecs = getSlotDurationSeconds(currentSlot);
       setTimerSeconds(slotSecs);
       syncCourseStateToFirestore({
+        isFullAppSimulating: false,
         isTimerRunning: false,
         timerSeconds: slotSecs,
         timeMultiplier: 1,
@@ -2640,7 +4145,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         suspensionInfo,
         suspendCourse,
         resumeCourse,
-        courseMessages,
+        courseMessages: effectiveCourseMessages,
         sendCourseMessage,
         acknowledgeCourseMessage,
         deleteCourseMessage,
@@ -2657,29 +4162,53 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateTeam,
         discenti,
         updateDiscente,
+        bulkUpdateDiscenti,
         addDiscente,
         deleteDiscente,
+        assignScenarioRoles,
+        clearScenarioRolesForTeam,
+        cleanupAssignedRoles,
+        resetAssignedRolesInFirestore: cleanupAssignedRoles,
+        simulationPhase,
+        setSimulationPhase,
         faculty,
         updateFaculty,
+        bulkUpdateFaculty,
         addFaculty,
         deleteFaculty,
         technicians,
         updateTechnician,
+        bulkUpdateTechnicians,
         addTechnician,
         deleteTechnician,
         directors,
         updateDirector,
+        bulkUpdateDirectors,
         addDirector,
         deleteDirector,
         regiaStaff,
         updateRegiaStaff,
+        bulkUpdateRegiaStaff,
         addRegiaStaff,
         deleteRegiaStaff,
         guests,
         updateGuest,
+        bulkUpdateGuests,
         addGuest,
         deleteGuest,
-        evaluations,
+        actors,
+        updateActor,
+        addActor,
+        deleteActor,
+        makeupArtists,
+        updateMakeupArtist,
+        addMakeupArtist,
+        deleteMakeupArtist,
+        linkActorToMakeupArtist,
+        assignTruccoToPatient,
+        rebalanceTruccoWorkload,
+        updateActorProgressStatus,
+        evaluations: effectiveEvaluations,
         saveEvaluation,
         bulkSaveEvaluations,
         getEvaluationForTeamAndSlot,
@@ -2734,8 +4263,15 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         firebaseUser,
         isFirebaseAuthReady,
         isFirebaseCloudConnected,
+        isQuotaExhausted: isQuotaExhausted(),
+        retryCloudConnection,
         signInWithGoogle,
         signOutFirebase,
+        isFullAppSimulating,
+        simulatedClockTime,
+        simulatedRoleState,
+        startFullAppSimulationFromGate,
+        stopFullAppSimulation,
         timeMultiplier,
         setTimeMultiplier,
         autoAdvancePhases,
@@ -2751,6 +4287,31 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setFreeAccessEnabled,
         isAreaDiscentiModalOpen,
         setIsAreaDiscentiModalOpen,
+        isFullscreenMode,
+        setIsFullscreenMode,
+        toggleFullscreenMode,
+        mascalTriageRecords,
+        saveMascalTeamAssessment,
+        resetMascalTeamTriage,
+        timelineSlots,
+        setTimelineSlots,
+        applyScheduleModification,
+        rollbackScheduleModification,
+        isAuditLogOpen,
+        setIsAuditLogOpen,
+        isIntentReviewOpen,
+        setIsIntentReviewOpen,
+        activeRollbackToast,
+        dismissRollbackToast,
+        isGateExpiredAwaitingAuth,
+        authorizeCourseStart,
+        isMacroBlockAwaitingAuth,
+        authorizedMacroBlocks,
+        authorizeScenarioBlockStart,
+        isScenarioBlockConfirmationModalOpen,
+        setIsScenarioBlockConfirmationModalOpen,
+        isTacticalMapOpen,
+        setIsTacticalMapOpen,
       }}
     >
       {children}

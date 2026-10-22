@@ -20,11 +20,13 @@ import {
   Zap,
   Bell,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { MasterAnagraficaManager } from '../anagrafica/MasterAnagraficaManager';
 import { CourseSuspensionModal } from '../CourseSuspensionModal';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { ScenariMasterListView } from './ScenariMasterListView';
+import { TruccoView } from './TruccoView';
 import { RegiaVisualTimelineBoard } from '../regia/RegiaVisualTimelineBoard';
 import { PreCourseDirectorBanner } from '../common/PreCourseDirectorBanner';
 import { TcccPreAlertCountdownBanner } from '../common/TcccPreAlertCountdownBanner';
@@ -32,9 +34,11 @@ import { isPreAllertaTcccSlot } from '../../utils/scenarioStatusHelper';
 import { RegiaDeviceStatusDashboard } from '../regia/RegiaDeviceStatusDashboard';
 import { FreeAccessAuthorizationModal } from '../regia/FreeAccessAuthorizationModal';
 import { StartStopConfirmationModal } from '../regia/StartStopConfirmationModal';
-import { RegiaSimulaPanel } from '../regia/RegiaSimulaPanel';
-import { Wifi, Monitor, ExternalLink, ChevronDown } from 'lucide-react';
+import { Wifi, Monitor, ExternalLink, ChevronDown, GraduationCap, Wrench, Award, Scale, Printer } from 'lucide-react';
 import { openVisualeInNewWindow } from '../../utils/qrCodeUtils';
+import { RegiaAssetDashboardView } from './RegiaAssetDashboardView';
+import { RegiaMascalCountdownBadge } from '../regia/RegiaMascalCountdownBadge';
+import { RegiaBatchLabelPrintView } from '../regia/RegiaBatchLabelPrintView';
 
 export const RegiaView: React.FC = () => {
   const {
@@ -84,7 +88,7 @@ export const RegiaView: React.FC = () => {
       isMaster: true,
     };
 
-  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'scenari' | 'suspension' | 'simula' | 'anagrafica'>('timeline');
+  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'asset' | 'scenari' | 'trucco' | 'suspension' | 'anagrafica' | 'batch_labels'>('timeline');
   const [isSuspensionModalOpen, setIsSuspensionModalOpen] = useState(false);
   const [isFreeAccessModalOpen, setIsFreeAccessModalOpen] = useState(false);
   const [isStartStopConfirmOpen, setIsStartStopConfirmOpen] = useState(false);
@@ -105,7 +109,7 @@ export const RegiaView: React.FC = () => {
     if (isCourseStarted && isTimerRunning) {
       const confirmed = window.confirm(
         isEn
-          ? 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler mettere in PAUSA il timer del corso?'
+          ? 'WARNING: The course is currently ACTIVE. Confirm pausing the course timer?'
           : 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler mettere in PAUSA il timer del corso?'
       );
       if (!confirmed) return;
@@ -118,7 +122,7 @@ export const RegiaView: React.FC = () => {
     if (isCourseStarted) {
       const confirmed = window.confirm(
         isEn
-          ? 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler AZZERARE il timer all\'inizio della sessione?'
+          ? 'WARNING: The course is currently ACTIVE. Confirm resetting the timer to the beginning of the session?'
           : 'ATTENZIONE: Il corso è attualmente ATTIVO. Confermi di voler AZZERARE il timer all\'inizio della sessione?'
       );
       if (!confirmed) return;
@@ -132,6 +136,9 @@ export const RegiaView: React.FC = () => {
     setCopiedPublicLink(true);
     setTimeout(() => setCopiedPublicLink(false), 3000);
   };
+
+  const currentSlotInDayIdx = filteredSlots.findIndex((s) => s.id === currentSlot?.id);
+  const effectiveSlotInDay = currentSlotInDayIdx >= 0 ? currentSlotInDayIdx : 0;
 
   return (
     <div className="space-y-4 pb-12">
@@ -149,7 +156,7 @@ export const RegiaView: React.FC = () => {
               </span>
 
               <span className="text-[11px] text-neutral-300 font-mono font-bold px-2.5 py-1 bg-neutral-900 border border-neutral-700">
-                DAY 0{activeDay} • {isEn ? 'SLOT' : 'SLOT'} {activeSlotIndex + 1}/{filteredSlots.length}
+                DAY 0{activeDay} • {isEn ? 'SLOT' : 'SLOT'} {effectiveSlotInDay + 1}/{filteredSlots.length}
               </span>
               {isPreAllertaTccc && (
                 <span className="bg-amber-500 text-black font-black text-[11px] px-2.5 py-1 animate-pulse flex items-center gap-1 shadow-md">
@@ -166,6 +173,14 @@ export const RegiaView: React.FC = () => {
                   🟢 {isEn ? 'ACTIVE' : 'ATTIVO'}
                 </span>
               )}
+
+              <span className="bg-emerald-950/90 text-emerald-300 border border-emerald-500/80 text-[11px] font-mono font-black px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                <span>{isEn ? 'REGIA ANCHORED (LIVE)' : 'VISUALE ANCORATA (LIVE)'}</span>
+              </span>
+
+              {/* MASCAL 21:00-23:00 Countdown & Quick Jump Badge */}
+              <RegiaMascalCountdownBadge variant="topbar" />
             </div>
 
             <div className="flex items-center gap-3 flex-wrap pt-1">
@@ -220,69 +235,105 @@ export const RegiaView: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {/* Visuale Discente */}
             <button
-              onClick={() => openVisualeInNewWindow('direttori', 'regia')}
-              className="px-3 py-1.5 bg-yellow-950 hover:bg-yellow-900 text-yellow-300 font-black text-xs uppercase tracking-wider border border-yellow-600 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-              title={isEn ? 'Open Directors view in new window' : 'Apri visuale Direttori in una nuova finestra'}
+              id="regia-open-discente-btn"
+              onClick={() => openVisualeInNewWindow('discente', 'regia')}
+              className="px-2.5 sm:px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 font-black text-xs uppercase tracking-wider border border-cyan-500 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              title={isEn ? 'Open Learner View in new window' : 'Apri Visuale Discente in una nuova finestra'}
             >
-              <Users className="w-3.5 h-3.5 text-yellow-400" />
-              <span>{isEn ? 'DIRECTORS' : 'DIRETTORI'}</span>
-              <ExternalLink className="w-3 h-3 text-yellow-400" />
+              <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{isEn ? 'LEARNER VIEW' : 'VISUALE DISCENTI'}</span>
+              <ExternalLink className="w-3 h-3 text-cyan-400" />
             </button>
 
-            {/* Quick Visuali Dropdown: Opens in New Window */}
-            <div className="relative group">
-              <button
-                type="button"
-                className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-bold text-xs uppercase border border-neutral-700 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-                title={isEn ? 'Open participant/public view in new window' : 'Apri visuali e postazioni in nuova finestra'}
-              >
-                <Monitor className="w-3.5 h-3.5 text-pink-400" />
-                <span>{isEn ? 'Open View' : 'Apri Visuale'}</span>
-                <ChevronDown className="w-3 h-3 text-neutral-400" />
-              </button>
-              <div className="absolute right-0 mt-1 w-52 bg-neutral-950 border border-neutral-700 shadow-2xl py-1 hidden group-hover:block z-50">
-                <div className="px-3 py-1 text-[10px] font-mono text-neutral-400 uppercase border-b border-neutral-850">
-                  {isEn ? 'Open in New Window (from Regia)' : 'Nuova Finestra (da Regia)'}
-                </div>
-                <button
-                  onClick={() => openVisualeInNewWindow('public', 'regia')}
-                  className="w-full text-left px-3 py-1.5 text-xs text-orange-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
-                >
-                  <span>{isEn ? 'Public Live View' : 'Visuale Pubblica'}</span>
-                  <ExternalLink className="w-3 h-3 text-orange-400" />
-                </button>
-                <button
-                  onClick={() => openVisualeInNewWindow('discente', 'regia')}
-                  className="w-full text-left px-3 py-1.5 text-xs text-cyan-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
-                >
-                  <span>{isEn ? 'Learner View' : 'Visuale Discenti'}</span>
-                  <ExternalLink className="w-3 h-3 text-cyan-400" />
-                </button>
-                <button
-                  onClick={() => openVisualeInNewWindow('faculty', 'regia')}
-                  className="w-full text-left px-3 py-1.5 text-xs text-amber-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
-                >
-                  <span>{isEn ? 'Faculty View' : 'Visuale Faculty'}</span>
-                  <ExternalLink className="w-3 h-3 text-amber-400" />
-                </button>
-                <button
-                  onClick={() => openVisualeInNewWindow('tecnici', 'regia')}
-                  className="w-full text-left px-3 py-1.5 text-xs text-pink-300 hover:bg-neutral-900 font-bold flex items-center justify-between cursor-pointer"
-                >
-                  <span>{isEn ? 'Technician View' : 'Visuale Tecnici'}</span>
-                  <ExternalLink className="w-3 h-3 text-pink-400" />
-                </button>
-              </div>
-            </div>
+            {/* Dashboard Regia Asset */}
+            <button
+              id="regia-open-asset-btn"
+              onClick={() => setActiveSubTab('asset')}
+              className={`px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider border transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm ${
+                activeSubTab === 'asset'
+                  ? 'bg-emerald-600 text-black border-emerald-300 ring-2 ring-emerald-400'
+                  : 'bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border-emerald-600'
+              }`}
+              title={isEn ? 'Open Regia Asset & Workload Dashboard' : 'Apri Dashboard Regia Asset & Carichi'}
+            >
+              <Scale className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isEn ? 'REGIA ASSET' : 'REGIA ASSET'}</span>
+            </button>
+
+            {/* Centrale Stampa Batch Etichette Termiche */}
+            <button
+              id="regia-open-batch-labels-btn"
+              onClick={() => setActiveSubTab('batch_labels')}
+              className={`px-2.5 sm:px-3 py-1.5 font-black text-xs uppercase tracking-wider border transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm ${
+                activeSubTab === 'batch_labels'
+                  ? 'bg-pink-600 text-white border-pink-300 ring-2 ring-pink-400'
+                  : 'bg-pink-950 hover:bg-pink-900 text-pink-300 border-pink-500'
+              }`}
+              title={isEn ? 'Open Batch Thermal Label Print Console' : 'Apri Centrale Stampa Batch Etichette Termoadesive'}
+            >
+              <Printer className="w-3.5 h-3.5 text-pink-400" />
+              <span>{isEn ? 'BATCH LABELS' : 'STAMPA ETICHETTE'}</span>
+            </button>
+
+            {/* Visuale Tecnici */}
+            <button
+              id="regia-open-tecnici-btn"
+              onClick={() => openVisualeInNewWindow('tecnici', 'regia')}
+              className="px-2.5 sm:px-3 py-1.5 bg-pink-950 hover:bg-pink-900 text-pink-300 font-black text-xs uppercase tracking-wider border border-pink-500 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              title={isEn ? 'Open Technician View in new window' : 'Apri Visuale Tecnici in una nuova finestra'}
+            >
+              <Wrench className="w-3.5 h-3.5 text-pink-400" />
+              <span>{isEn ? 'TECH VIEW' : 'VISUALE TECNICI'}</span>
+              <ExternalLink className="w-3 h-3 text-pink-400" />
+            </button>
+
+            {/* Visuale Trucco */}
+            <button
+              id="regia-open-trucco-btn"
+              onClick={() => openVisualeInNewWindow('trucco', 'regia')}
+              className="px-2.5 sm:px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-pink-200 font-black text-xs uppercase tracking-wider border border-pink-400 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              title={isEn ? 'Open Makeup & Moulage Timeline in new window' : 'Apri Visuale Trucco & Timeline in una nuova finestra'}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+              <span>{isEn ? 'MAKEUP VIEW' : 'VISUALE TRUCCO'}</span>
+              <ExternalLink className="w-3 h-3 text-pink-400" />
+            </button>
+
+            {/* Visuale Faculty */}
+            <button
+              id="regia-open-faculty-btn"
+              onClick={() => openVisualeInNewWindow('faculty', 'regia')}
+              className="px-2.5 sm:px-3 py-1.5 bg-amber-950 hover:bg-amber-900 text-amber-300 font-black text-xs uppercase tracking-wider border border-amber-500 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              title={isEn ? 'Open Faculty View in new window' : 'Apri Visuale Faculty in una nuova finestra'}
+            >
+              <Award className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isEn ? 'FACULTY VIEW' : 'VISUALE FACULTY'}</span>
+              <ExternalLink className="w-3 h-3 text-amber-400" />
+            </button>
+
+
+            {/* Visuale Pubblica */}
+            <button
+              id="regia-open-public-btn"
+              onClick={() => openVisualeInNewWindow('public', 'regia')}
+              className="px-2.5 sm:px-3 py-1.5 bg-orange-950 hover:bg-orange-900 text-orange-300 font-bold text-xs uppercase border border-orange-500 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              title={isEn ? 'Open Public Live View in new window' : 'Apri Visuale Pubblica in una nuova finestra'}
+            >
+              <Monitor className="w-3.5 h-3.5 text-orange-400" />
+              <span>{isEn ? 'PUBLIC LIVE' : 'VISUALE PUBBLICA'}</span>
+              <ExternalLink className="w-3 h-3 text-orange-400" />
+            </button>
 
             <button
               onClick={copyPublicUrl}
-              className="px-3 py-1.5 bg-orange-950 hover:bg-orange-900 text-orange-300 font-bold text-xs uppercase border border-orange-600 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+              className="px-2.5 sm:px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold text-xs uppercase border border-neutral-700 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+              title={isEn ? 'Copy Public Link to Clipboard' : 'Copia Link Pubblico negli appunti'}
             >
-              {copiedPublicLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Globe className="w-3.5 h-3.5 text-orange-400" />}
-              <span>{copiedPublicLink ? (isEn ? 'Link Copied!' : 'Link Copiato!') : (isEn ? 'Public Link' : 'Link Pubblico')}</span>
+              {copiedPublicLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Globe className="w-3.5 h-3.5 text-neutral-400" />}
+              <span>{copiedPublicLink ? (isEn ? 'Copied!' : 'Copiato!') : (isEn ? 'Copy Link' : 'Copia Link')}</span>
             </button>
           </div>
         </div>
@@ -295,7 +346,7 @@ export const RegiaView: React.FC = () => {
 
       {/* Regia Navigation Menu */}
       <nav aria-label="Menu Regia" className="bg-neutral-950 border border-neutral-800 p-1 sm:p-1.5 shadow-xl">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1 sm:gap-1.5">
           <button
             onClick={() => setActiveSubTab('timeline')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
@@ -329,6 +380,22 @@ export const RegiaView: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveSubTab('asset')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'asset'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-black border-emerald-400 shadow-md font-black'
+                : 'bg-neutral-900 text-emerald-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-emerald-500/50'
+            }`}
+          >
+            <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-emerald-400" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'ASSET CONTROL' : 'REGIA ASSET'}
+              </span>
+            </div>
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('scenari')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
               activeSubTab === 'scenari'
@@ -340,6 +407,22 @@ export const RegiaView: React.FC = () => {
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
                 {isEn ? 'MASTER SCENARIOS' : 'SCENARI MASTER'}
+              </span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('trucco')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'trucco'
+                ? 'bg-pink-600 text-white border-pink-400 shadow-md font-black'
+                : 'bg-neutral-900 text-pink-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-pink-500/50'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-pink-400" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'MAKEUP TIMELINE' : 'VISUALE TRUCCO'}
               </span>
             </div>
           </button>
@@ -361,22 +444,6 @@ export const RegiaView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('simula')}
-            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
-              activeSubTab === 'simula'
-                ? 'bg-orange-600 text-white border-orange-400 shadow-md font-black'
-                : 'bg-neutral-900 text-orange-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-orange-500/50'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-            <div className="min-w-0">
-              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
-                SIMULA
-              </span>
-            </div>
-          </button>
-
-          <button
             onClick={() => setActiveSubTab('anagrafica')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
               activeSubTab === 'anagrafica'
@@ -388,6 +455,24 @@ export const RegiaView: React.FC = () => {
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
                 {isEn ? 'REGIA ROSTER' : 'ANAGRAFICA REGIA'}
+              </span>
+            </div>
+          </button>
+
+          {/* Stampa Batch Etichette SubTab Button */}
+          <button
+            id="regia-nav-batch-labels-btn"
+            onClick={() => setActiveSubTab('batch_labels')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'batch_labels'
+                ? 'bg-pink-600 text-white border-pink-400 shadow-md font-black'
+                : 'bg-neutral-900 text-pink-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-pink-500/50'
+            }`}
+          >
+            <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-pink-400" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'BATCH LABELS' : 'STAMPA ETICHETTE'}
               </span>
             </div>
           </button>
@@ -437,6 +522,12 @@ export const RegiaView: React.FC = () => {
       {activeSubTab === 'scenari' && (
         <div className="space-y-6">
           <ScenariMasterListView />
+        </div>
+      )}
+
+      {activeSubTab === 'trucco' && (
+        <div className="space-y-6">
+          <TruccoView />
         </div>
       )}
 
@@ -522,13 +613,25 @@ export const RegiaView: React.FC = () => {
               </div>
 
               <div>
-                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold mb-1.5">
-                  {isEn ? 'TIME REMAINING TO GATE' : 'TEMPO RIMANENTE AL GATE'}
+                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-bold mb-1.5 flex items-center justify-between">
+                  <span>{isEn ? 'TIME REMAINING TO GATE' : 'TEMPO RIMANENTE AL GATE'}</span>
+                  {courseStartSchedule.isGateEnabled && timeRemainingMs <= 0 && (
+                    <span className="text-[9px] text-emerald-400 font-mono font-bold animate-pulse">
+                      ● READY
+                    </span>
+                  )}
                 </span>
-                <div className="bg-neutral-900 border border-neutral-700 px-3 py-2 font-mono font-black text-amber-400 text-lg flex items-center justify-between">
-                  <span>
+                <div
+                  className={`px-3 py-2 font-mono font-black text-lg flex items-center justify-between border transition-all ${
+                    courseStartSchedule.isGateEnabled && timeRemainingMs <= 0
+                      ? 'bg-neutral-900 border-2 border-emerald-400 text-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)] animate-pulse'
+                      : 'bg-neutral-900 border border-neutral-700 text-amber-400'
+                  }`}
+                >
+                  <span className="tracking-wider">
                     {(() => {
                       if (!courseStartSchedule.isGateEnabled) return isEn ? 'GATE OPEN' : 'GATE APERTO';
+                      if (timeRemainingMs <= 0) return '00:00:00';
                       const totalSec = Math.floor(timeRemainingMs / 1000);
                       const d = Math.floor(totalSec / 86400);
                       const h = Math.floor((totalSec % 86400) / 3600);
@@ -536,14 +639,34 @@ export const RegiaView: React.FC = () => {
                       const s = totalSec % 60;
                       if (d > 0) return `${d}${isEn ? 'd' : 'g'} ${h}h ${m}m ${s}s`;
                       if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
-                      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                      return `00:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
                     })()}
                   </span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                  {courseStartSchedule.isGateEnabled && timeRemainingMs <= 0 ? (
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+                    </span>
+                  ) : (
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                  )}
                 </div>
-                <span className="text-[10px] text-neutral-400 font-mono mt-1 block truncate">
-                  Target: {courseStartSchedule.scheduledDate} {isEn ? 'at' : 'ore'} {courseStartSchedule.scheduledTime}
-                </span>
+
+                {courseStartSchedule.isGateEnabled && timeRemainingMs <= 0 ? (
+                  <div className="mt-1.5 flex items-center justify-between gap-1">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/60 shadow-xs animate-pulse text-[9px] font-mono font-black text-emerald-300 uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      <span>READY TO AUTHORIZE</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400/90 font-mono font-semibold">
+                      {isEn ? 'Start active' : 'Avvio attivo'}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-neutral-400 font-mono mt-1 block truncate">
+                    Target: {courseStartSchedule.scheduledDate} {isEn ? 'at' : 'ore'} {courseStartSchedule.scheduledTime}
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-col justify-end gap-2">
@@ -647,13 +770,19 @@ export const RegiaView: React.FC = () => {
         </div>
       )}
 
-      {activeSubTab === 'simula' && (
+      {activeSubTab === 'asset' && (
         <div className="space-y-6">
-          <RegiaSimulaPanel />
+          <RegiaAssetDashboardView />
         </div>
       )}
 
       {activeSubTab === 'anagrafica' && <MasterAnagraficaManager initialSection="regia" />}
+
+      {activeSubTab === 'batch_labels' && (
+        <div className="space-y-6">
+          <RegiaBatchLabelPrintView />
+        </div>
+      )}
 
       <CourseSuspensionModal isOpen={isSuspensionModalOpen} onClose={() => setIsSuspensionModalOpen(false)} />
       <FreeAccessAuthorizationModal isOpen={isFreeAccessModalOpen} onClose={() => setIsFreeAccessModalOpen(false)} />

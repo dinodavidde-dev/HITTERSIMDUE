@@ -22,13 +22,13 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
       <div className={`flex items-center bg-neutral-950 px-2.5 py-1 border border-neutral-700 shadow-md rounded-none ${className}`}>
         <span className="text-[11px] font-mono text-yellow-400 font-bold flex items-center gap-1.5 uppercase tracking-wider">
           <Calendar className="w-3.5 h-3.5 text-yellow-400" />
-          <span>{isEn ? `DAY 0${activeDay}` : `GIORNO 0${activeDay}`} ({activeDay === 2 ? 'Day 2' : 'Day 3'})</span>
+          <span>{isEn ? `DAY 0${activeDay}` : `GIORNO 0${activeDay}`} ({activeDay === 1 ? '24 Ottobre' : '25 Ottobre'})</span>
         </span>
       </div>
     );
   }
 
-  const handleSelectDay = (day: 2 | 3) => {
+  const handleSelectDay = (day: 1 | 2) => {
     setActiveDay(day);
     const firstIdx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.day === day);
     if (firstIdx !== -1) {
@@ -52,29 +52,29 @@ export const DaySelectorToggle: React.FC<DaySelectorToggleProps> = ({
       <div className="flex items-center gap-1">
         <button
           type="button"
+          onClick={() => handleSelectDay(1)}
+          className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 font-mono text-xs font-black cursor-pointer transition-colors flex items-center gap-1 rounded-sm ${
+            activeDay === 1
+              ? activeBg
+              : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
+          }`}
+          title={isEn ? 'Select Course Day 1 (24 Oct)' : 'Seleziona Giorno 1 di Corso (24 Ottobre)'}
+        >
+          <Sun className="w-3.5 h-3.5" />
+          <span>DAY 01 (24 OTT)</span>
+        </button>
+        <button
+          type="button"
           onClick={() => handleSelectDay(2)}
           className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 font-mono text-xs font-black cursor-pointer transition-colors flex items-center gap-1 rounded-sm ${
             activeDay === 2
               ? activeBg
               : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
           }`}
-          title={isEn ? 'Select Course Day 2' : 'Seleziona Giorno 2 di Corso'}
-        >
-          <Sun className="w-3.5 h-3.5" />
-          <span>DAY 02</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSelectDay(3)}
-          className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 font-mono text-xs font-black cursor-pointer transition-colors flex items-center gap-1 rounded-sm ${
-            activeDay === 3
-              ? activeBg
-              : 'text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800'
-          }`}
-          title={isEn ? 'Select Course Day 3' : 'Seleziona Giorno 3 di Corso'}
+          title={isEn ? 'Select Course Day 2 (25 Oct)' : 'Seleziona Giorno 2 di Corso (25 Ottobre)'}
         >
           <Moon className="w-3.5 h-3.5" />
-          <span>DAY 03</span>
+          <span>DAY 02 (25 OTT)</span>
         </button>
       </div>
     </div>

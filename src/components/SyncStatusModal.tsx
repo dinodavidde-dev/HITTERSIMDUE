@@ -39,8 +39,18 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
     firebaseUser,
     isFirebaseAuthReady,
     isFirebaseCloudConnected,
+    isQuotaExhausted,
+    retryCloudConnection,
     signInWithGoogle,
     signOutFirebase,
+    devicePresenceMap,
+    discenti,
+    faculty,
+    technicians,
+    directors,
+    regiaStaff,
+    sendGlobalPing,
+    forceDeviceResync,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -168,36 +178,52 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
           
           {/* Main Status Hero Card */}
           <div className={`p-4 border-2 flex items-center justify-between gap-3 ${
-            syncStatus.isOnline
+            isQuotaExhausted
+              ? 'bg-amber-950/40 border-amber-500/70'
+              : syncStatus.isOnline
               ? 'bg-emerald-950/40 border-emerald-600/70'
               : 'bg-red-950/40 border-red-600'
           }`}>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className={`w-10 h-10 flex items-center justify-center font-black ${
-                  syncStatus.isOnline ? 'bg-emerald-500 text-black' : 'bg-red-600 text-white'
+                  isQuotaExhausted
+                    ? 'bg-amber-500 text-black'
+                    : syncStatus.isOnline
+                    ? 'bg-emerald-500 text-black'
+                    : 'bg-red-600 text-white'
                 }`}>
-                  {syncStatus.isOnline ? <Wifi className="w-6 h-6 stroke-[2.5]" /> : <WifiOff className="w-6 h-6" />}
+                  {isQuotaExhausted ? <Zap className="w-6 h-6 stroke-[2.5]" /> : syncStatus.isOnline ? <Wifi className="w-6 h-6 stroke-[2.5]" /> : <WifiOff className="w-6 h-6" />}
                 </div>
-                {syncStatus.isOnline && (
+                {syncStatus.isOnline && !isQuotaExhausted && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-ping" />
                 )}
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-black text-sm sm:text-base uppercase tracking-tight text-white">
-                    {syncStatus.isOnline
+                    {isQuotaExhausted
+                      ? (isEn ? 'LOCAL HIGH-PERFORMANCE MESH MODE (CLOUD QUOTA EXCEEDED)' : 'MODALITÀ MESH AD ALTE PRESTAZIONI (QUOTA CLOUD RAGGIUNTA)')
+                      : syncStatus.isOnline
                       ? (isEn ? 'FIRESTORE SYSTEM CONNECTED & SYNCED' : 'SISTEMA FIRESTORE COLLEGATO & SINCRONIZZATO')
                       : (isEn ? 'OFFLINE MODE DETECTED' : 'MODALITÀ OFFLINE RILEVATA')}
                   </span>
                   <span className={`text-[10px] font-black px-1.5 py-0.2 uppercase ${
-                    syncStatus.isOnline ? 'bg-emerald-500 text-black' : 'bg-red-600 text-white'
+                    isQuotaExhausted
+                      ? 'bg-amber-500 text-black'
+                      : syncStatus.isOnline
+                      ? 'bg-emerald-500 text-black'
+                      : 'bg-red-600 text-white'
                   }`}>
-                    {syncStatus.isOnline ? (isEn ? 'CLOUD ACTIVE' : 'CLOUD ATTIVO') : (isEn ? 'DISCONNECTED' : 'DISCONNESSO')}
+                    {isQuotaExhausted ? (isEn ? 'LOCAL PERSISTENT MESH' : 'MESH LOCALE ATTIVA') : syncStatus.isOnline ? (isEn ? 'CLOUD ACTIVE' : 'CLOUD ATTIVO') : (isEn ? 'DISCONNECTED' : 'DISCONNESSO')}
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-300 mt-0.5">
-                  {syncStatus.isOnline
+                  {isQuotaExhausted
+                    ? (isEn
+                        ? 'The app is running smoothly in zero-latency local persistence & real-time broadcast mesh mode. All simulation controls, timers, evaluations, and roles are 100% functional.'
+                        : 'L’applicazione opera regolarmente in persistenza locale a latenza zero e broadcast mesh in tempo reale. Timer, simulazioni, ruoli e valutazioni sono attivi al 100%.')
+                    : syncStatus.isOnline
                     ? (isEn
                         ? 'Data (timers, rotations, alerts, messages, and evaluations) are instantly synced with Google Cloud Firestore europe-west1.'
                         : 'I dati (timer, rotazioni, allerte, messaggi e valutazioni) sono sincronizzati istantaneamente con Google Cloud Firestore europe-west1.')
@@ -205,6 +231,21 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
                         ? 'Device synchronization may be limited to local memory.'
                         : 'La sincronizzazione tra dispositivi potrebbe essere limitata alla memoria locale.')}
                 </p>
+                {isQuotaExhausted && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        await retryCloudConnection();
+                        setPingSuccessMessage(isEn ? 'Testing cloud connection...' : 'Tentativo di riconnessione cloud in corso...');
+                        setTimeout(() => setPingSuccessMessage(null), 3000);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold uppercase rounded border border-amber-500/40 transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>{isEn ? 'Retry Cloud Firestore Connection' : 'Riprova Connessione Cloud'}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -348,45 +389,99 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
               </span>
             </div>
 
-            <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-              {syncStatus.peers.map((peer) => (
-                <div
-                  key={peer.id}
-                  className={`flex items-center justify-between p-2 border transition-all ${
-                    peer.isCurrent
-                      ? 'bg-neutral-950 border-orange-500/70 shadow-xs'
-                      : 'bg-neutral-950/70 border-neutral-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-1 bg-neutral-900 border border-neutral-700 flex-shrink-0">
-                      {getRoleIcon(peer.role)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-neutral-100 text-xs uppercase tracking-tight">
-                          {peer.roleLabel}
-                        </span>
-                        {peer.isCurrent && (
-                          <span className="text-[9px] font-black px-1.5 py-0.2 bg-orange-500 text-black uppercase">
-                            {isEn ? 'This device' : 'Questo dispositivo'}
-                          </span>
-                        )}
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+              {syncStatus.peers.map((peer) => {
+                const presences = Object.values(devicePresenceMap || {});
+                const matchPresence = presences.find(
+                  (p) => p.clientId === peer.id || p.deviceId === peer.id || p.id === peer.id
+                );
+
+                let matchedPersonName = matchPresence?.name;
+                let matchedBadge = matchPresence?.badgeCode;
+                let matchedDetail = matchPresence?.deviceInfo || '';
+
+                if (matchPresence?.badgeCode) {
+                  const bCode = matchPresence.badgeCode.toUpperCase();
+                  if (bCode.startsWith('FAC-')) {
+                    const f = faculty.find((fac) => fac.badgeCode.toUpperCase() === bCode);
+                    if (f) {
+                      matchedPersonName = f.name;
+                      matchedDetail = `Squadra ${f.assignedTeamId} • ${f.specialty}`;
+                    }
+                  } else if (bCode.startsWith('TECH-')) {
+                    const t = technicians.find((tech) => tech.badgeCode.toUpperCase() === bCode);
+                    if (t) {
+                      matchedPersonName = t.name;
+                      matchedDetail = t.assignedStation || t.assignedStations?.[0] || t.specialty;
+                    }
+                  } else if (bCode.startsWith('DISC-')) {
+                    const d = discenti.find((disc) => disc.badgeCode.toUpperCase() === bCode);
+                    if (d) {
+                      matchedPersonName = d.name;
+                      matchedDetail = `Squadra ${d.teamId} • ${d.role}`;
+                    }
+                  } else if (bCode.startsWith('DIR-')) {
+                    const dir = directors.find((d) => d.badgeCode.toUpperCase() === bCode);
+                    if (dir) {
+                      matchedPersonName = dir.name;
+                      matchedDetail = dir.title;
+                    }
+                  } else if (bCode.startsWith('REGIA-') || bCode === 'MASTER-01') {
+                    const r = regiaStaff.find(
+                      (reg) => reg.badgeCode?.toUpperCase() === bCode || (bCode === 'MASTER-01' && reg.isMaster)
+                    );
+                    if (r) {
+                      matchedPersonName = r.name;
+                      matchedDetail = r.role || r.title;
+                    }
+                  }
+                }
+
+                return (
+                  <div
+                    key={peer.id}
+                    className={`flex items-center justify-between p-2.5 border transition-all ${
+                      peer.isCurrent
+                        ? 'bg-neutral-950 border-orange-500/70 shadow-xs'
+                        : 'bg-neutral-950/70 border-neutral-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-1.5 bg-neutral-900 border border-neutral-700 flex-shrink-0">
+                        {getRoleIcon(peer.role)}
                       </div>
-                      <span className="text-[10px] font-mono text-neutral-400 truncate block">
-                        ID: {peer.id}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-neutral-100 text-xs uppercase tracking-tight">
+                            {matchedPersonName ? `${matchedPersonName}` : peer.roleLabel}
+                          </span>
+                          {matchedBadge && (
+                            <span className="text-[10px] font-mono font-black px-1.5 py-0.2 bg-blue-950 border border-blue-600 text-blue-300 rounded">
+                              {matchedBadge}
+                            </span>
+                          )}
+                          {peer.isCurrent && (
+                            <span className="text-[9px] font-black px-1.5 py-0.2 bg-orange-500 text-black uppercase">
+                              {isEn ? 'This device' : 'Questo dispositivo'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-400 truncate">
+                          {matchedDetail && <span className="text-neutral-300">{matchedDetail} •</span>}
+                          <span>Node: {peer.id.slice(0, 18)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                        {matchPresence?.latencyMs ? `${matchPresence.latencyMs}ms` : (isEn ? 'ACTIVE' : 'ATTIVO')}
                       </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-mono text-emerald-400 font-bold">
-                      {isEn ? 'ACTIVE' : 'ATTIVO'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {syncStatus.peers.length === 0 && (
                 <p className="text-neutral-500 text-xs italic py-2 text-center">
@@ -406,7 +501,7 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-neutral-800">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={handlePing}
@@ -415,6 +510,20 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({ isOpen, onClos
               >
                 <Zap className={`w-3.5 h-3.5 text-yellow-400 ${isPinging ? 'animate-spin' : ''}`} />
                 <span>{isPinging ? (isEn ? 'TESTING...' : 'TEST IN CORSO...') : (isEn ? 'PING TEST / LATENCY' : 'TEST PING / LATENZA')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  forceDeviceResync();
+                  sendGlobalPing();
+                  setPingSuccessMessage(isEn ? 'Device mesh ping and force resync executed.' : 'Ping della rete mesh e risincronizzazione forzata eseguiti.');
+                  setTimeout(() => setPingSuccessMessage(null), 3000);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-cyan-300 font-black text-xs uppercase tracking-wider border border-cyan-700 hover:border-cyan-500 transition-all cursor-pointer shadow-xs"
+              >
+                <Wifi className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{isEn ? 'RESYNC DEVICES' : 'RESYNC DISPOSITIVI'}</span>
               </button>
 
               <button

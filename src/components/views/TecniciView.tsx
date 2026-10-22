@@ -15,19 +15,30 @@ import {
   RotateCcw,
   AlertTriangle,
   Flame,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Scale,
+  Sliders,
 } from 'lucide-react';
+import { CardOperativaCongiunta } from '../common/CardOperativaCongiunta';
 import { TechSessionChecklist } from '../TechSessionChecklist';
 import { ProtesiCatalogView } from './ProtesiCatalogView';
+import { TruccoView } from './TruccoView';
 import { TechScenariChecklistModal } from '../tech/TechScenariChecklistModal';
 import { TecniciRegistroRisorseView } from '../tech/TecniciRegistroRisorseView';
 import { TecniciTimelineAffiancata } from '../tech/TecniciTimelineAffiancata';
 import { QuadroPubblicoCorsoModal } from '../tech/QuadroPubblicoCorsoModal';
 import { ProtesiAttoriTecniciModal } from '../regia/ProtesiAttoriTecniciModal';
 import { DaySelectorToggle } from '../DaySelectorToggle';
-import { SimulatorPatient, GroupType } from '../../types';
+import { SimulatorPatient, GroupType, Technician, TimelineSlot } from '../../types';
 import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
 import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
 import { isScenarioSlot } from '../../utils/scenarioStatusHelper';
+import { StaffBalancingModal } from '../common/StaffBalancingModal';
+import { balanceTechniciansWorkload, BalancingReport } from '../../utils/staffBalancer';
+import { TimelineSyncNavigator } from '../common/TimelineSyncNavigator';
+import { translateSlot } from '../../utils/courseTranslation';
 
 export const TecniciView: React.FC = () => {
   const {
@@ -36,11 +47,13 @@ export const TecniciView: React.FC = () => {
     setSelectedTechnicianId,
     activeDay,
     activeSlotIndex,
+    currentSlot: masterCurrentSlot,
     timerSeconds,
     isTimerRunning,
     simulatorPatients,
     teams,
     sendCourseMessage,
+    bulkUpdateTechnicians,
     canSelectOperator,
     language,
     isCourseStarted,
@@ -51,12 +64,16 @@ export const TecniciView: React.FC = () => {
   const isEn = language === 'en';
   const isPreCourse = !isCourseStarted || (courseStartSchedule?.isGateEnabled && timeRemainingMs > 0);
 
-  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'registro' | 'checklists' | 'moulage'>('timeline');
+  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'card_congiunta' | 'trucco' | 'registro' | 'checklists' | 'moulage'>('timeline');
   const [assignmentMode, setAssignmentMode] = useState<'single' | 'pairs'>('single');
   const [selectedPatientForChecklist, setSelectedPatientForChecklist] = useState<SimulatorPatient | null>(null);
   const [selectedProtesiPatient, setSelectedProtesiPatient] = useState<SimulatorPatient | null>(null);
+  const [selectedPatientForJointCard, setSelectedPatientForJointCard] = useState<SimulatorPatient | null>(null);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [showQuadroPubblicoModal, setShowQuadroPubblicoModal] = useState(false);
+  const [showStandbyScreen, setShowStandbyScreen] = useState(false);
+  const [technicianBalancingReport, setTechnicianBalancingReport] = useState<BalancingReport<Technician> | null>(null);
+  const [isBalancingModalOpen, setIsBalancingModalOpen] = useState(false);
 
   // Current active technician
   const currentTech =
@@ -88,53 +105,79 @@ export const TecniciView: React.FC = () => {
   );
 
   // Regia timeline synchronization
-  const dayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
-  const currentSlot = dayMasterSlots[activeSlotIndex] || INITIAL_TIMELINE_SLOTS[activeSlotIndex] || dayMasterSlots[0];
-  const isScenarioInProgress = isScenarioSlot(currentSlot);
+  const [inspectedSlot, setInspectedSlot] = useState<TimelineSlot | null>(null);
 
-  const slotTitleLower = (currentSlot.title || '').toLowerCase();
-  const slotDescLower = (currentSlot.description || '').toLowerCase();
-  const slotIdLower = currentSlot.id.toLowerCase();
+  const rawDayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
+  const dayMasterSlots = rawDayMasterSlots.map((s) => translateSlot(s, language));
+  const rawMasterCurrentSlot = INITIAL_TIMELINE_SLOTS[activeSlotIndex] || dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+  const slotIdxInDay = dayMasterSlots.findIndex((s) => s.id === (masterCurrentSlot?.id || rawMasterCurrentSlot?.id));
+  const effectiveSlotIdx = slotIdxInDay >= 0 ? slotIdxInDay : 0;
+  const liveCurrentSlot = dayMasterSlots[effectiveSlotIdx] || dayMasterSlots[0];
+
+  const currentSlot = inspectedSlot || liveCurrentSlot;
+  const isLiveSync = inspectedSlot === null || inspectedSlot.id === liveCurrentSlot?.id;
+
+  // Map technician (TECH-01..TECH-12) to their dedicated Group (A, B, C, D)
+  const techGroup: GroupType =
+    techNum <= 3 ? 'A' : techNum <= 6 ? 'B' : techNum <= 9 ? 'C' : 'D';
+  const techActivity = currentSlot?.groupActivities?.[techGroup];
+  const techActTitle = (techActivity?.title || '').toLowerCase();
+  const techActSub = (techActivity?.subtitle || '').toLowerCase();
+  const techActLoc = (techActivity?.location || '').toLowerCase();
+  const techActType = (techActivity?.activityType || '').toLowerCase();
+  const techActText = `${techActTitle} ${techActSub} ${techActLoc}`;
+
+  const isTechWorkshop =
+    (techActType === 'workshop' ||
+      techActText.includes('workshop') ||
+      techActText.includes('ws1') ||
+      techActText.includes('ws2')) &&
+    !techActText.includes('tccc') &&
+    !techActText.includes('shock');
 
   // 1. Riordino tra uno scenario e l'altro (Turnaround / Reset 15 min)
   const isResetBetweenScenarios =
-    slotIdLower.includes('reset') ||
-    slotIdLower.includes('turnaround') ||
-    slotTitleLower.includes('reset') ||
-    slotTitleLower.includes('riordino') ||
-    slotTitleLower.includes('turnaround') ||
-    slotDescLower.includes('reset') ||
-    slotDescLower.includes('riordino') ||
-    slotDescLower.includes('turnaround');
+    !isTechWorkshop &&
+    (techActText.includes('reset') ||
+      techActText.includes('turnaround') ||
+      techActText.includes('riordino') ||
+      (currentSlot.id || '').toLowerCase().includes('reset'));
 
-  // 2. Standby a 15 minuti dall'inizio dello scenario assegnato (Pre-Allerta T-15 / Standby Attivo SR)
+  // 2. Standby a 15 minuti dall'inizio dello scenario assegnato (Pre-Allerta T-15 TCCC o Pre-Allerta T-15 Shock Room nei min 15-30)
   const isStandby15Min =
-    !isResetBetweenScenarios && (
-      slotIdLower.includes('prealert') ||
-      slotIdLower.includes('pre-alert') ||
-      slotTitleLower.includes('pre-alert') ||
-      slotTitleLower.includes('pre-allerta') ||
-      slotTitleLower.includes('preallerta') ||
-      slotDescLower.includes('pre-allerta') ||
-      slotDescLower.includes('pre-alert') ||
-      slotTitleLower.includes('standby') ||
-      slotDescLower.includes('standby') ||
-      slotDescLower.includes('t -15') ||
-      slotDescLower.includes('t-15')
-    );
+    !isTechWorkshop &&
+    !isResetBetweenScenarios &&
+    (techActText.includes('pre-allerta') ||
+      techActText.includes('pre-alert') ||
+      techActText.includes('standby attivo') ||
+      techActText.includes('t -15') ||
+      techActText.includes('t-15'));
 
-  // 3. Operativa quando lo scenario si sta svolgendo
-  const isScenarioActive = !isResetBetweenScenarios && !isStandby15Min && isScenarioInProgress;
+  // 3. Operativa quando lo scenario (TCCC o Shock Room) del tecnico si sta svolgendo
+  const isTechClinicalScenario =
+    !isTechWorkshop &&
+    !isResetBetweenScenarios &&
+    !isStandby15Min &&
+    (techActType === 'scenario_extra' ||
+      techActType === 'scenario_intra' ||
+      techActText.includes('scenario tccc') ||
+      techActText.includes('shock room alta fedeltà') ||
+      techActText.includes('avvio shock room') ||
+      techActText.includes('handover'));
 
+  const isScenarioActive = isTechClinicalScenario;
+  const isScenarioInProgress = isScenarioActive;
   const isCurrentSlotPreAlert = isStandby15Min;
 
-  const nextScenarioSlot = dayMasterSlots
-    .slice(activeSlotIndex + 1)
-    .find((s) => isScenarioSlot(s)) || null;
+  const nextSlotInDay = dayMasterSlots[effectiveSlotIdx + 1] || null;
+  const nextTechActivity = nextSlotInDay?.groupActivities?.[techGroup];
+  const nextScenarioStartTime =
+    currentSlot?.timeRange?.split('-')[1]?.trim() ||
+    nextSlotInDay?.timeRange?.split('-')[0]?.trim() ||
+    null;
 
-  const nextScenarioStartTime = nextScenarioSlot?.timeRange
-    ? nextScenarioSlot.timeRange.split('-')[0].trim()
-    : null;
+  const singleTechPhaseTitle = techActivity?.title || currentSlot.title;
+  const singleTechPhaseDesc = techActivity?.subtitle || currentSlot.description;
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -142,8 +185,8 @@ export const TecniciView: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Pre-Course Standby: Only show personal Anagrafica & Public Countdown until course is started by Regia
-  if (isPreCourse) {
+  // Pre-Course Standby: Only show standby screen if explicitly requested when not an admin/selector
+  if (isPreCourse && !canSelectOperator && showStandbyScreen) {
     return (
       <div className="space-y-4 sm:space-y-6 pb-12 max-w-6xl mx-auto px-2 sm:px-4 font-mono animate-fadeIn">
         {/* Header Banner */}
@@ -214,6 +257,18 @@ export const TecniciView: React.FC = () => {
           )}
         </div>
 
+        {/* Action Button: Enter Technical Operations Dashboard */}
+        <div className="flex items-center justify-center pt-2">
+          <button
+            type="button"
+            onClick={() => setShowStandbyScreen(false)}
+            className="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-pink-600 via-rose-600 to-pink-500 hover:from-pink-500 hover:to-rose-400 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded border border-pink-400 shadow-2xl cursor-pointer flex items-center justify-center gap-2 transform hover:scale-[1.01] transition-all"
+          >
+            <Wrench className="w-4 h-4 text-white" />
+            <span>{isEn ? 'ENTER TECHNICAL OPERATIONS DASHBOARD (CHECKLIST & TIMELINE)' : 'ACCEDI AL PANNELLO OPERATIVO TECNICO (CHECKLIST & TIMELINE)'}</span>
+          </button>
+        </div>
+
         {/* PERSONALIZED TECHNICIAN ANAGRAFICA CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Card 1: Profilo e Specialità */}
@@ -229,24 +284,38 @@ export const TecniciView: React.FC = () => {
                 <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight break-words">
                   {currentTech.name}
                 </h2>
-                <p className="text-pink-300 font-bold text-xs sm:text-sm pt-0.5 break-words">
-                  {currentTech.specialty}
-                </p>
+                {currentTech.specialty && (
+                  <p className="text-pink-300 font-bold text-xs sm:text-sm pt-0.5 break-words">
+                    {currentTech.specialty}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="pt-3 mt-3 border-t border-neutral-800">
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
-                <div>
-                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
-                  <strong className="text-white truncate block">{currentTech.nationality || (isEn ? 'Italian' : 'Italiana')}</strong>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
-                  <strong className="text-white truncate block">{currentTech.phone || 'CH-3 TECH'}</strong>
+            {(currentTech.nationality || currentTech.phone || currentTech.organization) && (
+              <div className="pt-3 mt-3 border-t border-neutral-800">
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
+                  {currentTech.nationality && (
+                    <div>
+                      <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                      <strong className="text-white truncate block">{currentTech.nationality}</strong>
+                    </div>
+                  )}
+                  {currentTech.phone && (
+                    <div>
+                      <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
+                      <strong className="text-white truncate block">{currentTech.phone}</strong>
+                    </div>
+                  )}
+                  {currentTech.organization && (
+                    <div className="col-span-2">
+                      <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Organization:' : 'Ente:'}</span>
+                      <strong className="text-white truncate block">{currentTech.organization}</strong>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Card 2: Simulatori Pazienti Presidiati */}
@@ -301,6 +370,27 @@ export const TecniciView: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-12 max-w-6xl mx-auto px-2 sm:px-4 font-mono animate-fadeIn">
+      {/* Notice Banner when in Pre-Course */}
+      {isPreCourse && (
+        <div className="bg-amber-950/80 border-2 border-amber-500 p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping flex-shrink-0" />
+            <span className="text-amber-300 font-bold text-xs uppercase font-mono">
+              {isEn
+                ? 'PRE-COURSE OPERATIONAL MODE: Station setup, technical checklists, simulator testing & radio CH3 active.'
+                : 'MODALITÀ OPERATIVA PRE-CORSO: Allestimento postazioni, checklist tecniche, collaudo simulatori & radio CH3 attivi.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowStandbyScreen(true)}
+            className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase rounded transition-all cursor-pointer font-mono shrink-0 shadow-sm"
+          >
+            ⏱️ {isEn ? 'View Public Countdown' : 'Visualizza Countdown Standby'}
+          </button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="bg-neutral-900 border-2 border-pink-500/60 p-3 sm:p-4 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -311,7 +401,7 @@ export const TecniciView: React.FC = () => {
           <DaySelectorToggle variant="public" />
 
           <span className="px-2 py-0.5 bg-neutral-950 text-neutral-300 font-mono text-[11px] sm:text-xs border border-neutral-800 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping" /> DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{dayMasterSlots.length} ({currentSlot.timeRange})
+            <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping" /> DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {effectiveSlotIdx + 1}/{dayMasterSlots.length} ({currentSlot.timeRange})
           </span>
 
           {/* Tasto nell'intestazione: Quadro Pubblico del Corso */}
@@ -323,6 +413,21 @@ export const TecniciView: React.FC = () => {
           >
             <Globe className="w-3.5 h-3.5 text-black" />
             <span>{isEn ? 'Public Course' : 'Quadro Pubblico Corso'}</span>
+          </button>
+
+          {/* Tasto Rapido: Visuale Trucco & Timeline Pre-Scenario */}
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('trucco')}
+            className={`px-2.5 sm:px-3 py-1 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 rounded shadow cursor-pointer transition-all border ${
+              activeSubTab === 'trucco'
+                ? 'bg-pink-500 text-black border-pink-300'
+                : 'bg-pink-950 hover:bg-pink-900 text-pink-200 border-pink-500'
+            }`}
+            title={isEn ? 'Open Pre-Scenario Makeup Timeline' : 'Apri Visuale Trucco & Timeline Pre-Scenario'}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+            <span>{isEn ? 'Makeup Timeline' : 'Visuale Trucco'}</span>
           </button>
         </div>
 
@@ -387,6 +492,56 @@ export const TecniciView: React.FC = () => {
         )}
       </div>
 
+      {/* Sincronizzazione automatica con timeline di Regia e navigatore consultazione slot */}
+      <TimelineSyncNavigator
+        currentSlot={currentSlot}
+        masterCurrentSlot={liveCurrentSlot}
+        isLiveSync={isLiveSync}
+        onSelectSlot={(slot) => setInspectedSlot(slot)}
+        onSyncToLive={() => setInspectedSlot(null)}
+        roleLabel={isEn ? `Technician (${currentTech.badgeCode})` : `Tecnico Simulatore (${currentTech.badgeCode})`}
+        stationContext={
+          isEn
+            ? `${(currentTech.assignedStations || []).slice(0, 2).join(', ')} • CH-3 Radio & Reset Turnaround`
+            : `${(currentTech.assignedStations || []).slice(0, 2).join(', ')} • Presidio CH-3 & Reset Turnaround`
+        }
+      />
+
+      {/* ========================================================================= */}
+      {/* BARRA COMANDI OPERATIVA: BILANCIAMENTO CARICO ANAGRAFICA TECNICI         */}
+      {/* ========================================================================= */}
+      <div className="bg-neutral-950 border-2 border-emerald-500/80 p-3.5 sm:p-4 rounded-xl shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 font-mono">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <span className="px-2 py-0.5 bg-emerald-600 text-black font-black uppercase tracking-wider rounded">
+              MOTORE DI BILANCIAMENTO
+            </span>
+            <span className="text-emerald-300 font-bold">
+              Anagrafica Tecnici ({technicians.length} Operatori • TECH-01..12)
+            </span>
+            <span className="px-2 py-0.2 bg-black border border-emerald-500/40 text-neutral-300 text-[10px] rounded">
+              Carico Tattico & Turnaround Equilibrato
+            </span>
+          </div>
+          <p className="text-[11px] text-neutral-400 font-sans max-w-3xl leading-relaxed">
+            Distribuzione omogenea per carico orario e postazioni tattiche ad alto impatto (TCCC 1–3, Shock Room 1–3) e postazioni di supporto (WS1, WS2, Regia AV) per garantire parità operativa tra Day 2 e Day 3.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            const report = balanceTechniciansWorkload(technicians, simulatorPatients);
+            setTechnicianBalancingReport(report);
+            setIsBalancingModalOpen(true);
+          }}
+          className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-black font-black text-xs uppercase tracking-wider rounded cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all shrink-0 border border-emerald-400"
+        >
+          <Scale className="w-4 h-4 text-black shrink-0" />
+          <span>⚖️ Ribilancia Carico Omogeneo</span>
+        </button>
+      </div>
+
       {/* ========================================================================= */}
       {/* ANAGRAFICA DEL TECNICO IN CIMA ALLA PAGINA & SEGNALE OPERATIVO FASE      */}
       {/* ========================================================================= */}
@@ -410,10 +565,14 @@ export const TecniciView: React.FC = () => {
                 {currentTech.name}
               </h2>
               <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                <span className="text-pink-300 font-bold text-xs sm:text-sm">
-                  {currentTech.specialty}
-                </span>
-                <span className="text-neutral-500 text-xs">•</span>
+                {currentTech.specialty && (
+                  <>
+                    <span className="text-pink-300 font-bold text-xs sm:text-sm">
+                      {currentTech.specialty}
+                    </span>
+                    <span className="text-neutral-500 text-xs">•</span>
+                  </>
+                )}
                 <span className="text-neutral-300 text-xs font-mono flex items-center gap-1">
                   <Radio className="w-3 h-3 text-pink-400" />
                   <strong className="text-pink-300">CH-3 TECNICI</strong>
@@ -429,12 +588,17 @@ export const TecniciView: React.FC = () => {
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {assignedPatients.map((p) => (
-                  <span
+                  <button
                     key={p.id}
-                    className="px-2 py-0.5 bg-neutral-900 border border-pink-700/60 text-white rounded text-[11px] font-bold"
+                    type="button"
+                    onClick={() => setSelectedPatientForJointCard(p)}
+                    className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 border border-pink-700/60 hover:border-pink-400 text-white rounded text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1 shadow-xs"
+                    title={isEn ? 'Open Joint Operational Card (Makeup & Tech)' : 'Apri Card Operativa Congiunta Trucco & Tecnico'}
                   >
-                    Paz. {p.id} <span className="text-pink-300 font-normal">({p.scenarioCode || p.name})</span>
-                  </span>
+                    <Sliders className="w-3 h-3 text-pink-400" />
+                    <span>Paz. {p.id}</span>
+                    <span className="text-pink-300 font-normal">({p.scenarioCode || p.name})</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -479,12 +643,13 @@ export const TecniciView: React.FC = () => {
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5">
                     <Flame className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>{currentSlot.title}</span>
+                    <span>{singleTechPhaseTitle}</span>
                   </h3>
                   <p className="text-[11px] text-emerald-100/90 font-mono mt-1 leading-relaxed">
-                    {isEn
-                      ? 'The clinical scenario is actively unfolding in the simulation station. Bleed pumps delivery, dynamic telemetry modulation and invasive procedures support active.'
-                      : 'Lo scenario clinico si sta svolgendo sul campo. Erogazione flussi emorragici, modulazione parametri vitali su telemetria e supporto operativo in corso.'}
+                    {singleTechPhaseDesc ||
+                      (isEn
+                        ? 'The clinical scenario is actively unfolding in the simulation station. Bleed pumps delivery, dynamic telemetry modulation and invasive procedures support active.'
+                        : 'Lo scenario clinico si sta svolgendo sul campo. Erogazione flussi emorragici, modulazione parametri vitali su telemetria e supporto operativo in corso.')}
                   </p>
                 </div>
               </div>
@@ -528,16 +693,17 @@ export const TecniciView: React.FC = () => {
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-bounce" />
-                    <span>{isEn ? 'STANDBY 15 MIN BEFORE SCENARIO' : 'STANDBY A 15 MIN DALL\'INIZIO SCENARIO'}</span>
+                    <span>{singleTechPhaseTitle}</span>
                   </h3>
                   <p className="text-[11px] text-amber-100/90 font-mono mt-1 leading-relaxed">
-                    {isEn
-                      ? 'Standby window 15 minutes before the start of the assigned scenario. Bleeding pumps priming, hydraulic lines test, telemetry check and radio CH3 verification.'
-                      : 'Finestra di standby a 15 minuti dall\'inizio dello scenario assegnato. Innesco pompe sanguinamento, check circuiti idraulici, telemetria e apparati radio CH3.'}
+                    {singleTechPhaseDesc ||
+                      (isEn
+                        ? 'Standby window 15 minutes before the start of the assigned scenario. Bleeding pumps priming, hydraulic lines test, telemetry check and radio CH3 verification.'
+                        : 'Finestra di standby a 15 minuti dall\'inizio dello scenario assegnato. Innesco pompe sanguinamento, check circuiti idraulici, telemetria e apparati radio CH3.')}
                   </p>
                   {nextScenarioStartTime && (
                     <div className="mt-1.5 text-[11px] font-mono font-bold text-amber-300 bg-neutral-950/80 px-2.5 py-1 rounded border border-amber-700/60 inline-flex items-center gap-1.5">
-                      <span>🎯 {nextScenarioSlot?.title || (isEn ? 'Upcoming Scenario' : 'Scenario in arrivo')}</span>
+                      <span>🎯 {nextTechActivity?.title || (isEn ? 'Upcoming Scenario' : 'Scenario in arrivo')}</span>
                       <span>•</span>
                       <span className="text-white">{isEn ? `Starts at ${nextScenarioStartTime}` : `Inizio ore ${nextScenarioStartTime}`}</span>
                     </div>
@@ -580,12 +746,13 @@ export const TecniciView: React.FC = () => {
                 {/* Titolo e Dettaglio Riordino */}
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5">
-                    <span>{isEn ? 'RECOVERY & RESET BETWEEN SCENARIOS' : 'RIORDINO TRA UNO SCENARIO E L\'ALTRO'}</span>
+                    <span>{singleTechPhaseTitle}</span>
                   </h3>
                   <p className="text-[11px] text-yellow-100/90 font-mono mt-1 leading-relaxed">
-                    {isEn
-                      ? '15-minute quick turnaround: manikin disinfection, flushing lines and refilling synthetic blood pouches, inserts replacement, restocking consumables and sending green light on CH3.'
-                      : 'Turnaround di 15 min tra gli scenari: sanificazione manichini, spurgo sacche sangue sintetico, sostituzione inserti cricotiroidotomia e cute, reintegro consumabili e invio "LUCE VERDE" via radio CH3.'}
+                    {singleTechPhaseDesc ||
+                      (isEn
+                        ? '15-minute quick turnaround: manikin disinfection, flushing lines and refilling synthetic blood pouches, inserts replacement, restocking consumables and sending green light on CH3.'
+                        : 'Turnaround di 15 min tra gli scenari: sanificazione manichini, spurgo sacche sangue sintetico, sostituzione inserti cricotiroidotomia e cute, reintegro consumabili e invio "LUCE VERDE" via radio CH3.')}
                   </p>
                 </div>
               </div>
@@ -611,7 +778,9 @@ export const TecniciView: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="px-2.5 py-0.5 bg-neutral-800 text-neutral-200 font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider rounded border border-neutral-600">
-                    {isEn ? '⚙️ COURSE TECHNICAL PHASE' : '⚙️ FASE TECNICA DI CORSO'}
+                    {isTechWorkshop
+                      ? isEn ? '🛠️ WORKSHOP SUPPORT' : '🛠️ SUPPORTO WORKSHOP'
+                      : isEn ? '⚙️ COURSE TECHNICAL PHASE' : '⚙️ FASE TECNICA DI CORSO'}
                   </span>
                   <span className="text-[10px] font-mono text-neutral-400">
                     {currentSlot.timeRange}
@@ -620,10 +789,10 @@ export const TecniciView: React.FC = () => {
 
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
-                    {currentSlot.title}
+                    {singleTechPhaseTitle}
                   </h3>
                   <p className="text-[11px] text-neutral-300 font-mono mt-1">
-                    {currentSlot.description || (isEn ? 'Logistics supervision and CH3 standby.' : 'Presidio logistico e ascolto attivo su canale radio CH3.')}
+                    {singleTechPhaseDesc || (isEn ? 'Logistics supervision and CH3 standby.' : 'Presidio logistico e ascolto attivo su canale radio CH3.')}
                   </p>
                 </div>
               </div>
@@ -655,6 +824,28 @@ export const TecniciView: React.FC = () => {
           }`}
         >
           <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {isEn ? 'Side-by-Side Timeline' : 'Timeline Affiancata'}
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('card_congiunta')}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border whitespace-nowrap shrink-0 ${
+            activeSubTab === 'card_congiunta'
+              ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white border-fuchsia-400 shadow-lg'
+              : 'bg-neutral-900 text-fuchsia-300 border-fuchsia-800/60 hover:text-white hover:border-fuchsia-500'
+          }`}
+        >
+          <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-fuchsia-400" /> {isEn ? 'Joint Card (Makeup & Tech)' : 'Card Congiunta Trucco & Simulatore'}
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('trucco')}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 border whitespace-nowrap shrink-0 ${
+            activeSubTab === 'trucco'
+              ? 'bg-pink-600 text-white border-pink-400 shadow-lg'
+              : 'bg-neutral-900 text-pink-300 border-pink-800/60 hover:text-white hover:border-pink-500'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-400" /> {isEn ? 'Makeup Timeline (Pre-Scenario)' : 'Visuale Trucco & Timeline'}
         </button>
 
         <button
@@ -720,6 +911,57 @@ export const TecniciView: React.FC = () => {
           onOpenQuadroPubblico={() => setShowQuadroPubblicoModal(true)}
         />
       )}
+
+      {/* SUBTAB CARD OPERATIVA CONGIUNTA: TRUCCO & REGIA SIMULATORE */}
+      {activeSubTab === 'card_congiunta' && (
+        <div className="space-y-4">
+          <div className="bg-neutral-900 border border-fuchsia-500/40 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1 font-mono">
+              <span className="text-[10px] text-fuchsia-400 font-bold uppercase tracking-widest block">
+                {isEn ? 'SIMULTANEOUS OPERATION & CONTROL' : 'OPERATIVITÀ CONGIUNTA & REGIA CH-3'}
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-white uppercase flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-fuchsia-400" />
+                <span>Card Operativa Congiunta • Tecnico {currentTech.badgeCode} ({currentTech.name})</span>
+              </h2>
+              <p className="text-xs text-neutral-400 font-sans">
+                Visualizzazione simultanea attività di trucco/moulage e azioni tecniche sul simulatore con spunta condivisa e feedback istantaneo alla regia.
+              </p>
+            </div>
+
+            {assignedPatients.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-black/60 p-1.5 rounded-lg border border-neutral-800">
+                <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold pl-1">Seleziona Paziente:</span>
+                {assignedPatients.map((p) => {
+                  const isSelected = (selectedPatientForJointCard?.id || assignedPatients[0]?.id) === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPatientForJointCard(p)}
+                      className={`px-2.5 py-1 text-xs font-mono font-bold rounded cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-fuchsia-600 text-white shadow'
+                          : 'bg-neutral-900 text-neutral-300 hover:text-white'
+                      }`}
+                    >
+                      Paz. {p.id}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <CardOperativaCongiunta
+            patientId={(selectedPatientForJointCard || assignedPatients[0] || simulatorPatients[0]).id}
+            activeRolePerspective="tecnico"
+          />
+        </div>
+      )}
+
+      {/* SUBTAB TRUCCO: VISUALE TRUCCO & TIMELINE PRE-SCENARIO */}
+      {activeSubTab === 'trucco' && <TruccoView />}
 
       {/* SUBTAB 2: REGISTRO RISORSE TECNICHE */}
       {activeSubTab === 'registro' && (
@@ -850,6 +1092,40 @@ export const TecniciView: React.FC = () => {
         onClose={() => setShowUnlockModal(false)}
         roleLabel={isEn ? 'Technician' : 'Tecnico'}
       />
+
+      {/* MODALE REPORT ANTEPRIMA BILANCIAMENTO TECNICI */}
+      <StaffBalancingModal<Technician>
+        isOpen={isBalancingModalOpen}
+        report={technicianBalancingReport}
+        onClose={() => setIsBalancingModalOpen(false)}
+        onConfirm={async (updatedTechs) => {
+          await bulkUpdateTechnicians(updatedTechs);
+          if (sendCourseMessage) {
+            sendCourseMessage({
+              senderId: 'REGIA-CH3',
+              senderName: 'Coordinamento Operativo Regia',
+              senderRole: 'direttore',
+              type: 'info',
+              subject: 'RIASSETTO OPERATIVO TECNICI APPLICATO',
+              content: `Il carico operativo per i 12 tecnici è stato bilanciato omogeneamente su tutte le postazioni tattiche e di regia.`,
+            });
+          }
+        }}
+      />
+
+      {/* MODALE CARD OPERATIVA CONGIUNTA (TRUCCO & TECNICO) */}
+      {selectedPatientForJointCard && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="max-w-5xl w-full my-auto animate-in fade-in zoom-in-95 duration-200">
+            <CardOperativaCongiunta
+              patientId={selectedPatientForJointCard.id}
+              activeRolePerspective="tecnico"
+              onClose={() => setSelectedPatientForJointCard(null)}
+              isModal
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

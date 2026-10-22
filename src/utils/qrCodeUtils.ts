@@ -1,9 +1,26 @@
 import QRCode from 'qrcode';
-import { Discente, Faculty, Technician, Director, RegiaStaff, Guest, Team } from '../types';
+import { Discente, Faculty, Technician, Director, RegiaStaff, Guest, Team, MakeupArtist, CourseActor } from '../types';
 
-export type ParticipantCategory = 'discente' | 'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti';
+export type ParticipantCategory =
+  | 'discente'
+  | 'discenti'
+  | 'faculty'
+  | 'tecnici'
+  | 'direttori'
+  | 'regia'
+  | 'ospiti'
+  | 'truccatori'
+  | 'attori';
 
-export type AnyParticipant = Discente | Faculty | Technician | Director | RegiaStaff | Guest;
+export type AnyParticipant =
+  | Discente
+  | Faculty
+  | Technician
+  | Director
+  | RegiaStaff
+  | Guest
+  | MakeupArtist
+  | CourseActor;
 
 /**
  * Computes a deterministic compact hash / fingerprint representing the participant's exact data state.
@@ -47,7 +64,7 @@ export function getParticipantPersonalPageUrl(
   person: AnyParticipant,
   category: ParticipantCategory,
   customBaseUrl?: string,
-  originRole?: 'regia' | 'direttore'
+  originRole?: 'regia' | 'direttore' | 'master'
 ): string {
   const base = customBaseUrl || (typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : 'https://trauma-sim.med');
   const badge = (person as any).badgeCode || person.id;
@@ -58,12 +75,20 @@ export function getParticipantPersonalPageUrl(
     : category === 'direttori' ? 'direttori'
     : category === 'discenti' ? 'discente'
     : category === 'ospiti' ? 'public'
+    : category === 'truccatori' ? 'truccatore'
+    : category === 'attori' ? 'attore'
     : category;
 
   const url = new URL(base);
   url.searchParams.set('view', viewParam);
   url.searchParams.set('id', person.id);
   url.searchParams.set('badge', badge);
+  if (category === 'truccatori') {
+    url.searchParams.set('truccatore', badge);
+  }
+  if (category === 'attori') {
+    url.searchParams.set('attore', badge);
+  }
   url.searchParams.set('qr', '1');
   url.searchParams.set('h', hash); // Version fingerprint
   if (originRole) {
@@ -78,7 +103,7 @@ export function getParticipantPersonalPageUrl(
  */
 export function buildVisualeUrl(
   view: string,
-  originRole?: 'regia' | 'direttore',
+  originRole?: 'regia' | 'direttore' | 'master',
   extraParams?: Record<string, string>
 ): string {
   const base = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : 'https://trauma-sim.med';
@@ -100,7 +125,7 @@ export function buildVisualeUrl(
  */
 export function openVisualeInNewWindow(
   view: string,
-  originRole?: 'regia' | 'direttore',
+  originRole?: 'regia' | 'direttore' | 'master',
   extraParams?: Record<string, string>
 ): Window | null {
   if (typeof window !== 'undefined') {
@@ -190,6 +215,7 @@ export function resolveParticipantByQuery(
     regiaStaff: RegiaStaff[];
     guests: Guest[];
     teams: Team[];
+    makeupArtists?: MakeupArtist[];
   }
 ): { person: AnyParticipant; category: ParticipantCategory; team?: Team } | null {
   if (!query || !query.trim()) return null;
@@ -203,7 +229,7 @@ export function resolveParticipantByQuery(
     if (q.includes('?') || q.startsWith('http')) {
       const url = new URL(q, 'https://dummy.med');
       const idParam = url.searchParams.get('id');
-      const badgeParam = url.searchParams.get('badge');
+      const badgeParam = url.searchParams.get('badge') || url.searchParams.get('truccatore');
       if (idParam) targetId = idParam;
       if (badgeParam) targetBadge = badgeParam.toUpperCase();
     }
@@ -217,9 +243,9 @@ export function resolveParticipantByQuery(
   // 1. Search Discenti
   const disc = data.discenti.find(
     (d) =>
-      d.id.toLowerCase() === idLower ||
-      d.badgeCode?.toUpperCase() === badgeUpper ||
-      d.name.toLowerCase() === idLower
+      (d?.id || '').toLowerCase() === idLower ||
+      (d?.badgeCode || '').toUpperCase() === badgeUpper ||
+      (d?.name || '').toLowerCase() === idLower
   );
   if (disc) {
     const team = data.teams.find((t) => t.id === disc.teamId);
@@ -229,9 +255,9 @@ export function resolveParticipantByQuery(
   // 2. Search Faculty
   const fac = data.faculty.find(
     (f) =>
-      f.id.toLowerCase() === idLower ||
-      f.badgeCode?.toUpperCase() === badgeUpper ||
-      f.name.toLowerCase() === idLower
+      (f?.id || '').toLowerCase() === idLower ||
+      (f?.badgeCode || '').toUpperCase() === badgeUpper ||
+      (f?.name || '').toLowerCase() === idLower
   );
   if (fac) {
     const team = data.teams.find((t) => t.id === fac.assignedTeamId);
@@ -241,9 +267,9 @@ export function resolveParticipantByQuery(
   // 3. Search Technicians
   const tech = data.technicians.find(
     (t) =>
-      t.id.toLowerCase() === idLower ||
-      t.badgeCode?.toUpperCase() === badgeUpper ||
-      t.name.toLowerCase() === idLower
+      (t?.id || '').toLowerCase() === idLower ||
+      (t?.badgeCode || '').toUpperCase() === badgeUpper ||
+      (t?.name || '').toLowerCase() === idLower
   );
   if (tech) {
     return { person: tech, category: 'tecnici' };
@@ -252,9 +278,9 @@ export function resolveParticipantByQuery(
   // 4. Search Directors
   const dir = data.directors.find(
     (d) =>
-      d.id.toLowerCase() === idLower ||
-      d.badgeCode?.toUpperCase() === badgeUpper ||
-      d.name.toLowerCase() === idLower
+      (d?.id || '').toLowerCase() === idLower ||
+      (d?.badgeCode || '').toUpperCase() === badgeUpper ||
+      (d?.name || '').toLowerCase() === idLower
   );
   if (dir) {
     return { person: dir, category: 'direttori' };
@@ -263,9 +289,9 @@ export function resolveParticipantByQuery(
   // 5. Search Regia Staff
   const reg = data.regiaStaff.find(
     (r) =>
-      r.id.toLowerCase() === idLower ||
-      r.badgeCode?.toUpperCase() === badgeUpper ||
-      r.name.toLowerCase() === idLower
+      (r?.id || '').toLowerCase() === idLower ||
+      (r?.badgeCode || '').toUpperCase() === badgeUpper ||
+      (r?.name || '').toLowerCase() === idLower
   );
   if (reg) {
     return { person: reg, category: 'regia' };
@@ -274,12 +300,25 @@ export function resolveParticipantByQuery(
   // 6. Search Guests
   const guest = data.guests.find(
     (g) =>
-      g.id.toLowerCase() === idLower ||
-      g.badgeCode?.toUpperCase() === badgeUpper ||
-      g.name.toLowerCase() === idLower
+      (g?.id || '').toLowerCase() === idLower ||
+      (g?.badgeCode || '').toUpperCase() === badgeUpper ||
+      (g?.name || '').toLowerCase() === idLower
   );
   if (guest) {
     return { person: guest, category: 'ospiti' };
+  }
+
+  // 7. Search Makeup Artists
+  if (data.makeupArtists) {
+    const truc = data.makeupArtists.find(
+      (m) =>
+        (m?.id || '').toLowerCase() === idLower ||
+        (m?.badgeCode || '').toUpperCase() === badgeUpper ||
+        (m?.name || '').toLowerCase() === idLower
+    );
+    if (truc) {
+      return { person: truc, category: 'truccatori' };
+    }
   }
 
   return null;

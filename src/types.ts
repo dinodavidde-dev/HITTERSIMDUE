@@ -1,8 +1,18 @@
-export type UserRole = 'discente' | 'tecnico' | 'faculty' | 'direttore' | 'ospite' | 'regia';
+export type UserRole = 'discente' | 'tecnico' | 'faculty' | 'direttore' | 'ospite' | 'regia' | 'master';
 
-export type CourseDay = 2 | 3;
+export type CourseDay = 1 | 2 | 3;
 export type SessionPeriod = 'mattina' | 'pomeriggio' | 'notturno';
 export type GroupType = 'A' | 'B' | 'C' | 'D';
+
+export type ScenarioType = 'TCCC' | 'SHOCKROOM' | 'WORKSHOP' | 'OTHER' | 'MASCAL';
+
+export interface ScenarioRoleAssignment {
+  discenteId: string;
+  role: string;
+  scenarioType: ScenarioType;
+  slotId?: string;
+  assignedByFacultyBadge?: string;
+}
 
 export interface Discente {
   id: string;
@@ -17,7 +27,19 @@ export interface Discente {
   organization?: string;
   badgeCode?: string;
   notes?: string;
+  professione?: string;
+  clothingSize?: string;
+
+  // Ruoli Operativi di Scenario (Pre-Allerta TCCC / Shock Room)
+  assignedRole?: string;
+  activeScenarioRole?: string;
+  activeScenarioType?: ScenarioType;
+  activeScenarioSlotId?: string;
+  activeScenarioAssignedAt?: string;
+  activeScenarioAssignedBy?: string;
 }
+
+export type SimulationPhase = 'idle' | 'briefing' | 'active' | 'scenario' | 'handover' | 'debriefing' | 'completed';
 
 export interface Team {
   id: number;
@@ -48,6 +70,8 @@ export interface Technician {
   id: string;
   name: string;
   assignedStations: string[];
+  assignedStation?: string;
+  role?: string;
   specialty: string;
   nationality: string;
   phone: string;
@@ -99,6 +123,49 @@ export interface Guest {
   notes?: string;
 }
 
+export type ActorPhysicalStatus = 'AMPUTATO' | 'INTERO';
+export type ClothingSize = 'S' | 'M' | 'L' | 'XL';
+export type ActorProgressStatus =
+  | 'STANDBY'
+  | 'IN_PREPARAZIONE'
+  | 'PRONTO_T0'
+  | 'IN_SCENARIO'
+  | 'RESET_SMONTAGGIO';
+
+export interface CourseActor {
+  id: string;
+  slotNumber: number; // 1 to 8
+  badgeCode: string; // e.g. "ATT-01" .. "ATT-08"
+  name: string;
+  physicalStatus: ActorPhysicalStatus; // 'AMPUTATO' | 'INTERO'
+  amputationDetails: string; // e.g. "Amputazione transtibiale DX (moncone reale per protesi arteriosa)" or "Corpo intero - idoneo estrazione tattica e politrauma"
+  clothingSize: ClothingSize; // 'S' | 'M' | 'L' | 'XL'
+  makeupAllergies: string; // e.g. "Nessuna allergia nota" or "Sensibilità mastice alcolico - usare Pros-Aide ad acqua"
+  assignedMakeupArtistId: string; // Default associated makeup artist ID (from Anagrafica Trucco)
+  progressStatus?: ActorProgressStatus; // Current 5-stage progress status
+  progressUpdatedAt?: string; // e.g. "08:42"
+  progressUpdatedBy?: string; // e.g. "TRUC-01 • Silvia Rossi"
+  nationality: string;
+  phone: string;
+  email?: string;
+  organization?: string;
+  notes?: string;
+}
+
+export interface MakeupArtist {
+  id: string;
+  badgeCode: string; // e.g. "TRUC-01" .. "TRUC-08"
+  name: string;
+  role: string; // e.g. "Coordinator & Lead Silicone Moulage", "Specialista Effetti Balistici & Amputazioni"
+  specialty: string;
+  nationality: string;
+  phone: string;
+  email?: string;
+  organization?: string;
+  assignedStation?: string;
+  notes?: string;
+}
+
 export interface SimulatorPatient {
   id: number; // 1 to 24
   day: CourseDay;
@@ -122,6 +189,11 @@ export interface SimulatorPatient {
   simulatori: string; // Manichini / Hardware
   attoriCount: number; // 1 o 2
   attoreDettagli?: string;
+  assignedActorId?: string; // e.g. 'actor-1' (ATT-01 .. ATT-08)
+  assignedMakeupArtistId?: string; // e.g. 'truc-1' (TRUC-01 .. TRUC-08)
+  actorProgressStatus?: ActorProgressStatus; // 5-stage progress status for this scenario
+  actorProgressUpdatedAt?: string;
+  actorProgressUpdatedBy?: string;
   techNotes?: string;
   readinessStatus?: 'ready' | 'critical' | 'preparing';
   criticalityNotes?: string;
@@ -186,10 +258,18 @@ export interface CourseStartSchedule {
   location: string;
   isGatePaused?: boolean;
   pausedRemainingMs?: number;
-  gateMode?: 'start' | 'lunch';
+  gateMode?: 'start' | 'lunch' | 'night' | 'day3';
   lunchTime?: string;
   courseStartSignalTimestamp?: number; // Epoch ms timestamp broadcast when the course is officially started
   isOfficialStartTriggered?: boolean;
+  isStartAuthorizedByRegia?: boolean;
+  authorizedAt?: string;
+  authorizedBy?: string;
+}
+
+export interface ScenarioBlockAuthorizationState {
+  authorizedBlocks: Record<string, boolean>;
+  pendingBlockSlotId?: string;
 }
 
 export interface CourseMessage {
@@ -258,6 +338,54 @@ export interface ProtesiItem {
 }
 
 export type TriageCategory = 'RED' | 'YELLOW' | 'GREEN' | 'BLACK';
+
+export type CriticalLsiType =
+  | 'TOURNIQUET'
+  | 'WOUND_PACKING'
+  | 'NEEDLE_DECOMPRESSION'
+  | 'AIRWAY_MANEUVER'
+  | 'PELVIC_BINDER'
+  | 'HYPOTHERMIA_WRAP';
+
+export interface MascalCasualty {
+  id: string; // 'CAS-01' .. 'CAS-12'
+  codeNumber: number; // 1 to 12
+  title: string;
+  description: string;
+  vitalsSummary: string;
+  breathingRate: string;
+  radialPulse: boolean;
+  mentalState: string;
+  canonicalCategory: TriageCategory;
+  indicatedLsi: CriticalLsiType[];
+  clinicalRationale: string;
+}
+
+export interface MascalTeamCasualtyAssessment {
+  casualtyId: string;
+  assignedCategory?: TriageCategory;
+  isCorrect?: boolean;
+  isUnderTriage?: boolean;
+  isOverTriage?: boolean;
+  performedLsi: CriticalLsiType[];
+  secondsToCategorize?: number;
+  assessedByFacultyId?: string;
+  assessedAtTimestamp?: number;
+  notes?: string;
+}
+
+export interface MascalTeamTriageRecord {
+  teamId: number;
+  assessments: Record<string, MascalTeamCasualtyAssessment>;
+  totalAssessed: number;
+  totalCorrect: number;
+  accuracyPercent: number;
+  underTriageCount: number;
+  overTriageCount: number;
+  averageSecondsPerCasualty: number;
+  totalLsiCompleted: number;
+  lastUpdated: number;
+}
 
 export interface ConnectedPeer {
   id: string;

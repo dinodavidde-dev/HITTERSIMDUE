@@ -30,9 +30,11 @@ import {
   FileText,
   GraduationCap,
 } from 'lucide-react';
-import { GroupType } from '../../types';
+import { GroupType, TimelineSlot } from '../../types';
 import { useCourse } from '../../context/CourseContext';
+import { useCourseAuthorization } from '../../hooks/useCourseAuthorization';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
+import { TimelineSyncNavigator } from '../common/TimelineSyncNavigator';
 import { getGroupPhaseDetails, GroupPhaseEnrichedDetails } from '../../utils/groupPhaseDetails';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 import { RomaSudWeatherTicker } from '../public/RomaSudWeatherTicker';
@@ -46,28 +48,28 @@ const GROUP_META: Record<
 > = {
   A: {
     name: 'ALPHA',
-    range: 'DISC-01 – DISC-15',
+    range: 'DISC-01 – DISC-18',
     squads: [1, 2, 3],
     defaultTcccLoc: 'Ambiente Tattico 1',
     defaultSrLoc: 'Box Shock Room 1',
   },
   B: {
     name: 'BRAVO',
-    range: 'DISC-16 – DISC-30',
+    range: 'DISC-19 – DISC-36',
     squads: [4, 5, 6],
     defaultTcccLoc: 'Ambiente Tattico 2',
     defaultSrLoc: 'Box Shock Room 2',
   },
   C: {
     name: 'CHARLIE',
-    range: 'DISC-31 – DISC-45',
+    range: 'DISC-37 – DISC-54',
     squads: [7, 8, 9],
     defaultTcccLoc: 'Ambiente Tattico 3',
     defaultSrLoc: 'Box Shock Room 3',
   },
   D: {
     name: 'DELTA',
-    range: 'DISC-46 – DISC-60',
+    range: 'DISC-55 – DISC-70',
     squads: [10, 11, 12],
     defaultTcccLoc: 'Ambiente Tattico 2',
     defaultSrLoc: 'Box Shock Room 1',
@@ -160,7 +162,7 @@ const extractHandoverInfo = (slot: any, day: number, isEn: boolean = false): Han
 
   // 2. Canonical specular rotation rules fallback (Section 4 of course specs)
   if (!delivering || !receiving) {
-    if (day === 2) {
+    if (day === 1) {
       if (slotId.includes('b1')) {
         delivering = 'A';
         receiving = 'C';
@@ -246,14 +248,6 @@ const GroupScrollingTicker: React.FC<{
     });
   }
 
-  if (phaseDetails.phaseTypeLabel) {
-    tickerItems.push({
-      icon: '⚡',
-      label: isEn ? 'PHASE' : 'FASE',
-      text: phaseDetails.phaseTypeLabel,
-    });
-  }
-
   if (phaseDetails.operationalDescription) {
     tickerItems.push({
       icon: '📋',
@@ -318,38 +312,23 @@ const GroupScrollingTicker: React.FC<{
 
   return (
     <div
-      className="bg-neutral-950/95 border border-neutral-800 rounded px-2 sm:px-2.5 py-1.5 overflow-hidden relative group/ticker shadow-inner w-full max-w-full"
+      className="bg-neutral-950/95 border border-neutral-800 rounded px-2 sm:px-2.5 py-1.5 overflow-hidden relative group/ticker shadow-inner w-full max-w-full cursor-pointer"
       title={isEn ? 'Scrolling phase details banner (tap to open details sheet)' : 'Banner scorrevole dettagli fase (tocca per aprire la scheda dettagli)'}
+      onClick={onOpenDetails}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <button
-          type="button"
-          onClick={onOpenDetails}
-          className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-orange-950 hover:bg-orange-900 active:bg-orange-800 text-orange-300 border border-orange-700/80 rounded text-[9px] sm:text-[10px] font-mono font-black uppercase transition-colors cursor-pointer min-h-[30px]"
-          title={isEn ? 'Open operational and training details sheet' : 'Apri scheda dettagli operativi e didattici'}
-        >
-          <Radio className="w-2.5 h-2.5 text-orange-500 animate-pulse" />
-          <span>{isEn ? 'PHASE INFO' : 'INFO FASE'}</span>
-          <Info className="w-2.5 h-2.5 text-orange-400" />
-        </button>
-
+      <div className="overflow-hidden whitespace-nowrap w-full relative">
+        {/* Dual marquee block for continuous seamless scroll (slowed down for comfortable reading) */}
         <div
-          onClick={onOpenDetails}
-          className="overflow-hidden whitespace-nowrap flex-1 relative w-full cursor-pointer"
+          className="animate-marquee-slow inline-flex"
+          style={{
+            animationPlayState: isPaused ? 'paused' : undefined,
+            animationDuration: '80s',
+          }}
         >
-          {/* Dual marquee block for continuous seamless scroll (slowed down for comfortable reading) */}
-          <div
-            className="animate-marquee-slow inline-flex"
-            style={{
-              animationPlayState: isPaused ? 'paused' : undefined,
-              animationDuration: '80s',
-            }}
-          >
-            {renderContent()}
-            {renderContent()}
-          </div>
+          {renderContent()}
+          {renderContent()}
         </div>
       </div>
     </div>
@@ -378,6 +357,8 @@ export const PublicTimelineView: React.FC = () => {
     freeAccessEnabled,
     setIsAreaDiscentiModalOpen,
   } = useCourse();
+
+  const { isTimelineInteractionLocked, isGateExpiredAwaitingAuth, isMacroBlockAwaitingAuth } = useCourseAuthorization();
 
   const isEn = language === 'en';
 
@@ -425,6 +406,9 @@ export const PublicTimelineView: React.FC = () => {
 
   const isCurrentUnlocked = true;
 
+  // Stato consultazione slot vs sincronizzazione live Regia
+  const [inspectedSlot, setInspectedSlot] = useState<TimelineSlot | null>(null);
+
   const rawDayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
   const dayMasterSlots = useMemo(() => rawDayMasterSlots.map((s) => translateSlot(s, language)), [rawDayMasterSlots, language]);
   const publicSlots = useMemo(() => dayMasterSlots.filter((s) => !s.id.includes('setup')), [dayMasterSlots]);
@@ -432,11 +416,14 @@ export const PublicTimelineView: React.FC = () => {
   const rawMasterCurrentSlot = INITIAL_TIMELINE_SLOTS[activeSlotIndex] || rawDayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
   const slotIdxInDay = rawDayMasterSlots.findIndex((s) => s.id === rawMasterCurrentSlot?.id);
   const masterCurrentSlot = useMemo(() => translateSlot(rawMasterCurrentSlot, language), [rawMasterCurrentSlot, language]);
-  let currentSlot = publicSlots.find((s) => s.id === masterCurrentSlot?.id);
-  if (!currentSlot && publicSlots.length > 0) {
-    currentSlot = publicSlots[0];
+  let liveCurrentSlot = publicSlots.find((s) => s.id === masterCurrentSlot?.id);
+  if (!liveCurrentSlot && publicSlots.length > 0) {
+    liveCurrentSlot = publicSlots[0];
   }
-  if (!currentSlot) currentSlot = dayMasterSlots[0] || translateSlot(INITIAL_TIMELINE_SLOTS[0], language);
+  if (!liveCurrentSlot) liveCurrentSlot = dayMasterSlots[0] || translateSlot(INITIAL_TIMELINE_SLOTS[0], language);
+
+  const currentSlot = inspectedSlot || liveCurrentSlot;
+  const isLiveSync = inspectedSlot === null || inspectedSlot.id === liveCurrentSlot?.id;
 
   // Handover Info Extraction
   const handoverInfo = useMemo(() => {
@@ -518,8 +505,9 @@ export const PublicTimelineView: React.FC = () => {
     return 'D';
   };
 
-  // Se il Gate è abilitato e il corso non è ancora iniziato (countdown attivo)
-  const isScheduledGateWaiting = courseStartSchedule?.isGateEnabled && !isCourseStarted && timeRemainingMs > 0;
+  // Se il Gate è abilitato o il corso non è ancora iniziato (countdown attivo o standby autorizzazione)
+  const isGateClosed = !isCourseStarted || Boolean(courseStartSchedule?.isGateEnabled && timeRemainingMs > 0);
+  const isScheduledGateWaiting = isGateClosed || Boolean(courseStartSchedule?.isGateEnabled && !isCourseStarted);
   const isDayBefore8 = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 0;
   const isMorningCountdown = (activeDay === 2 || activeDay === 3) && slotIdxInDay === 1;
   const isNightToMorningCountdown = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
@@ -529,20 +517,32 @@ export const PublicTimelineView: React.FC = () => {
 
   const renderCountdownBanner = () => {
     if (isScheduledGateWaiting) {
+      const isExpiredOrAwaiting = timeRemainingMs <= 0 || isGateExpiredAwaitingAuth;
+      const isNightGate = courseStartSchedule?.gateMode === 'night' || courseStartSchedule?.scheduledTime === '20:30';
       return (
-        <div className="bg-neutral-950 border-2 sm:border-3 border-amber-500 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-transparent to-red-500/10 pointer-events-none" />
+        <div className={`bg-neutral-950 border-2 sm:border-3 p-4 sm:p-8 md:p-14 rounded-xl shadow-2xl text-center space-y-4 sm:space-y-6 relative overflow-hidden ${
+          isExpiredOrAwaiting ? 'border-amber-400' : isNightGate ? 'border-red-600' : 'border-amber-500'
+        }`}>
+          <div className={`absolute inset-0 pointer-events-none ${
+            isNightGate ? 'bg-gradient-to-b from-red-600/15 via-transparent to-amber-500/10' : 'bg-gradient-to-b from-amber-500/10 via-transparent to-red-500/10'
+          }`} />
           <div className="relative z-10 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
             {/* Course Name in First Plane / Primo Piano */}
             <div className="space-y-2 sm:space-y-3 pb-2 border-b border-neutral-800">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-600/70 text-red-400 rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm">
+                <div className={`inline-flex items-center gap-2 px-3 py-1 border rounded-full font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-sm ${
+                  isNightGate ? 'bg-red-950 border-red-500 text-red-300' : 'bg-red-950/80 border-red-600/70 text-red-400'
+                }`}>
                   <Activity className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                  <span>{isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM'}</span>
+                  <span>
+                    {isNightGate
+                      ? (isEn ? 'TACTICAL NIGHT SESSION • MASCAL' : 'SESSIONE NOTTURNA TATTICA • MASCAL')
+                      : (isEn ? 'OFFICIAL COURSE • INTUBATI EM' : 'CORSO UFFICIALE • INTUBATI EM')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isNightGate ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`} />
                     <span>DAY 0{activeDay}</span>
                   </span>
                 </div>
@@ -550,49 +550,95 @@ export const PublicTimelineView: React.FC = () => {
               
               <div className="space-y-1">
                 <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-tight leading-tight uppercase filter drop-shadow">
-                  HITTER
+                  {isNightGate ? 'MASCAL NOTTURNO' : 'HITTER'}
                 </h1>
                 <p className="text-xs sm:text-base md:text-xl font-mono font-bold text-amber-300 tracking-wider uppercase">
-                  High Intensive Training Trauma Emergency Response
+                  {isNightGate
+                    ? (isEn ? 'Mass Casualty Incident • Night Operation Phase' : 'Mass Casualty Incident • Operazione Notturna Congiunta')
+                    : 'High Intensive Training Trauma Emergency Response'}
                 </p>
               </div>
             </div>
 
-            {/* Event Phase: Countdown Apertura Gate */}
+            {/* Event Phase: Countdown Apertura Gate / Standby Autorizzazione */}
             <div className="space-y-1">
-              <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                {isEn ? 'ACCESS STATUS: PRE-COURSE' : 'STATO ACCESSO: PRE-CORSO'}
+              <span className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm ${
+                isExpiredOrAwaiting ? 'bg-amber-400 text-black animate-pulse' : 'bg-red-600 text-white animate-pulse'
+              }`}>
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {isExpiredOrAwaiting
+                    ? (isEn ? 'STATUS: GATE OPEN • OPERATIONAL STANDBY' : 'STATO: GATE APERTO • STANDBY OPERATIVO')
+                    : (isEn ? `GATE STATUS: CLOSED • OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `STATO GATE: CHIUSO • APERTURA ORE ${courseStartSchedule?.scheduledTime || '08:30'}`)}
+                </span>
               </span>
-              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                {isEn ? 'GATE OPENING COUNTDOWN' : 'COUNTDOWN APERTURA GATE'}
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1 flex items-center justify-center gap-2">
+                <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400 shrink-0" />
+                <span>
+                  {isExpiredOrAwaiting
+                    ? (isEn ? 'AWAITING REGIA START AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE REGIA')
+                    : (isEn ? `GATE OPENING COUNTDOWN (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN APERTURA GATE (ORE ${courseStartSchedule?.scheduledTime || '08:30'})`)}
+                </span>
               </h2>
             </div>
 
-            <div className="bg-amber-950/80 border-2 border-amber-500 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
+            <div className={`p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto border-2 ${
+              isExpiredOrAwaiting ? 'bg-amber-950/90 border-amber-400' : 'bg-amber-950/80 border-amber-500 animate-pulse'
+            }`}>
               <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 uppercase tracking-widest block mb-1.5 flex items-center justify-center gap-1.5">
                 <Lock className="w-4 h-4 text-amber-400" />
-                <span>{isEn ? 'OFFICIAL CONTROL ROOM NOTICE • SCHEDULED OPENING' : 'AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA'}</span>
+                <span>
+                  {isExpiredOrAwaiting
+                    ? (isEn ? 'OFFICIAL STATUS • GATE OPEN • AWAITING REGIA START' : 'AVVISO UFFICIALE REGIA • GATE RAGGIUNTO')
+                    : (isEn ? 'OFFICIAL CONTROL ROOM NOTICE • SCHEDULED OPENING' : 'AVVISO UFFICIALE REGIA • APERTURA PROGRAMMATA')}
+                </span>
               </span>
               <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
-                {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ORE ${courseStartSchedule?.scheduledTime || '08:30'}`}
+                {isExpiredOrAwaiting
+                  ? (isEn ? 'GATE IS OPEN • TIMELINE HELD BY CONTROL ROOM' : 'GATE APERTO • TIMELINE IN STANDBY REGIA')
+                  : (isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ORE ${courseStartSchedule?.scheduledTime || '08:30'}`)}
               </p>
               <p className="text-[11px] sm:text-xs font-mono text-amber-200 mt-1.5">
-                {isEn ? `Scheduled date: ${courseStartSchedule?.scheduledDate || ''} • Access reserved for assigned teams` : `Data prevista: ${courseStartSchedule?.scheduledDate || ''} • Accesso riservato ai team assegnati`}
+                {isExpiredOrAwaiting
+                  ? (isEn ? 'Countdown reached 00:00:00. The Control Room is authorizing the official launch of the course.' : 'Countdown terminato a 00:00:00. La Regia Operativa sta autorizzando l\'avvio ufficiale del corso.')
+                  : (isEn ? `Scheduled date: ${courseStartSchedule?.scheduledDate || ''} • Access reserved for assigned teams` : `Data prevista: ${courseStartSchedule?.scheduledDate || ''} • Accesso riservato ai team assegnati`)}
               </p>
             </div>
 
-            <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
-              <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1">
-                {isEn ? 'TIME REMAINING UNTIL GATE OPENING' : "TEMPO RIMANENTE ALL'APERTURA DEL GATE"}
-              </span>
-              <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
-                {formatGateCountdown(timeRemainingMs)}
+            {!isExpiredOrAwaiting ? (
+              <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1 flex items-center justify-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isEn ? `COUNTDOWN TO GATE OPENING (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN ALL'APERTURA DEL GATE (ORE ${courseStartSchedule?.scheduledTime || '08:30'})`}</span>
+                </span>
+                <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
+                  {formatGateCountdown(timeRemainingMs > 0 ? timeRemainingMs : timerSeconds * 1000)}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="py-4 sm:py-6 px-4 sm:px-8 bg-amber-950/95 border-2 border-amber-400 rounded-xl shadow-2xl inline-block my-1 sm:my-2 w-full max-w-xl mx-auto animate-pulse">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-black font-mono text-xs font-black uppercase tracking-widest rounded shadow">
+                    <Lock className="w-4 h-4 text-black" />
+                    <span>READY TO AUTHORIZE</span>
+                  </span>
+                  <div className="text-xl sm:text-2xl font-black text-amber-300 uppercase tracking-wider text-center">
+                    {isEn ? '⚠️ AWAITING REGIA START AUTHORIZATION' : '⚠️ IN ATTESA DI AUTORIZZAZIONE DALLA REGIA'}
+                  </div>
+                  <p className="text-xs sm:text-sm font-mono text-amber-100 max-w-md text-center">
+                    {isEn
+                      ? 'Countdown reached 00:00:00. Control Room holds the master timeline and will authorize course launch.'
+                      : 'Countdown completato a 00:00:00. La Regia detiene la timeline centrale e autorizzerà a breve la partenza del corso.'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="pt-1 sm:pt-2 space-y-2">
               <p className="text-base sm:text-xl md:text-2xl font-black text-amber-300 uppercase tracking-wider italic">
-                {isEn ? '"Verify individual equipment, contact Faculty and align Teams."' : '"Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."'}
+                {isExpiredOrAwaiting
+                  ? (isEn ? '"Gate open. Await the official launch signal from Control Room before starting activities."' : '"Gate aperto. Attendere il segnale di avvio ufficiale della Regia prima di iniziare le attività."')
+                  : (isEn ? '"Verify individual equipment, contact Faculty and align Teams."' : '"Verifica dotazioni individuali, contatto con Faculty e allineamento Squadre."')}
               </p>
               <p className="text-[11px] sm:text-xs text-neutral-400 font-mono">
                 {isEn ? 'Centralized time synchronization from Control Room • Full course timeline & rotations available below' : 'Sincronizzazione oraria centralizzata dalla Regia Operativa • Cronoprogramma completo e rotazioni consultabili sotto'}
@@ -634,21 +680,35 @@ export const PublicTimelineView: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <span className="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 bg-orange-600 text-black font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm">
-                {isEn ? 'OPERATIONAL STATUS: PRE-OPENING' : 'STATO OPERATIVO: PRE-APERTURA'}
+              <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 bg-red-600 text-white font-black text-[10px] sm:text-xs uppercase tracking-widest rounded shadow-sm animate-pulse">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>{isEn ? `GATE STATUS: CLOSED • OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `STATO GATE: CHIUSO • APERTURA ORE ${courseStartSchedule?.scheduledTime || '08:30'}`}</span>
               </span>
-              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1">
-                {isEn ? 'AWAITING COURSE OPENING' : 'ATTESA APERTURA CORSO'}
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight pt-1 flex items-center justify-center gap-2">
+                <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400 shrink-0" />
+                <span>{isEn ? `GATE OPENING COUNTDOWN (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN APERTURA GATE (ORE ${courseStartSchedule?.scheduledTime || '08:30'})`}</span>
               </h2>
             </div>
 
             <div className="bg-red-950/80 border-2 border-red-600 p-4 sm:p-6 rounded-lg shadow-lg max-w-xl mx-auto animate-pulse">
-              <span className="text-[10px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-1.5">
-                {isEn ? `OFFICIAL CONTROL ROOM NOTICE • DAY 0${activeDay}` : `AVVISO UFFICIALE REGIA • DAY 0${activeDay}`}
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-widest block mb-1.5 flex items-center justify-center gap-1.5">
+                <Lock className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{isEn ? `OFFICIAL CONTROL ROOM NOTICE • DAY 0${activeDay}` : `AVVISO UFFICIALE REGIA • DAY 0${activeDay}`}</span>
               </span>
               <p className="text-base sm:text-2xl font-black text-white uppercase tracking-wide leading-snug">
                 {isEn ? `LEARNER GATE OPENS AT ${courseStartSchedule?.scheduledTime || '08:30'}` : `IL GATE DISCENTI APRE ALLE ${courseStartSchedule?.scheduledTime || '08:30'}`}
               </p>
+            </div>
+
+            {/* COUNTDOWN BOX FOR isDayBefore8 */}
+            <div className="py-4 sm:py-6 px-4 sm:px-8 bg-neutral-900/95 border-2 border-amber-500/80 rounded-xl shadow-inner inline-block my-1 sm:my-2 w-full max-w-md mx-auto">
+              <span className="text-[10px] sm:text-xs font-mono text-neutral-400 uppercase tracking-widest block mb-1 flex items-center justify-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>{isEn ? `COUNTDOWN TO GATE OPENING (${courseStartSchedule?.scheduledTime || '08:30'})` : `COUNTDOWN ALL'APERTURA DEL GATE (ORE ${courseStartSchedule?.scheduledTime || '08:30'})`}</span>
+              </span>
+              <div className="text-3xl sm:text-5xl md:text-6xl font-mono font-black text-amber-400 animate-pulse tracking-wider break-words">
+                {formatGateCountdown(timeRemainingMs > 0 ? timeRemainingMs : timerSeconds * 1000)}
+              </div>
             </div>
 
             <div className="pt-1 sm:pt-2 space-y-2">
@@ -759,102 +819,26 @@ export const PublicTimelineView: React.FC = () => {
         />
       )}
 
-      {/* Quando il countdown è attivo: mostra solo countdown, meteo e info essenziali; nascondi lo schema orario */}
-      {isCountdownActive ? (
-        <div className="bg-neutral-900 border-2 border-amber-500/80 p-4 sm:p-6 rounded-xl shadow-2xl space-y-5 animate-fadeIn font-mono">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-              <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
-                {isEn ? 'ESSENTIAL COURSE INFORMATION • HITTER INTUBATI EM' : 'INFO ESSENZIALI & ASSETTO CORSO • HITTER INTUBATI EM'}
-              </h3>
-            </div>
-            <span className="px-2.5 py-0.5 bg-neutral-950 border border-neutral-800 text-amber-400 text-xs font-bold rounded">
-              {isEn ? 'PHASE SCHEDULE LOCKED DURING COUNTDOWN' : 'SCHEMA ORARIO FASE BLOCCATO DURANTE IL COUNTDOWN'}
-            </span>
-          </div>
+      {/* 2. Main Public Operational Timeline & Groups Board */}
+      <div className="space-y-4">
+          {/* Sincronizzazione automatica con timeline di Regia e navigatore consultazione slot */}
+          <TimelineSyncNavigator
+            currentSlot={currentSlot}
+            masterCurrentSlot={liveCurrentSlot}
+            isLiveSync={isLiveSync}
+            onSelectSlot={(slot) => setInspectedSlot(slot)}
+            onSyncToLive={() => setInspectedSlot(null)}
+            roleLabel={isEn ? 'Guest / Public' : 'Ospiti / Tabellone'}
+            stationContext={isEn ? 'Quad-Track Wall Display • 4 Groups Synced' : 'Monitor Aula Quad-Track • 4 Gruppi Sincronizzati'}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
-            {/* Box 1: Discenti & Gruppi */}
-            <div className="bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 text-cyan-400 font-bold uppercase text-[11px]">
-                <Users className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                <span>{isEn ? '60 Trainees (4 Groups)' : '60 Discenti (4 Gruppi)'}</span>
-              </div>
-              <ul className="space-y-1 text-neutral-300 text-[11px] font-sans">
-                <li><strong className="font-mono text-cyan-300">ALPHA:</strong> DISC-01 – DISC-15 (Sq. 1, 2, 3)</li>
-                <li><strong className="font-mono text-amber-300">BRAVO:</strong> DISC-16 – DISC-30 (Sq. 4, 5, 6)</li>
-                <li><strong className="font-mono text-emerald-300">CHARLIE:</strong> DISC-31 – DISC-45 (Sq. 7, 8, 9)</li>
-                <li><strong className="font-mono text-purple-300">DELTA:</strong> DISC-46 – DISC-60 (Sq. 10, 11, 12)</li>
-              </ul>
-              <p className="text-[10px] text-neutral-400 pt-1 border-t border-neutral-850">
-                {isEn ? '12 Teams of 5 (1 Team Leader + 4 Operators)' : '12 Squadre da 5 (1 Team Leader + 4 Operatori)'}
-              </p>
-            </div>
-
-            {/* Box 2: Faculty & Tech */}
-            <div className="bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-bold uppercase text-[11px]">
-                <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <span>{isEn ? 'Faculty & Tech Team' : 'Faculty & Team Tecnico'}</span>
-              </div>
-              <p className="text-neutral-300 text-[11px] font-sans leading-relaxed">
-                <strong>12 Tutor Faculty (FAC-01 – FAC-12):</strong> Rapporto 1:1 costante per squadra e paziente dedicato per l&apos;intero blocco clinico.
-              </p>
-              <p className="text-neutral-300 text-[11px] font-sans leading-relaxed">
-                <strong>12 Tecnici (TECH-01 – TECH-12):</strong> Presidio simulatori avanzati, regia A/V e turnaround rapido dei consumabili.
-              </p>
-            </div>
-
-            {/* Box 3: Postazioni Addestrative */}
-            <div className="bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 text-red-400 font-bold uppercase text-[11px]">
-                <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <span>{isEn ? '4 Training Settings' : '4 Setting Addestrativi'}</span>
-              </div>
-              <ul className="space-y-1 text-neutral-300 text-[11px] font-sans">
-                <li><strong>TCCC:</strong> 3 Ambienti Tattici (Stop the Bleed & barellamento)</li>
-                <li><strong>Shock Room:</strong> 3 Box Ospedale da Campo (ABCDE, Eco-FAST)</li>
-                <li><strong>WS1:</strong> Vie Aeree Difficili & Cricotiroidotomia</li>
-                <li><strong>WS2:</strong> Ecografia Clinica Avanzata & Accessi Vascolari</li>
-              </ul>
-            </div>
-
-            {/* Box 4: Regola Oraria Cardine */}
-            <div className="bg-neutral-950/80 border border-amber-600/50 p-3.5 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 text-amber-300 font-bold uppercase text-[11px]">
-                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <span>{isEn ? 'Timing Rules & Handover' : 'Regole Temporali & Handover'}</span>
-              </div>
-              <p className="text-neutral-300 text-[11px] font-sans leading-relaxed">
-                Blocchi da <strong>90 minuti</strong> suddivisi in slot rigidi da 15 minuti.
-              </p>
-              <div className="bg-red-950/70 border border-red-600/60 p-2 rounded text-[11px] text-red-200">
-                <strong>Tassativo Ore :30:</strong> HANDOVER 1:1 barellato TCCC ➔ Shock Room con report strutturato SBAR (:30–:35).
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-neutral-950 border border-neutral-800 p-3 rounded-lg flex items-center justify-between gap-3 text-xs text-neutral-400">
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span>
-                {isEn
-                  ? 'The dynamic phase schedule and detailed rotation boards will automatically unlock once the countdown reaches zero or when officially started.'
-                  : 'Lo schema orario dinamico della fase e le postazioni operative si sbloccheranno automaticamente al termine del countdown o con avvio ufficiale dalla Regia.'}
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* 2. Main Public Operational Timeline & Groups Board (Visibile quando il countdown NON è attivo) */
-        <div className="bg-neutral-900 border-2 border-orange-500/80 p-3.5 sm:p-5 shadow-2xl space-y-4">
+          <div className="bg-neutral-900 border-2 border-orange-500/80 p-3.5 sm:p-5 shadow-2xl space-y-4">
             {/* Slot Time & Title Header */}
             <div className="border-b border-neutral-800 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-red-950 border border-red-600/70 text-red-300 font-mono text-[10px] font-black uppercase tracking-wider rounded">
-                    HITTER • INTUBATI EM
+                  <span className="px-2 py-0.5 bg-neutral-950 border border-orange-500/60 text-orange-400 font-mono text-[10px] font-black uppercase tracking-wider rounded">
+                    DAY 0{activeDay}
                   </span>
                   <span className="text-xs font-mono font-bold text-orange-400 uppercase tracking-widest">
                     {isEn ? 'PHASE TIME:' : 'ORARIO FASE:'} {currentSlot?.timeRange || '08:30 - 08:45'}
@@ -866,17 +850,47 @@ export const PublicTimelineView: React.FC = () => {
                 </h2>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
+                {!isCourseStarted && (
+                  <span className="px-3 py-1 bg-red-950/90 border-2 border-red-500 text-red-200 font-mono text-xs font-black uppercase rounded-lg flex items-center gap-2 shadow-lg animate-pulse">
+                    <Lock className="w-4 h-4 text-red-400 shrink-0" />
+                    <span className="text-red-400 font-black">{isEn ? 'GATE CLOSED' : 'GATE CHIUSO'}</span>
+                    <span className="text-neutral-500 font-bold">|</span>
+                    <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="text-amber-300 font-mono font-black tabular-nums">
+                      {formatGateCountdown(timeRemainingMs > 0 ? timeRemainingMs : timerSeconds * 1000)}
+                    </span>
+                  </span>
+                )}
+                {(!isCourseStarted || isTimelineInteractionLocked) && (
+                  <span className="px-2.5 py-1 bg-amber-950/90 border border-amber-500 text-amber-300 font-mono text-[11px] font-black uppercase rounded flex items-center gap-1.5 shadow-sm animate-pulse">
+                    <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>{isEn ? 'WAITING FOR AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE'}</span>
+                    <span className="text-[9px] px-1 py-0.2 bg-amber-900/60 text-amber-200 rounded font-normal">
+                      {isEn ? 'READ-ONLY' : 'SOLA LETTURA'}
+                    </span>
+                  </span>
+                )}
                 {handoverInfo?.isHandover && (
                   <span className="px-3 py-1 bg-red-600 text-white font-black text-xs uppercase tracking-wider rounded flex items-center gap-1.5 animate-pulse shadow">
                     <AlertTriangle className="w-3.5 h-3.5" /> HANDOVER LIVE (:30-:35)
                   </span>
                 )}
-                <div className="px-3 py-1 bg-neutral-950 border border-neutral-800 text-xs font-mono text-neutral-300 flex items-center gap-2">
-                  <span>{isEn ? 'Master Phase:' : 'Fase Master:'}</span>
-                  <span className="font-black text-orange-400 uppercase">DAY 0{activeDay}</span>
-                </div>
               </div>
             </div>
+
+            {isMacroBlockAwaitingAuth && (
+              <div className="p-3 bg-red-950/90 border-2 border-red-500 text-red-200 rounded-lg flex items-center justify-between gap-3 font-mono text-xs shadow-md">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-red-400 shrink-0 animate-pulse" />
+                  <span className="font-bold uppercase">
+                    {isEn ? 'SCENARIO MACRO-BLOCK IN STANDBY: Awaiting Control Room confirmation to begin rotation.' : 'BLOCCO SCENARIO IN STANDBY: In attesa di autorizzazione di avvio dalla Regia.'}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 bg-red-900 text-white text-[10px] uppercase font-black rounded shrink-0">
+                  {isEn ? 'READ-ONLY STANDBY' : 'STANDBY SOLA LETTURA'}
+                </span>
+              </div>
+            )}
 
             {/* ========================================================================= */}
             {/* TOOLBAR DI NAVIGAZIONE E RICERCA OTTIMIZZATA PER SMARTPHONE               */}
@@ -992,11 +1006,11 @@ export const PublicTimelineView: React.FC = () => {
                           const discGrp = getDiscenteGroup(disc.teamId);
                           const discAct = currentSlot?.groupActivities?.[discGrp];
                           const facMatch = safeFaculty.find((f) => f && f.assignedTeamId === disc.teamId) || safeFaculty[disc.teamId - 1];
-                          const isLeader = disc.role?.toLowerCase().includes('leader') || disc.id.endsWith('01') || disc.id.endsWith('06') || disc.id.endsWith('11');
+                          const isLeader = (disc?.role || '').toLowerCase().includes('leader') || (disc?.id || '').endsWith('01') || (disc?.id || '').endsWith('06') || (disc?.id || '').endsWith('11');
 
                           return (
                             <div
-                              key={disc.id}
+                              key={disc?.id || Math.random()}
                               className="bg-neutral-950 border border-neutral-700 p-2 sm:p-2.5 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                             >
                               <div className="space-y-0.5">
@@ -1249,14 +1263,18 @@ export const PublicTimelineView: React.FC = () => {
                         <span>{isEn ? 'Teams' : 'Squadre'} {squadNumbers[0]}-{squadNumbers[2]}</span>
                       </div>
 
-                      {/* Core Activity Title & Subtitle */}
+                      {/* Core Activity Title, Subtitle (if distinct) & Location */}
                       <div className="space-y-1 sm:space-y-1.5">
                         <h3 className="text-white font-black text-sm sm:text-base md:text-lg tracking-tight leading-snug line-clamp-2">
                           {act.title}
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-neutral-300 font-medium leading-relaxed line-clamp-2">
-                          {act.subtitle}
-                        </p>
+                        {act.subtitle &&
+                          act.subtitle.toLowerCase() !== act.title.toLowerCase() &&
+                          act.subtitle.toLowerCase() !== act.location.toLowerCase() && (
+                            <p className="text-[11px] sm:text-xs text-neutral-300 font-medium leading-relaxed line-clamp-2">
+                              {act.subtitle}
+                            </p>
+                          )}
                         <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[10px] sm:text-[11px] text-orange-400 font-bold max-w-full">
                           <MapPin className="w-3 h-3 text-orange-500 flex-shrink-0" />
                           <span className="truncate">{act.location}</span>
@@ -1554,7 +1572,7 @@ export const PublicTimelineView: React.FC = () => {
               )}
             </div>
           </div>
-        )}
+        </div>
 
       {/* ========================================================================= */}
       {/* MODALE SCHEDA OPERATIVA DETTAGLIATA (OTTIMIZZATA PER SMARTPHONE & DESKTOP) */}
@@ -1673,9 +1691,9 @@ export const PublicTimelineView: React.FC = () => {
                     const facMatch = safeFaculty.find((f) => f && f.assignedTeamId === sqNum) || safeFaculty[sqNum - 1];
                     const squadMembers = groupDiscenti.filter((d) => d.teamId === sqNum);
                     const teamLeader = squadMembers.find(
-                      (d) => d.role?.toLowerCase().includes('leader') || d.id.endsWith('01') || d.id.endsWith('06') || d.id.endsWith('11')
+                      (d) => (d?.role || '').toLowerCase().includes('leader') || (d?.id || '').endsWith('01') || (d?.id || '').endsWith('06') || (d?.id || '').endsWith('11')
                     ) || squadMembers[0];
-                    const operators = squadMembers.filter((d) => d.id !== teamLeader?.id);
+                    const operators = squadMembers.filter((d) => (d?.id || '') !== (teamLeader?.id || ''));
 
                     return (
                       <div

@@ -1,279 +1,581 @@
-import { ProtesiItem } from '../types';
+import { ProtesiItem, CourseDay } from '../types';
+
+export interface OperationalBlockMeta {
+  blockNumber: 1 | 2 | 3 | 4;
+  day: CourseDay;
+  period: 'mattina' | 'pomeriggio';
+  blockLabelIt: string;
+  blockLabelEn: string;
+  blockTimeRange: string;
+  truccoPrepWindow: string;
+  preAlertTcccWindow: string;
+  tcccWindow: string;
+  preAlertSrWindow: string;
+  handoverTime: string;
+  srWindow: string;
+  debriefResetWindow: string;
+  tcccGroup: 'A' | 'B' | 'C' | 'D';
+  srGroup: 'A' | 'B' | 'C' | 'D';
+  ws1Group: 'A' | 'B' | 'C' | 'D';
+  ws2Group: 'A' | 'B' | 'C' | 'D';
+  patientIds: [number, number, number];
+}
+
+const DAY_1_OPERATIONAL_BLOCKS: OperationalBlockMeta[] = [
+  {
+    blockNumber: 1,
+    day: 1,
+    period: 'mattina',
+    blockLabelIt: 'BLOCCO 1 • MATTINA (09:00 – 10:35)',
+    blockLabelEn: 'BLOCK 1 • MORNING (09:00 – 10:35)',
+    blockTimeRange: '09:00 - 10:35',
+    truccoPrepWindow: '08:15 - 09:00',
+    preAlertTcccWindow: '08:45 - 09:00',
+    tcccWindow: '09:00 - 09:30',
+    preAlertSrWindow: '09:15 - 09:30',
+    handoverTime: '09:30 - 09:35',
+    srWindow: '09:35 - 10:05',
+    debriefResetWindow: '10:05 - 10:35',
+    tcccGroup: 'A',
+    srGroup: 'C',
+    ws1Group: 'B',
+    ws2Group: 'D',
+    patientIds: [1, 2, 3],
+  },
+  {
+    blockNumber: 2,
+    day: 1,
+    period: 'mattina',
+    blockLabelIt: 'BLOCCO 2 • MATTINA (11:05 – 12:40)',
+    blockLabelEn: 'BLOCK 2 • MORNING (11:05 – 12:40)',
+    blockTimeRange: '11:05 - 12:40',
+    truccoPrepWindow: '10:20 - 11:05',
+    preAlertTcccWindow: '10:50 - 11:05',
+    tcccWindow: '11:05 - 11:35',
+    preAlertSrWindow: '11:20 - 11:35',
+    handoverTime: '11:35 - 11:40',
+    srWindow: '11:40 - 12:10',
+    debriefResetWindow: '12:10 - 12:40',
+    tcccGroup: 'D',
+    srGroup: 'B',
+    ws1Group: 'C',
+    ws2Group: 'A',
+    patientIds: [4, 5, 6],
+  },
+  {
+    blockNumber: 3,
+    day: 1,
+    period: 'pomeriggio',
+    blockLabelIt: 'BLOCCO 3 • POMERIGGIO (14:10 – 15:45)',
+    blockLabelEn: 'BLOCK 3 • AFTERNOON (14:10 – 15:45)',
+    blockTimeRange: '14:10 - 15:45',
+    truccoPrepWindow: '13:25 - 14:10',
+    preAlertTcccWindow: '13:55 - 14:10',
+    tcccWindow: '14:10 - 14:40',
+    preAlertSrWindow: '14:25 - 14:40',
+    handoverTime: '14:40 - 14:45',
+    srWindow: '14:45 - 15:15',
+    debriefResetWindow: '15:15 - 15:45',
+    tcccGroup: 'B',
+    srGroup: 'D',
+    ws1Group: 'A',
+    ws2Group: 'C',
+    patientIds: [7, 8, 9],
+  },
+  {
+    blockNumber: 4,
+    day: 1,
+    period: 'pomeriggio',
+    blockLabelIt: 'BLOCCO 4 • POMERIGGIO (16:10 – 17:45)',
+    blockLabelEn: 'BLOCK 4 • AFTERNOON (16:10 – 17:45)',
+    blockTimeRange: '16:10 - 17:45',
+    truccoPrepWindow: '15:25 - 16:10',
+    preAlertTcccWindow: '15:55 - 16:10',
+    tcccWindow: '16:10 - 16:40',
+    preAlertSrWindow: '16:25 - 16:40',
+    handoverTime: '16:40 - 16:45',
+    srWindow: '16:45 - 17:15',
+    debriefResetWindow: '17:15 - 17:45',
+    tcccGroup: 'C',
+    srGroup: 'A',
+    ws1Group: 'D',
+    ws2Group: 'B',
+    patientIds: [10, 11, 12],
+  },
+];
+
+const DAY_2_OPERATIONAL_BLOCKS: OperationalBlockMeta[] = [
+  {
+    blockNumber: 1,
+    day: 2,
+    period: 'mattina',
+    blockLabelIt: 'BLOCCO 1 • MATTINA (09:00 – 10:35)',
+    blockLabelEn: 'BLOCK 1 • MORNING (09:00 – 10:35)',
+    blockTimeRange: '09:00 - 10:35',
+    truccoPrepWindow: '08:15 - 09:00',
+    preAlertTcccWindow: '08:45 - 09:00',
+    tcccWindow: '09:00 - 09:30',
+    preAlertSrWindow: '09:15 - 09:30',
+    handoverTime: '09:30 - 09:35',
+    srWindow: '09:35 - 10:05',
+    debriefResetWindow: '10:05 - 10:35',
+    tcccGroup: 'B',
+    srGroup: 'D',
+    ws1Group: 'C',
+    ws2Group: 'A',
+    patientIds: [13, 14, 15],
+  },
+  {
+    blockNumber: 2,
+    day: 2,
+    period: 'mattina',
+    blockLabelIt: 'BLOCCO 2 • MATTINA (11:05 – 12:40)',
+    blockLabelEn: 'BLOCK 2 • MORNING (11:05 – 12:40)',
+    blockTimeRange: '11:05 - 12:40',
+    truccoPrepWindow: '10:20 - 11:05',
+    preAlertTcccWindow: '10:50 - 11:05',
+    tcccWindow: '11:05 - 11:35',
+    preAlertSrWindow: '11:20 - 11:35',
+    handoverTime: '11:35 - 11:40',
+    srWindow: '11:40 - 12:10',
+    debriefResetWindow: '12:10 - 12:40',
+    tcccGroup: 'C',
+    srGroup: 'A',
+    ws1Group: 'B',
+    ws2Group: 'D',
+    patientIds: [16, 17, 18],
+  },
+  {
+    blockNumber: 3,
+    day: 2,
+    period: 'pomeriggio',
+    blockLabelIt: 'BLOCCO 3 • POMERIGGIO (14:10 – 15:45)',
+    blockLabelEn: 'BLOCK 3 • AFTERNOON (14:10 – 15:45)',
+    blockTimeRange: '14:10 - 15:45',
+    truccoPrepWindow: '13:25 - 14:10',
+    preAlertTcccWindow: '13:55 - 14:10',
+    tcccWindow: '14:10 - 14:40',
+    preAlertSrWindow: '14:25 - 14:40',
+    handoverTime: '14:40 - 14:45',
+    srWindow: '14:45 - 15:15',
+    debriefResetWindow: '15:15 - 15:45',
+    tcccGroup: 'A',
+    srGroup: 'C',
+    ws1Group: 'D',
+    ws2Group: 'B',
+    patientIds: [19, 20, 21],
+  },
+  {
+    blockNumber: 4,
+    day: 2,
+    period: 'pomeriggio',
+    blockLabelIt: 'BLOCCO 4 • POMERIGGIO (16:10 – 17:45)',
+    blockLabelEn: 'BLOCK 4 • AFTERNOON (16:10 – 17:45)',
+    blockTimeRange: '16:10 - 17:45',
+    truccoPrepWindow: '15:25 - 16:10',
+    preAlertTcccWindow: '15:55 - 16:10',
+    tcccWindow: '16:10 - 16:40',
+    preAlertSrWindow: '16:25 - 16:40',
+    handoverTime: '16:40 - 16:45',
+    srWindow: '16:45 - 17:15',
+    debriefResetWindow: '17:15 - 17:45',
+    tcccGroup: 'D',
+    srGroup: 'B',
+    ws1Group: 'A',
+    ws2Group: 'C',
+    patientIds: [22, 23, 24],
+  },
+];
+
+export const OPERATIONAL_BLOCKS_BY_DAY: Record<CourseDay, OperationalBlockMeta[]> = {
+  1: DAY_1_OPERATIONAL_BLOCKS,
+  2: DAY_2_OPERATIONAL_BLOCKS,
+  3: DAY_2_OPERATIONAL_BLOCKS,
+};
+
+export function getBlockForPatientId(patientId: number): OperationalBlockMeta {
+  const day: CourseDay = patientId <= 12 ? 1 : 2;
+  const blocks = OPERATIONAL_BLOCKS_BY_DAY[day] || OPERATIONAL_BLOCKS_BY_DAY[1];
+  return (
+    blocks.find((b) => b.patientIds.includes(patientId)) || blocks[0]
+  );
+}
+
+export function getStationIndexForPatientId(patientId: number): 1 | 2 | 3 {
+  const mod = ((patientId - 1) % 3) + 1;
+  return mod as 1 | 2 | 3;
+}
 
 export const PROTESI_CATALOG: ProtesiItem[] = [
   {
-    id: 'prot-crico',
-    code: 'PR-CRIC-01',
-    name: 'Protesi Cricotirotomia Chirurgica (CRICO Sanguina ed Espande)',
+    id: 'prot-crico-exp',
+    code: 'PRO-01 • CRIC-EXP',
+    name: 'Protesi Cervicale Cricotirotomia "Sanguina ed Espande"',
     district: 'VIE_AEREE',
-    description: 'Protesi laringea morbida a doppio strato con membrana cricotiroidea palpabile, micro-camera di espansione per simulazione ematoma compressivo e canale fluidico per sanguinamento pulsatile venoso/arterioso.',
+    description:
+      'Collare protesico laringo-tracheale multistrato con camera vascolare pressurizzata che simula un ematoma cervicale in espansione progressiva e sanguinamento attivo all\'incisione.',
     activeFeatures: [
-      'Espansione pneumatica ematoma cervicale',
-      'Sanguinamento attivo regolabile con siringa remota',
-      'Membrana cricotiroidea incidibile e sostituibile',
-      'Trachea cannulabile con tubo endotracheale 6.0'
+      'Camera di espansione ematoma cervicale',
+      'Membrana cricotiroidea sostituibile post-incisione',
+      'Linea di sanguinamento venoso/arterioso a comando',
+      ' Struttura cartilaginea palpabile per repere anatomico',
     ],
     scenariosUsed: [
-      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 4, scenarioCode: 'Scenario 6 (TCCC) - Replica', day: 2, period: 'mattina', teamExtra: 7, teamIntra: 10 },
-      { patientId: 9, scenarioCode: 'Scenario 3 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 6, teamIntra: 3 },
-      { patientId: 12, scenarioCode: 'Scenario 3 (TCCC) - Replica', day: 2, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 },
-      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 3, teamIntra: 6 },
-      { patientId: 18, scenarioCode: 'Scenario 15 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 12 },
-      { patientId: 19, scenarioCode: 'Scenario 7 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 4, teamIntra: 1 },
-      { patientId: 22, scenarioCode: 'Scenario 7 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 10, teamIntra: 7 }
+      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 7 },
+      { patientId: 4, scenarioCode: 'Scenario 6 - Replica', day: 2, period: 'mattina', teamExtra: 10, teamIntra: 4 },
+      { patientId: 9, scenarioCode: 'Scenario 3 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 6, teamIntra: 12 },
+      { patientId: 12, scenarioCode: 'Scenario 3 - Replica', day: 2, period: 'pomeriggio', teamExtra: 9, teamIntra: 3 },
+      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 6, teamIntra: 12 },
+      { patientId: 18, scenarioCode: 'Scenario 15 - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 3 },
+      { patientId: 19, scenarioCode: 'Scenario 7 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 1, teamIntra: 7 },
+      { patientId: 22, scenarioCode: 'Scenario 7 - Replica', day: 3, period: 'pomeriggio', teamExtra: 10, teamIntra: 4 },
     ],
     requiredProcedures: [
-      'Cricotirotomia chirurgica (CRIC)',
-      'Incisione verticale/orizzontale membrana',
-      'Inserimento uncino tracheale e cannula cuffiata'
+      'Cricotirotomia chirurgica d\'urgenza (Tecnica Scalpel-Bougie-Tube)',
+      'Aspirazione massiva delle vie aeree',
+      'Conferma capnografica e fissaggio cannula',
     ],
-    techRequirements: 'Ricarica sacca sangue venoso 500ml prima di ogni turno; verificare 3 membrane ricambio pronte per postazione.',
-    leadTechnician: 'Silvia Rossi (Lead Moulage)',
-    consumables: ['Membrana in silicone di ricambio', 'Cannula tracheostomica N.6', 'Bisturi lama 10/11', 'Sangue sintetico venoso']
+    techRequirements:
+      'Verificare tenuta raccordo idraulico prima dell\'inizio blocco; sostituire strato cute siliconica e membrana cricotiroidea ad ogni reset (15 min).',
+    leadTechnician: 'Silvia Rossi (TECH-01)',
+    consumables: ['Pelle cervicale in silicone (x8)', 'Membrane cricotiroidee (x10)', 'Cannule tracheo 6.0 cuffiate (x8)', 'Sangue artificiale 500ml'],
   },
   {
-    id: 'prot-gsw-schiena-torace',
-    code: 'PR-GSW-02',
-    name: 'Protesi Ferita da Arma da Fuoco Torace/Schiena con Pompa Sanguinante',
-    district: 'TORACE_CUORE',
-    description: 'Protesi toracica e dorsale a contatto epidermico con foro di entrata/uscita ad alta fedeltà, collegata a micro-pompa sommersa per getto pulsatile e camera pneumatica per bolle ematiche (pneumotorace aspirante).',
-    activeFeatures: [
-      'Foro di entrata/uscita passante trans-toracico',
-      'Pompa sangue pulsatile a comando remoto',
-      'Emissione di bolle ematiche per suzione d\'aria toracica',
-      'Superficie adesiva conforme a chest seal con valvola'
-    ],
-    scenariosUsed: [
-      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 2, scenarioCode: 'Scenario 1 (TCCC)', day: 2, period: 'mattina', teamExtra: 2, teamIntra: 5 },
-      { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 16, scenarioCode: 'Scenario 18 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 10 }
-    ],
-    requiredProcedures: [
-      'Medicazione toracica occlusiva ventilata (Chest Seal)',
-      'Toracostomia con dito (Finger Thoracostomy)',
-      'Drenaggio toracico e Resuscitative Thoracotomy'
-    ],
-    techRequirements: 'Spurgo aria tubi ad alta pressione; controllo alimentazione 12V pompa peristaltica.',
-    leadTechnician: 'Roberto Bianchi / Silvia Rossi',
-    consumables: ['Chest Seal ventilato TCCC', 'Tubi in silicone 4mm', 'Sangue sintetico arterioso', 'Drenaggio toracico 28-32 Fr']
-  },
-  {
-    id: 'prot-collo-giugulo-carotidea',
-    code: 'PR-JUNC-03',
-    name: 'Protesi Emorragia Giunzionale del Collo (Lesione Giugulo-Carotidea)',
+    id: 'prot-collo-carotide',
+    code: 'PRO-02 • NECK-HEM',
+    name: 'Protesi Emorragia Giunzionale Collo (Lesione Giugulo-Carotidea)',
     district: 'COLLO_VASCOLARE',
-    description: 'Collare anatomico con squarcio latero-cervicale profondo, vaso carotideo pressurizzato a 90 mmHg e tasca di contenimento profonda per wound packing con garze emostatiche e pressione mirata contro i processi vertebrali.',
+    description:
+      'Guscio cervicale laterale indossabile da attore o manichino con condotto arterioso ad alta pressione (zampillo pulsatile) e cavità profonda per training di Wound Packing giunzionale.',
     activeFeatures: [
-      'Zampillo arterioso carotideo continuo/pulsatile',
-      'Tasca profonda anatomica per garzaggio emostatico',
-      'Riconoscimento tattile fascio vascolo-nervoso',
-      'Sensibilità a occlusione mediante pressione digitale'
+      'Pompa peristaltica remota per getto arterioso sincronizzato con FC',
+      'Cavità profonda 6 cm per zaffaggio con garza emostatica',
+      'Sensore di compressione per stop flusso al raggiungimento della pressione target',
+      'Protezione rigida interna per trachea dell\'attore vivo',
     ],
     scenariosUsed: [
-      { patientId: 8, scenarioCode: 'Scenario 00 (Personalizzato)', day: 2, period: 'pomeriggio', teamExtra: 5, teamIntra: 2 },
-      { patientId: 11, scenarioCode: 'Scenario 00 - Replica', day: 2, period: 'pomeriggio', teamExtra: 11, teamIntra: 8 },
-      { patientId: 24, scenarioCode: 'Scenario 8 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 }
+      { patientId: 8, scenarioCode: 'Scenario 00 (Collo Sanguinante)', day: 2, period: 'pomeriggio', teamExtra: 5, teamIntra: 11 },
+      { patientId: 11, scenarioCode: 'Scenario 00 - Replica', day: 2, period: 'pomeriggio', teamExtra: 8, teamIntra: 2 },
+      { patientId: 24, scenarioCode: 'Scenario 8 - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 6 },
     ],
     requiredProcedures: [
-      'Gestione Massive Bleeding Collo (Wound Packing)',
-      'Applicazione garza emostatica caolino/chitosano',
-      'Pressione digitale e clampaggio vascolare in shock room'
+      'Compressione digitale diretta immediata in arteria carotide/succlavia',
+      'Wound Packing giunzionale con garza emostatica (Combat Gauze)',
+      'Medicazione compressiva non circonferenziale del collo',
     ],
-    techRequirements: 'Protezione tracheale durante il packing per evitare compressione vie aeree attore.',
-    leadTechnician: 'Silvia Rossi (Lead Moulage)',
-    consumables: ['Garze emostatiche TCCC (QuikClot / ChitoGauze)', 'Bende elastiche compressive', 'Ricarica sangue arterioso 1500ml']
+    techRequirements:
+      'Attenzione a non far occludere la via aerea dell\'attore durante la pressione; pre-caricare serbatoio da 1.5L di sangue ad alta viscosità.',
+    leadTechnician: 'Roberto Bianchi (TECH-02)',
+    consumables: ['Garze emostatiche Z-fold da training (x12)', 'Sangue teatrale denso 3L', 'Pellicola adesiva medicale per bordi protesi'],
+  },
+  {
+    id: 'prot-torace-morbido-thoraco',
+    code: 'PRO-03 • THOR-RESUS',
+    name: 'Torace Morbido Chirurgico Ibrido (Con Organi Biologici per Resus Thoracotomy)',
+    district: 'TORACE_CUORE',
+    description:
+      'Cassa toracica anatomica rivestita da parete muscolo-cutanea incindibile con alloggiamento interno per blocco cuore-polmoni biologico (suino) perfuso, progettata per toracotomia d\'emergenza (Clamshell / Antero-laterale sx).',
+    activeFeatures: [
+      'Spazi intercostali incindibili con bisturi e divaricatore Finochietto',
+      'Sacco pericardico suturato con tamponamento cardiaco reale (coaguli + sangue)',
+      'Aorta toracica discendente isolabile per Cross-Clamping aortico',
+      'Emitorace con raccolta emotoracica aspirabile (> 1200 ml)',
+    ],
+    scenariosUsed: [
+      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 7 },
+      { patientId: 2, scenarioCode: 'Scenario 1 (TCCC)', day: 2, period: 'mattina', teamExtra: 2, teamIntra: 8 },
+      { patientId: 5, scenarioCode: 'Scenario 1 - Replica', day: 2, period: 'mattina', teamExtra: 11, teamIntra: 5 },
+      { patientId: 8, scenarioCode: 'Scenario 00 (Collo Sanguinante)', day: 2, period: 'pomeriggio', teamExtra: 5, teamIntra: 11 },
+      { patientId: 11, scenarioCode: 'Scenario 00 - Replica', day: 2, period: 'pomeriggio', teamExtra: 8, teamIntra: 2 },
+      { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 4, teamIntra: 10 },
+      { patientId: 16, scenarioCode: 'Scenario 18 - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 1 },
+    ],
+    requiredProcedures: [
+      'Finger Thoracostomy (Toracostomia digitale decompressiva)',
+      'Posizionamento tubo di drenaggio toracico 28-32 Fr',
+      'Resuscitative Thoracotomy (Pericardiotomia, evacuazione coaguli, sutura miocardica, massaggio cardiaco interno, clampaggio aortico)',
+    ],
+    techRequirements:
+      'Conservazione blocchi biologici a +4°C fino a 20 min prima dello scenario; smaltimento biohazard immediato post-sessione e lavaggio camera toracica.',
+    leadTechnician: 'Marco Cattaneo (TECH-03)',
+    consumables: ['Blocchi biologici cuore-polmone (x8)', 'Pareti toraciche incindibili di ricambio (x8)', 'Tubi toracici 32Fr (x10)', 'Foley 20Fr per cardiorrafia temporanea'],
+  },
+  {
+    id: 'prot-torace-pnx-balistico',
+    code: 'PRO-04 • CHEST-GSW',
+    name: 'Pettorina Balistica Toracica (Pneumotorace Aperto Sibilante & Uscita Posteriore)',
+    district: 'TORACE_CUORE',
+    description:
+      'Corazza toracica in silicone medicale indossabile dall\'attore con foro d\'entrata anteriore (sucking chest wound con bolle d\'aria ed emottisi) e foro d\'uscita posteriore sanguinante.',
+    activeFeatures: [
+      'Valvola acustica integrata che simula il risucchio d\'aria (sucking chest wound)',
+      'Schiuma ematica rosata al foro anteriore sincronizzata con gli atti respiratori',
+      'Pad sottocutaneo in 2° e 5° spazio intercostale per decompressione con ago 14G/10G',
+      'Linea di sanguinamento posteriore nascosta nella barella per effetto sorpresa al Log-Roll',
+    ],
+    scenariosUsed: [
+      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 7 },
+      { patientId: 2, scenarioCode: 'Scenario 1 (TCCC)', day: 2, period: 'mattina', teamExtra: 2, teamIntra: 8 },
+      { patientId: 3, scenarioCode: 'Scenario 11 (TCCC)', day: 2, period: 'mattina', teamExtra: 3, teamIntra: 9 },
+      { patientId: 6, scenarioCode: 'Scenario 11 - Replica', day: 2, period: 'mattina', teamExtra: 12, teamIntra: 6 },
+      { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 4, teamIntra: 10 },
+      { patientId: 16, scenarioCode: 'Scenario 18 - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 1 },
+    ],
+    requiredProcedures: [
+      'Applicazione immediata di Chest Seal valvolato (anteriore e posteriore post Log-Roll)',
+      'Decompressione toracica con ago (Needle Decompression - 2° ICS MCL o 5° ICS AAL)',
+      'Burping della medicazione toracica in caso di peggioramento dispnoico',
+    ],
+    techRequirements:
+      'Asciugare accuratamente la cute siliconica con alcool isopropilico tra gli scenari per garantire l\'adesione del Chest Seal.',
+    leadTechnician: 'Elena Fontana (TECH-04)',
+    consumables: ['Chest Seal valvolati da training (x16)', 'Aghi da decompressione 14G 8cm (x20)', 'Soluzione saponosa ematica per bolle (500ml)'],
   },
   {
     id: 'prot-addome-eviscerazione',
-    code: 'PR-ABD-04',
-    name: 'Protesi Addome con Eviscerazione & Emoperitoneo Attivo',
+    code: 'PRO-05 • ABD-EVISC',
+    name: 'Modulo Addominale Chirurgico con Eviscerazione & Packing Peritoneale (PPP)',
     district: 'ADDOME_PELVI',
-    description: 'Protesi addominale aperta a conca con anse intestinali in silicone ultra-realistico, vasi mesenterici sanguinanti e cavità pelvica predisposta per packing peritoneale Damage Control.',
+    description:
+      'Cavità addomino-pelvica completa di anse intestinali estruse in gel balistico, mesentere sanguinante, loggia epatica/splenica e spazio retroperitoneale pre-peritoneale per Damage Control Laparotomy e PPP.',
     activeFeatures: [
-      'Anse intestinali morbide lubrificate',
-      'Sanguinamento diffuso mesenterico ed emoperitoneo attivo',
-      'Possibilità di applicazione medicazione umida non aderente',
-      'Predisposta per laparotomia e packing a quadranti'
+      'Anse intestinali realistiche calde ed umide con peristalsi passiva',
+      'Doppio circuito emorragico: asse celiaco/porta (Zona 1) e plesso venoso presacrale (Pelvi)',
+      'Parete fasciale suturabile o predisposta per Bogota Bag / medicazione a pressione negativa',
+      'Serbatoio emoperitoneo da 2000 ml per riscontro positivo immediato Eco-FAST',
     ],
     scenariosUsed: [
-      { patientId: 7, scenarioCode: 'Scenario 16 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 4, teamIntra: 1 },
-      { patientId: 10, scenarioCode: 'Scenario 16 (TCCC) - Replica', day: 2, period: 'pomeriggio', teamExtra: 10, teamIntra: 7 },
-      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 3, teamIntra: 6 },
-      { patientId: 18, scenarioCode: 'Scenario 15 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 12 }
+      { patientId: 7, scenarioCode: 'Scenario 16 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 4, teamIntra: 10 },
+      { patientId: 10, scenarioCode: 'Scenario 16 - Replica', day: 2, period: 'pomeriggio', teamExtra: 7, teamIntra: 1 },
+      { patientId: 14, scenarioCode: 'Scenario 5 (TCCC)', day: 3, period: 'mattina', teamExtra: 5, teamIntra: 11 },
+      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 6, teamIntra: 12 },
+      { patientId: 17, scenarioCode: 'Scenario 5 - Replica', day: 3, period: 'mattina', teamExtra: 8, teamIntra: 2 },
+      { patientId: 18, scenarioCode: 'Scenario 15 - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 3 },
+      { patientId: 20, scenarioCode: 'Scenario 13 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 2, teamIntra: 8 },
+      { patientId: 23, scenarioCode: 'Scenario 13 - Replica', day: 3, period: 'pomeriggio', teamExtra: 11, teamIntra: 5 },
     ],
     requiredProcedures: [
-      'Copertura con telini umidi sterili e sacca laparotomica',
-      'Laparotomia d\'urgenza Damage Control',
-      'Packing peri-epatico e splenico a 4 quadranti'
+      'Copertura sterile umida atraumatic delle anse eviscerate (TCCC)',
+      'Esecuzione E-FAST con identificazione liquido libero in Morison, Douglas e splenorenale',
+      'Pre-Peritoneal Pelvic Packing (PPP) con 3+3 laparotomic pads',
+      'Damage Control Laparotomy (Packing peri-epatico nei 4 quadranti)',
     ],
-    techRequirements: 'Idratazione costante anse intestinali con gel sterile idrosolubile per realismo ottico.',
-    leadTechnician: 'Alessandro Conti / Silvia Rossi',
-    consumables: ['Gel idrosolubile', 'Telini sterili trasparenti', 'Garze laparotomiche radio-opache', 'Sangue venoso per cavità']
+    techRequirements:
+      'Riscaldare il liquido peritoneale a 37°C per evitare appannamento sonde ecografiche e mantenere fedeltà termica.',
+    leadTechnician: 'Davide Galli (TECH-05)',
+    consumables: ['Garze laparotomiche radiopache 45x45 (x40)', 'Telini sterili umidi per eviscerazione (x10)', 'Gel ecografico 1L'],
   },
   {
-    id: 'prot-amputazione-moncone-reboa',
-    code: 'PR-AMP-05',
-    name: 'Protesi Moncone Amputazione Traumatica Arto Inferiore con Accesso REBOA',
-    district: 'ARTI_AMPUTAZIONI',
-    description: 'Moncone emorragico di coscia/gamba ad alta fedeltà con osso femorale frantumato sporgente, arteria femorale sanguinante ad alta pressione (120 mmHg) e vaso femorale prossimale cannulabile con introduttore REBOA 7 Fr.',
+    id: 'prot-reboa-endovasc',
+    code: 'PRO-06 • VASC-REBOA',
+    name: 'Simulatore Endovascolare Aorto-Iliaco per REBOA (Zone 1 & Zone 3)',
+    district: 'ADDOME_PELVI',
+    description:
+      'Sistema vascolare pressurizzato ad alta fedeltà ecografica dall\'arteria femorale comune fino all\'aorta toracica ascendente, dotato di trasduttore di pressione invasiva a monte e a valle del pallone.',
     activeFeatures: [
-      'Zampillo arterioso da lacerazione femorale interrotta da Tourniquet',
-      'Arteria femorale cannulabile per catetere a palloncino REBOA',
-      'Osso femorale esposto con tessuti muscolari slabbrati',
-      'Compatibilità con tourniquet da combattimento (CAT / SAM-XT)'
+      'Inserto inguinale ecoguidabile con arteria femorale pulsante e vena femorale comprimibile',
+      'Conduzione realistica del catetere REBOA 7 Fr (ER-REBOA) con landmark centimetrati (46 cm Z1 / 28 cm Z3)',
+      'Feedback immediato su monitor parametri: incremento PA sistolica +45 mmHg al gonfiaggio del pallone',
+      'Simulazione complicanze (rottura aortica da sovra-gonfiaggio o migrazione in Zona 2)',
     ],
     scenariosUsed: [
-      { patientId: 3, scenarioCode: 'Scenario 11 (TCCC)', day: 2, period: 'mattina', teamExtra: 3, teamIntra: 6 },
-      { patientId: 6, scenarioCode: 'Scenario 11 (TCCC) - Replica', day: 2, period: 'mattina', teamExtra: 9, teamIntra: 12 },
-      { patientId: 14, scenarioCode: 'Scenario 5 (TCCC)', day: 3, period: 'mattina', teamExtra: 2, teamIntra: 5 },
-      { patientId: 17, scenarioCode: 'Scenario 5 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 8, teamIntra: 11 },
-      { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 6, teamIntra: 3 },
-      { patientId: 24, scenarioCode: 'Scenario 8 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 }
+      { patientId: 3, scenarioCode: 'Scenario 11 (TCCC)', day: 2, period: 'mattina', teamExtra: 3, teamIntra: 9 },
+      { patientId: 6, scenarioCode: 'Scenario 11 - Replica', day: 2, period: 'mattina', teamExtra: 12, teamIntra: 6 },
+      { patientId: 14, scenarioCode: 'Scenario 5 (TCCC)', day: 3, period: 'mattina', teamExtra: 5, teamIntra: 11 },
+      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 6, teamIntra: 12 },
+      { patientId: 17, scenarioCode: 'Scenario 5 - Replica', day: 3, period: 'mattina', teamExtra: 8, teamIntra: 2 },
+      { patientId: 18, scenarioCode: 'Scenario 15 - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 3 },
+      { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 3, teamIntra: 9 },
+      { patientId: 24, scenarioCode: 'Scenario 8 - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 6 },
     ],
     requiredProcedures: [
-      'Applicazione Tourniquet CAT o giunzionale SAM-JETT',
-      'Posizionamento introduttore femorale ecoguidato',
-      'Gonfiaggio REBOA Zona 1 (Aorta toracica discendente) / Zona 3 (Iliaca)'
+      'Pungitura ecoguidata (Out-of-Plane / In-Plane) dell\'arteria femorale comune',
+      'Inserimento introduttore arterioso 7 Fr secondo tecnica di Seldinger',
+      'Misurazione landmark anatomici esterni (Giugulo / Xifoide / Ombelico)',
+      'Gonfiaggio titolato con soluzione fisiologica e monitoraggio tempo di ischemia (< 30 min Z1)',
     ],
-    techRequirements: 'Calibrazione manometro linea femorale a 80-100 mmHg; verificare arresto flusso al gonfiaggio palloncino.',
-    leadTechnician: 'Alessandro Conti (Lead REBOA)',
-    consumables: ['Catetere REBOA 7 Fr con siringa blocco', 'Tourniquet CAT Gen 7', 'Laccio emostatico giunzionale', 'Liquido arterioso pressurizzato']
-  },
-  {
-    id: 'prot-frattura-esposta-avambraccio',
-    code: 'PR-FRACT-06',
-    name: 'Protesi Frattura Esposta Avambraccio con Emorragia a Getto',
-    district: 'ARTI_AMPUTAZIONI',
-    description: 'Guaina per braccio con monconi ossei di radio/ulna sporgenti, lesione dell\'arteria radiale/brachiale con zampillo sincronizzato e lacero-contusioni dei tessuti molli.',
-    activeFeatures: [
-      'Estremità ossee appuntite sporgenti mobili',
-      'Getto arterioso radiale/ulnare regolabile',
-      'Sensibilità a tourniquet omerale o garzaggio compressivo'
-    ],
-    scenariosUsed: [
-      { patientId: 2, scenarioCode: 'Scenario 1 (TCCC)', day: 2, period: 'mattina', teamExtra: 2, teamIntra: 5 },
-      { patientId: 6, scenarioCode: 'Scenario 11 (TCCC) - Replica', day: 2, period: 'mattina', teamExtra: 9, teamIntra: 12 },
-      { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 16, scenarioCode: 'Scenario 18 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 10 }
-    ],
-    requiredProcedures: [
-      'Applicazione Tourniquet arto superiore',
-      'Allineamento provvisorio e steccaggio SAM Splint',
-      'Controllo vascolare e medicazione sterile'
-    ],
-    techRequirements: 'Verificare fissaggio comodo sull\'arto dell\'attore con fascia in velcro a sgancio rapido.',
-    leadTechnician: 'Silvia Rossi (Lead Moulage)',
-    consumables: ['Stecche SAM Splint 36"', 'Bende orlate', 'Sangue sintetico arterioso', 'Guanti monouso']
-  },
-  {
-    id: 'prot-trauma-facciale-maxillo',
-    code: 'PR-MAX-07',
-    name: 'Maschera Trauma Maxillo-Facciale Complesso & Epistassi Massiva',
-    district: 'MAXILLO_FACCIALE',
-    description: 'Maschera prostetica facciale completa con frattura tipo Le Fort II/III, deviazione massiccio facciale, perdita di sostanza ossea mandibolare e circuito sangue cavo orale/nasale per inondazione vie aeree.',
-    activeFeatures: [
-      'Sanguinamento massivo faringeo e cavità orale con aspirazione difficile',
-      'Deformità scheletrica palpabile',
-      'Ostruzione meccanica che impedisce l\'intubazione orotracheale standard'
-    ],
-    scenariosUsed: [
-      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 4, scenarioCode: 'Scenario 6 (TCCC) - Replica', day: 2, period: 'mattina', teamExtra: 7, teamIntra: 10 },
-      { patientId: 5, scenarioCode: 'Scenario 1 (TCCC) - Replica', day: 2, period: 'mattina', teamExtra: 8, teamIntra: 11 },
-      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 3, teamIntra: 6 },
-      { patientId: 18, scenarioCode: 'Scenario 15 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 12 }
-    ],
-    requiredProcedures: [
-      'Aspirazione energica cavo orale con cannula Yankauer rigida',
-      'Posizionamento cannula nasofaringea (se non sospetta frattura base cranica)',
-      'Conversione immediata a Cricotirotomia chirurgica'
-    ],
-    techRequirements: 'Applicazione silicone dermatologico 20 minuti prima del turno; test flusso sangue orale.',
-    leadTechnician: 'Silvia Rossi (Lead Moulage)',
-    consumables: ['Cannule Yankauer', 'Aspiratore chirurgico portatile', 'Protesi silicone maxillo', 'Coloranti teatrali traumatologici']
-  },
-  {
-    id: 'prot-ustioni-torace-collo',
-    code: 'PR-BURN-08',
-    name: 'Protesi Ustioni II & III Grado Viso/Collo/Torace a Corazza con Fumi Caldi',
-    district: 'USTIONI_BLAST',
-    description: 'Applicazione prostetica estesa per simulazione ustione a corazza circonferenziale con flictene, tessuti necrotici carbonizzati, peli bruciacchiati ed edema imminente delle vie aeree da inalazione fumi.',
-    activeFeatures: [
-      'Cute anelastica carbonizzata a corazza che riduce l\'escursione toracica',
-      'Flictene a liquido siero-ematico simulato',
-      'Coinvolgimento circonferenziale del collo'
-    ],
-    scenariosUsed: [
-      { patientId: 9, scenarioCode: 'Scenario 3 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 6, teamIntra: 3 },
-      { patientId: 12, scenarioCode: 'Scenario 3 (TCCC) - Replica', day: 2, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 },
-      { patientId: 19, scenarioCode: 'Scenario 7 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 4, teamIntra: 1 },
-      { patientId: 20, scenarioCode: 'Scenario 13 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 5, teamIntra: 2 },
-      { patientId: 22, scenarioCode: 'Scenario 7 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 10, teamIntra: 7 },
-      { patientId: 23, scenarioCode: 'Scenario 13 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 11, teamIntra: 8 }
-    ],
-    requiredProcedures: [
-      'Ispezione cavo orale per fuliggine/eritema e intubazione precoce o CRICO',
-      'Escarotomia decompressiva toracica (linee ascellari e sottocostali)',
-      'Calcolo fluidoterapia formula di Parkland'
-    ],
-    techRequirements: 'Fumo scenico pronto; applicazione lattice e gel combustione 30 min prima.',
-    leadTechnician: 'Silvia Rossi / Davide Esposito',
-    consumables: ['Gel idrogel ustioni (WaterJel)', 'Telini termici sterili', 'Trucco prostetico effetto carbonizzazione']
+    techRequirements:
+      'Spurgare completamente l\'aria dal circuito aorto-femorale prima di ogni blocco per garantire visibilità ecografica nitida senza artefatti.',
+    leadTechnician: 'Chiara Moretti (TECH-06)',
+    consumables: ['Pad inguinali vascolari auto-sigillanti (x6)', 'Introduttori 7 Fr (x8)', 'Cateteri REBOA da training (x4)', 'Fisiologica 0.9% 250ml'],
   },
   {
     id: 'prot-impalamento-addome',
-    code: 'PR-IMP-09',
-    name: 'Protesi Lesione da Impalamento Addomino-Pelvico con Corpo Estraneo in Situ',
+    code: 'PRO-07 • IMP-ABDPELV',
+    name: 'Struttura Protesica Impalamento Addomino-Pelvico con Corpo Estraneo In Situ',
     district: 'ADDOME_PELVI',
-    description: 'Impalcatura anatomica addominale ancorata con corpo estraneo rigido (barra metallica / frammento legno) conficcato nell\'addome, lesione dei grossi vasi sottostanti e sanguinamento perilesionale.',
+    description:
+      'Piastra toraco-addominale rinforzata con ancoraggio meccanico per tondino metallico/scheggia legnosa penetrante in ipocondrio/ipogastrio, progettata per addestrare la stabilizzazione pre-ospedaliera e il transfer barellato sicuro.',
     activeFeatures: [
-      'Corpo estraneo stabilmente conficcato ma suscettibile a mobilitazione traumatica',
-      'Sanguinamento attivo intorno alla base d\'impalamento',
-      'Simulatore pelvico associato per REBOA / Packing'
+      'Snodo meccanico con sensore di oscillazione: attiva emorragia massiva se il corpo estraneo viene mobilizzato incautamente',
+      'Compatibile con taglio/accorciamento tecnico o rimozione chirurgica controllata in Shock Room',
+      'Supporto lombare ergonomico per attore vivo durante l\'estrazione in ambiente tattico',
     ],
     scenariosUsed: [
-      { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 6, teamIntra: 3 },
-      { patientId: 24, scenarioCode: 'Scenario 8 (TCCC) - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 9 }
+      { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 3, teamIntra: 9 },
+      { patientId: 24, scenarioCode: 'Scenario 8 - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 6 },
     ],
     requiredProcedures: [
-      'Stabilizzazione manuale e con rotoli di bende del corpo estraneo (MAI rimuovere)',
-      'Posizionamento REBOA per controllo vascolare a monte',
-      'Estrazione chirurgica controllata in laparotomia shock room'
+      'Divieto assoluto di rimozione sul campo (TCCC)',
+      'Confezionamento di bulky dressing stabilizzante a ciambella/piramide',
+      'Trasferimento barellato (Log-Roll modificato / Scoop Stretcher) senza dislocazione',
+      'Rimozione sotto visione diretta chirurgica previa occlusione aortica REBOA in Shock Room',
     ],
-    techRequirements: 'Verificare imbragatura di sicurezza sotto i vestiti dell\'attore per non gravare sulla pelle.',
-    leadTechnician: 'Alessandro Conti / Silvia Rossi',
-    consumables: ['Corpo estraneo da simulazione smussato', 'Bende rigide di fissaggio', 'Teli di stabilizzazione ad anello']
+    techRequirements:
+      'Verificare il serraggio della piastra protettiva in kevlar tra l\'asta impalata e l\'addome dell\'attore prima dello scenario.',
+    leadTechnician: 'Silvia Rossi (TECH-01)',
+    consumables: ['Rotoli garza Kerlix (x10)', 'Cerotto telato ad alta tenuta 5cm (x6)', 'Sangue denso per fuoriuscita peri-oggetto'],
   },
   {
-    id: 'prot-toracotomia-biologica-cuore',
-    code: 'PR-THOR-10',
-    name: 'Torace Morbido con Organi Biologici (Cuore e Polmone Maiale) per Toracotomia',
-    district: 'TORACE_CUORE',
-    description: 'Manichino a torace morbido con gabbia toracica incisibile (costole cartilaginee), sacco pericardico biologico con tamponamento cardiaco simulato, aorta discendente per clampaggio crociato e polmone suturabile.',
+    id: 'prot-amputazione-arti',
+    code: 'PRO-08 • AMP-BLAST',
+    name: 'Moncone Traumatico da Deflagrazione (Arto Superiore / Inferiore) con Arteria Pulsante',
+    district: 'ARTI_AMPUTAZIONI',
+    description:
+      'Protesi terminale per amputazione sub-totale da mina/IED con esposizione di monconi ossei tibiali/omerali frastagliati, lembi muscolari devitalizzati e doppia linea arteriosa ad alta portata.',
     activeFeatures: [
-      'Gabbia toracica incidibile al 4°-5° spazio intercostale sinistro (Clamshell / Anterolaterale)',
-      'Organi di maiale innervati di tubi sangue per massaggio cardiaco e clampaggio',
-      'Pericardiocentesi / Apertura pericardica a T con rilascio tamponamento'
+      'Getto arterioso pulsante a 120 mmHg che si arresta solo con serraggio corretto del Tourniquet CAT (≥ 3 giri di windlass)',
+      'Simulazione di sanguinamento residuo midollare/venoso che richiede secondo Tourniquet affiancato (Side-by-Side)',
+      'Indossabile da attore con arto reale occultato in tasca mimetica/bassa barella',
     ],
     scenariosUsed: [
-      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 2, scenarioCode: 'Scenario 1 (TCCC)', day: 2, period: 'mattina', teamExtra: 2, teamIntra: 5 },
-      { patientId: 5, scenarioCode: 'Scenario 1 (TCCC) - Replica', day: 2, period: 'mattina', teamExtra: 8, teamIntra: 11 },
-      { patientId: 8, scenarioCode: 'Scenario 00 (Personalizzato)', day: 2, period: 'pomeriggio', teamExtra: 5, teamIntra: 2 },
-      { patientId: 11, scenarioCode: 'Scenario 00 - Replica', day: 2, period: 'pomeriggio', teamExtra: 11, teamIntra: 8 },
-      { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 1, teamIntra: 4 },
-      { patientId: 16, scenarioCode: 'Scenario 18 (TCCC) - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 10 }
+      { patientId: 3, scenarioCode: 'Scenario 11 (TCCC)', day: 2, period: 'mattina', teamExtra: 3, teamIntra: 9 },
+      { patientId: 6, scenarioCode: 'Scenario 11 - Replica', day: 2, period: 'mattina', teamExtra: 12, teamIntra: 6 },
+      { patientId: 9, scenarioCode: 'Scenario 3 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 6, teamIntra: 12 },
+      { patientId: 12, scenarioCode: 'Scenario 3 - Replica', day: 2, period: 'pomeriggio', teamExtra: 9, teamIntra: 3 },
+      { patientId: 21, scenarioCode: 'Scenario 8 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 3, teamIntra: 9 },
+      { patientId: 24, scenarioCode: 'Scenario 8 - Replica', day: 3, period: 'pomeriggio', teamExtra: 12, teamIntra: 6 },
     ],
     requiredProcedures: [
-      'Resuscitative Thoracotomy (Clamshell / Anterolaterale sinistra)',
-      'Incisione pericardica verticale anteriore al nervo frenico',
-      'Massaggio cardiaco interno bimanuale',
-      'Clampaggio aortico sovradiaframmatico'
+      'Applicazione immediata Tourniquet (CAT Gen7 / SOFTT-W) "High & Tight" in Care Under Fire',
+      'Rivalutazione in Tactical Field Care e posizionamento del 2° Tourniquet prossimale se persiste sanguinamento',
+      'Segnatura orario di applicazione (T) sulla fronte del paziente',
+      'Conversione del Tourniquet o controllo chirurgico definitivo in Shock Room',
     ],
-    techRequirements: 'Preparazione e conservazione refrigerata tessuti biologici; sostituzione blocchi costali tra una sessione e l\'altra.',
-    leadTechnician: 'Roberto Bianchi (Lead Tessuti Biologici & Toraco)',
-    consumables: ['Set organi biologici suini freschi', 'Costole in resina epossidica/poliuretano incidibili', 'Divaricatore Finochietto', 'Pinza Satinsky/DeBakey']
-  }
+    techRequirements:
+      'Rifornire la sacca a pressione da 3L a 150 mmHg; proteggere i connettori rapidi Luer-Lock dallo strappo durante il trascinamento TCCC.',
+    leadTechnician: 'Roberto Bianchi (TECH-02)',
+    consumables: ['Tourniquet CAT da addestramento blu/neri (x16)', 'Bende israeliane 6" (x12)', 'Sangue artificiale lavabile 5L'],
+  },
+  {
+    id: 'prot-frattura-esposta-arto',
+    code: 'PRO-09 • FRAC-OPEN',
+    name: 'Manicotto Frattura Esposta Avambraccio / Tibia-Perone & Ferita Balistica Coscia',
+    district: 'ARTI_AMPUTAZIONI',
+    description:
+      'Manicotto in silicone rinforzato con segmenti ossei di radio/ulna o tibia sporgenti dalla cute lacerata, associato a tasca muscolare di coscia per ferita d\'arma da fuoco femorale.',
+    activeFeatures: [
+      'Crepitio osseo reale alla palpazione e deformità angolare riducibile sotto trazione',
+      'Sanguinamento arterioso a getto dall\'arteria brachiale o femorale superficiale',
+      'Possibilità di eseguire riduzione, splinting (SAM Splint) e controllo dei polsi distali',
+    ],
+    scenariosUsed: [
+      { patientId: 2, scenarioCode: 'Scenario 1 (TCCC)', day: 2, period: 'mattina', teamExtra: 2, teamIntra: 8 },
+      { patientId: 6, scenarioCode: 'Scenario 11 - Replica', day: 2, period: 'mattina', teamExtra: 12, teamIntra: 6 },
+      { patientId: 7, scenarioCode: 'Scenario 16 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 4, teamIntra: 10 },
+      { patientId: 10, scenarioCode: 'Scenario 16 - Replica', day: 2, period: 'pomeriggio', teamExtra: 7, teamIntra: 1 },
+      { patientId: 13, scenarioCode: 'Scenario 18 (TCCC)', day: 3, period: 'mattina', teamExtra: 4, teamIntra: 10 },
+      { patientId: 14, scenarioCode: 'Scenario 5 (TCCC)', day: 3, period: 'mattina', teamExtra: 5, teamIntra: 11 },
+      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 6, teamIntra: 12 },
+      { patientId: 16, scenarioCode: 'Scenario 18 - Replica', day: 3, period: 'mattina', teamExtra: 7, teamIntra: 1 },
+      { patientId: 17, scenarioCode: 'Scenario 5 - Replica', day: 3, period: 'mattina', teamExtra: 8, teamIntra: 2 },
+      { patientId: 18, scenarioCode: 'Scenario 15 - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 3 },
+    ],
+    requiredProcedures: [
+      'Emostasi immediata con Tourniquet o Wound Packing profondo + bendaggio compressivo',
+      'Irrigazione, copertura sterile dei monconi ossei esposti e immobilizzazione con SAM Splint',
+      'Profilassi antibiotica precoce (Moxifloxacina / Ertapenem) e acido tranexamico (TXA 2g EV)',
+    ],
+    techRequirements:
+      'Verificare che i bordi in lattice del manicotto siano sfumati con pasta modellante ed ematoma viola/rosso.',
+    leadTechnician: 'Elena Fontana (TECH-04)',
+    consumables: ['Stecche modellabili SAM Splint (x8)', 'Bende coesive Coban (x12)', 'Garze sterili 10x10 (x30)'],
+  },
+  {
+    id: 'prot-maxillo-facciale',
+    code: 'PRO-10 • MAX-GSW',
+    name: 'Maschera Protesica Trauma Maxillo-Facciale Balistico (Le Fort III / Mandibolare)',
+    district: 'MAXILLO_FACCIALE',
+    description:
+      'Protesi facciale inferiore e zigomatica con avulsione dentaria, instabilità mandibolare, sanguinamento massivo oro-nasale ed ostruzione meccanica della glottide che impedisce la laringoscopia tradizionale.',
+    activeFeatures: [
+      'Erogazione continua di sangue coagulato e saliva densa nel cavo orale',
+      'Anatomia sovraglottica distorta (impossibilità di posizionare i-Gel o tubo endotracheale per via orale)',
+      'Induce automaticamente i team alla decisione rapida di via aerea chirurgica (Cricotirotomia)',
+    ],
+    scenariosUsed: [
+      { patientId: 1, scenarioCode: 'Scenario 6 (TCCC)', day: 2, period: 'mattina', teamExtra: 1, teamIntra: 7 },
+      { patientId: 4, scenarioCode: 'Scenario 6 - Replica', day: 2, period: 'mattina', teamExtra: 10, teamIntra: 4 },
+      { patientId: 5, scenarioCode: 'Scenario 1 - Replica', day: 2, period: 'mattina', teamExtra: 11, teamIntra: 5 },
+      { patientId: 15, scenarioCode: 'Scenario 15 (TCCC)', day: 3, period: 'mattina', teamExtra: 6, teamIntra: 12 },
+      { patientId: 18, scenarioCode: 'Scenario 15 - Replica', day: 3, period: 'mattina', teamExtra: 9, teamIntra: 3 },
+    ],
+    requiredProcedures: [
+      'Posizionamento posturale di drenaggio (Sit-Up & Lean-Forward se paziente cosciente in TCCC)',
+      'Aspirazione con cannula rigida Yankauer ad alto flusso',
+      'Transizione immediata al piano D dell\'algoritmo vie aeree difficili (FONA / Cricotirotomia)',
+    ],
+    techRequirements:
+      'Abbinare sempre la maschera maxillo-facciale al collare per cricotirotomia PRO-01; testare l\'aspiratore chirurgico da campo.',
+    leadTechnician: 'Silvia Rossi (TECH-01)',
+    consumables: ['Coaguli artificiali in gelatina (barattolo 500g)', 'Sondini Yankauer (x10)', 'Colla mastice pros-aide ipoallergenica'],
+  },
+  {
+    id: 'prot-ustioni-torace-escarotomia',
+    code: 'PRO-11 • BURN-ESCHAR',
+    name: 'Corazza Toraco-Cervicale Ustione Circonferenziale III Grado (Per Escarotomia)',
+    district: 'USTIONI_BLAST',
+    description:
+      'Rivestimento cutaneo coriaceo carbonizzato a tutto spessore su collo, torace anteriore ed avambraccio che limita meccanicamente l\'espansione della gabbia toracica fino all\'incisione longitudinale delle escare.',
+    activeFeatures: [
+      'Effetto "corazza" che riduce i volumi correnti sul ventilatore e innalza le pressioni di picco (> 40 cmH2O)',
+      'Strato superficiale carbonizzato con fuliggine periorale e vibrisse bruciate (segno di inalazione)',
+      'Linee di escarotomia toracica (medio-ascellari bilaterali e sottocostale) incindibili con rilascio elastico immediato',
+    ],
+    scenariosUsed: [
+      { patientId: 9, scenarioCode: 'Scenario 3 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 6, teamIntra: 12 },
+      { patientId: 12, scenarioCode: 'Scenario 3 - Replica', day: 2, period: 'pomeriggio', teamExtra: 9, teamIntra: 3 },
+      { patientId: 19, scenarioCode: 'Scenario 7 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 1, teamIntra: 7 },
+      { patientId: 20, scenarioCode: 'Scenario 13 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 2, teamIntra: 8 },
+      { patientId: 22, scenarioCode: 'Scenario 7 - Replica', day: 3, period: 'pomeriggio', teamExtra: 10, teamIntra: 4 },
+      { patientId: 23, scenarioCode: 'Scenario 13 - Replica', day: 3, period: 'pomeriggio', teamExtra: 11, teamIntra: 5 },
+    ],
+    requiredProcedures: [
+      'Intubazione precoce o Cricotirotomia prima della chiusura completa della glottide da edema termico',
+      'Escarotomia toracica d\'urgenza in Shock Room per insufficienza ventilatoria restrittiva',
+      'Rianimazione volemica secondo formula di Parkland modificata / TCCC Burn Resuscitation (Rule of Ten)',
+    ],
+    techRequirements:
+      'Attivare generatore di fumo scenico atossico nell\'ambiente tattico e applicare polvere di carbone vegetale sul volto dell\'attore.',
+    leadTechnician: 'Marco Cattaneo (TECH-03)',
+    consumables: ['Fogli lattice ustione III grado pre-tesi (x8)', 'Polvere carbone scenico e glicerina per flittene', 'Medicazioni idrogel Water-Jel'],
+  },
+  {
+    id: 'prot-cranio-tbi-liquorrea',
+    code: 'PRO-12 • HEAD-TBI',
+    name: 'Calotta Cranica Ferita Lacero-Contusa (FLC) con Frattura Base Cranica & Oto-Liquorrea',
+    district: 'MAXILLO_FACCIALE',
+    description:
+      'Protesi epicranica parieto-temporale con ferita lacero-contusa sanguinante, infossamento osseo palpabile, ecchimosi periorbitaria ("occhi da procione"), segno di Battle retroauricolare e fuoriuscita di liquor misto a sangue dal condotto uditivo.',
+    activeFeatures: [
+      'Gocciolamento lento dall\'orecchio con "segno dell\'alone" positivo su garza',
+      'Lenti a contatto sclero-corneali o pupille LED asimmetriche per simulare Anisocoria da erniazione uncale',
+      'Sanguinamento venoso dallo scalpo ad alta vascolarizzazione',
+    ],
+    scenariosUsed: [
+      { patientId: 9, scenarioCode: 'Scenario 3 (TCCC)', day: 2, period: 'pomeriggio', teamExtra: 6, teamIntra: 12 },
+      { patientId: 12, scenarioCode: 'Scenario 3 - Replica', day: 2, period: 'pomeriggio', teamExtra: 9, teamIntra: 3 },
+      { patientId: 20, scenarioCode: 'Scenario 13 (TCCC)', day: 3, period: 'pomeriggio', teamExtra: 2, teamIntra: 8 },
+      { patientId: 23, scenarioCode: 'Scenario 13 - Replica', day: 3, period: 'pomeriggio', teamExtra: 11, teamIntra: 5 },
+    ],
+    requiredProcedures: [
+      'Divieto di sondaggio naso-gastrico o cannula rinofaringea (NPA) in presenza di frattura base cranica',
+      'Prevenzione dell\'insulto cerebrale secondario (Target SpO2 > 94%, PAS > 110 mmHg)',
+      'Terapia iperosmolare d\'attacco in Shock Room (Salina Ipertonica 3% o Mannitolo) e neuroprotezione',
+    ],
+    techRequirements:
+      'Istruire l\'attore sulla postura decerebrata/decorticata (GCS 6: E1 V2 M3) e sul respiro di Cheyne-Stokes.',
+    leadTechnician: 'Davide Galli (TECH-05)',
+    consumables: ['Lenti pupillari midriasi fissa (x4)', 'Fluido chiaro sieroso per oto-liquorrea', 'Palette colori ematomi (blu/viola/giallo)'],
+  },
 ];

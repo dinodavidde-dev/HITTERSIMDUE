@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity,
   Clock,
@@ -19,8 +19,13 @@ import {
   Wrench,
   Coffee,
   Calendar,
+  ShieldAlert,
+  Radio,
+  Scale,
+  EyeOff,
+  Flame,
 } from 'lucide-react';
-import { GroupType, Discente } from '../../types';
+import { GroupType, Discente, TimelineSlot } from '../../types';
 import { useCourse } from '../../context/CourseContext';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
 import { DaySelectorToggle } from '../DaySelectorToggle';
@@ -29,6 +34,11 @@ import { OperatorUnlockModal } from '../common/OperatorUnlockModal';
 import { PreCoursePublicCountdown } from '../common/PreCoursePublicCountdown';
 import { DiscentePersonalTimeline } from './DiscentePersonalTimeline';
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
+import { StaffBalancingModal } from '../common/StaffBalancingModal';
+import { balanceDiscentiWorkload, BalancingReport } from '../../utils/staffBalancer';
+import { MascalTriageGuideCard } from '../discente/MascalTriageGuideCard';
+import { TimelineSyncNavigator } from '../common/TimelineSyncNavigator';
+import { useCourseAuthorization } from '../../hooks/useCourseAuthorization';
 
 export const DiscenteView: React.FC = () => {
   const [showQRModal, setShowQRModal] = useState(false);
@@ -52,6 +62,7 @@ export const DiscenteView: React.FC = () => {
   const {
     activeDay,
     activeSlotIndex,
+    currentSlot: masterCurrentSlot,
     timerSeconds,
     isTimerRunning,
     syncStatus,
@@ -62,6 +73,8 @@ export const DiscenteView: React.FC = () => {
     simulatorPatients,
     teams,
     technicians,
+    bulkUpdateDiscenti,
+    sendCourseMessage,
     canSelectOperator,
     language,
     isCourseStarted,
@@ -69,8 +82,13 @@ export const DiscenteView: React.FC = () => {
     timeRemainingMs,
   } = useCourse();
 
+  const { isTimelineInteractionLocked, isMacroBlockAwaitingAuth, isGateExpiredAwaitingAuth } = useCourseAuthorization();
+
   const isEn = language === 'en';
-  const isPreCourse = !isCourseStarted || (courseStartSchedule?.isGateEnabled && timeRemainingMs > 0);
+  const isPreCourse = !isCourseStarted || (courseStartSchedule?.isGateEnabled && timeRemainingMs > 0) || isGateExpiredAwaitingAuth;
+
+  const [discentiBalancingReport, setDiscentiBalancingReport] = useState<BalancingReport<Discente> | null>(null);
+  const [isBalancingModalOpen, setIsBalancingModalOpen] = useState(false);
 
   const currentDiscente = discenti.find((d) => d.id === selectedDiscenteId) || discenti[0] || {
     id: 'disc-1',
@@ -83,22 +101,122 @@ export const DiscenteView: React.FC = () => {
 
   const studentGroup: GroupType = currentDiscente.teamId <= 3 ? 'A' : currentDiscente.teamId <= 6 ? 'B' : currentDiscente.teamId <= 9 ? 'C' : 'D';
   const groupLabel = studentGroup === 'A' ? 'ALPHA' : studentGroup === 'B' ? 'BRAVO' : studentGroup === 'C' ? 'CHARLIE' : 'DELTA';
-  const assignedFaculty = faculty.find((f) => f.assignedTeamId === currentDiscente.teamId) || faculty[0];
-  const isTeamLeader = currentDiscente.id === `disc-${(currentDiscente.teamId - 1) * 5 + 1}` || (currentDiscente.role?.toLowerCase().includes('leader') ?? false);
+  const assignedFaculty = faculty.find((f) => f && f.assignedTeamId === currentDiscente.teamId) || faculty[0];
+  const isTeamLeader = (currentDiscente?.id || '') === `disc-${((currentDiscente?.teamId || 1) - 1) * 5 + 1}` || ((currentDiscente?.role || '').toLowerCase().includes('leader'));
+
+  // Stato consultazione slot vs sincronizzazione live Regia
+  const [inspectedSlot, setInspectedSlot] = useState<TimelineSlot | null>(null);
 
   const rawDayMasterSlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === activeDay);
   const dayMasterSlots = rawDayMasterSlots.map((s) => translateSlot(s, language));
   const publicSlots = dayMasterSlots.filter((s) => !s.id.includes('setup'));
 
-  const masterCurrentSlot = dayMasterSlots[activeSlotIndex] || dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
-  const slotIdxInDay = dayMasterSlots.findIndex((s) => s.id === masterCurrentSlot?.id);
-  let currentSlot = publicSlots.find((s) => s.id === masterCurrentSlot?.id);
-  if (!currentSlot && publicSlots.length > 0) {
-    currentSlot = publicSlots[0];
+  const rawMasterCurrentSlot = INITIAL_TIMELINE_SLOTS[activeSlotIndex] || rawDayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+  const slotIdxInDay = dayMasterSlots.findIndex((s) => s.id === (masterCurrentSlot?.id || rawMasterCurrentSlot?.id));
+  const effectiveSlotIdx = slotIdxInDay >= 0 ? slotIdxInDay : 0;
+  const currentSlotInDay = dayMasterSlots[effectiveSlotIdx] || dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+
+  let liveCurrentSlot = publicSlots.find((s) => s.id === currentSlotInDay?.id);
+  if (!liveCurrentSlot && publicSlots.length > 0) {
+    liveCurrentSlot = publicSlots[0];
   }
-  if (!currentSlot) currentSlot = dayMasterSlots[0] || INITIAL_TIMELINE_SLOTS[0];
+  if (!liveCurrentSlot) liveCurrentSlot = currentSlotInDay;
+
+  const currentSlot = inspectedSlot || liveCurrentSlot;
+  const isLiveSync = inspectedSlot === null || inspectedSlot.id === liveCurrentSlot?.id;
 
   const studentCurrentActivity = currentSlot?.groupActivities?.[studentGroup];
+
+  const currentActTitleStr = (studentCurrentActivity?.title || '').toLowerCase();
+  const currentActSubStr = (studentCurrentActivity?.subtitle || '').toLowerCase();
+  const currentActLocStr = (studentCurrentActivity?.location || '').toLowerCase();
+  const currentActTypeStr = (studentCurrentActivity?.activityType || '').toLowerCase();
+  const actText = `${currentActTitleStr} ${currentActSubStr} ${currentActLocStr}`.toLowerCase();
+
+  const isWorkshopActivity =
+    actText.includes('workshop') ||
+    actText.includes('ws1') ||
+    actText.includes('ws2') ||
+    actText.includes('skill station') ||
+    currentActTypeStr === 'workshop';
+
+  const isPauseOrResetActivity =
+    actText.includes('pausa') ||
+    actText.includes('pranzo') ||
+    actText.includes('reset') ||
+    actText.includes('riordino') ||
+    actText.includes('turnaround') ||
+    currentActTypeStr === 'pause';
+
+  const isSetupOrPlenary =
+    actText.includes('setup') ||
+    actText.includes('patto d\'aula') ||
+    actText.includes('accoglienza') ||
+    actText.includes('plenaria');
+
+  const isCurrentTCCC = !isWorkshopActivity && !isPauseOrResetActivity && !isSetupOrPlenary && (
+    actText.includes('tccc') ||
+    actText.includes('tattic') ||
+    actText.includes('tactical') ||
+    actText.includes('under fire') ||
+    currentActTypeStr === 'scenario_extra'
+  );
+
+  const isCurrentShockRoom = !isWorkshopActivity && !isPauseOrResetActivity && !isSetupOrPlenary && (
+    actText.includes('shock') ||
+    actText.includes('ospedale da campo') ||
+    currentActTypeStr === 'scenario_intra'
+  );
+
+  const isPreAllerta = (isCurrentTCCC || isCurrentShockRoom) && (
+    actText.includes('pre-alert') ||
+    actText.includes('pre-allerta') ||
+    actText.includes('preallerta') ||
+    actText.includes('standby') ||
+    actText.includes('t -15') ||
+    actText.includes('t-15')
+  );
+
+  const isDebriefingPhase = (isCurrentTCCC || isCurrentShockRoom) && (
+    actText.includes('debriefing') ||
+    currentActTypeStr.includes('debriefing')
+  );
+
+  // Scenario active phase: Pre-Allerta (T-15) -> Practical Scenario / Handover -> Debriefing (Pt 1 & Pt 2)
+  // Ends strictly at Reset Tecnico, Turnaround, Pause, Workshop, or subsequent block
+  const isScenarioActivePhase = !isPreCourse && (isCurrentTCCC || isCurrentShockRoom) && !isPauseOrResetActivity && !isWorkshopActivity && !isSetupOrPlenary;
+
+  // Current scenario type (TCCC vs SHOCKROOM)
+  const currentScenarioType: 'TCCC' | 'SHOCKROOM' | null = isCurrentTCCC ? 'TCCC' : isCurrentShockRoom ? 'SHOCKROOM' : null;
+  const isMatchingScenarioType = !currentDiscente.activeScenarioType || !currentScenarioType || currentDiscente.activeScenarioType === currentScenarioType;
+
+  // Ruolo operativo di scenario (supporta sia activeScenarioRole che assignedRole)
+  const currentAssignedRole = currentDiscente.assignedRole || currentDiscente.activeScenarioRole;
+
+  // Crucial requirement: Show role ONLY AFTER assignment by Faculty, and KEEP IT VISIBLE UNTIL THE END OF THE DEBRIEFING
+  // Keep local memory for the active scenario so that when Firestore cleans up during debriefing/completion,
+  // the discente STILL sees the assigned role through the debriefing phase until reset/turnaround/workshop!
+  const [cachedDebriefRole, setCachedDebriefRole] = useState<{ role: string; type?: string } | null>(null);
+
+  useEffect(() => {
+    if (currentAssignedRole) {
+      setCachedDebriefRole({
+        role: currentAssignedRole,
+        type: currentDiscente.activeScenarioType,
+      });
+    } else if (!isScenarioActivePhase || isPauseOrResetActivity || isWorkshopActivity) {
+      setCachedDebriefRole(null);
+    }
+  }, [currentAssignedRole, isScenarioActivePhase, isPauseOrResetActivity, isWorkshopActivity, currentDiscente.activeScenarioType]);
+
+  const activeRoleName = currentAssignedRole || (isDebriefingPhase ? cachedDebriefRole?.role : undefined);
+
+  // Crucial requirement: Show role ONLY AFTER assignment by Faculty, and KEEP IT VISIBLE UNTIL THE END OF THE DEBRIEFING
+  const isScenarioRoleActive = Boolean(
+    activeRoleName &&
+    isMatchingScenarioType &&
+    isScenarioActivePhase
+  );
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -138,6 +256,12 @@ export const DiscenteView: React.FC = () => {
               <span className="px-2 py-0.5 bg-neutral-950 text-amber-400 font-mono text-[11px] sm:text-xs border border-amber-800/80 flex items-center gap-1.5 rounded">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" /> {isEn ? 'PRE-COURSE STANDBY' : 'STANDBY PRE-CORSO'}
               </span>
+              {(!isCourseStarted || isTimelineInteractionLocked) && (
+                <span className="px-2.5 py-0.5 bg-amber-950/80 border border-amber-500/80 text-amber-300 font-mono text-[10px] sm:text-xs font-bold uppercase rounded flex items-center gap-1.5 shadow-sm animate-pulse">
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{isEn ? 'WAITING FOR AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE'}</span>
+                </span>
+              )}
             </div>
 
             {/* Discente Selector */}
@@ -178,6 +302,41 @@ export const DiscenteView: React.FC = () => {
           </div>
         )}
 
+        {/* ========================================================================= */}
+        {/* BARRA COMANDI OPERATIVA: BILANCIAMENTO ANAGRAFICA DISCENTI               */}
+        {/* ========================================================================= */}
+        <div className="bg-neutral-950 border-2 border-emerald-500/80 p-3.5 sm:p-4 rounded-xl shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 font-mono">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="px-2 py-0.5 bg-emerald-600 text-black font-black uppercase tracking-wider rounded">
+                MOTORE DI BILANCIAMENTO
+              </span>
+              <span className="text-emerald-300 font-bold">
+                Anagrafica Discenti ({discenti.length} Allievi • DISC-01..60)
+              </span>
+              <span className="px-2 py-0.2 bg-black border border-emerald-500/40 text-neutral-300 text-[10px] rounded">
+                4 Macro-Gruppi & 12 Squadre (1 TL + 4 Op)
+              </span>
+            </div>
+            <p className="text-[11px] text-neutral-400 font-sans max-w-3xl leading-relaxed">
+              Distribuzione omogenea per carico orario, bilanciamento dei 4 Macro-Gruppi (ALPHA, BRAVO, CHARLIE, DELTA da 15 allievi) e delle 12 Squadre da 5 allievi con alternanza del ruolo di Team Leader tra Day 2 e Day 3.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const report = balanceDiscentiWorkload(discenti);
+              setDiscentiBalancingReport(report);
+              setIsBalancingModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-black font-black text-xs uppercase tracking-wider rounded cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all shrink-0 border border-emerald-400"
+          >
+            <Scale className="w-4 h-4 text-black shrink-0" />
+            <span>⚖️ Ribilancia Macro-Gruppi & TL</span>
+          </button>
+        </div>
+
         {/* ANAGRAFICA COMPLETA DEL DISCENTE */}
         <div className="bg-neutral-950 border-2 border-cyan-500/80 p-3.5 sm:p-5 rounded-xl shadow-xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -190,17 +349,16 @@ export const DiscenteView: React.FC = () => {
                 <h1 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight">
                   {currentDiscente.name}
                 </h1>
-                <span className={`px-2.5 py-1 font-mono text-xs font-bold rounded border ${
-                  isTeamLeader
-                    ? 'bg-cyan-950 text-cyan-300 border-cyan-600'
-                    : 'bg-neutral-900 text-neutral-300 border-neutral-700'
-                }`}>
-                  {isTeamLeader ? 'Team Leader (TL)' : (isEn ? 'Operator' : 'Operatore')}
+                <span className="px-2.5 py-1 font-mono text-[11px] font-bold rounded border bg-neutral-900 text-neutral-400 border-neutral-800 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isEn ? 'Role: Pending Faculty assignment' : 'Ruolo: In attesa del Faculty'}</span>
                 </span>
               </div>
-              <p className="text-neutral-300 text-xs sm:text-sm font-mono">
-                {currentDiscente.role || (isEn ? 'Healthcare / Emergency Profession' : 'Professione Sanitaria / Emergenza')} • {currentDiscente.nationality || (isEn ? 'Italian' : 'Italiana')}
-              </p>
+              {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).length > 0 && (
+                <p className="text-neutral-300 text-xs sm:text-sm font-mono">
+                  {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).join(' • ')}
+                </p>
+              )}
             </div>
 
             {/* Info Integrate: Gruppo, Squadra, Faculty Tutor & Pass QR */}
@@ -222,6 +380,20 @@ export const DiscenteView: React.FC = () => {
 
               <button
                 type="button"
+                onClick={() => setShowCourseTimeline(!showCourseTimeline)}
+                className={`px-3 py-1.5 rounded text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs border ${
+                  showCourseTimeline
+                    ? 'bg-cyan-500 text-black border-cyan-400 font-black'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-cyan-300 border-neutral-700'
+                }`}
+                title={isEn ? 'View My Timeline' : 'Visualizza La Mia Timeline'}
+              >
+                <Calendar className="w-4 h-4" />
+                <span>{showCourseTimeline ? (isEn ? 'Close Timeline' : 'Chiudi Timeline') : (isEn ? 'My Timeline' : 'La Mia Timeline')}</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowQRModal(true)}
                 className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 text-xs font-mono font-bold uppercase flex items-center gap-1.5 rounded transition-colors cursor-pointer shadow-xs"
                 title={isEn ? 'View QR Code Pass' : 'Visualizza QR Code Pass'}
@@ -235,6 +407,23 @@ export const DiscenteView: React.FC = () => {
 
         {/* COUNTDOWN PUBBLICO UFFICIALE */}
         <PreCoursePublicCountdown />
+
+        {/* TIMELINE PERSONALE DEL DISCENTE (OPZIONALE IN CONSULTAZIONE STANDBY) */}
+        {showCourseTimeline && (
+          <div className="space-y-3 pt-2">
+            <DiscentePersonalTimeline
+              discente={currentDiscente}
+              assignedFaculty={assignedFaculty}
+              currentActiveSlotId={currentSlot?.id}
+              activeDay={activeDay}
+              onSelectSlot={(slotId) => {
+                const found = INITIAL_TIMELINE_SLOTS.find((s) => s.id === slotId);
+                if (found) setInspectedSlot(translateSlot(found, language));
+              }}
+              inspectedSlotId={inspectedSlot?.id}
+            />
+          </div>
+        )}
 
         {/* Modals */}
         {showQRModal && currentDiscente && (
@@ -271,6 +460,12 @@ export const DiscenteView: React.FC = () => {
             <span className="px-2 py-0.5 bg-neutral-950 text-cyan-400 border border-neutral-800 font-mono text-[11px] sm:text-xs flex items-center gap-1.5 rounded">
               <Clock className={`w-3 h-3 ${isTimerRunning ? 'text-cyan-400 animate-spin' : 'text-neutral-400'}`} /> {isEn ? 'T-Phase:' : 'T-Fase:'} {formatTimer(timerSeconds)}
             </span>
+            {isTimelineInteractionLocked && (
+              <span className="px-2.5 py-1 bg-amber-950/80 border border-amber-500/80 text-amber-300 font-mono text-[10px] sm:text-xs font-bold rounded flex items-center gap-1.5 shadow-sm">
+                <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>{isEn ? 'STANDBY: AWAITING REGIA' : 'STANDBY: IN ATTESA REGIA'}</span>
+              </span>
+            )}
           </div>
 
           {/* Discente Selector - visible ONLY when opened by Regia or Direttore */}
@@ -311,6 +506,20 @@ export const DiscenteView: React.FC = () => {
         </div>
       )}
 
+      {isMacroBlockAwaitingAuth && (
+        <div className="p-3 bg-red-950/90 border-2 border-red-500 text-red-200 rounded-lg flex items-center justify-between gap-3 font-mono text-xs shadow-md">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-red-400 shrink-0 animate-pulse" />
+            <span className="font-bold uppercase">
+              {isEn ? 'SCENARIO MACRO-BLOCK IN STANDBY: Awaiting Control Room confirmation to begin rotation.' : 'BLOCCO SCENARIO IN STANDBY: In attesa di autorizzazione di avvio dalla Regia.'}
+            </span>
+          </div>
+          <span className="px-2 py-0.5 bg-red-900 text-white text-[10px] uppercase font-black rounded shrink-0">
+            {isEn ? 'READ-ONLY STANDBY' : 'STANDBY SOLA LETTURA'}
+          </span>
+        </div>
+      )}
+
       {/* INTESTAZIONE PERSONALIZZATA MINIMIZZATA: NOME E COGNOME, INFO FACULTY, GRUPPO E SQUADRA */}
       <div className="bg-neutral-950 border-2 border-cyan-500/80 p-3 sm:p-4 rounded shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -323,17 +532,42 @@ export const DiscenteView: React.FC = () => {
               <h1 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight">
                 {currentDiscente.name}
               </h1>
-              <span className={`px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold rounded border ${
-                isTeamLeader
-                  ? 'bg-cyan-950 text-cyan-300 border-cyan-700'
-                  : 'bg-neutral-900 text-neutral-300 border-neutral-700'
-              }`}>
-                {isTeamLeader ? 'Team Leader (TL)' : (isEn ? 'Operator' : 'Operatore')}
-              </span>
+              {(!isCourseStarted || isTimelineInteractionLocked) && (
+                <span className="px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-black uppercase rounded border bg-amber-950/90 text-amber-300 border-amber-500 flex items-center gap-1.5 shadow-sm animate-pulse">
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{isEn ? 'WAITING FOR AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE'}</span>
+                  <span className="text-[9px] px-1 py-0.2 bg-amber-900/60 text-amber-200 rounded font-normal">
+                    {isEn ? 'READ-ONLY' : 'SOLA LETTURA'}
+                  </span>
+                </span>
+              )}
+              {isScenarioRoleActive ? (
+                <span className="px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-black rounded border bg-cyan-950 text-cyan-300 border-cyan-500 flex items-center gap-1 shadow-sm animate-pulse-slow">
+                  <span className="text-yellow-400">⚡</span>
+                  <span>{activeRoleName}</span>
+                </span>
+              ) : isScenarioActivePhase ? (
+                <span className="px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold rounded border bg-amber-950/80 text-amber-300 border-amber-600 flex items-center gap-1 animate-pulse">
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  <span>{isEn ? 'Role: Pending Faculty assignment' : 'Ruolo: In attesa del Faculty'}</span>
+                </span>
+              ) : isWorkshopActivity ? (
+                <span className="px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold rounded border bg-neutral-900 text-cyan-400 border-neutral-800 flex items-center gap-1">
+                  <Wrench className="w-3 h-3 text-cyan-400" />
+                  <span>{studentCurrentActivity?.title || 'Workshop'}</span>
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold rounded border bg-neutral-900 text-neutral-400 border-neutral-800 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-neutral-400" />
+                  <span>{studentCurrentActivity?.title || (isEn ? 'Break / Standby' : 'Pausa / Standby')}</span>
+                </span>
+              )}
             </div>
-            <p className="text-neutral-400 text-xs font-mono">
-              {currentDiscente.role || (isEn ? 'Healthcare / Emergency Profession' : 'Professione Sanitaria / Emergenza')} • {currentDiscente.nationality || (isEn ? 'Italian' : 'Italiana')}
-            </p>
+            {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).length > 0 && (
+              <p className="text-neutral-400 text-xs font-mono">
+                {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).join(' • ')}
+              </p>
+            )}
           </div>
 
           {/* Info Integrate nel riquadro: Faculty, Gruppo, Squadra & Azioni */}
@@ -390,7 +624,7 @@ export const DiscenteView: React.FC = () => {
           <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-neutral-400">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              <span>DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {activeSlotIndex + 1}/{dayMasterSlots.length}</span>
+              <span>DAY 0{activeDay} • {isEn ? 'PHASE' : 'FASE'} {effectiveSlotIdx + 1}/{dayMasterSlots.length}</span>
               <span className="text-neutral-500">•</span>
               <span className="text-cyan-400">{isEn ? 'T-Phase:' : 'T-Fase:'} {formatTimer(timerSeconds)}</span>
             </div>
@@ -401,6 +635,150 @@ export const DiscenteView: React.FC = () => {
         )}
       </div>
 
+      {/* Sincronizzazione automatica con timeline di Regia e navigatore consultazione slot */}
+      <TimelineSyncNavigator
+        currentSlot={currentSlot}
+        masterCurrentSlot={liveCurrentSlot}
+        isLiveSync={isLiveSync}
+        onSelectSlot={(slot) => setInspectedSlot(slot)}
+        onSyncToLive={() => setInspectedSlot(null)}
+        roleLabel={isEn ? `Learner (${currentDiscente.badgeCode})` : `Discente (${currentDiscente.badgeCode})`}
+        stationContext={
+          isEn
+            ? `Group ${groupLabel} • Team ${currentDiscente.teamId} (${currentDiscente.role || 'Operator'})`
+            : `Gruppo ${groupLabel} • Squadra ${currentDiscente.teamId} (${currentDiscente.role || 'Operatore'})`
+        }
+      />
+
+      {/* BANNER TATTICO RUOLO OPERATIVO SCENARIO IN EVIDENZA (VISIBILE FINO ALLA FINE DEL DEBRIEFING) */}
+      {isScenarioRoleActive && (
+        <div
+          className={`border-2 p-3.5 sm:p-4 rounded shadow-2xl transition-all font-mono relative overflow-hidden ${
+            isCurrentTCCC
+              ? 'bg-orange-950/70 border-orange-500 shadow-orange-950/80 ring-2 ring-orange-500/60'
+              : 'bg-cyan-950/70 border-cyan-400 shadow-cyan-950/80 ring-2 ring-cyan-400/60'
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${
+                    isDebriefingPhase
+                      ? 'bg-purple-600 text-white'
+                      : isCurrentTCCC
+                      ? 'bg-orange-600 text-white animate-pulse'
+                      : 'bg-cyan-400 text-black animate-pulse'
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  {isDebriefingPhase
+                    ? (isEn ? 'SCENARIO DEBRIEFING • ROLE ACTIVE' : 'DEBRIEFING SCENARIO • RUOLO ATTIVO')
+                    : (isEn ? 'TACTICAL SCENARIO ROLE ASSIGNED' : 'RUOLO OPERATIVO SCENARIO ASSEGNATO')}
+                </span>
+
+                <span className="px-2 py-0.5 bg-neutral-950 border border-neutral-700 text-neutral-300 text-[10px] font-bold rounded flex items-center gap-1">
+                  <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+                  {isCurrentTCCC ? 'AMBIENTE TATTICO (TCCC)' : 'OSPEDALE DA CAMPO (SHOCK ROOM)'}
+                </span>
+
+                <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 text-neutral-400 text-[10px] rounded">
+                  Faculty: {assignedFaculty?.badgeCode || 'FAC'} ({assignedFaculty?.name})
+                </span>
+
+                {currentDiscente.activeScenarioAssignedBy?.includes('RANDOM') && (
+                  <span className="px-2 py-0.5 bg-purple-950 border border-purple-500 text-purple-200 text-[10px] font-bold rounded flex items-center gap-1">
+                    🎲 {isEn ? 'RANDOM ASSIGNMENT (T-15)' : 'ASSEGNAZIONE RANDOM (FINE T-15)'}
+                  </span>
+                )}
+              </div>
+
+              <div className="pt-0.5 flex items-baseline gap-2 flex-wrap">
+                <span className="text-xs text-neutral-400 uppercase font-semibold">
+                  {isEn ? 'Your Operational Role:' : 'Il Tuo Ruolo nello Scenario:'}
+                </span>
+                <h2
+                  className={`text-lg sm:text-2xl font-black uppercase tracking-tight ${
+                    isCurrentTCCC ? 'text-orange-300' : 'text-cyan-300'
+                  }`}
+                >
+                  ⚡ {activeRoleName}
+                </h2>
+              </div>
+
+              <p className="text-[11px] text-neutral-300">
+                {isDebriefingPhase
+                  ? (isEn
+                      ? 'Debriefing phase: role kept active for video review and clinical/tactical debriefing until session end.'
+                      : 'Fase di Debriefing: ruolo mantenuto visibile per la revisione video NTS e il debriefing clinico con il Faculty fino al termine della sessione.')
+                  : (isEn
+                      ? 'Role active for practical phase and visible continuously until the end of debriefing.'
+                      : 'Ruolo operativo assegnato dal Faculty. Attivo e visibile per l’intera durata dello scenario e del debriefing.')}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <div className="px-3 py-1.5 bg-neutral-950/90 border border-neutral-800 rounded text-right font-mono">
+                <span className="text-[9px] text-neutral-500 uppercase block font-bold">
+                  {isEn ? 'Status' : 'Stato'}
+                </span>
+                <span className={`text-xs font-black flex items-center gap-1 ${isDebriefingPhase ? 'text-purple-400' : 'text-emerald-400'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${isDebriefingPhase ? 'text-purple-400' : 'text-emerald-400'}`} />
+                  {isDebriefingPhase ? (isEn ? 'IN DEBRIEFING' : 'IN DEBRIEFING') : (isEn ? 'ENGAGED' : 'OPERATIVO')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BANNER ATTESA ASSEGNAZIONE RUOLO SE IN FASE SCENARIO E NON ANCORA TRASMESSO */}
+      {isScenarioActivePhase && !activeRoleName && (
+        <div className="border-2 border-amber-500/80 bg-amber-950/40 p-3.5 sm:p-4 rounded shadow-xl transition-all font-mono">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 bg-amber-500 text-black shadow-sm animate-pulse">
+                  <Clock className="w-3.5 h-3.5" />
+                  {isEn ? 'ROLE ASSIGNMENT PENDING' : 'ASSEGNAZIONE RUOLO IN CORSO'}
+                </span>
+                <span className="px-2 py-0.5 bg-neutral-950 border border-neutral-700 text-neutral-300 text-[10px] font-bold rounded flex items-center gap-1">
+                  <Radio className="w-3 h-3 text-amber-400 animate-pulse" />
+                  {isCurrentTCCC ? 'AMBIENTE TATTICO (TCCC)' : 'OSPEDALE DA CAMPO (SHOCK ROOM)'}
+                </span>
+                <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 text-neutral-400 text-[10px] rounded">
+                  Faculty: {assignedFaculty?.badgeCode || 'FAC'} ({assignedFaculty?.name})
+                </span>
+              </div>
+              <div className="pt-0.5 flex items-baseline gap-2 flex-wrap">
+                <span className="text-xs text-amber-400 uppercase font-semibold">
+                  {isEn ? 'Awaiting Faculty Directive:' : 'In attesa del Faculty Tutor:'}
+                </span>
+                <h2 className="text-base sm:text-xl font-black text-amber-200 uppercase tracking-tight">
+                  ⏳ {isEn ? 'Role not yet transmitted by Faculty' : 'Ruoli in corso di definizione dal Faculty'}
+                </h2>
+              </div>
+              <p className="text-[11px] text-neutral-300">
+                {isEn
+                  ? `Faculty ${assignedFaculty?.name} is conferring on the 5 squad roles. Your specific role will appear here automatically upon transmission (or random assignment at end of T-15).`
+                  : `Il Faculty ${assignedFaculty?.name} sta definendo i 5 ruoli operativi della squadra. Il tuo ruolo comparirà qui in tempo reale appena trasmesso dal Faculty (o tramite assegnazione random allo scadere del T-15).`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <div className="px-3 py-1.5 bg-neutral-950/90 border border-amber-800/80 rounded text-right font-mono">
+                <span className="text-[9px] text-neutral-500 uppercase block font-bold">
+                  {isEn ? 'Status' : 'Stato'}
+                </span>
+                <span className="text-xs font-black text-amber-400 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                  {isEn ? 'PENDING' : 'IN ATTESA'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SEZIONE TIMELINE PERSONALIZZATA DELL'INTERO CORSO (DAY 2 & DAY 3) */}
       {showCourseTimeline && (
         <DiscentePersonalTimeline
@@ -408,6 +786,11 @@ export const DiscenteView: React.FC = () => {
           assignedFaculty={assignedFaculty}
           currentActiveSlotId={currentSlot?.id}
           activeDay={activeDay}
+          onSelectSlot={(slotId) => {
+            const found = INITIAL_TIMELINE_SLOTS.find((s) => s.id === slotId);
+            if (found) setInspectedSlot(translateSlot(found, language));
+          }}
+          inspectedSlotId={inspectedSlot?.id}
         />
       )}
 
@@ -506,29 +889,220 @@ export const DiscenteView: React.FC = () => {
         const act = studentCurrentActivity;
         if (!act) return null;
 
+        // Verifica fasi speciali notturne del Day 2
+        const isMascalActive = currentSlot?.id === 'd2-mascal-scenario' || (currentSlot?.id === 'd2-gate-discenti-notturno' && activeDay === 2);
+        const isNightClassifiedPreGate = activeDay === 2 && (currentSlot?.id === 'd2-staff-briefing-notturno' || currentSlot?.id === 'd2-pausa-cena');
+        const isNightChiusuraDay2 = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
+
+        if (isNightClassifiedPreGate) {
+          return (
+            <div className="bg-neutral-900 border-2 border-red-600 p-4 sm:p-6 shadow-2xl space-y-4 rounded-xl font-mono">
+              {/* Header Classificato */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-900/60 pb-3">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="px-2.5 py-0.5 bg-red-600 text-white font-black text-[10px] sm:text-xs uppercase tracking-widest rounded flex items-center gap-1.5 animate-pulse">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'SECURITY CLEARANCE: CLASSIFIED' : 'LIVELLO DI SICUREZZA: CLASSIFICATO'}</span>
+                    </span>
+                    <span className="px-2 py-0.5 bg-neutral-950 border border-red-500/60 text-red-300 font-mono text-[10px] sm:text-xs font-bold rounded">
+                      DAY 02 • 20:00 - 23:00
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                    <EyeOff className="w-6 h-6 text-red-500 shrink-0 animate-pulse" />
+                    <span>{isEn ? 'CLASSIFIED NIGHT SCENARIO' : 'SCENARIO NOTTURNO CLASSIFICATO'}</span>
+                  </h2>
+                </div>
+                <div className="px-3 py-1 bg-red-950/80 border border-red-500 text-xs font-mono text-red-300 rounded self-start sm:self-auto font-bold">
+                  {isEn ? 'STATUS: DETAILS REDACTED' : 'STATO: DETTAGLI OSCURATI'}
+                </div>
+              </div>
+
+              {/* Box Oscurato con barre diagonali tattiche */}
+              <div className="relative p-5 sm:p-7 rounded-lg border-2 border-red-500/70 bg-neutral-950 overflow-hidden shadow-inner">
+                <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,#000,#000_15px,#7f1d1d25_15px,#7f1d1d25_30px)] pointer-events-none" />
+                <div className="relative z-10 space-y-4 max-w-3xl mx-auto text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-950 border-2 border-red-500 text-red-400 mx-auto shadow-lg">
+                    <Lock className="w-6 h-6 animate-pulse" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold text-red-400 uppercase tracking-widest block">
+                      [ TOP SECRET • PROTOCOLLO RISERVATO REGIA ]
+                    </span>
+                    <h3 className="text-lg sm:text-2xl font-black text-white uppercase tracking-wide">
+                      {isEn ? 'TACTICAL BLACKOUT & SCENARIO REDACTION' : 'OSCURAMENTO TATTICO SCENARIO NOTTURNO'}
+                    </h3>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-neutral-300 font-sans leading-relaxed">
+                    {isEn
+                      ? 'All prosthetics, dynamic actors, simulated pathologies and tactical procedures are withheld by Master Control. Clinical and operational conditions will be decided on-demand in real-time. No prior scheduling is required or disclosed.'
+                      : 'Tutte le protesi necessarie, gli attori, le patologie simulate e le procedure tattiche sono rigorosamente nascoste e verranno decise al momento dalla Centrale Regia. Nessuna programmazione statica è richiesta né divulgata prima dell\'ingaggio.'}
+                  </p>
+
+                  {/* Quadri Avvisi Convocazione Staff e Gate Discenti */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left pt-2 font-mono text-xs">
+                    <div className="p-3 bg-neutral-900/90 border border-red-500/50 rounded-lg space-y-1">
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{isEn ? 'STAFF CONVOCATION NOTICE' : 'AVVISO CONVOCAZIONE STAFF'}</span>
+                      </span>
+                      <p className="text-white font-black text-xs sm:text-sm">
+                        {isEn ? 'ALL STAFF CONVOCATED BY 20:00' : 'TUTTO LO STAFF CONVOCATO ENTRO LE 20:00'}
+                      </p>
+                      <p className="text-[11px] text-neutral-400 font-sans">
+                        {isEn
+                          ? 'Technicians, Actors, Makeup Artists and Faculty must be on station for classified briefing and dynamic night staging.'
+                          : 'Tecnici, Attori, Truccatori e Faculty convocati entro le ore 20:00 per briefing segreto di allestimento.'}
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-neutral-900/90 border border-cyan-500/50 rounded-lg space-y-1">
+                      <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{isEn ? 'LEARNERS GATE OPENING' : 'APERTURA GATE DISCENTI'}</span>
+                      </span>
+                      <p className="text-white font-black text-xs sm:text-sm">
+                        {isEn ? 'GATE OPENS AT 20:30 • BRIEFING ON SCENE' : 'APERTURA GATE ORE 20:30 • BRIEFING VERBALE'}
+                      </p>
+                      <p className="text-[11px] text-neutral-400 font-sans">
+                        {isEn
+                          ? 'Gate opens at 20:30. Operational orders will be communicated strictly by voice upon arrival on scene.'
+                          : 'Il gate discenti aprirà alle 20:30: le istruzioni operative saranno comunicate verbalmente all\'arrivo sul posto.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Countdown Box verso le 20:30 */}
+                  <div className="p-3 bg-neutral-900 border border-red-500/70 rounded-lg inline-block w-full max-w-md">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-0.5">
+                      {isEn ? 'TIME REMAINING TO GATE OPENING (20:30):' : 'TEMPO RIMANENTE ALL\'APERTURA DEL GATE (ORE 20:30):'}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-red-400 tracking-wider">
+                      {formatTimer(timerSeconds)}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-neutral-400 italic">
+                    {isEn
+                      ? 'Equip tactical boots, full PPE and headlamp before approaching the Central Gate.'
+                      : 'Indossare calzature tattiche, DPI completi e torcia frontale prima di presentarsi al Gate Centrale.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (isMascalActive) {
+          return (
+            <div className="bg-neutral-900 border-2 border-red-600 p-4 sm:p-5 shadow-2xl space-y-4 rounded-xl font-mono">
+              {/* Header MASCAL Attivo */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-900/60 pb-3">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="px-2.5 py-0.5 bg-red-600 text-white font-black text-[10px] sm:text-xs uppercase tracking-widest rounded flex items-center gap-1.5 animate-pulse">
+                      <Flame className="w-3.5 h-3.5 text-yellow-300" />
+                      <span>{isEn ? 'ACTIVE MASCAL OPERATION' : 'OPERAZIONE MASCAL ATTIVA'}</span>
+                    </span>
+                    <span className="px-2 py-0.5 bg-neutral-950 border border-red-500/60 text-red-300 font-mono text-[10px] sm:text-xs font-bold rounded">
+                      21:00 - 23:00 • DAY 02
+                    </span>
+                    <span className="px-2 py-0.5 bg-red-950 text-red-200 border border-red-800 text-[10px] sm:text-xs font-bold rounded">
+                      {isEn ? 'ALL 60 LEARNERS JOINT PHASE' : 'TUTTI I 60 DISCENTI CONGIUNTI (ALPHA, BRAVO, CHARLIE, DELTA)'}
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                    <Crosshair className="w-6 h-6 text-red-500 shrink-0 animate-pulse" />
+                    <span>{isEn ? 'NIGHT MASCAL SCENARIO' : 'SCENARIO NOTTURNO MASCAL'}</span>
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="px-3 py-1 bg-neutral-950 border border-red-500 text-right rounded">
+                    <span className="text-[9px] text-neutral-400 uppercase block">{isEn ? 'SESSION TIME' : 'TEMPO SESSIONE'}</span>
+                    <span className="text-lg font-black text-red-400 tracking-wider">{formatTimer(timerSeconds)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informative briefing box */}
+              <div className="p-3 bg-red-950/40 border border-red-600/60 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block flex items-center gap-1">
+                    <Radio className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                    <span>{isEn ? 'FIELD RADIO DIRECTIVE • CH-1 CONTROL ROOM' : 'DIRETTIVA RADIO CAMPO • CH-1 REGIA'}</span>
+                  </span>
+                  <p className="text-xs text-neutral-200 font-sans">
+                    {isEn
+                      ? 'Mass casualty triage, immediate bleeding control and team stabilization. Follow verbal instructions from on-scene Faculty and Master Control.'
+                      : 'Maxiafflusso di feriti con triage rapido, controllo emorragie e stabilizzazione di squadra. Seguire le istruzioni verbali impartite sul campo dalla Regia e dai Tutor Faculty.'}
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 bg-red-600 text-white font-mono font-black text-xs uppercase tracking-wider rounded shrink-0 self-start sm:self-auto shadow-sm">
+                  {isEn ? 'NO STATIC PATIENT SCHEDULE' : 'GESTIONE FERITI ON-DEMAND'}
+                </span>
+              </div>
+
+              {/* Schede di Triage MASCAL con Guida Decisionale a Step integrate direttamente */}
+              <MascalTriageGuideCard />
+            </div>
+          );
+        }
+
+        if (isNightChiusuraDay2) {
+          return (
+            <div className="bg-neutral-900 border-2 border-amber-500 p-4 sm:p-6 shadow-2xl space-y-4 rounded-xl font-mono text-center">
+              <div className="space-y-2">
+                <span className="px-3 py-1 bg-amber-500 text-black font-black text-xs uppercase tracking-widest rounded inline-block">
+                  {isEn ? 'DAY 2 COMPLETED • NIGHT REST' : 'DAY 2 CONCLUSO • RIPOSO NOTTURNO'}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                  {isEn ? 'MASCAL COMPLETED • RESUMING AT 08:30 (DAY 3)' : 'SCENARIO MASCAL CONCLUSO • RIPRESA ORE 08:30 (DAY 3)'}
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-300 font-sans max-w-xl mx-auto">
+                  {isEn
+                    ? 'Day 2 operations concluded at 23:00. The public countdown has resumed for Day 3 start at 08:30.'
+                    : 'Le operazioni del Day 2 si sono concluse alle ore 23:00. Il countdown pubblico ha ripreso il conteggio per l\'apertura del Day 3 alle ore 08:30.'}
+                </p>
+              </div>
+
+              <div className="p-4 bg-neutral-950 border border-amber-500/80 rounded-lg inline-block w-full max-w-md my-2">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
+                  {isEn ? 'TIME REMAINING UNTIL DAY 3 (08:30):' : 'TEMPO RIMANENTE ALL\'AVVIO DEL DAY 3 (08:30):'}
+                </span>
+                <span className="text-3xl sm:text-4xl font-black text-amber-400 tracking-wider">
+                  {formatTimer(timerSeconds)}
+                </span>
+              </div>
+            </div>
+          );
+        }
+
         // Squad station number within the group (Squadra 1 -> 1, Squadra 2 -> 2, Squadra 3 -> 3)
         const stationNum = ((currentDiscente.teamId - 1) % 3) + 1;
-        const slotTitle = (currentSlot?.title || '').toLowerCase();
         const text = `${act.title} ${act.subtitle} ${act.location}`.toLowerCase();
         const actType = act.activityType || '';
 
-        // Determine environment classification
-        const isTCCC =
-          text.includes('tccc') ||
-          text.includes('tattic') ||
-          text.includes('tactical') ||
-          actType === 'scenario_extra' ||
-          (slotTitle.includes('tccc') && !text.includes('shock') && !text.includes('ws'));
-
-        const isShockRoom =
-          text.includes('shock room') ||
-          text.includes('box shock') ||
-          actType === 'scenario_intra' ||
-          (slotTitle.includes('shock room') && !text.includes('tccc') && !text.includes('ws'));
-
+        // Determine environment classification strictly from the learner's own activity
         const isWS1 = text.includes('ws1') || text.includes('vie aeree') || text.includes('crico') || text.includes('airway');
         const isWS2 = text.includes('ws2') || text.includes('ecografia') || text.includes('fast') || text.includes('accessi') || text.includes('ultrasound');
-        const isWorkshop = actType === 'workshop' || text.includes('workshop') || isWS1 || isWS2;
+        const isWorkshop = (actType === 'workshop' || text.includes('workshop') || isWS1 || isWS2) && !text.includes('tccc') && !text.includes('shock');
+
+        const isTCCC =
+          !isWorkshop &&
+          (text.includes('tccc') ||
+            text.includes('tattic') ||
+            text.includes('tactical') ||
+            actType === 'scenario_extra');
+
+        const isShockRoom =
+          !isWorkshop &&
+          (text.includes('shock room') ||
+            text.includes('box shock') ||
+            text.includes('box sr') ||
+            actType === 'scenario_intra');
 
         // Compute contiguous workshop block (start and end times) for unified single time display
         let wsStartTime = '';
@@ -582,20 +1156,27 @@ export const DiscenteView: React.FC = () => {
           }
         }
 
-        const isPreAllertaTCCC = isTCCC && (
-          slotTitle.includes('pre-alert') ||
-          slotTitle.includes('pre-allerta') ||
-          text.includes('pre-allerta') ||
-          text.includes('preallerta')
-        );
+        const isPreAllertaTCCC =
+          isTCCC &&
+          (text.includes('pre-alert') ||
+            text.includes('pre-allerta') ||
+            text.includes('preallerta') ||
+            text.includes('t -15') ||
+            text.includes('t-15'));
 
-        const isStandbySR = isShockRoom && (
-          text.includes('standby') ||
-          text.includes('pre-handover') ||
-          slotTitle.includes('standby')
-        );
+        const isStandbySR =
+          isShockRoom &&
+          (text.includes('pre-allerta') ||
+            text.includes('pre-alert') ||
+            text.includes('standby attivo') ||
+            text.includes('pre-handover') ||
+            text.includes('t -15') ||
+            text.includes('t-15'));
 
-        const isHandover = slotTitle.includes('handover') || text.includes('handover') || text.includes('sbar');
+        const isBriefingSR =
+          isShockRoom && !isStandbySR && text.includes('briefing shock room');
+
+        const isHandover = text.includes('handover') || text.includes('sbar');
         const showCountdown = isPreAllertaTCCC || isStandbySR;
 
         // Configuration strictly specifying AMBIENTE TCCC vs SHOCK ROOM and eliminating any scenario details
@@ -690,15 +1271,29 @@ export const DiscenteView: React.FC = () => {
             envConfig = {
               environmentType: 'SHOCK_ROOM',
               environmentBadge: 'SHOCK ROOM',
-              phaseLabel: isEn ? 'ACTIVE BOX STANDBY (T -15)' : 'STANDBY ATTIVO BOX (T -15)',
+              phaseLabel: isEn ? 'PRE-ALERT SHOCK ROOM (T -15)' : 'PRE-ALLERTA SHOCK ROOM (T -15)',
               title: 'SHOCK ROOM',
-              subtitle: isEn ? 'T-15 window: Box staffing, equipment check, and active standby prior to handover.' : 'Finestra T-15: presidio Box, controllo presidi e standby attivo pre-handover.',
+              subtitle: isEn ? 'T-15 window (Min 15-30 before :30 Handover): Box staffing, equipment check, and active standby.' : 'Finestra T-15 (Min 15-30 prima di Handover :30): presidio Box, controllo presidi e standby attivo.',
               location: isEn ? `Shock Room Box ${stationNum}` : `Box Shock Room ${stationNum}`,
               border: 'border-yellow-400 animate-pulse border-3',
               bg: 'bg-yellow-950/35',
               badge: 'bg-yellow-400 text-black font-black animate-pulse',
               glow: 'shadow-yellow-950/60 shadow-xl',
               isBlinking: true,
+            };
+          } else if (isBriefingSR) {
+            envConfig = {
+              environmentType: 'SHOCK_ROOM',
+              environmentBadge: 'SHOCK ROOM',
+              phaseLabel: isEn ? 'SHOCK ROOM BRIEFING (MIN 00-15)' : 'BRIEFING SHOCK ROOM (MIN 00-15)',
+              title: 'SHOCK ROOM',
+              subtitle: isEn ? 'Preliminary Box briefing and equipment verification prior to T-15 Pre-Alert window.' : 'Briefing preliminare nel Box e verifica dotazioni in vista della Pre-Allerta T-15.',
+              location: isEn ? `Shock Room Box ${stationNum}` : `Box Shock Room ${stationNum}`,
+              border: 'border-cyan-500 border-2',
+              bg: 'bg-cyan-950/30',
+              badge: 'bg-cyan-500 text-black font-black',
+              glow: 'shadow-cyan-950/60 shadow-xl',
+              isBlinking: false,
             };
           } else if (text.includes('debriefing')) {
             envConfig = {
@@ -767,7 +1362,7 @@ export const DiscenteView: React.FC = () => {
           envConfig = {
             environmentType: 'BRIEFING',
             environmentBadge: isEn ? 'CLASSROOM SESSION' : 'SESSIONE D\'AULA',
-            phaseLabel: isEn ? 'FRAMEWORK / PLENARY' : 'INQUADRAMENTO / PLENARIA',
+            phaseLabel: isEn ? 'FRAMEWORK / PLENARIA' : 'INQUADRAMENTO / PLENARIA',
             title: act.title || (isEn ? 'CLASSROOM SESSION' : 'SESSIONE D\'AULA'),
             subtitle: act.subtitle || (isEn ? 'Alignment and classroom directives with Faculty.' : 'Allineamento e direttive d\'aula con la Faculty.'),
             location: act.location ? translateLocation(act.location, language) : (isEn ? 'Plenary Hall' : 'Aula Plenaria'),
@@ -780,7 +1375,9 @@ export const DiscenteView: React.FC = () => {
         }
 
         const squadNumbers = studentGroup === 'A' ? [1, 2, 3] : studentGroup === 'B' ? [4, 5, 6] : studentGroup === 'C' ? [7, 8, 9] : [10, 11, 12];
-        const displaySlotTitle = (currentSlot?.title || (isEn ? 'CURRENT PHASE' : 'FASE CORRENTE')).replace(/Scenario\s*/gi, isEn ? 'Activity ' : 'Attività ').trim();
+        const singleLearnerEventTitle = act.title
+          ? `${envConfig.title} • ${act.title}`
+          : envConfig.title;
 
         return (
           <div className="bg-neutral-900 border-2 border-cyan-500/80 p-4 sm:p-5 shadow-xl space-y-4 rounded">
@@ -809,7 +1406,7 @@ export const DiscenteView: React.FC = () => {
                     </span>
                     <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
                       <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-pulse" />
-                      {displaySlotTitle}
+                      {singleLearnerEventTitle}
                     </h2>
                   </div>
                 )}
@@ -820,7 +1417,7 @@ export const DiscenteView: React.FC = () => {
                     {isEn ? `Continuous Block (${wsDuration} min)` : `Blocco Continuo (${wsDuration} min)`}
                   </span>
                 ) : (
-                  <span>{isEn ? `Phase ${activeSlotIndex + 1}/${dayMasterSlots.length}` : `Fase ${activeSlotIndex + 1}/${dayMasterSlots.length}`}</span>
+                  <span>{isEn ? `Phase ${effectiveSlotIdx + 1}/${dayMasterSlots.length}` : `Fase ${effectiveSlotIdx + 1}/${dayMasterSlots.length}`}</span>
                 )}
               </div>
             </div>
@@ -900,6 +1497,101 @@ export const DiscenteView: React.FC = () => {
                     <span className="text-base sm:text-lg font-mono font-black text-yellow-400 tracking-wider">
                       {formatTimer(timerSeconds)}
                     </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Tactical Scenario Role Box inside slot card */}
+              {isScenarioRoleActive && (
+                <div
+                  className={`p-3 sm:p-4 rounded border-2 space-y-2 font-mono transition-all ${
+                    isTCCC
+                      ? 'bg-orange-950/90 border-orange-500 shadow-xl shadow-orange-950/60 ring-1 ring-orange-400/50'
+                      : 'bg-cyan-950/90 border-cyan-400 shadow-xl shadow-cyan-950/60 ring-1 ring-cyan-400/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap border-b border-neutral-800/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1 shadow-sm ${
+                          isDebriefingPhase
+                            ? 'bg-purple-600 text-white'
+                            : isTCCC
+                            ? 'bg-orange-600 text-white'
+                            : 'bg-cyan-400 text-black'
+                        }`}
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                        {isDebriefingPhase
+                          ? (isEn ? 'DEBRIEFING • YOUR ROLE' : 'DEBRIEFING • IL TUO RUOLO')
+                          : (isEn ? 'YOUR ASSIGNED SCENARIO ROLE' : 'IL TUO RUOLO OPERATIVO ASSEGNATO')}
+                      </span>
+                      <span className="text-white text-xs font-bold">
+                        {currentDiscente.badgeCode || 'DISC'} • {currentDiscente.name}
+                      </span>
+                    </div>
+
+                    {currentDiscente.activeScenarioAssignedBy?.includes('RANDOM') ? (
+                      <span className="text-[10px] text-purple-300 font-bold flex items-center gap-1">
+                        🎲 {isEn ? 'Assigned automatically at Random (T-15 expiry)' : 'Assegnato in modalità Random (fine Pre-Allerta T-15)'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        {isEn ? 'Verified by Faculty Tutor' : 'Assegnato e Validato da Faculty'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="pt-0.5">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest block font-semibold mb-0.5">
+                      {isEn ? 'Operational Assignment:' : 'Incarico Operativo:'}
+                    </span>
+                    <div className="text-base sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                      <span className={isTCCC ? 'text-orange-400' : 'text-cyan-300'}>
+                        ⚡ {activeRoleName}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-200 pt-1 leading-snug">
+                      {isDebriefingPhase
+                        ? (isEn
+                            ? `Debriefing in progress with Faculty ${assignedFaculty?.name}. Role visible for review and restitution.`
+                            : `Debriefing in corso con il Tutor Faculty ${assignedFaculty?.name}. Ruolo visibile per l'analisi e la restituzione didattica.`)
+                        : (isEn
+                            ? `Operate strictly under your assigned clinical/tactical role in coordination with Faculty ${assignedFaculty?.name}.`
+                            : `Opera attivamente secondo il tuo ruolo tattico-clinico designato in coordinamento con il Tutor Faculty ${assignedFaculty?.name}.`)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Slot card state when scenario phase is active but role is pending Faculty assignment */}
+              {isScenarioActivePhase && !activeRoleName && (
+                <div className="p-3 sm:p-4 rounded border-2 border-amber-500/70 bg-amber-950/40 space-y-2 font-mono shadow-md animate-pulse">
+                  <div className="flex items-center justify-between gap-2 flex-wrap border-b border-amber-800/60 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1 bg-amber-500 text-black shadow-sm">
+                        <Clock className="w-3.5 h-3.5 text-black" />
+                        {isEn ? 'ROLE ASSIGNMENT PENDING' : 'ASSEGNAZIONE RUOLO IN CORSO'}
+                      </span>
+                      <span className="text-white text-xs font-bold">
+                        {currentDiscente.badgeCode || 'DISC'} • {currentDiscente.name}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                      Faculty: {assignedFaculty?.badgeCode || 'FAC'} ({assignedFaculty?.name})
+                    </span>
+                  </div>
+
+                  <div className="pt-0.5">
+                    <span className="text-[10px] text-amber-400 uppercase tracking-widest block font-semibold mb-0.5">
+                      {isEn ? 'Directive from Faculty Tutor:' : 'Direttiva Tutor Faculty:'}
+                    </span>
+                    <p className="text-xs sm:text-sm text-neutral-200 leading-snug font-semibold">
+                      {isEn
+                        ? `Awaiting tactical role assignment from Faculty ${assignedFaculty?.name}. The role will appear here automatically upon confirmation.`
+                        : `In attesa di assegnazione del ruolo da parte del Faculty ${assignedFaculty?.name}. Il tuo ruolo operativo comparirà qui in tempo reale appena confermato dal Faculty.`}
+                    </p>
                   </div>
                 </div>
               )}
@@ -1017,6 +1709,26 @@ export const DiscenteView: React.FC = () => {
         isOpen={showUnlockModal}
         onClose={() => setShowUnlockModal(false)}
         roleLabel={isEn ? 'Learner' : 'Discente'}
+      />
+
+      {/* MODALE REPORT ANTEPRIMA BILANCIAMENTO DISCENTI */}
+      <StaffBalancingModal<Discente>
+        isOpen={isBalancingModalOpen}
+        report={discentiBalancingReport}
+        onClose={() => setIsBalancingModalOpen(false)}
+        onConfirm={async (updatedDiscenti) => {
+          await bulkUpdateDiscenti(updatedDiscenti);
+          if (sendCourseMessage) {
+            sendCourseMessage({
+              senderId: 'REGIA-CH3',
+              senderName: 'Coordinamento Didattico Regia',
+              senderRole: 'direttore',
+              type: 'info',
+              subject: 'RIASSETTO SQUADRE E LEADERSHIP DISCENTI APPLICATO',
+              content: `L'articolazione delle 12 Squadre nei 4 Macro-Gruppi (ALPHA..DELTA) e le assegnazioni Team Leader sono state bilanciate omogeneamente.`,
+            });
+          }
+        }}
       />
     </div>
   );

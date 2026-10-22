@@ -1,12 +1,59 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, disableNetwork, enableNetwork, setLogLevel } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+
+// Silence internal Firestore SDK retry and backoff log noise (prevents unhandled quota warning spam)
+try {
+  setLogLevel('silent');
+} catch (e) {}
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+let isNetworkDisabled = false;
+let isQuotaExhaustedFlag = false;
+
+// Check if quota was previously flagged in this session or localStorage
+if (typeof window !== 'undefined') {
+  try {
+    if (localStorage.getItem('firestore_quota_exhausted') === 'true') {
+      isQuotaExhaustedFlag = true;
+      isNetworkDisabled = true;
+      disableNetwork(db).catch(() => {});
+    }
+  } catch (e) {}
+}
+
+export function isQuotaExhausted(): boolean {
+  return isQuotaExhaustedFlag;
+}
+
+export function markQuotaExhausted(): void {
+  isQuotaExhaustedFlag = true;
+  isNetworkDisabled = true;
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('firestore_quota_exhausted', 'true');
+    }
+  } catch (e) {}
+  disableNetwork(db).catch(() => {});
+}
+
+export async function resetQuotaStatus(): Promise<void> {
+  isQuotaExhaustedFlag = false;
+  isNetworkDisabled = false;
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('firestore_quota_exhausted');
+    }
+  } catch (e) {}
+  try {
+    await enableNetwork(db);
+  } catch (e) {}
+}
 
 export enum OperationType {
   CREATE = 'create',
@@ -34,9 +81,28 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): void {
+  const rawMsg = error instanceof Error ? error.message : String(error);
+  const errorCode = (error && typeof error === 'object' && 'code' in error) ? String((error as any).code) : '';
+
+  const isQuotaOrResourceExhausted =
+    errorCode === 'resource-exhausted' ||
+    errorCode.includes('resource-exhausted') ||
+    rawMsg.toLowerCase().includes('quota') ||
+    rawMsg.toLowerCase().includes('resource-exhausted');
+
+  if (isQuotaOrResourceExhausted) {
+    markQuotaExhausted();
+    return;
+  }
+
+  const isPermissionError =
+    rawMsg.toLowerCase().includes('permission') ||
+    rawMsg.toLowerCase().includes('insufficient') ||
+    errorCode === 'permission-denied';
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: rawMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -51,22 +117,34 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
 
-export async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Firebase client is offline or initializing.');
-    }
+  if (isPermissionError) {
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  } else {
+    // Other errors (network offline, etc.)
+    console.warn(`[Firestore ${operationType} on ${path || 'unknown'}] Handled notice: ${rawMsg}`);
   }
 }
 
-// Initial connection check
-testConnection();
+export async function testConnection(): Promise<boolean> {
+  if (isQuotaExhausted() || isNetworkDisabled) {
+    return false;
+  }
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    return true;
+  } catch (error) {
+    const rawMsg = error instanceof Error ? error.message : String(error);
+    const errorCode = (error && typeof error === 'object' && 'code' in error) ? String((error as any).code) : '';
+    if (errorCode === 'resource-exhausted' || rawMsg.toLowerCase().includes('quota') || rawMsg.toLowerCase().includes('resource-exhausted')) {
+      markQuotaExhausted();
+    } else if (rawMsg.includes('the client is offline')) {
+      // client offline
+    }
+    return false;
+  }
+}
 
 export async function signInWithGoogle() {
   try {
@@ -85,3 +163,4 @@ export async function logOut() {
     throw error;
   }
 }
+

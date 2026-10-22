@@ -35,6 +35,7 @@ service cloud.firestore {
         (!('suspensionInfo' in data) || data.suspensionInfo is map) &&
         (!('courseStartSchedule' in data) || data.courseStartSchedule is map) &&
         (!('freeAccessEnabled' in data) || data.freeAccessEnabled is bool) &&
+        (!('simulationPhase' in data) || data.simulationPhase is string || data.simulationPhase is map) &&
         (!('language' in data) || data.language in ['it', 'en']);
     }
 
@@ -151,7 +152,15 @@ service cloud.firestore {
         (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
         (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
-        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100)) &&
+        (!('assignedRole' in data) || data.assignedRole == null || (data.assignedRole is string && data.assignedRole.size() <= 200)) &&
+        (!('activeScenarioRole' in data) || data.activeScenarioRole == null || (data.activeScenarioRole is string && data.activeScenarioRole.size() <= 200)) &&
+        (!('activeScenarioType' in data) || data.activeScenarioType == null || (data.activeScenarioType is string && data.activeScenarioType.size() <= 100)) &&
+        (!('activeScenarioSlotId' in data) || data.activeScenarioSlotId == null || (data.activeScenarioSlotId is string && data.activeScenarioSlotId.size() <= 200)) &&
+        (!('activeScenarioAssignedAt' in data) || data.activeScenarioAssignedAt == null || (data.activeScenarioAssignedAt is string && data.activeScenarioAssignedAt.size() <= 100)) &&
+        (!('activeScenarioAssignedBy' in data) || data.activeScenarioAssignedBy == null || (data.activeScenarioAssignedBy is string && data.activeScenarioAssignedBy.size() <= 100)) &&
+        (!('simulationPhase' in data) || data.simulationPhase == null || (data.simulationPhase is string && data.simulationPhase.size() <= 100)) &&
+        (!('lastRoleResetTimestamp' in data) || data.lastRoleResetTimestamp == null || (data.lastRoleResetTimestamp is string && data.lastRoleResetTimestamp.size() <= 100));
     }
 
     match /discenti/{discenteId} {

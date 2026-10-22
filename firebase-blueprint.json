@@ -183,6 +183,12 @@
         "experience": { "type": "string", "maxLength": 200 },
         "organization": { "type": "string", "maxLength": 200 },
         "badgeCode": { "type": "string", "maxLength": 50 },
+        "assignedRole": { "type": "string", "maxLength": 150 },
+        "activeScenarioRole": { "type": "string", "maxLength": 150 },
+        "activeScenarioType": { "type": "string", "maxLength": 50 },
+        "activeScenarioSlotId": { "type": "string", "maxLength": 100 },
+        "simulationPhase": { "type": "string", "maxLength": 50 },
+        "lastRoleResetTimestamp": { "type": "string", "maxLength": 50 },
         "notes": { "type": "string", "maxLength": 1000 }
       },
       "required": ["id", "name", "role", "teamId", "nationality"]

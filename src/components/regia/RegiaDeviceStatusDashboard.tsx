@@ -184,31 +184,45 @@ export const RegiaDeviceStatusDashboard: React.FC = () => {
     const now = Date.now();
     const items: FleetDeviceItem[] = [];
 
-    // 1. DISCENTI (60 Matricole: DISC-01 to DISC-60)
-    for (let i = 1; i <= 60; i++) {
+    // 1. DISCENTI (70 Matricole: DISC-01 to DISC-70 • HITTER 70)
+    const teamSizes = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5];
+    for (let i = 1; i <= 70; i++) {
+      const idx = i - 1;
+      let accumulated = 0;
+      let teamId = 1;
+      let numInSquad = 1;
+
+      for (let t = 0; t < teamSizes.length; t++) {
+        const size = teamSizes[t];
+        if (idx < accumulated + size) {
+          teamId = t + 1;
+          numInSquad = idx - accumulated + 1;
+          break;
+        }
+        accumulated += size;
+      }
+
       const matricola = `DISC-${i.toString().padStart(2, '0')}`;
       const d = discenti.find(
         (disc) => (disc.badgeCode || '').toUpperCase() === matricola || disc.id === `disc-${i}`
       ) || {
         id: `disc-${i}`,
         name: `Allievo ${matricola}`,
-        role: i % 5 === 1 ? 'Team Leader' : 'Operatore Trauma',
-        teamId: Math.ceil(i / 5),
+        role: numInSquad === 1 ? 'Team Leader' : 'Operatore Trauma',
+        teamId,
         nationality: 'Italiana',
         badgeCode: matricola,
       };
 
       // Determine macro-group
       let group: 'ALPHA' | 'BRAVO' | 'CHARLIE' | 'DELTA' = 'ALPHA';
-      if (i > 45) group = 'DELTA';
-      else if (i > 30) group = 'CHARLIE';
-      else if (i > 15) group = 'BRAVO';
+      if (i > 54) group = 'DELTA';
+      else if (i > 36) group = 'CHARLIE';
+      else if (i > 18) group = 'BRAVO';
 
-      const teamNumInGroup = ((Math.ceil(i / 5) - 1) % 3) + 1; // 1, 2, or 3
-      const numInSquad = ((i - 1) % 5) + 1; // 1 to 5
+      const teamNumInGroup = ((teamId - 1) % 3) + 1; // 1, 2, or 3
       const isTL = numInSquad === 1;
       const hierarchicalCode = `${group}-SQ${teamNumInGroup}-0${numInSquad}`;
-      const teamId = Math.ceil(i / 5);
       const teamName = `Squadra ${teamId}`;
       const patientId = teamNumInGroup;
       const currentStation = getDiscenteCurrentStation(group, teamNumInGroup);

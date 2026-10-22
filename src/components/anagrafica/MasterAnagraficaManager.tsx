@@ -18,16 +18,29 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  Upload,
   UserCheck,
   UserPlus,
   Users,
   Wrench,
   X,
+  Sparkles,
+  Scale,
 } from 'lucide-react';
 import { Director, Discente, Faculty, Guest, RegiaStaff, Team, Technician } from '../../types';
 import { getTeamCodeName } from '../../utils/teamUtils';
 import { ParticipantQRModal } from './ParticipantQRModal';
 import { PersonnelBadgeRegistry } from './PersonnelBadgeRegistry';
+import { AnagraficaTruccoPanel } from './AnagraficaTruccoPanel';
+import { StaffBalancingModal } from '../common/StaffBalancingModal';
+import { AnagraficaImportModal, ImportCategory } from './AnagraficaImportModal';
+import { ThermalLabelGeneratorModal } from './ThermalLabelGeneratorModal';
+import {
+  balanceTechniciansWorkload,
+  balanceFacultyWorkload,
+  balanceDiscentiWorkload,
+  BalancingReport,
+} from '../../utils/staffBalancer';
 
 export const getCountryFlag = (nationality: string = ''): string => {
   const norm = nationality.toLowerCase().trim();
@@ -60,10 +73,21 @@ export const NATIONALITY_PRESETS = [
 ];
 
 interface MasterAnagraficaManagerProps {
-  initialSection?: 'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti';
+  initialSection?:
+    | 'discenti'
+    | 'faculty'
+    | 'tecnici'
+    | 'direttori'
+    | 'regia'
+    | 'ospiti'
+    | 'attori'
+    | 'truccatori'
+    | 'trucco';
 }
 
-export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = ({ initialSection = 'discenti' }) => {
+export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = ({
+  initialSection = 'discenti',
+}) => {
   const {
     language,
     teams,
@@ -80,6 +104,11 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
     updateTechnician,
     addTechnician,
     deleteTechnician,
+    bulkUpdateTechnicians,
+    bulkUpdateFaculty,
+    bulkUpdateDiscenti,
+    simulatorPatients,
+    sendCourseMessage,
     directors,
     updateDirector,
     addDirector,
@@ -92,14 +121,31 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
     updateGuest,
     addGuest,
     deleteGuest,
+    actors,
+    makeupArtists,
   } = useCourse();
 
   const isEn = language === 'en';
 
-  const [activeSection, setActiveSection] = useState<'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti' | 'badges'>(initialSection);
+  const [activeSection, setActiveSection] = useState<
+    | 'discenti'
+    | 'faculty'
+    | 'tecnici'
+    | 'direttori'
+    | 'regia'
+    | 'ospiti'
+    | 'attori'
+    | 'truccatori'
+    | 'trucco'
+    | 'badges'
+  >(initialSection === 'trucco' ? 'attori' : initialSection);
   const [searchQuery, setSearchQuery] = useState('');
   const [nationalityFilter, setNationalityFilter] = useState('ALL');
   const [groupFilter, setGroupFilter] = useState('ALL');
+  const [activeBalancingReport, setActiveBalancingReport] = useState<BalancingReport<any> | null>(null);
+  const [isBalancingModalOpen, setIsBalancingModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isThermalLabelsModalOpen, setIsThermalLabelsModalOpen] = useState(false);
 
   // QR Pass Modal state
   const [selectedPersonForQr, setSelectedPersonForQr] = useState<{
@@ -353,12 +399,28 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
             </h2>
             <p className="text-[10px] text-neutral-400 max-w-3xl mt-1 leading-relaxed">
               {isEn
-                ? 'Comprehensive management and editing of personal records, nationalities, operational roles, contacts and teams for Learners (60), Faculty (12), Technical Staff (6), Direction (2) and Guest/VIP Delegations (5).'
-                : 'Gestione, compilazione e modifica completa dei dati anagrafici, nazionalità, ruoli operativi, contatti e squadre per Discenti (60), Faculty (12), Staff Tecnico (6), Direzione (2) e Delegazioni Ospiti/VIP (5).'}
+                ? 'Comprehensive management and editing of personal records, nationalities, operational roles, contacts and teams for Learners (70), Faculty (12), Technical Staff (12), Direction (2) and Guest/VIP Delegations (5).'
+                : 'Gestione, compilazione e modifica completa dei dati anagrafici, nazionalità, ruoli operativi, contatti e squadre per Discenti (70), Faculty (12), Staff Tecnico (12), Direzione (2) e Delegazioni Ospiti/VIP (5).'}
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsThermalLabelsModalOpen(true)}
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black border-2 border-amber-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-amber-950/40"
+              title={isEn ? 'Generate thermal adhesive labels (50x80 / 40x30 mm JPG)' : 'Generatore etichette termoadesive (50x80 e 40x30 mm JPG)'}
+            >
+              <QrCode className="w-4 h-4 text-black stroke-[2.8]" />
+              {isEn ? 'THERMAL LABELS (50x80 / 40x30)' : 'ETICHETTE TERMICHE QR (50x80 / 40x30)'}
+            </button>
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-black border-2 border-orange-400 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-orange-950/40"
+              title={isEn ? 'Import data from CSV, Excel or TSV' : 'Importa dati anagrafici da CSV, foglio Excel o TSV'}
+            >
+              <Upload className="w-4 h-4 text-black stroke-[3]" />
+              {isEn ? 'IMPORT DATA (CSV / EXCEL)' : 'IMPORTA DATI (CSV / EXCEL)'}
+            </button>
             <button
               onClick={handleExportCSV}
               className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-100 hover:text-black text-white border-2 border-neutral-700 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
@@ -483,6 +545,30 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
         </button>
 
         <button
+          onClick={() => setActiveSection('attori')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+            activeSection === 'attori'
+              ? 'bg-amber-500 text-black border-amber-400 shadow-md font-black'
+              : 'bg-neutral-900 text-amber-300 border-amber-500/40 hover:text-white hover:border-amber-500'
+          }`}
+        >
+          <Users className="w-4 h-4 text-amber-400" />
+          {isEn ? '6. ACTORS ROSTER (8 SLOTS)' : '6. ANAGRAFICA ATTORI (8 SLOT)'} ({actors.length})
+        </button>
+
+        <button
+          onClick={() => setActiveSection('truccatori')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
+            activeSection === 'truccatori'
+              ? 'bg-pink-600 text-white border-pink-400 shadow-md font-black'
+              : 'bg-neutral-900 text-pink-300 border-pink-500/40 hover:text-white hover:border-pink-500'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-pink-400" />
+          {isEn ? '7. MAKEUP ARTISTS ROSTER' : '7. ANAGRAFICA TRUCCATORI'} ({makeupArtists.length})
+        </button>
+
+        <button
           onClick={() => setActiveSection('badges')}
           className={`px-4 py-2 text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-2 flex-shrink-0 ${
             activeSection === 'badges'
@@ -495,8 +581,12 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
         </button>
       </div>
 
-      {/* SEARCH AND FILTERS BAR */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-neutral-900/60 p-3 border border-neutral-800">
+      {/* SEARCH AND FILTERS BAR (for standard tables; Attori & Truccatori have their own dedicated bars) */}
+      {activeSection !== 'attori' &&
+        activeSection !== 'truccatori' &&
+        activeSection !== 'trucco' &&
+        activeSection !== 'badges' && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-neutral-900/60 p-3 border border-neutral-800">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
           <input
@@ -540,31 +630,76 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
 
           {/* Add button based on active section */}
           {activeSection === 'discenti' && (
-            <button
-              onClick={() => setIsAddingDiscente(true)}
-              className="px-4 py-2 bg-orange-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-orange-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
-            >
-              <Plus className="w-4 h-4" />
-              {isEn ? 'NEW LEARNER' : 'NUOVO DISCENTE'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const report = balanceDiscentiWorkload(discenti);
+                  setActiveBalancingReport(report);
+                  setIsBalancingModalOpen(true);
+                }}
+                className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-400 text-black border-2 border-emerald-400 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                title="Ribilancia omogeneamente carichi orari, Macro-Gruppi ALPHA..DELTA e 12 Squadre con alternanza Team Leader"
+              >
+                <Scale className="w-4 h-4 text-black shrink-0" />
+                <span>⚖️ Ribilancia Discenti</span>
+              </button>
+              <button
+                onClick={() => setIsAddingDiscente(true)}
+                className="px-4 py-2 bg-orange-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-orange-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
+              >
+                <Plus className="w-4 h-4" />
+                {isEn ? 'NEW LEARNER' : 'NUOVO DISCENTE'}
+              </button>
+            </div>
           )}
           {activeSection === 'faculty' && (
-            <button
-              onClick={() => setIsAddingFaculty(true)}
-              className="px-4 py-2 bg-emerald-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-emerald-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
-            >
-              <Plus className="w-4 h-4" />
-              {isEn ? 'NEW FACULTY INSTRUCTOR' : 'NUOVO DOCENTE FACULTY'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const report = balanceFacultyWorkload(faculty, teams, simulatorPatients);
+                  setActiveBalancingReport(report);
+                  setIsBalancingModalOpen(true);
+                }}
+                className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-400 text-black border-2 border-emerald-400 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                title="Ribilancia omogeneamente il rapporto didattico 1:1 e carico cognitivo TCCC / Shock Room"
+              >
+                <Scale className="w-4 h-4 text-black shrink-0" />
+                <span>⚖️ Ribilancia Faculty</span>
+              </button>
+              <button
+                onClick={() => setIsAddingFaculty(true)}
+                className="px-4 py-2 bg-emerald-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-emerald-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
+              >
+                <Plus className="w-4 h-4" />
+                {isEn ? 'NEW FACULTY INSTRUCTOR' : 'NUOVO DOCENTE FACULTY'}
+              </button>
+            </div>
           )}
           {activeSection === 'tecnici' && (
-            <button
-              onClick={() => setIsAddingTech(true)}
-              className="px-4 py-2 bg-amber-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-amber-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
-            >
-              <Plus className="w-4 h-4" />
-              {isEn ? 'NEW LAB TECH' : 'NUOVO TECNICO LAB'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const report = balanceTechniciansWorkload(technicians, simulatorPatients);
+                  setActiveBalancingReport(report);
+                  setIsBalancingModalOpen(true);
+                }}
+                className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-400 text-black border-2 border-emerald-400 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                title="Ribilancia omogeneamente carichi orari e presidio postazioni tattiche e regia per i 12 tecnici"
+              >
+                <Scale className="w-4 h-4 text-black shrink-0" />
+                <span>⚖️ Ribilancia Tecnici</span>
+              </button>
+              <button
+                onClick={() => setIsAddingTech(true)}
+                className="px-4 py-2 bg-amber-500 hover:bg-neutral-100 hover:text-black text-black border-2 border-amber-500 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer font-bold"
+              >
+                <Plus className="w-4 h-4" />
+                {isEn ? 'NEW LAB TECH' : 'NUOVO TECNICO LAB'}
+              </button>
+            </div>
           )}
           {activeSection === 'direttori' && (
             <button
@@ -595,6 +730,20 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
           )}
         </div>
       </div>
+      )}
+
+      {/* SECTION 6: ANAGRAFICA ATTORI SEPARATA (8 SLOT PRINCIPALI: AMPUTATO / INTERO) */}
+      {activeSection === 'attori' && (
+        <AnagraficaTruccoPanel key="panel-attori" forcedSection="attori" />
+      )}
+
+      {/* SECTION 7: ANAGRAFICA TRUCCATORI SEPARATA (TRUC-01 - TRUC-08) */}
+      {activeSection === 'truccatori' && (
+        <AnagraficaTruccoPanel key="panel-truccatori" forcedSection="truccatori" />
+      )}
+
+      {/* FALLBACK COMBINED TRUCCO */}
+      {activeSection === 'trucco' && <AnagraficaTruccoPanel key="panel-trucco" />}
 
       {/* SECTION 1: DISCENTI TABLE */}
       {activeSection === 'discenti' && (
@@ -2500,6 +2649,75 @@ export const MasterAnagraficaManager: React.FC<MasterAnagraficaManagerProps> = (
             else if (selectedPersonForQr.category === 'regia') setEditingRegia(p as RegiaStaff);
             else if (selectedPersonForQr.category === 'ospiti') setEditingGuest(p as Guest);
           }}
+        />
+      )}
+
+      {/* UNIVERSAL STAFF BALANCING PREVIEW MODAL */}
+      <StaffBalancingModal
+        isOpen={isBalancingModalOpen}
+        report={activeBalancingReport}
+        onClose={() => setIsBalancingModalOpen(false)}
+        onConfirm={async (payload: any) => {
+          if (!activeBalancingReport) return;
+          if (activeBalancingReport.entityType === 'technicians') {
+            await bulkUpdateTechnicians(payload);
+          } else if (activeBalancingReport.entityType === 'faculty') {
+            await bulkUpdateFaculty(payload);
+          } else if (activeBalancingReport.entityType === 'discenti') {
+            await bulkUpdateDiscenti(payload);
+          }
+          if (sendCourseMessage) {
+            sendCourseMessage({
+              senderId: 'REGIA-CH3',
+              senderName: 'Coordinamento Master Anagrafica',
+              senderRole: 'direttore',
+              type: 'info',
+              subject: `BILANCIAMENTO OMOGENEO APPLICATO: ${activeBalancingReport.title}`,
+              content: `Riassegnazione completata con successo per ${activeBalancingReport.totalEntities} posizioni operative.`,
+            });
+          }
+        }}
+      />
+      {/* ANAGRAFICA DATA IMPORT MODAL (CSV / TSV / EXCEL / JSON) */}
+      <AnagraficaImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        defaultCategory={
+          activeSection === 'faculty'
+            ? 'faculty'
+            : activeSection === 'tecnici'
+            ? 'tecnici'
+            : activeSection === 'direttori'
+            ? 'direttori'
+            : activeSection === 'regia'
+            ? 'regia'
+            : activeSection === 'ospiti'
+            ? 'ospiti'
+            : 'discenti'
+        }
+      />
+      {/* THERMAL ADHESIVE QR LABELS GENERATOR (50x80 / 40x30 JPG) */}
+      {isThermalLabelsModalOpen && (
+        <ThermalLabelGeneratorModal
+          isOpen={isThermalLabelsModalOpen}
+          onClose={() => setIsThermalLabelsModalOpen(false)}
+          initialCategory={
+            activeSection === 'faculty'
+              ? 'faculty'
+              : activeSection === 'tecnici'
+              ? 'tecnici'
+              : activeSection === 'direttori'
+              ? 'direttori'
+              : activeSection === 'regia'
+              ? 'regia'
+              : activeSection === 'ospiti'
+              ? 'ospiti'
+              : activeSection === 'attori'
+              ? 'attori'
+              : activeSection === 'truccatori'
+              ? 'truccatori'
+              : 'discenti'
+          }
         />
       )}
     </div>

@@ -20,7 +20,7 @@ import {
 interface RegiaKeypadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: (role: 'regia' | 'direttore', profileId: string) => void;
+  onSuccess?: (role: 'regia' | 'direttore' | 'master', profileId: string) => void;
 }
 
 export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
@@ -46,11 +46,12 @@ export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
-  const [targetRole, setTargetRole] = useState<'regia' | 'direttore' | null>(null);
+  const [targetRole, setTargetRole] = useState<'regia' | 'direttore' | 'master' | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
 
   const CODE_REGIA = '9438';
   const CODE_DIRETTORE = '0118';
+  const CODE_MASTER = '251201';
 
   // Reset state on open/close
   useEffect(() => {
@@ -68,42 +69,54 @@ export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
     (digit: string) => {
       if (isSuccess || step !== 'pin') return;
       setError(false);
-      if (pin.length < 4) {
+      if (pin.length < 6) {
         const nextPin = pin + digit;
         setPin(nextPin);
 
-        if (nextPin.length === 4) {
-          if (nextPin === CODE_REGIA) {
-            setIsSuccess(true);
-            setTargetRole('regia');
-            // Default to current selected or first
-            const defaultId = selectedRegiaId || regiaStaff[0]?.id || 'regia-1';
-            setSelectedProfileId(defaultId);
-            setTimeout(() => {
-              setStep('select_profile');
-              setIsSuccess(false);
-            }, 550);
-          } else if (nextPin === CODE_DIRETTORE) {
-            setIsSuccess(true);
-            setTargetRole('direttore');
-            // Default to current selected or first
-            const defaultId = selectedDirectorId || directors[0]?.id || 'dir-1';
-            setSelectedProfileId(defaultId);
-            setTimeout(() => {
-              setStep('select_profile');
-              setIsSuccess(false);
-            }, 550);
-          } else {
-            setError(true);
-            setTimeout(() => {
-              setPin('');
-              setError(false);
-            }, 800);
-          }
+        // Immediate matching for 4-digit codes
+        if (nextPin === CODE_REGIA) {
+          setIsSuccess(true);
+          setTargetRole('regia');
+          const defaultId = selectedRegiaId || regiaStaff[0]?.id || 'regia-1';
+          setSelectedProfileId(defaultId);
+          setTimeout(() => {
+            setStep('select_profile');
+            setIsSuccess(false);
+          }, 550);
+        } else if (nextPin === CODE_DIRETTORE) {
+          setIsSuccess(true);
+          setTargetRole('direttore');
+          const defaultId = selectedDirectorId || directors[0]?.id || 'dir-1';
+          setSelectedProfileId(defaultId);
+          setTimeout(() => {
+            setStep('select_profile');
+            setIsSuccess(false);
+          }, 550);
+        } else if (nextPin === CODE_MASTER) {
+          setIsSuccess(true);
+          setTargetRole('master');
+          const defaultId = regiaStaff.find((r) => r.isMaster)?.id || selectedRegiaId || regiaStaff[0]?.id || 'master-1';
+          setSelectedProfileId(defaultId);
+          setTimeout(() => {
+            setUserRole('master');
+            setCurrentTab('master');
+            if (onSuccess) {
+              onSuccess('master', defaultId);
+            }
+            onClose();
+          }, 600);
+        } else if (nextPin.length === 6 || (nextPin.length === 4 && !CODE_MASTER.startsWith(nextPin))) {
+          // If 4 digits entered and does not match prefix of 251201 ('2512') and not matching regia/direttore
+          // Or if full 6 digits reached without matching CODE_MASTER
+          setError(true);
+          setTimeout(() => {
+            setPin('');
+            setError(false);
+          }, 800);
         }
       }
     },
-    [pin, isSuccess, step, selectedRegiaId, regiaStaff, selectedDirectorId, directors]
+    [pin, isSuccess, step, selectedRegiaId, regiaStaff, selectedDirectorId, directors, setUserRole, setCurrentTab, onSuccess, onClose]
   );
 
   const handleBackspace = useCallback(() => {
@@ -123,7 +136,11 @@ export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
       const activeId = profileId || selectedProfileId;
       if (!targetRole || !activeId) return;
 
-      if (targetRole === 'regia') {
+      if (targetRole === 'master') {
+        setSelectedRegiaId(activeId);
+        setUserRole('master');
+        setCurrentTab('master');
+      } else if (targetRole === 'regia') {
         setSelectedRegiaId(activeId);
         setUserRole('regia');
         setCurrentTab('regia');
@@ -242,28 +259,30 @@ export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
             <div className="p-5 text-center space-y-4">
               <p className="text-xs text-neutral-400 font-mono">
                 {isEn
-                  ? 'Enter your 4-digit security PIN to unlock the operational profile:'
-                  : 'Digita il PIN di sicurezza a 4 cifre per sbloccare il profilo operativo:'}
+                  ? 'Enter security PIN to unlock Control Room, Direction or Master:'
+                  : 'Digita il PIN di sicurezza per sbloccare Regia, Direzione o Master:'}
               </p>
 
-              {/* 4 Digit Boxes */}
-              <div className="flex justify-center gap-3 py-1">
-                {[0, 1, 2, 3].map((index) => {
+              {/* Digit Boxes: dynamically 4 or 6 slots */}
+              <div className="flex justify-center gap-2 sm:gap-3 py-1">
+                {(pin.startsWith('2') || pin.length > 4 ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3]).map((index) => {
                   const digit = pin[index];
                   const isFilled = digit !== undefined;
 
                   return (
                     <div
                       key={index}
-                      className={`w-12 h-14 rounded-lg flex items-center justify-center font-mono font-black text-2xl border-2 transition-all duration-200 ${
+                      className={`w-10 sm:w-12 h-12 sm:h-14 rounded-lg flex items-center justify-center font-mono font-black text-xl sm:text-2xl border-2 transition-all duration-200 ${
                         isSuccess
-                          ? targetRole === 'regia'
+                          ? targetRole === 'master'
+                            ? 'bg-amber-950/90 border-amber-400 text-amber-300 ring-2 ring-amber-400'
+                            : targetRole === 'regia'
                             ? 'bg-pink-950/80 border-pink-500 text-pink-300'
                             : 'bg-amber-950/80 border-amber-500 text-amber-300'
                           : error
                           ? 'bg-red-950/80 border-red-600 text-red-300'
                           : isFilled
-                          ? 'bg-neutral-900 border-red-500 text-white shadow-md'
+                          ? 'bg-neutral-900 border-amber-500 text-white shadow-md'
                           : 'bg-neutral-900/60 border-neutral-800 text-neutral-600'
                       }`}
                     >
@@ -278,12 +297,20 @@ export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
                 {isSuccess ? (
                   <div
                     className={`flex items-center gap-1.5 font-mono text-xs font-bold uppercase animate-fadeIn ${
-                      targetRole === 'regia' ? 'text-pink-400' : 'text-amber-400'
+                      targetRole === 'master'
+                        ? 'text-amber-300 font-black'
+                        : targetRole === 'regia'
+                        ? 'text-pink-400'
+                        : 'text-amber-400'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     <span>
-                      {targetRole === 'regia'
+                      {targetRole === 'master'
+                        ? isEn
+                          ? '★ MASTER PIN (251201) ACCEPTED • ACCESSING MASTER VIEW...'
+                          : '★ CODICE MASTER (251201) ACCETTATO • ACCESSO ALLA VISUALE MASTER...'
+                        : targetRole === 'regia'
                         ? isEn
                           ? 'REGIA CODE (9438) ACCEPTED • LOADING PROFILES...'
                           : 'CODICE REGIA (9438) ACCETTATO • CARICAMENTO PROFILI...'
@@ -298,14 +325,18 @@ export const RegiaKeypadModal: React.FC<RegiaKeypadModalProps> = ({
                     <span>{isEn ? 'INCORRECT PIN • ACCESS DENIED' : 'CODICE ERRATO • ACCESSO NEGATO'}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-500">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-500 flex-wrap justify-center">
                     <span className="flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-red-400" />
+                      <Lock className="w-3 h-3 text-pink-400" />
                       <strong className="text-pink-400">9438</strong> = {isEn ? 'Control Room' : 'Regia'}
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <strong className="text-amber-400">0118</strong> = {isEn ? 'Direction' : 'Direzione'}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-amber-300">
+                      <strong className="text-amber-300 bg-amber-950/80 px-1.5 py-0.5 border border-amber-600 rounded">251201</strong> = ★ MASTER
                     </span>
                   </div>
                 )}

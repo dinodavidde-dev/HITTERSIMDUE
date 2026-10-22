@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCourse } from '../../context/CourseContext';
+import { useCourseAuthorization } from '../../hooks/useCourseAuthorization';
 import { Clock, Radio, Play, ShieldAlert, DoorOpen, PlusCircle } from 'lucide-react';
 import { formatGateCountdown } from './PreCoursePublicCountdown';
 
@@ -17,6 +18,8 @@ export const PreCourseDirectorBanner: React.FC<PreCourseDirectorBannerProps> = (
     resetCourseScheduleToFuture,
     setCurrentTab,
   } = useCourse();
+
+  const { setIsStartModalOpen } = useCourseAuthorization();
 
   const isEn = language === 'en';
 
@@ -53,14 +56,28 @@ export const PreCourseDirectorBanner: React.FC<PreCourseDirectorBannerProps> = (
 
           <h3 className="text-white font-black text-sm sm:text-base uppercase tracking-tight flex items-center gap-2 flex-wrap">
             <span>
-              {isEn
+              {timeRemainingMs <= 0
+                ? (isEn
+                  ? '⚠️ GATE OPEN (00:00) • REGIA AUTHORIZATION REQUIRED TO START'
+                  : '⚠️ GATE APERTO (00:00) • AUTORIZZAZIONE REGIA RICHIESTA PER AVVIARE')
+                : isEn
                 ? 'AWAITING OFFICIAL COURSE START • COUNTDOWN ACTIVE'
-                : "ATTESA AVVIO CORSO DA PARTE DELLA REGIA • COUNTDOWN INIZIO ATTIVO"}
+                : 'ATTESA AVVIO CORSO DA PARTE DELLA REGIA • COUNTDOWN INIZIO ATTIVO'}
             </span>
           </h3>
 
           <p className="text-xs text-neutral-300 leading-relaxed font-sans">
-            {isEn ? (
+            {timeRemainingMs <= 0 ? (
+              isEn ? (
+                <>
+                  Countdown has reached zero. The course does not start automatically: <strong className="text-emerald-400">Regia must authorize the official start</strong> to release views and synchronize timelines.
+                </>
+              ) : (
+                <>
+                  Il countdown è giunto a zero. Il corso non parte automaticamente: <strong className="text-emerald-400">la Regia deve autorizzare l&apos;avvio ufficiale</strong> per sbloccare le visuali e sincronizzare la timeline.
+                </>
+              )
+            ) : isEn ? (
               <>
                 Target: <strong className="text-amber-300 font-mono">{courseStartSchedule?.scheduledDate}</strong> at{' '}
                 <strong className="text-amber-300 font-mono">{courseStartSchedule?.scheduledTime || '08:30'}</strong>.
@@ -79,14 +96,50 @@ export const PreCourseDirectorBanner: React.FC<PreCourseDirectorBannerProps> = (
         {/* Center/Right: Live Big Countdown & Launch Buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto flex-shrink-0">
           {/* Live Timer Box */}
-          <div className="bg-neutral-900/90 border-2 border-amber-500/80 px-3.5 py-2 rounded-lg text-center shadow-inner min-w-[170px]">
-            <span className="text-[9px] sm:text-[10px] uppercase text-neutral-400 font-bold block flex items-center justify-center gap-1">
-              <Clock className="w-3 h-3 text-amber-400" />
-              <span>{isEn ? 'START COUNTDOWN' : 'COUNTDOWN AVVIO'}</span>
+          <div
+            onClick={() => {
+              if (timeRemainingMs <= 0) {
+                setIsStartModalOpen(true);
+              }
+            }}
+            className={`px-3.5 py-2.5 rounded-lg text-center shadow-inner min-w-[190px] transition-all relative overflow-hidden ${
+              timeRemainingMs <= 0
+                ? 'bg-neutral-900/95 border-2 border-emerald-400 ring-4 ring-emerald-500/25 shadow-[0_0_30px_rgba(52,211,153,0.5)] animate-pulse cursor-pointer'
+                : 'bg-neutral-900/90 border-2 border-amber-500/80'
+            }`}
+            title={timeRemainingMs <= 0 ? (isEn ? 'Click to open Start Course Authorization' : 'Clicca per aprire il modale di autorizzazione avvio') : undefined}
+          >
+            <span className="text-[9px] sm:text-[10px] uppercase text-neutral-400 font-bold block flex items-center justify-center gap-1.5 mb-0.5">
+              <Clock className={`w-3.5 h-3.5 ${timeRemainingMs <= 0 ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
+              <span>
+                {timeRemainingMs <= 0
+                  ? (isEn ? 'GATE COUNTDOWN' : 'COUNTDOWN GATE')
+                  : (isEn ? 'START COUNTDOWN' : 'COUNTDOWN AVVIO')}
+              </span>
             </span>
-            <div className="text-xl sm:text-2xl md:text-3xl font-mono font-black text-amber-400 animate-pulse tracking-wider">
-              {formatGateCountdown(timeRemainingMs, isEn)}
+
+            <div
+              className={`text-2xl sm:text-3xl font-mono font-black tracking-wider ${
+                timeRemainingMs <= 0
+                  ? 'text-emerald-400 animate-pulse drop-shadow-[0_0_10px_rgba(52,211,153,0.65)]'
+                  : 'text-amber-400'
+              }`}
+            >
+              {timeRemainingMs <= 0 ? '00:00:00' : formatGateCountdown(timeRemainingMs, isEn)}
             </div>
+
+            {/* Subtle 'READY TO AUTHORIZE' Label when countdown reaches 00:00:00 */}
+            {timeRemainingMs <= 0 && (
+              <div className="mt-1.5 inline-flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-500/70 shadow-sm animate-pulse">
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-mono font-black tracking-widest text-emerald-300 uppercase">
+                  READY TO AUTHORIZE
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Controls */}
@@ -94,12 +147,22 @@ export const PreCourseDirectorBanner: React.FC<PreCourseDirectorBannerProps> = (
             <div className="flex flex-col gap-1.5 min-w-[160px]">
               <button
                 type="button"
-                onClick={startCourseImmediately}
-                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider rounded shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-emerald-400"
-                title={isEn ? 'Start course now: unlocks all personal views immediately' : 'Avvia il corso adesso: sblocca tutte le visuali operative immediatamente'}
+                onClick={() => {
+                  if (timeRemainingMs <= 0) {
+                    setIsStartModalOpen(true);
+                  } else {
+                    startCourseImmediately();
+                  }
+                }}
+                className={`w-full py-2 px-3 text-black font-black text-xs uppercase tracking-wider rounded shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                  timeRemainingMs <= 0
+                    ? 'bg-emerald-400 hover:bg-emerald-300 border-white ring-2 ring-emerald-400 animate-bounce'
+                    : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-400'
+                }`}
+                title={isEn ? 'Authorize and start course now' : 'Autorizza e avvia il corso adesso'}
               >
                 <DoorOpen className="w-4 h-4 text-black" />
-                <span>{isEn ? 'START COURSE NOW' : 'AVVIA CORSO ADESSO'}</span>
+                <span>{timeRemainingMs <= 0 ? (isEn ? 'AUTHORIZE START NOW' : 'AUTORIZZA AVVIO ORA') : (isEn ? 'START COURSE NOW' : 'AVVIA CORSO ADESSO')}</span>
               </button>
 
               <button

@@ -29,6 +29,8 @@ interface DiscentePersonalTimelineProps {
   assignedFaculty: Faculty;
   currentActiveSlotId?: string;
   activeDay: number;
+  onSelectSlot?: (slotId: string) => void;
+  inspectedSlotId?: string | null;
 }
 
 interface MergedTimelineEntry {
@@ -58,16 +60,23 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
   assignedFaculty,
   currentActiveSlotId,
   activeDay: courseActiveDay,
+  onSelectSlot,
+  inspectedSlotId,
 }) => {
   const { language } = useCourse();
   const isEn = language === 'en';
   const [selectedDay, setSelectedDay] = useState<2 | 3>(courseActiveDay === 3 ? 3 : 2);
   const [expandedWorkshops, setExpandedWorkshops] = useState<Record<string, boolean>>({});
 
+  // Ensure personalized timeline day automatically stays parallel to master course day
+  React.useEffect(() => {
+    setSelectedDay(courseActiveDay === 3 ? 3 : 2);
+  }, [courseActiveDay]);
+
   const studentGroup: GroupType = discente.teamId <= 3 ? 'A' : discente.teamId <= 6 ? 'B' : discente.teamId <= 9 ? 'C' : 'D';
   const groupLabel = studentGroup === 'A' ? 'ALPHA' : studentGroup === 'B' ? 'BRAVO' : studentGroup === 'C' ? 'CHARLIE' : 'DELTA';
-  const stationNum = ((discente.teamId - 1) % 3) + 1;
-  const isTeamLeader = discente.id === `disc-${(discente.teamId - 1) * 5 + 1}` || (discente.role?.toLowerCase().includes('leader') ?? false);
+  const stationNum = (((discente?.teamId || 1) - 1) % 3) + 1;
+  const isTeamLeader = (discente?.id || '') === `disc-${((discente?.teamId || 1) - 1) * 5 + 1}` || ((discente?.role || '').toLowerCase().includes('leader'));
 
   const toggleExpand = (id: string) => {
     setExpandedWorkshops((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -226,9 +235,8 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
 
         i = j;
       } else {
-        // Non-workshop slot (TCCC, Shock Room, Pausa, Briefing)
+        // Non-workshop slot (TCCC, Shock Room, Pausa, Briefing) - strictly use the learner's own activity
         const act = current.groupActivities?.[studentGroup];
-        const slotTitle = (current.title || '').toLowerCase();
         const text = `${act?.title || ''} ${act?.subtitle || ''} ${act?.location || ''}`.toLowerCase();
         const actType = act?.activityType || '';
 
@@ -236,19 +244,32 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
           text.includes('tccc') ||
           text.includes('tattic') ||
           text.includes('tactical') ||
-          actType === 'scenario_extra' ||
-          (slotTitle.includes('tccc') && !text.includes('shock') && !text.includes('ws'));
+          actType === 'scenario_extra';
 
         const isShockRoom =
           text.includes('shock room') ||
           text.includes('box shock') ||
-          actType === 'scenario_intra' ||
-          (slotTitle.includes('shock room') && !text.includes('tccc') && !text.includes('ws'));
+          text.includes('box sr') ||
+          actType === 'scenario_intra';
 
-        const isPreAllerta = isTCCC && (slotTitle.includes('pre-alert') || text.includes('pre-allerta') || text.includes('preallerta'));
-        const isStandbySR = isShockRoom && (text.includes('standby') || slotTitle.includes('standby'));
-        const isHandover = slotTitle.includes('handover') || text.includes('handover') || text.includes('sbar');
-        const isDebriefing = text.includes('debriefing') || slotTitle.includes('debriefing');
+        const isPreAllerta =
+          isTCCC &&
+          (text.includes('pre-alert') ||
+            text.includes('pre-allerta') ||
+            text.includes('preallerta') ||
+            text.includes('t -15') ||
+            text.includes('t-15'));
+        const isStandbySR =
+          isShockRoom &&
+          (text.includes('pre-allerta') ||
+            text.includes('pre-alert') ||
+            text.includes('standby attivo') ||
+            text.includes('t -15') ||
+            text.includes('t-15'));
+        const isBriefingSR =
+          isShockRoom && !isStandbySR && text.includes('briefing shock room');
+        const isHandover = text.includes('handover') || text.includes('sbar');
+        const isDebriefing = text.includes('debriefing');
         const isPausa = text.includes('pausa') || text.includes('ristoro') || text.includes('pranzo') || text.includes('break') || text.includes('lunch');
 
         const isCurrentActive = currentActiveSlotId === current.id && courseActiveDay === selectedDay;
@@ -262,7 +283,26 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
         let locationName = act?.location ? translateLocation(act.location, language) : (isEn ? 'Course Venue' : 'Sede del Corso');
         let iconType: 'tccc' | 'shock' | 'workshop' | 'pause' | 'clock' = 'clock';
 
-        if (isTCCC) {
+        const isMascal = text.includes('mascal') || current.id === 'd2-mascal-scenario';
+        const isNightGate = current.id === 'd2-gate-discenti-notturno';
+        const isNightStaff = current.id === 'd2-staff-briefing-notturno';
+
+        if (isMascal) {
+          badgeText = isEn ? 'MASCAL NIGHT SCENARIO (21:00)' : 'SCENARIO NOTTURNO MASCAL (21:00)';
+          badgeStyle = 'bg-red-950 text-red-300 border-red-600 animate-pulse font-black';
+          locationName = isEn ? 'Tactical Ground & Field Hospital' : 'Area Tattica Esterna & Ospedale da Campo';
+          iconType = 'tccc';
+        } else if (isNightGate) {
+          badgeText = isEn ? 'MASCAL GATE OPENING (20:30)' : 'APERTURA GATE MASCAL (20:30)';
+          badgeStyle = 'bg-red-950 text-red-200 border-red-500';
+          locationName = isEn ? 'Central Gate' : 'Gate Centrale & Piazzale';
+          iconType = 'clock';
+        } else if (isNightStaff) {
+          badgeText = isEn ? 'STAFF CONVOCATION (20:00)' : 'CONVOCAZIONE STAFF (20:00)';
+          badgeStyle = 'bg-amber-950 text-amber-300 border-amber-600';
+          locationName = isEn ? 'Control Room (Gate Closed)' : 'Centrale Regia (Gate Chiuso)';
+          iconType = 'clock';
+        } else if (isTCCC) {
           badgeText = isHandover
             ? (isEn ? 'SBAR HANDOVER (TCCC)' : 'HANDOVER SBAR (TCCC)')
             : isPreAllerta
@@ -277,7 +317,9 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
           badgeText = isHandover
             ? (isEn ? 'SBAR HANDOVER (SHOCK ROOM)' : 'HANDOVER SBAR (SHOCK ROOM)')
             : isStandbySR
-            ? (isEn ? 'SR BOX STANDBY (T -15)' : 'STANDBY BOX SR (T -15)')
+            ? (isEn ? 'PRE-ALERT SHOCK ROOM (T -15)' : 'PRE-ALLERTA SHOCK ROOM (T -15)')
+            : isBriefingSR
+            ? (isEn ? 'SHOCK ROOM BRIEFING' : 'BRIEFING SHOCK ROOM')
             : isDebriefing
             ? (isEn ? 'SHOCK ROOM DEBRIEFING' : 'DEBRIEFING SHOCK ROOM')
             : 'SHOCK ROOM';
@@ -298,8 +340,8 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
           startTime,
           endTime,
           durationMinutes: current.durationMinutes,
-          title: current.title,
-          subtitle: current.description || act?.subtitle || '',
+          title: act?.title || current.title,
+          subtitle: act?.subtitle || '',
           locationName,
           badgeText,
           badgeStyle,
@@ -479,8 +521,8 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
                   <div className="flex items-center gap-3">
                     <span>
                       {isEn ? 'Role:' : 'Ruolo:'}{' '}
-                      <strong className={isTeamLeader ? 'text-cyan-300 font-bold' : 'text-neutral-200'}>
-                        {isTeamLeader ? 'Team Leader (TL)' : (isEn ? 'Operator' : 'Operatore')}
+                      <strong className={discente.activeScenarioRole ? 'text-cyan-300 font-bold' : 'text-neutral-400'}>
+                        {discente.activeScenarioRole ? `⚡ ${discente.activeScenarioRole}` : (isEn ? 'Pending Faculty assignment' : 'In attesa del Faculty')}
                       </strong>
                     </span>
                     <span>
@@ -488,57 +530,10 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
                     </span>
                   </div>
 
-                  {/* Expand Sub-Phases Toggle Button */}
-                  <button
-                    type="button"
-                    onClick={() => toggleExpand(entry.id)}
-                    className="flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer underline decoration-dotted"
-                  >
-                    <span>
-                      {isExpanded
-                        ? (isEn ? 'Hide internal segments' : 'Nascondi segmenti interni')
-                        : (isEn ? `Show internal segments (${entry.slots.length} phases)` : `Mostra segmenti interni (${entry.slots.length} fasi)`)}
-                    </span>
-                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase">
+                    {isEn ? 'Continuous Session • No Operational Sub-Phases' : 'Sessione Continua • Senza Fasi Operative'}
+                  </span>
                 </div>
-
-                {/* Optional Expanded Internal Phases */}
-                {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-neutral-800 space-y-1.5 animate-fadeIn">
-                    <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block mb-1">
-                      {isEn ? 'Internal Workshop Milestones (For Reference Only):' : 'Milestone Interne del Workshop (A solo scopo di riferimento):'}
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {entry.slots.map((subSlot, sIdx) => {
-                        const subAct = subSlot.groupActivities?.[studentGroup];
-                        const isSubActive = subSlot.id === currentActiveSlotId && courseActiveDay === selectedDay;
-
-                        return (
-                          <div
-                            key={subSlot.id}
-                            className={`px-2.5 py-1.5 rounded border text-[11px] font-mono flex items-center justify-between gap-2 ${
-                              isSubActive
-                                ? 'bg-emerald-950 border-emerald-400 text-white'
-                                : 'bg-neutral-950/80 border-neutral-800 text-neutral-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-neutral-500 font-bold shrink-0">{sIdx + 1}.</span>
-                              <span className="font-bold text-white shrink-0">{subSlot.timeRange}</span>
-                              <span className="truncate text-neutral-300">{subAct?.title || subSlot.title}</span>
-                            </div>
-                            {isSubActive && (
-                              <span className="text-[9px] bg-emerald-500 text-black font-black px-1.5 py-0.2 rounded uppercase shrink-0">
-                                {isEn ? 'CURRENT' : 'ATTIVO'}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           }
@@ -589,8 +584,8 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
                 <div className="flex items-center gap-3">
                   <span>
                     {isEn ? 'Role:' : 'Ruolo:'}{' '}
-                    <strong className={isTeamLeader ? 'text-cyan-300 font-bold' : 'text-neutral-200'}>
-                      {isTeamLeader ? 'Team Leader (TL)' : (isEn ? 'Operator' : 'Operatore')}
+                    <strong className={discente.activeScenarioRole ? 'text-cyan-300 font-bold' : 'text-neutral-400'}>
+                      {discente.activeScenarioRole ? `⚡ ${discente.activeScenarioRole}` : (isEn ? 'Pending Faculty assignment' : 'In attesa del Faculty')}
                     </strong>
                   </span>
                   <span>

@@ -64,19 +64,26 @@ export const getScenarioStatusInfo = (
   activeDay: number,
   activeSlotIndex: number,
   evaluations: TeamEvaluation[],
-  facultyList: Faculty[]
+  facultyList: Faculty[],
+  perspectiveTeamId?: number
 ): ScenarioStatusInfo => {
   // Assigned faculty for this patient (extra team or intra team)
-  const assignedFaculty = facultyList.filter(
-    (f) => f.assignedTeamId === patient.teamExtraAssigned || f.assignedTeamId === patient.teamIntraAssigned
+  const assignedFaculty = facultyList.filter((f) =>
+    perspectiveTeamId
+      ? f.assignedTeamId === perspectiveTeamId
+      : f.assignedTeamId === patient.teamExtraAssigned || f.assignedTeamId === patient.teamIntraAssigned
   );
 
-  const patientEvals = evaluations.filter((e) => e.patientId === patient.id);
+  const patientEvals = evaluations.filter((e) =>
+    perspectiveTeamId
+      ? e.patientId === patient.id && (e.teamId === perspectiveTeamId || assignedFaculty.some((f) => f.id === e.facultyId))
+      : e.patientId === patient.id
+  );
   const assignedFacultyIds = assignedFaculty.map((f) => f.id);
 
   const allEvaluated =
     assignedFacultyIds.length > 0
-      ? assignedFacultyIds.every((fId) => patientEvals.some((e) => e.facultyId === fId))
+      ? assignedFacultyIds.every((fId) => patientEvals.some((e) => e.facultyId === fId || (perspectiveTeamId && e.teamId === perspectiveTeamId)))
       : patientEvals.length > 0;
 
   // Day comparison
@@ -110,44 +117,46 @@ export const getScenarioStatusInfo = (
     };
   }
 
-  // Same day check
-  const daySlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === patient.day);
-  const slotIndex = daySlots.findIndex((slot) => {
-    if (!slot.groupActivities) return false;
-    return Object.values(slot.groupActivities).some(
-      (act: any) => act && act.patientIds && act.patientIds.includes(patient.id)
-    );
+  // Determine which group(s) we are checking on the same day using global INITIAL_TIMELINE_SLOTS indices
+  const targetIsExtra = perspectiveTeamId ? patient.teamExtraAssigned === perspectiveTeamId : false;
+  const targetIsIntra = perspectiveTeamId ? patient.teamIntraAssigned === perspectiveTeamId : false;
+
+  const activeIndices: number[] = [];
+  const preAlertIndices: number[] = [];
+  const debriefIndices: number[] = [];
+
+  INITIAL_TIMELINE_SLOTS.forEach((slot, globalIdx) => {
+    if (slot.day !== patient.day || !slot.groupActivities) return;
+
+    for (const act of Object.values(slot.groupActivities)) {
+      if (!act || !act.patientIds || !act.patientIds.includes(patient.id)) continue;
+
+      const titleLower = `${act.title || ''} ${act.subtitle || ''}`.toLowerCase();
+      const isPreAlert =
+        titleLower.includes('pre-allerta') ||
+        titleLower.includes('pre-alert') ||
+        titleLower.includes('t -15') ||
+        titleLower.includes('t-15');
+      const isDebrief = act.activityType === 'debriefing' || titleLower.includes('debriefing');
+      const isExtraAct = act.activityType === 'scenario_extra' || titleLower.includes('tccc') || titleLower.includes('tattic');
+      const isIntraAct = act.activityType === 'scenario_intra' || titleLower.includes('shock') || titleLower.includes('sr ');
+
+      if (perspectiveTeamId) {
+        if (targetIsExtra && !isExtraAct) continue;
+        if (targetIsIntra && !isIntraAct) continue;
+      }
+
+      if (isPreAlert) {
+        preAlertIndices.push(globalIdx);
+      } else if (isDebrief) {
+        debriefIndices.push(globalIdx);
+      } else if (act.activityType === 'scenario_extra' || act.activityType === 'scenario_intra') {
+        activeIndices.push(globalIdx);
+      }
+    }
   });
 
-  if (slotIndex === -1) {
-    // Fallback estimate
-    if (activeSlotIndex > 5) {
-      if (allEvaluated) {
-        return {
-          status: 'VALUTATO',
-          text: 'VALUTATO',
-          badgeClass: 'bg-emerald-500 text-black font-black uppercase text-[10px] tracking-wider px-2 py-0.5 rounded shadow',
-          dotColor: 'bg-emerald-400',
-          isFlashing: false,
-        };
-      }
-      return {
-        status: 'DA_VALUTARE',
-        text: 'DA VALUTARE',
-        badgeClass: 'bg-yellow-400 text-black font-black uppercase text-[10px] tracking-wider px-2 py-0.5 rounded animate-pulse shadow',
-        dotColor: 'bg-yellow-300 animate-ping',
-        isFlashing: true,
-      };
-    }
-    if (activeSlotIndex >= 2) {
-      return {
-        status: 'IN_CORSO',
-        text: 'IN CORSO',
-        badgeClass: 'bg-red-600 text-white font-black uppercase text-[10px] tracking-wider px-2 py-0.5 rounded animate-pulse shadow',
-        dotColor: 'bg-red-500 animate-ping',
-        isFlashing: true,
-      };
-    }
+  if (activeIndices.length === 0 && debriefIndices.length === 0) {
     return {
       status: 'DA_FARE',
       text: 'DA FARE',
@@ -157,26 +166,19 @@ export const getScenarioStatusInfo = (
     };
   }
 
-  // slotIndex is execution slot
-  // Preallerta is slotIndex - 1, Debriefing is slotIndex + 1
-  if (activeSlotIndex < slotIndex - 1) {
-    return {
-      status: 'DA_FARE',
-      text: 'DA FARE',
-      badgeClass: 'bg-neutral-800 text-neutral-400 border border-neutral-700 font-bold uppercase text-[10px] tracking-wider px-2 py-0.5 rounded',
-      dotColor: 'bg-neutral-500',
-      isFlashing: false,
-    };
-  } else if (activeSlotIndex >= slotIndex - 1 && activeSlotIndex <= slotIndex + 1) {
-    return {
-      status: 'IN_CORSO',
-      text: 'IN CORSO',
-      badgeClass: 'bg-red-600 text-white font-black uppercase text-[10px] tracking-wider px-2 py-0.5 rounded animate-pulse shadow',
-      dotColor: 'bg-red-500 animate-ping',
-      isFlashing: true,
-    };
-  } else {
-    // After debriefing
+  const firstStartIdx =
+    preAlertIndices.length > 0
+      ? Math.min(...preAlertIndices, ...(activeIndices.length > 0 ? activeIndices : [999]))
+      : Math.min(...activeIndices);
+  const lastActiveIdx = activeIndices.length > 0 ? Math.max(...activeIndices) : firstStartIdx;
+  const firstDebriefIdx = debriefIndices.length > 0 ? Math.min(...debriefIndices) : lastActiveIdx + 1;
+
+  // As soon as the scenario enters Debriefing (or finishes active execution), unlock evaluation (DA_VALUTARE / VALUTATO)
+  if (
+    activeSlotIndex > lastActiveIdx ||
+    ( !perspectiveTeamId && debriefIndices.includes(activeSlotIndex) && !activeIndices.includes(activeSlotIndex) ) ||
+    ( perspectiveTeamId && activeSlotIndex >= firstDebriefIdx )
+  ) {
     if (allEvaluated) {
       return {
         status: 'VALUTATO',
@@ -195,6 +197,24 @@ export const getScenarioStatusInfo = (
       };
     }
   }
+
+  if (activeSlotIndex >= firstStartIdx && activeSlotIndex <= lastActiveIdx) {
+    return {
+      status: 'IN_CORSO',
+      text: 'IN CORSO',
+      badgeClass: 'bg-red-600 text-white font-black uppercase text-[10px] tracking-wider px-2 py-0.5 rounded animate-pulse shadow',
+      dotColor: 'bg-red-500 animate-ping',
+      isFlashing: true,
+    };
+  }
+
+  return {
+    status: 'DA_FARE',
+    text: 'DA FARE',
+    badgeClass: 'bg-neutral-800 text-neutral-400 border border-neutral-700 font-bold uppercase text-[10px] tracking-wider px-2 py-0.5 rounded',
+    dotColor: 'bg-neutral-500',
+    isFlashing: false,
+  };
 };
 
 /**
@@ -287,12 +307,12 @@ export const getIncomingTcccScenarioDetails = (
         if (text.includes('tccc') || text.includes('tattic')) {
           tcccGroup =
             grp === 'A'
-              ? 'ALPHA (DISC-01 – DISC-15)'
+              ? 'ALPHA (DISC-01 – DISC-18)'
               : grp === 'B'
-              ? 'BRAVO (DISC-16 – DISC-30)'
+              ? 'BRAVO (DISC-19 – DISC-36)'
               : grp === 'C'
-              ? 'CHARLIE (DISC-31 – DISC-45)'
-              : 'DELTA (DISC-46 – DISC-60)';
+              ? 'CHARLIE (DISC-37 – DISC-54)'
+              : 'DELTA (DISC-55 – DISC-70)';
           if (act.location) station = act.location;
           break;
         }

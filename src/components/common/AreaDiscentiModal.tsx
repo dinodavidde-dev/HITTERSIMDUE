@@ -22,10 +22,10 @@ interface AreaDiscentiModalProps {
 }
 
 const GROUP_META: Record<GroupType, { name: string; range: string; squads: string }> = {
-  A: { name: 'ALPHA', range: 'DISC-01 – DISC-15', squads: 'Squadre 1, 2, 3' },
-  B: { name: 'BRAVO', range: 'DISC-16 – DISC-30', squads: 'Squadre 4, 5, 6' },
-  C: { name: 'CHARLIE', range: 'DISC-31 – DISC-45', squads: 'Squadre 7, 8, 9' },
-  D: { name: 'DELTA', range: 'DISC-46 – DISC-60', squads: 'Squadre 10, 11, 12' },
+  A: { name: 'ALPHA', range: 'DISC-01 – DISC-18', squads: 'Squadre 1, 2, 3' },
+  B: { name: 'BRAVO', range: 'DISC-19 – DISC-36', squads: 'Squadre 4, 5, 6' },
+  C: { name: 'CHARLIE', range: 'DISC-37 – DISC-54', squads: 'Squadre 7, 8, 9' },
+  D: { name: 'DELTA', range: 'DISC-55 – DISC-70', squads: 'Squadre 10, 11, 12' },
 };
 
 export const AreaDiscentiModal: React.FC<AreaDiscentiModalProps> = ({ isOpen, onClose }) => {
@@ -83,11 +83,11 @@ export const AreaDiscentiModal: React.FC<AreaDiscentiModalProps> = ({ isOpen, on
       }
       if (!q) return true;
 
-      const nameMatch = d.name.toLowerCase().includes(q);
-      const codeMatch = (d.badgeCode || '').toLowerCase().includes(q);
-      const idMatch = d.id.toLowerCase().includes(q);
+      const nameMatch = (d?.name || '').toLowerCase().includes(q);
+      const codeMatch = (d?.badgeCode || '').toLowerCase().includes(q);
+      const idMatch = (d?.id || '').toLowerCase().includes(q);
       const numMatch = q.replace(/[^0-9]/g, '');
-      const teamMatch = numMatch ? d.teamId.toString() === numMatch : false;
+      const teamMatch = numMatch ? String(d?.teamId || '') === numMatch : false;
 
       return nameMatch || codeMatch || idMatch || teamMatch;
     });
@@ -121,7 +121,7 @@ export const AreaDiscentiModal: React.FC<AreaDiscentiModalProps> = ({ isOpen, on
                 <span>{isEn ? 'LEARNER ACCESS PROTOCOL' : 'PROTOCOLLO ACCESSO DISCENTI'}</span>
               </span>
               <span className="text-neutral-400 text-xs font-mono">
-                {isEn ? '60 Official Trainees (DISC-01 – DISC-60)' : '60 Allievi Ufficiali (DISC-01 – DISC-60)'}
+                {isEn ? '70 Official Trainees (DISC-01 – DISC-70)' : '70 Allievi Ufficiali (DISC-01 – DISC-70)'}
               </span>
             </div>
 

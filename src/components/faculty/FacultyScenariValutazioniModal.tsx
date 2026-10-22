@@ -56,26 +56,8 @@ export const FacultyScenariValutazioniModal: React.FC<FacultyScenariValutazioniM
 
   // Helper to determine if a scenario has been executed according to master timeline
   const checkIfExecuted = (patient: SimulatorPatient) => {
-    // If course day is past the patient day, it's executed
-    if (activeDay > patient.day) return true;
-    if (activeDay < patient.day) return false;
-
-    // If same day, find the index of the slot in INITIAL_TIMELINE_SLOTS where this patient is involved for facultyGroup
-    const daySlots = INITIAL_TIMELINE_SLOTS.filter((s) => s.day === patient.day);
-    const slotIndex = daySlots.findIndex((slot) => {
-      if (!slot.groupActivities) return false;
-      const act: any = slot.groupActivities[facultyGroup];
-      return act && act.patientIds && act.patientIds.includes(patient.id);
-    });
-
-    if (slotIndex === -1) {
-      // Fallback based on patient id distribution (Day 2: 1-6 matt, 7-12 pom; Day 3: 13-18 matt, 19-24 pom)
-      const isMattina = patient.id % 6 <= 3 && patient.id % 6 !== 0;
-      const currentIsMattina = activeSlotIndex < 4;
-      return !isMattina || !currentIsMattina;
-    }
-
-    return activeSlotIndex > slotIndex;
+    const statusInfo = getScenarioStatusInfo(patient, activeDay, activeSlotIndex, evaluations, faculty, teamId);
+    return statusInfo.status === 'DA_VALUTARE' || statusInfo.status === 'VALUTATO';
   };
 
   return (
@@ -152,8 +134,8 @@ export const FacultyScenariValutazioniModal: React.FC<FacultyScenariValutazioniM
                   );
                   const isEvaluated = Boolean(existingEval);
 
-                  // Determine card styling based on state
-                  const statusInfo = getScenarioStatusInfo(patient, activeDay, activeSlotIndex, evaluations, faculty);
+                  // Determine card styling based on state for this faculty's team
+                  const statusInfo = getScenarioStatusInfo(patient, activeDay, activeSlotIndex, evaluations, faculty, teamId);
                   let cardStyle = "bg-neutral-900 border-2 border-neutral-800 hover:border-amber-500";
                   if (statusInfo.status === 'IN_CORSO') {
                     cardStyle = "bg-red-950/40 border-2 border-red-600 animate-pulse shadow-xl shadow-red-600/20";
@@ -168,7 +150,6 @@ export const FacultyScenariValutazioniModal: React.FC<FacultyScenariValutazioniM
                       key={patient.id}
                       onClick={() => {
                         if (statusInfo.status === 'DA_FARE' || statusInfo.status === 'IN_CORSO') {
-                          alert(isEn ? "The evaluation form for this scenario is accessible only once the scenario has finished." : "La scheda di valutazione associata a questo scenario è accessibile solo dal momento in cui lo scenario è terminato.");
                           return;
                         }
                         setSelectedPatientForEval(patient);

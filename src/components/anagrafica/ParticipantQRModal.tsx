@@ -32,6 +32,7 @@ import {
 import { useCourse } from '../../context/CourseContext';
 import { getTeamCodeName } from '../../utils/teamUtils';
 import { getCountryFlag } from './MasterAnagraficaManager';
+import { ThermalLabelGeneratorModal } from './ThermalLabelGeneratorModal';
 
 interface ParticipantQRModalProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [justRegenerated, setJustRegenerated] = useState(false);
+  const [showThermalModal, setShowThermalModal] = useState(false);
 
   // Find team if applicable
   const teamId = (person as any)?.teamId || (person as any)?.assignedTeamId;
@@ -178,6 +180,15 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
           label: isEn ? 'CONTROL ROOM // MISSION CONTROL' : 'CENTRALE REGIA // MISSION CONTROL',
           icon: Activity,
         };
+      case 'truccatori':
+        return {
+          border: 'border-pink-500',
+          bgHeader: 'bg-pink-950/90',
+          text: 'text-pink-300',
+          badgeBg: 'bg-pink-600 text-white',
+          label: isEn ? 'MAKEUP ARTIST // SFX & MOULAGE SPECIALIST' : 'TRUCCATORE SFX // SPECIALISTA MOULAGE & PROTESI',
+          icon: Sparkles,
+        };
       case 'ospiti':
       default:
         return {
@@ -297,12 +308,14 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
                   <span className={`font-black ${style.text} text-sm`}>{badgeCode}</span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-400 font-bold">{isEn ? 'Operational Role:' : 'Ruolo Operativo:'}</span>
-                  <span className="text-white font-bold text-right truncate max-w-[200px]">
-                    {(person as any).role || (person as any).title || (isEn ? 'Operator' : 'Operatore')}
-                  </span>
-                </div>
+                {((person as any).role || (person as any).title) && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-400 font-bold">{isEn ? 'Operational Role:' : 'Ruolo Operativo:'}</span>
+                    <span className="text-white font-bold text-right truncate max-w-[200px]">
+                      {(person as any).role || (person as any).title}
+                    </span>
+                  </div>
+                )}
 
                 {teamName && (
                   <div className="flex justify-between items-center">
@@ -313,13 +326,15 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
                   </div>
                 )}
 
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-400 font-bold">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
-                  <span className="text-white font-bold flex items-center gap-1">
-                    <span>{getCountryFlag(person.nationality)}</span>
-                    <span>{person.nationality || (isEn ? 'Italian' : 'Italiana')}</span>
-                  </span>
-                </div>
+                {person.nationality && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-400 font-bold">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                    <span className="text-white font-bold flex items-center gap-1">
+                      <span>{getCountryFlag(person.nationality)}</span>
+                      <span>{person.nationality}</span>
+                    </span>
+                  </div>
+                )}
 
                 {(person as any).organization && (
                   <div className="flex justify-between items-center">
@@ -330,19 +345,23 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
                   </div>
                 )}
 
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-400 font-bold">{isEn ? 'Contact Email:' : 'Email Contatto:'}</span>
-                  <span className="text-neutral-300 truncate max-w-[200px]">
-                    {person.email || 'N/A'}
-                  </span>
-                </div>
+                {person.email && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-400 font-bold">{isEn ? 'Contact Email:' : 'Email Contatto:'}</span>
+                    <span className="text-neutral-300 truncate max-w-[200px]">
+                      {person.email}
+                    </span>
+                  </div>
+                )}
 
-                <div className="flex justify-between items-center">
-                  <span className="text-neutral-400 font-bold">{isEn ? 'Emergency Phone:' : 'Telefono Emergenza:'}</span>
-                  <span className="text-neutral-300">
-                    {person.phone || 'N/A'}
-                  </span>
-                </div>
+                {person.phone && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-400 font-bold">{isEn ? 'Emergency Phone:' : 'Telefono Emergenza:'}</span>
+                    <span className="text-neutral-300">
+                      {person.phone}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Format Toggle Bar */}
@@ -456,7 +475,17 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setShowThermalModal(true)}
+              className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-black uppercase rounded shadow flex items-center gap-1.5 transition-colors cursor-pointer"
+              title={isEn ? 'Generate thermal adhesive label (50x80 / 40x30 mm JPG)' : 'Genera etichetta termoadesiva (50x80 / 40x30 mm JPG)'}
+            >
+              <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{isEn ? 'Thermal Label (JPG)' : 'Etichetta Termoadesiva (JPG)'}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleDownloadPNG}
@@ -477,6 +506,15 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
           </div>
         </div>
       </div>
+
+      {showThermalModal && person && (
+        <ThermalLabelGeneratorModal
+          isOpen={showThermalModal}
+          onClose={() => setShowThermalModal(false)}
+          initialPerson={person}
+          initialCategory={category}
+        />
+      )}
     </div>
   );
 };

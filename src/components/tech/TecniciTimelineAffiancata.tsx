@@ -30,7 +30,9 @@ import {
   HeartPulse,
   Flame,
   Gauge,
+  Sliders,
 } from 'lucide-react';
+import { CardOperativaCongiunta } from '../common/CardOperativaCongiunta';
 import {
   SimulatorPatient,
   Technician,
@@ -83,6 +85,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   const [showCompletedArchive, setShowCompletedArchive] = useState(false);
   const [selectedInspectSlotId, setSelectedInspectSlotId] = useState<string | null>(null);
   const [showDetailedPhases, setShowDetailedPhases] = useState(true);
+  const [selectedJointPatient, setSelectedJointPatient] = useState<SimulatorPatient | null>(null);
 
   const techNum = parseInt(currentTech.id.replace(/\D/g, '')) || 1;
   const assignedPatientIds =
@@ -135,10 +138,11 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
   const slotProgressPercent = Math.min(100, Math.max(0, Math.round((slotElapsedSeconds / slotTotalSeconds) * 100)));
 
   // Determine current training block context (e.g. Blocco 1, 2, 3, 4)
-  const isBlock1 = currentSlot.id.includes('b1');
-  const isBlock2 = currentSlot.id.includes('b2');
-  const isBlock3 = currentSlot.id.includes('b3');
-  const isBlock4 = currentSlot.id.includes('b4');
+  const slotIdSafe = currentSlot?.id || '';
+  const isBlock1 = slotIdSafe.includes('b1');
+  const isBlock2 = slotIdSafe.includes('b2');
+  const isBlock3 = slotIdSafe.includes('b3');
+  const isBlock4 = slotIdSafe.includes('b4');
   const isTacticalBlock = isBlock1 || isBlock2 || isBlock3 || isBlock4;
   const currentBlockNumber = isBlock1 ? 1 : isBlock2 ? 2 : isBlock3 ? 3 : isBlock4 ? 4 : null;
 
@@ -148,17 +152,17 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
       id: 'sub-01',
       timeWindow: isEn ? 'Min 00–15' : 'Min 00–15',
       durationMinutes: 15,
-      phaseTitle: isEn ? 'TCCC Engagement / WS Framing / SR Standby' : 'Ingaggio TCCC / WS Inquadramento / Standby SR',
+      phaseTitle: isEn ? 'TCCC Engagement / SR Briefing & Standby' : 'Ingaggio TCCC / Briefing & Standby SR',
       description: isEn
-        ? 'Under-fire tactical scenarios start, Stop the Bleed in 3 Tactical Environments. WS framing. Active standby in SR Boxes.'
-        : 'Avvio scenari tattici sotto fuoco, Stop the Bleed nei 3 Ambienti Tattici. Inquadramento WS. Standby attivo Box SR.',
+        ? 'Under-fire tactical scenarios start, Stop the Bleed in 3 Tactical Environments. Active standby in SR Boxes.'
+        : 'Avvio scenari tattici sotto fuoco, Stop the Bleed nei 3 Ambienti Tattici. Standby attivo Box SR.',
       techFocus: isEn
         ? 'Manning infusion carts, pulsed hemorrhage delivery on TCCC simulators, radio CH3 test.'
         : 'Presidio carrelli infusione, erogazione emorragia pulsante simulatori TCCC, test radio CH3.',
       isHandover: false,
       isReset: false,
-      isActive: (currentSlot.id.includes('tccc') || currentSlot.id.includes('b1-tccc')) && slotElapsedMinutes < 15,
-      isCompleted: !currentSlot.id.includes('tccc') && isTacticalBlock && (currentSlot.id.includes('handover') || currentSlot.id.includes('sr') || currentSlot.id.includes('debrief') || currentSlot.id.includes('reset')),
+      isActive: (slotIdSafe.includes('tccc') || slotIdSafe.includes('b1-tccc')) && slotElapsedMinutes < 15,
+      isCompleted: !slotIdSafe.includes('tccc') && isTacticalBlock && (slotIdSafe.includes('handover') || slotIdSafe.includes('sr') || slotIdSafe.includes('debrief') || slotIdSafe.includes('reset')),
     },
     {
       id: 'sub-02',
@@ -173,8 +177,8 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
         : 'STANDBY ATTIVO BOX SR: Collaudo ventilatori, monitor ECG multiparametrici, sonde e-FAST pronte per barella.',
       isHandover: false,
       isReset: false,
-      isActive: (currentSlot.id.includes('tccc') || currentSlot.id.includes('b1-tccc')) && slotElapsedMinutes >= 15,
-      isCompleted: isTacticalBlock && (currentSlot.id.includes('handover') || currentSlot.id.includes('sr') || currentSlot.id.includes('debrief') || currentSlot.id.includes('reset')),
+      isActive: (slotIdSafe.includes('tccc') || slotIdSafe.includes('b1-tccc')) && slotElapsedMinutes >= 15,
+      isCompleted: isTacticalBlock && (slotIdSafe.includes('handover') || slotIdSafe.includes('sr') || slotIdSafe.includes('debrief') || slotIdSafe.includes('reset')),
     },
     {
       id: 'sub-03',
@@ -189,8 +193,8 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
         : 'CRITICO: Guida barella nei Box Shock Room, connessione monitor portatili a schermi a parete, assistenza linee vascolari.',
       isHandover: true,
       isReset: false,
-      isActive: currentSlot.id.includes('handover'),
-      isCompleted: isTacticalBlock && (currentSlot.id.includes('sr') || currentSlot.id.includes('debrief') || currentSlot.id.includes('reset')),
+      isActive: slotIdSafe.includes('handover'),
+      isCompleted: isTacticalBlock && (slotIdSafe.includes('sr') || slotIdSafe.includes('debrief') || slotIdSafe.includes('reset')),
     },
     {
       id: 'sub-04',
@@ -205,8 +209,8 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
         : 'Regia parametri vitali dinamici su simulatori HALO/SimMan, modulazione crisi emodinamica, erogazione referti.',
       isHandover: false,
       isReset: false,
-      isActive: currentSlot.id.includes('sr'),
-      isCompleted: isTacticalBlock && (currentSlot.id.includes('debrief') || currentSlot.id.includes('reset')),
+      isActive: slotIdSafe.includes('sr'),
+      isCompleted: isTacticalBlock && (slotIdSafe.includes('debrief') || slotIdSafe.includes('reset')),
     },
     {
       id: 'sub-05',
@@ -221,8 +225,8 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
         : 'Playback telecamere PTZ per FAC, salvataggio telemetria, controllo carrelli farmaci e inventario.',
       isHandover: false,
       isReset: false,
-      isActive: currentSlot.id.includes('debrief'),
-      isCompleted: isTacticalBlock && currentSlot.id.includes('reset'),
+      isActive: slotIdSafe.includes('debrief'),
+      isCompleted: isTacticalBlock && slotIdSafe.includes('reset'),
     },
     {
       id: 'sub-06',
@@ -237,7 +241,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
         : 'RESET RAPIDO 15 MINUTI: Sanificazione cute, rabbocco sangue sintetico, sostituzione trachee e aghi, ricarica batterie.',
       isHandover: false,
       isReset: true,
-      isActive: currentSlot.id.includes('reset'),
+      isActive: slotIdSafe.includes('reset'),
       isCompleted: false,
     },
   ];
@@ -270,40 +274,61 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
     },
   ];
 
-  // Helper: map slot to technical duties and visiting groups
+  // Helper: map slot to technical duties for the technician's specific assigned group
   const getSlotTechActivity = (slot: TimelineSlot) => {
-    const slotTitle = (slot.title || '').toLowerCase();
-    const slotDesc = (slot.description || '').toLowerCase();
+    const techGroup: GroupType =
+      techNum <= 3 ? 'A' : techNum <= 6 ? 'B' : techNum <= 9 ? 'C' : 'D';
     const acts = slot.groupActivities || {};
-    const allActs = (['A', 'B', 'C', 'D'] as GroupType[])
-      .map((g) => ({ group: g, act: acts[g] }))
-      .filter((item) => item.act);
-    const fullText = `${slotTitle} ${slotDesc} ${allActs
-      .map((a) => `${a.act?.title} ${a.act?.subtitle} ${a.act?.location}`)
-      .join(' ')}`.toLowerCase();
+    const ownAct = acts[techGroup];
+    const allActs = ownAct
+      ? [{ group: techGroup, act: ownAct }]
+      : (['A', 'B', 'C', 'D'] as GroupType[])
+          .map((g) => ({ group: g, act: acts[g] }))
+          .filter((item) => item.act);
+    const fullText = `${ownAct?.title || slot.title || ''} ${ownAct?.subtitle || ''} ${ownAct?.location || ''}`.toLowerCase();
 
-    const isReset =
-      fullText.includes('reset') || fullText.includes('turnaround') || fullText.includes('riordino');
-    const isHandover =
-      fullText.includes('handover') || fullText.includes('sbar') || fullText.includes('consegna');
-    const isShockRoom =
-      fullText.includes('shock room') || fullText.includes('abcde') || fullText.includes('box sr');
-    const isTccc =
-      fullText.includes('tccc') || fullText.includes('stop bleed') || fullText.includes('ambiente tattico');
-    const isPreAllerta =
-      slot.id.toLowerCase().includes('prealert') ||
-      slot.id.toLowerCase().includes('pre-alert') ||
-      fullText.includes('pre-allerta') ||
-      fullText.includes('pre-alert');
-    const isStandbySR = fullText.includes('standby sr') || fullText.includes('standby attivo');
     const isWorkshop =
-      fullText.includes('workshop') ||
-      fullText.includes('ws1') ||
-      fullText.includes('ws2') ||
-      fullText.includes('skill');
-    const isDebrief = fullText.includes('debriefing') || fullText.includes('revisione');
+      (ownAct?.activityType === 'workshop' ||
+        fullText.includes('workshop') ||
+        fullText.includes('ws1') ||
+        fullText.includes('ws2') ||
+        fullText.includes('skill')) &&
+      !fullText.includes('tccc') &&
+      !fullText.includes('shock');
+    const isReset =
+      !isWorkshop &&
+      (fullText.includes('reset') || fullText.includes('turnaround') || fullText.includes('riordino'));
+    const isHandover =
+      !isWorkshop &&
+      (fullText.includes('handover') || fullText.includes('sbar') || fullText.includes('consegna'));
+    const isPreAllerta =
+      !isWorkshop &&
+      (fullText.includes('pre-allerta') ||
+        fullText.includes('pre-alert') ||
+        fullText.includes('t -15') ||
+        fullText.includes('t-15'));
+    const isStandbySR =
+      !isWorkshop &&
+      (fullText.includes('standby sr') ||
+        fullText.includes('standby attivo') ||
+        fullText.includes('pre-allerta shock'));
+    const isShockRoom =
+      !isWorkshop &&
+      (fullText.includes('shock room') ||
+        fullText.includes('abcde') ||
+        fullText.includes('box sr') ||
+        ownAct?.activityType === 'scenario_intra');
+    const isTccc =
+      !isWorkshop &&
+      (fullText.includes('tccc') ||
+        fullText.includes('stop bleed') ||
+        fullText.includes('ambiente tattico') ||
+        ownAct?.activityType === 'scenario_extra');
+    const isDebrief =
+      !isWorkshop && (fullText.includes('debriefing') || fullText.includes('revisione'));
     const isPause =
-      fullText.includes('pausa') || fullText.includes('ristoro') || fullText.includes('pranzo');
+      !isWorkshop &&
+      (fullText.includes('pausa') || fullText.includes('ristoro') || fullText.includes('pranzo'));
     const isSetup = slot.id.includes('setup') || fullText.includes('setup staff');
 
     const postazioneNum = ((techNum - 1) % 3) + 1; // 1, 2, 3
@@ -632,7 +657,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
     // Check if the current technician is directly assigned/involved in this slot's station
     const isTechDirectlyInvolved =
-      currentTech.assignedStations?.some((st) => stationLocation.toLowerCase().includes(st.toLowerCase())) ||
+      currentTech.assignedStations?.some((st) => (stationLocation || '').toLowerCase().includes((st || '').toLowerCase())) ||
       techDuties.length > 0;
 
     return {
@@ -704,8 +729,8 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
 
   const isCurrentSlotPreAlert =
     currentSlotInfo.isPreAllerta ||
-    currentSlot.id.toLowerCase().includes('prealert') ||
-    currentSlot.id.toLowerCase().includes('pre-alert') ||
+    (currentSlot.id || '').toLowerCase().includes('prealert') ||
+    (currentSlot.id || '').toLowerCase().includes('pre-alert') ||
     (currentSlot.title || '').toLowerCase().includes('pre-alert') ||
     (currentSlot.title || '').toLowerCase().includes('pre-allerta');
 
@@ -836,7 +861,7 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     <span className="px-2 py-0.5 bg-pink-600 text-white font-mono font-black text-[9px] uppercase rounded">
                       {currentSlotInfo.isHandover
                         ? 'HANDOVER 1:1 SBAR'
-                        : currentSlot.id.includes('tccc')
+                        : (currentSlot?.id || '').includes('tccc')
                         ? 'TCCC ADDESTRAMENTO'
                         : 'SHOCK ROOM ALTA FEDELTÀ'}
                     </span>
@@ -1266,11 +1291,21 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                     <Wrench className="w-3.5 h-3.5" /> {isEn ? 'Simulator Pt & Pre-Alert Duty:' : 'Simulatore & Compiti Pre-Allerta:'}
                   </span>
                   {targetPatient ? (
-                    <div className="text-xs font-bold text-pink-300">
-                      Pt. #{targetPatient.id} • {targetPatient.scenarioCode}
-                      <div className="text-[10px] text-neutral-300 font-normal truncate">
-                        {targetPatient.name}
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-bold text-pink-300">
+                        Pt. #{targetPatient.id} • {targetPatient.scenarioCode}
+                        <div className="text-[10px] text-neutral-300 font-normal truncate">
+                          {targetPatient.name}
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedJointPatient(targetPatient)}
+                        className="w-full py-1.5 px-2 bg-gradient-to-r from-fuchsia-950 to-pink-950 hover:from-fuchsia-900 hover:to-pink-900 border border-fuchsia-500 rounded text-[10px] text-pink-200 font-bold uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                      >
+                        <Sliders className="w-3 h-3 text-fuchsia-400" />
+                        <span>Card Congiunta Trucco & Simulatore</span>
+                      </button>
                     </div>
                   ) : (
                     <div className="text-xs text-neutral-300">
@@ -1793,7 +1828,19 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
                   <span className="text-neutral-400 text-[11px]">
                     {isEn ? 'Station:' : 'Presidio:'} <strong>{patient.scenarioCode.includes('TCCC') ? (isEn ? 'Tactical Environment' : 'Ambiente Tattico') : 'Shock Room'}</strong>
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedJointPatient(patient);
+                      }}
+                      className="px-2 py-0.5 bg-fuchsia-950 hover:bg-fuchsia-900 text-fuchsia-300 border border-fuchsia-700 text-[10px] font-bold uppercase rounded cursor-pointer flex items-center gap-1 shadow-xs"
+                      title="Card Operativa Congiunta Trucco & Simulatore"
+                    >
+                      <Sliders className="w-3 h-3 text-fuchsia-400" />
+                      <span>Card Congiunta</span>
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1814,6 +1861,20 @@ export const TecniciTimelineAffiancata: React.FC<TecniciTimelineAffiancataProps>
           })}
         </div>
       </div>
+
+      {/* MODALE CARD OPERATIVA CONGIUNTA (TRUCCO & TECNICO) */}
+      {selectedJointPatient && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="max-w-5xl w-full my-auto animate-in fade-in zoom-in-95 duration-200">
+            <CardOperativaCongiunta
+              patientId={selectedJointPatient.id}
+              activeRolePerspective="tecnico"
+              onClose={() => setSelectedJointPatient(null)}
+              isModal
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

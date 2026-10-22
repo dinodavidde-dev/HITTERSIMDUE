@@ -47,6 +47,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
     directors,
     regiaStaff,
     guests,
+    makeupArtists,
     teams,
     setCurrentTab,
     setSelectedDiscenteId,
@@ -62,7 +63,16 @@ export const PersonnelBadgeRegistry: React.FC = () => {
 
   const isEn = language === 'en';
 
-  const [filterType, setFilterType] = useState<'all' | 'discenti' | 'faculty' | 'tecnici' | 'direttori' | 'regia' | 'ospiti'>('all');
+  const [filterType, setFilterType] = useState<
+    | 'all'
+    | 'discenti'
+    | 'faculty'
+    | 'tecnici'
+    | 'direttori'
+    | 'regia'
+    | 'ospiti'
+    | 'truccatori'
+  >('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [qrMap, setQrMap] = useState<Record<string, { dataUrl: string; hash: string; url: string }>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -78,7 +88,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: d.name,
       badgeCode: d.badgeCode || d.id,
       category: 'discenti' as const,
-      roleTitle: d.role || (isEn ? 'Trauma Team Operator' : 'Operatore Trauma Team'),
+      roleTitle: d.role || '',
       email: d.email,
       phone: d.phone,
       teamId: d.teamId,
@@ -89,7 +99,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: f.name,
       badgeCode: f.badgeCode || f.id,
       category: 'faculty' as const,
-      roleTitle: f.title || f.specialty || (isEn ? 'Faculty Instructor' : 'Faculty Tutor'),
+      roleTitle: f.title || f.specialty || '',
       email: f.email,
       phone: f.phone,
       teamId: f.assignedTeamId,
@@ -100,17 +110,27 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: t.name,
       badgeCode: t.badgeCode || t.id,
       category: 'tecnici' as const,
-      roleTitle: t.specialty || (isEn ? 'Simulation Technician' : 'Tecnico Simulazione'),
+      roleTitle: t.specialty || '',
       email: t.phone,
       phone: t.phone,
       raw: t,
+    })),
+    ...makeupArtists.map((m) => ({
+      id: m.id,
+      name: m.name,
+      badgeCode: m.badgeCode || m.id,
+      category: 'truccatori' as const,
+      roleTitle: m.role || '',
+      email: m.email || m.phone,
+      phone: m.phone,
+      raw: m,
     })),
     ...directors.map((dir) => ({
       id: dir.id,
       name: dir.name,
       badgeCode: dir.badgeCode || dir.id,
       category: 'direttori' as const,
-      roleTitle: dir.title || (isEn ? 'Course Director' : 'Direttore Corso'),
+      roleTitle: dir.title || dir.role || '',
       phone: dir.phone,
       raw: dir,
     })),
@@ -119,7 +139,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: r.name,
       badgeCode: r.badgeCode || r.id,
       category: 'regia' as const,
-      roleTitle: `${r.title} (${r.role})`,
+      roleTitle: [r.title, r.role].filter(Boolean).join(' • '),
       phone: r.phone,
       raw: r,
     })),
@@ -128,7 +148,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
       name: g.name,
       badgeCode: g.badgeCode || g.id,
       category: 'ospiti' as const,
-      roleTitle: g.title || (isEn ? 'Guest / VIP Observer' : 'Ospite / VIP Observer'),
+      roleTitle: g.title || '',
       email: g.email,
       phone: g.phone,
       raw: g,
@@ -189,6 +209,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
     discenti,
     faculty,
     technicians,
+    makeupArtists,
     directors,
     regiaStaff,
     guests,
@@ -255,6 +276,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
               { key: 'discenti', label: isEn ? `LEARNERS (${discenti.length})` : `DISCENTI (${discenti.length})`, icon: Users },
               { key: 'faculty', label: `FACULTY (${faculty.length})`, icon: Award },
               { key: 'tecnici', label: isEn ? `TECH (${technicians.length})` : `TECNICI (${technicians.length})`, icon: Wrench },
+              { key: 'truccatori', label: isEn ? `MAKEUP (${makeupArtists.length})` : `TRUCCATORI (${makeupArtists.length})`, icon: Sparkles },
               { key: 'direttori', label: isEn ? `DIRECT. (${directors.length})` : `DIREZ. (${directors.length})`, icon: Shield },
               { key: 'regia', label: isEn ? `CONTROL (${regiaStaff.length})` : `REGIA (${regiaStaff.length})`, icon: Radio },
               { key: 'ospiti', label: isEn ? `GUESTS (${guests.length})` : `OSPITI (${guests.length})`, icon: UserCheck },
@@ -304,6 +326,8 @@ export const PersonnelBadgeRegistry: React.FC = () => {
                 return 'border-amber-800 hover:border-amber-500';
               case 'tecnici':
                 return 'border-pink-800 hover:border-pink-500';
+              case 'truccatori':
+                return 'border-pink-600 hover:border-pink-400 bg-pink-950/10';
               case 'direttori':
                 return 'border-yellow-800 hover:border-yellow-500';
               case 'regia':
@@ -325,7 +349,7 @@ export const PersonnelBadgeRegistry: React.FC = () => {
                     {p.category.toUpperCase()}
                   </span>
                   <h4 className="text-sm font-black text-white truncate">{p.name}</h4>
-                  <p className="text-[11px] text-neutral-400 truncate">{p.roleTitle}</p>
+                  {p.roleTitle && <p className="text-[11px] text-neutral-400 truncate">{p.roleTitle}</p>}
                 </div>
                 <span className="px-2 py-0.5 bg-neutral-950 border border-neutral-700 text-xs font-mono font-bold text-neutral-200 flex-shrink-0">
                   {p.badgeCode}
