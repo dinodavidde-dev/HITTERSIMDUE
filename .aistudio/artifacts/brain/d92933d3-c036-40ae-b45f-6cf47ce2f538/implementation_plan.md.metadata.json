@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for Labelnize PM240 (203 DPI) compatibility and dedicated 40x30 mm thermal roll print profile with anti-clip margins and USB desktop driver optimization.",
-  "updatedAt":  "2026-10-22T21:08:00.462757929Z",
+  "summary":  "Completamento della sincronizzazione bidirezionale dell'anagrafica con Firestore e integrazione real-time con il generatore di etichette e badge termici. Persistenza continua garantita prima, durante e dopo ogni avvio dell'app.",
+  "updatedAt":  "2026-10-23T00:00:00.472619656Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

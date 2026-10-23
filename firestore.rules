@@ -153,6 +153,12 @@ service cloud.firestore {
         (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
         (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
         (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100)) &&
+        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 300)) &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 300)) &&
+        (!('experience' in data) || (data.experience is string && data.experience.size() <= 500)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 3000)) &&
+        (!('professione' in data) || (data.professione is string && data.professione.size() <= 200)) &&
+        (!('clothingSize' in data) || (data.clothingSize is string && data.clothingSize.size() <= 50)) &&
         (!('assignedRole' in data) || data.assignedRole == null || (data.assignedRole is string && data.assignedRole.size() <= 200)) &&
         (!('activeScenarioRole' in data) || data.activeScenarioRole == null || (data.activeScenarioRole is string && data.activeScenarioRole.size() <= 200)) &&
         (!('activeScenarioType' in data) || data.activeScenarioType == null || (data.activeScenarioType is string && data.activeScenarioType.size() <= 100)) &&
@@ -175,12 +181,16 @@ service cloud.firestore {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
         (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
         (!('title' in data) || (data.title is string && data.title.size() <= 150)) &&
-        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 150)) &&
+        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 300)) &&
         (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
         (!('assignedTeamId' in data) || data.assignedTeamId is number) &&
+        (!('assignedStation' in data) || (data.assignedStation is string && data.assignedStation.size() <= 200)) &&
+        (!('affiliation' in data) || (data.affiliation is string && data.affiliation.size() <= 200)) &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 300)) &&
         (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
-        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 3000));
     }
 
     match /faculty/{facultyId} {
@@ -194,12 +204,16 @@ service cloud.firestore {
     function isValidTechnician(data) {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
         (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
-        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 150)) &&
+        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 300)) &&
+        (!('role' in data) || (data.role is string && data.role.size() <= 150)) &&
         (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
         (!('assignedStations' in data) || (data.assignedStations is list && data.assignedStations.size() <= 30)) &&
+        (!('assignedStation' in data) || (data.assignedStation is string && data.assignedStation.size() <= 200)) &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 300)) &&
         (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
-        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 3000));
     }
 
     match /technicians/{technicianId} {
@@ -214,10 +228,14 @@ service cloud.firestore {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
         (!('name' in data) || (data.name is string && data.name.size() <= 200)) &&
         (!('title' in data) || (data.title is string && data.title.size() <= 150)) &&
+        (!('role' in data) || (data.role is string && data.role.size() <= 150)) &&
         (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 300)) &&
         (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
-        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
+        (!('isMaster' in data) || data.isMaster is bool) &&
+        (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 3000));
     }
 
     match /directors/{directorId} {
@@ -257,6 +275,10 @@ service cloud.firestore {
         (!('organization' in data) || (data.organization is string && data.organization.size() <= 200)) &&
         (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 150)) &&
         (!('assignedDays' in data) || (data.assignedDays is list && data.assignedDays.size() <= 10)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 100)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
+        (!('escortFaculty' in data) || (data.escortFaculty is string && data.escortFaculty.size() <= 150)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 3000)) &&
         (!('badgeCode' in data) || (data.badgeCode is string && data.badgeCode.size() <= 100));
     }
 

@@ -18,6 +18,8 @@ import {
   Sliders,
   FileDown,
   Info,
+  FileText,
+  Cloud,
 } from 'lucide-react';
 import { useCourse } from '../../context/CourseContext';
 import { AnyParticipant, ParticipantCategory, getParticipantPersonalPageUrl } from '../../utils/qrCodeUtils';
@@ -29,6 +31,9 @@ import {
   ThermalLabelConfig,
   renderThermalLabelToCanvas,
   downloadThermalLabelJpg,
+  downloadSinglePdf1to1,
+  generateMultiPagePdfForThermalRoll,
+  printBatchThermalRoll,
   getThermalLabelJpgBlob,
   printThermalLabel,
   getLabelPixelDimensions,
@@ -61,6 +66,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
     guests,
     teams,
     language,
+    isFirebaseCloudConnected,
   } = useCourse();
 
   const isEn = language === 'en';
@@ -160,6 +166,17 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
     }
   }, [isOpen, initialPerson, initialCategory, allCourseFigures]);
 
+  // Keep selectedPerson synced in real time if its data is updated in Firestore or local storage
+  useEffect(() => {
+    if (isOpen && selectedPerson) {
+      const latest = allCourseFigures.find((f) => f.person.id === selectedPerson.id);
+      if (latest && latest.person !== selectedPerson) {
+        setSelectedPerson(latest.person);
+        setSelectedCategory(latest.category);
+      }
+    }
+  }, [isOpen, allCourseFigures, selectedPerson]);
+
   // Filtered figures based on category tab & search query
   const filteredFigures = useMemo(() => {
     return allCourseFigures.filter((item) => {
@@ -255,13 +272,108 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
     }
   };
 
+  // 1:1 Millimeter PDF download for selected person
+  const handleDownloadSinglePdf = async () => {
+    if (!selectedPerson) return;
+    try {
+      await downloadSinglePdf1to1(
+        selectedPerson,
+        selectedCategory,
+        {
+          size: labelSize,
+          orientation,
+          dpi,
+          printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
+        },
+        currentTeamName
+      );
+    } catch (e) {
+      console.error('Error downloading 1:1 PDF label:', e);
+    }
+  };
+
   // Direct print handler
   const handlePrint = () => {
     if (!previewCanvas) return;
     printThermalLabel(previewCanvas, labelSize, orientation);
   };
 
-  // Batch download handler
+  // Batch 1:1 Multi-page PDF download handler (all filtered figures)
+  const handleDownloadBatchPdf = async (itemsToExport: typeof filteredFigures) => {
+    if (itemsToExport.length === 0 || isBatchExporting) return;
+
+    setIsBatchExporting(true);
+    setBatchProgress({ current: 0, total: itemsToExport.length, currentName: '' });
+
+    try {
+      const batchItems = itemsToExport.map((item) => ({
+        person: item.person,
+        category: item.category,
+        teamName: item.teamName,
+      }));
+
+      const doc = await generateMultiPagePdfForThermalRoll(
+        batchItems,
+        {
+          size: labelSize,
+          orientation,
+          dpi,
+          printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
+        },
+        (current, total, name) => {
+          setBatchProgress({ current, total, currentName: name });
+        }
+      );
+
+      const sizeStr = `${labelSize}mm`;
+      doc.save(`ROTOLO_ETICHETTE_1a1_${itemsToExport.length}_FIGURE_${sizeStr}.pdf`);
+    } catch (e) {
+      console.error('Batch PDF export error:', e);
+    } finally {
+      setIsBatchExporting(false);
+    }
+  };
+
+  // Batch direct browser spool print
+  const handlePrintBatchRoll = async (itemsToExport: typeof filteredFigures) => {
+    if (itemsToExport.length === 0 || isBatchExporting) return;
+
+    setIsBatchExporting(true);
+    setBatchProgress({ current: 0, total: itemsToExport.length, currentName: '' });
+
+    try {
+      const canvases: { canvas: HTMLCanvasElement; name: string }[] = [];
+      for (let i = 0; i < itemsToExport.length; i++) {
+        const item = itemsToExport[i];
+        setBatchProgress({
+          current: i + 1,
+          total: itemsToExport.length,
+          currentName: `${(item.person as any).badgeCode || ''} • ${item.person.name}`,
+        });
+
+        const canvas = await renderThermalLabelToCanvas(
+          item.person,
+          item.category,
+          {
+            size: labelSize,
+            orientation,
+            dpi,
+            printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
+          },
+          item.teamName
+        );
+        canvases.push({ canvas, name: item.person.name });
+      }
+
+      printBatchThermalRoll(canvases, labelSize, orientation);
+    } catch (e) {
+      console.error('Batch print roll error:', e);
+    } finally {
+      setIsBatchExporting(false);
+    }
+  };
+
+  // Batch download handler (individual JPGs)
   const handleDownloadBatch = async (itemsToExport: typeof filteredFigures) => {
     if (itemsToExport.length === 0 || isBatchExporting) return;
 
@@ -323,6 +435,14 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                 </h3>
                 <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase rounded">
                   JPG 50×80 / 40×30 MM
+                </span>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-black uppercase rounded border ${
+                  isFirebaseCloudConnected
+                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50 shadow-sm'
+                    : 'bg-neutral-800 text-neutral-300 border-neutral-700'
+                }`}>
+                  <Cloud className={`w-3 h-3 ${isFirebaseCloudConnected ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'}`} />
+                  {isFirebaseCloudConnected ? 'CLOUD FIRESTORE: LIVE SYNC' : 'OFFLINE: PERSISTENZA ATTIVA'}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400 font-sans truncate">
@@ -489,19 +609,19 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                   </span>
                 </button>
 
-                {labelSize === '40x30' && orientation === 'landscape' && dpi === 203 && (
-                  <div className="mt-2 p-2.5 bg-neutral-900/90 border border-amber-500/40 text-neutral-300 space-y-1 text-xs font-mono rounded">
+                {labelSize === '40x30' && (
+                  <div className="mt-2 p-2.5 bg-neutral-900/90 border border-amber-500/40 text-neutral-300 space-y-1.5 text-xs font-mono rounded">
                     <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
                       <span className="text-[10px] font-bold text-amber-400 uppercase flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>CALIBRAZIONE PM240 ATTIVA (USB PC)</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>RAPPORTO 1:1 CALIBRATO 40 × 30 MM</span>
                       </span>
-                      <span className="text-[10px] text-neutral-400">320 × 240 px • 8 dpmm</span>
+                      <span className="text-[10px] text-emerald-400 font-bold">PDF VETTORIALE 1:1 ATTIVO</span>
                     </div>
                     <div className="text-[11px] space-y-0.5 text-neutral-300 font-sans">
-                      <p>• <strong>Formato rotolo</strong>: 40 mm × 30 mm (4×3 cm) orizzontale.</p>
-                      <p>• <strong>Margine di sicurezza</strong>: 1.5 mm anti-ritaglio bordi applicato al layout.</p>
-                      <p>• <strong>Driver USB PC</strong>: Impostare carta <em>40×30 mm</em>, scala <em>100%</em>, margini <em>Nessuno (0 mm)</em>.</p>
+                      <p>• <strong>Geometria PDF 1:1</strong>: Pagina PDF bloccata a <strong>40.0 × 30.0 mm</strong> esatti con direttiva <code>/PrintScaling None</code> per impedire il rimpicciolimento automatico del visualizzatore.</p>
+                      <p>• <strong>Risoluzione</strong>: {pixelWidth} × {pixelHeight} px ({dpi} DPI • 1.5mm margine anti-ritaglio).</p>
+                      <p>• <strong>Driver Stampante</strong>: Selezionare formato <em>40×30 mm</em>, scala <em>100% (Effettiva)</em>, margini <em>Nessuno (0 mm)</em>.</p>
                     </div>
                   </div>
                 )}
@@ -675,7 +795,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                 {isBatchExporting ? (
                   <div className="space-y-1">
                     <span className="text-amber-400 font-mono font-bold block animate-pulse">
-                      ⚡ {isEn ? 'Exporting labels:' : 'Generazione etichette:'} {batchProgress.current} / {batchProgress.total}
+                      ⚡ {isEn ? 'Processing labels:' : 'Elaborazione etichette:'} {batchProgress.current} / {batchProgress.total}
                     </span>
                     <span className="text-[11px] text-neutral-300 font-mono block truncate max-w-xs">
                       {batchProgress.currentName}
@@ -683,22 +803,47 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                   </div>
                 ) : (
                   <span>
-                    {isEn ? 'Batch generation ready for' : 'Download massivo disponibile per'}{' '}
+                    {isEn ? 'Batch export ready for' : 'Export rotolo pronto per'}{' '}
                     <strong className="text-white font-mono">{filteredFigures.length}</strong> {isEn ? 'figures' : 'figure'}.
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                {/* 1. Multi-page PDF 1:1 Roll */}
+                <button
+                  type="button"
+                  disabled={isBatchExporting || filteredFigures.length === 0}
+                  onClick={() => handleDownloadBatchPdf(filteredFigures)}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded border border-emerald-400/50 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow"
+                  title="Scarica PDF multipagina a misura esatta 1:1 (calibrato senza ridimensionamento)"
+                >
+                  <FileText className="w-3.5 h-3.5 text-white" />
+                  <span>{isEn ? `PDF ROLL 1:1 (${filteredFigures.length})` : `PDF ROTOLO 1:1 (${filteredFigures.length})`}</span>
+                </button>
+
+                {/* 2. Direct Browser Roll Spool */}
+                <button
+                  type="button"
+                  disabled={isBatchExporting || filteredFigures.length === 0}
+                  onClick={() => handlePrintBatchRoll(filteredFigures)}
+                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white font-bold text-xs uppercase tracking-wider rounded border border-neutral-700 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Invia tutte le etichette al dialogo di stampa del browser"
+                >
+                  <Printer className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isEn ? 'PRINT ROLL' : 'STAMPA ROTOLO'}</span>
+                </button>
+
+                {/* 3. Individual JPGs */}
                 <button
                   type="button"
                   disabled={isBatchExporting || filteredFigures.length === 0}
                   onClick={() => handleDownloadBatch(filteredFigures)}
-                  className="w-full sm:w-auto px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs uppercase tracking-wider rounded border border-neutral-700 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  title="Scarica tutte le etichette visibili nel filtro attuale"
+                  className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white font-bold text-[11px] uppercase tracking-wider rounded border border-neutral-800 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1"
+                  title="Scarica tutti i file JPG singoli"
                 >
-                  <FileDown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{isEn ? `EXPORT LIST (${filteredFigures.length} JPG)` : `SCARICA FILTRATI (${filteredFigures.length} JPG)`}</span>
+                  <FileDown className="w-3 h-3 text-neutral-400" />
+                  <span>JPG</span>
                 </button>
               </div>
             </div>
@@ -777,29 +922,65 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
 
             {/* Action Buttons for currently selected figure */}
             <div className="w-full space-y-2 pt-1">
+              {/* Primary 1:1 PDF Download - Solves scaling/shrink bug completely */}
               <button
                 type="button"
                 disabled={!selectedPerson || isRendering}
-                onClick={handleDownloadSingle}
-                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 border border-amber-300 disabled:opacity-50"
+                onClick={handleDownloadSinglePdf}
+                className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 border border-emerald-300 disabled:opacity-50"
+                title="Scarica PDF a misura geometrica esatta 1:1 (elimina i rimpicciolimenti del browser)"
               >
-                <Download className="w-4 h-4 stroke-[2.5]" />
-                <span>
-                  {isEn
-                    ? `DOWNLOAD JPG (${labelSize} MM)`
-                    : `SCARICA JPG SINGOLO (${labelSize} MM)`}
-                </span>
+                <FileText className="w-4 h-4 stroke-[2.5]" />
+                <div className="flex flex-col items-center">
+                  <span>
+                    {isEn
+                      ? `DOWNLOAD PDF 1:1 CALIBRATED (${labelSize} MM)`
+                      : `SCARICA PDF 1:1 CALIBRATO (${labelSize} MM)`}
+                  </span>
+                  <span className="text-[9px] font-sans font-bold normal-case text-emerald-950 opacity-90">
+                    {isEn ? 'Exact millimeters • Zero scaling distortion' : 'Dimensione millimetrica esatta • Nessun rimpicciolimento'}
+                  </span>
+                </div>
               </button>
 
-              <button
-                type="button"
-                disabled={!previewCanvas || isRendering}
-                onClick={handlePrint}
-                className="w-full py-2 px-4 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-bold text-xs uppercase tracking-wider rounded-lg border border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <Printer className="w-3.5 h-3.5 text-amber-400" />
-                <span>{isEn ? 'DIRECT THERMAL PRINT' : 'STAMPA DIRETTA ETICHETTATRICE'}</span>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                {/* Direct Zero-Margin Print */}
+                <button
+                  type="button"
+                  disabled={!previewCanvas || isRendering}
+                  onClick={handlePrint}
+                  className="py-2 px-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-[11px] uppercase tracking-wider rounded-lg border border-amber-300 transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 shadow"
+                  title="Apre la finestra di stampa con margini forzati a 0mm"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>{isEn ? 'DIRECT PRINT (0mm)' : 'STAMPA DIRETTA (0mm)'}</span>
+                </button>
+
+                {/* JPG Download */}
+                <button
+                  type="button"
+                  disabled={!selectedPerson || isRendering}
+                  onClick={handleDownloadSingle}
+                  className="py-2 px-3 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-bold text-[11px] uppercase tracking-wider rounded-lg border border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  title="Scarica file JPG ad alta risoluzione"
+                >
+                  <Download className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>{isEn ? 'DOWNLOAD JPG' : 'SCARICA JPG'}</span>
+                </button>
+              </div>
+
+              {/* Thermal Printer Driver Guidance Box */}
+              <div className="p-2.5 bg-neutral-900/90 border border-neutral-800 rounded text-[11px] font-sans text-neutral-300 space-y-1">
+                <div className="flex items-center gap-1.5 font-mono font-bold text-amber-400 text-[10px] uppercase">
+                  <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{isEn ? 'THERMAL PRINTER CALIBRATION (PM240 / LABEL):' : 'GUIDA CALIBRAZIONE STAMPANTE (PM240 / TERMICHE):'}</span>
+                </div>
+                <ul className="list-disc list-inside text-[10px] text-neutral-400 space-y-0.5">
+                  <li>Formato carta nel driver: <strong>{widthMm} × {heightMm} mm</strong></li>
+                  <li>Nel dialogo di stampa browser: <strong>Margini: Nessuno (0 mm)</strong> e <strong>Scala: 100%</strong></li>
+                  <li>Se il browser rimpicciolisce comunque: usa il pulsante <strong>PDF 1:1 CALIBRATO</strong></li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

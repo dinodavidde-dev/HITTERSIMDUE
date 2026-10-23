@@ -480,10 +480,10 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
               type="button"
               onClick={() => setShowThermalModal(true)}
               className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-black uppercase rounded shadow flex items-center gap-1.5 transition-colors cursor-pointer"
-              title={isEn ? 'Generate thermal adhesive label (50x80 / 40x30 mm JPG)' : 'Genera etichetta termoadesiva (50x80 / 40x30 mm JPG)'}
+              title={isEn ? 'Generate thermal adhesive label (50x80 / 40x30 mm - 1:1 PDF & JPG)' : 'Genera etichetta termoadesiva (50x80 / 40x30 mm - PDF 1:1 & JPG)'}
             >
               <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{isEn ? 'Thermal Label (JPG)' : 'Etichetta Termoadesiva (JPG)'}</span>
+              <span>{isEn ? 'Thermal Label (PDF 1:1 / JPG)' : 'Etichetta Termoadesiva (PDF 1:1)'}</span>
             </button>
 
             <button

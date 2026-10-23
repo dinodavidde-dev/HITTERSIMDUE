@@ -843,34 +843,12 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   });
   const [discenti, setDiscenti] = useState<Discente[]>(() => {
-    if (typeof window !== 'undefined') {
-      const rosterRev = localStorage.getItem(STORAGE_KEY_PREFIX + 'roster_rev_9240629a');
-      const stored = getStoredOrDefault('discenti', INITIAL_DISCENTI);
-      if (!rosterRev || !stored || stored.length !== 68 || stored[0]?.name !== 'Ahern Ellen') {
-        try {
-          localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(INITIAL_DISCENTI));
-          localStorage.setItem(STORAGE_KEY_PREFIX + 'roster_rev_9240629a', 'rev_9240629a');
-        } catch (e) {}
-        return INITIAL_DISCENTI;
-      }
-      return stored;
-    }
-    return INITIAL_DISCENTI;
+    const stored = getStoredOrDefault<Discente[]>('discenti', INITIAL_DISCENTI);
+    return Array.isArray(stored) && stored.length > 0 ? stored : INITIAL_DISCENTI;
   });
   const [faculty, setFaculty] = useState<Faculty[]>(() => {
-    if (typeof window !== 'undefined') {
-      const rosterRev = localStorage.getItem(STORAGE_KEY_PREFIX + 'roster_rev_faculty_23');
-      const stored = getStoredOrDefault('faculty', INITIAL_FACULTY);
-      if (!rosterRev || !stored || stored.length !== 23 || !stored.some((f) => f.badgeCode === 'FAC-LEAD')) {
-        try {
-          localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(INITIAL_FACULTY));
-          localStorage.setItem(STORAGE_KEY_PREFIX + 'roster_rev_faculty_23', 'rev_23');
-        } catch (e) {}
-        return INITIAL_FACULTY;
-      }
-      return stored;
-    }
-    return INITIAL_FACULTY;
+    const stored = getStoredOrDefault<Faculty[]>('faculty', INITIAL_FACULTY);
+    return Array.isArray(stored) && stored.length > 0 ? stored : INITIAL_FACULTY;
   });
   const [technicians, setTechnicians] = useState<Technician[]>(() => getStoredOrDefault('technicians', INITIAL_TECHNICIANS));
   const [directors, setDirectors] = useState<Director[]>(() => getStoredOrDefault('directors', INITIAL_DIRECTORS));
@@ -1427,6 +1405,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [devicePresenceMap, setDevicePresenceMap] = useState<Record<string, DevicePresenceRecord>>({});
   const hasSeededPatientsRef = useRef<boolean>(false);
+  const hasSeededDiscentiRef = useRef<boolean>(false);
+  const hasSeededFacultyRef = useRef<boolean>(false);
+  const hasSeededTechsRef = useRef<boolean>(false);
+  const hasSeededDirsRef = useRef<boolean>(false);
+  const hasSeededRegiaRef = useRef<boolean>(false);
+  const hasSeededGuestsRef = useRef<boolean>(false);
+  const hasSeededTeamsRef = useRef<boolean>(false);
 
   // -------------------------------------------------------------
   // FIRESTORE REAL-TIME SYNCHRONIZATION LISTENERS
@@ -1618,8 +1603,24 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               } as Team);
             });
             list.sort((a, b) => a.id - b.id);
-            setTeams(list.length > 0 ? list : INITIAL_TEAMS);
-            setLastSyncTimestamp(Date.now());
+            if (list.length > 0) {
+              setTeams(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'teams', JSON.stringify(list));
+              } catch (e) {}
+              setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            // Self-healing: seed teams to Firestore if collection is empty
+            if (!isQuotaExhausted() && !hasSeededTeamsRef.current) {
+              hasSeededTeamsRef.current = true;
+              const sourceTeams = getStoredOrDefault<Team[]>('teams', INITIAL_TEAMS);
+              const batch = writeBatch(db);
+              sourceTeams.forEach((t) => {
+                batch.set(doc(db, teamsPath, String(t.id)), cleanUndefined(t), { merge: true });
+              });
+              batch.commit().catch(() => {});
+            }
           }
         },
         (error) => {
@@ -1631,7 +1632,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to teams:', err);
     }
 
-    // 7. Listen to Discenti
+    // 7. Listen to Discenti (Continuous Bidirectional Persistence)
     const discentiPath = 'discenti';
     try {
       const unsubDiscenti = onSnapshot(
@@ -1656,7 +1657,21 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
             if (list.length > 0) {
               setDiscenti(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(list));
+              } catch (e) {}
               setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            // Self-healing: Seed discenti on Cloud Firestore if collection is empty
+            if (!isQuotaExhausted() && !hasSeededDiscentiRef.current) {
+              hasSeededDiscentiRef.current = true;
+              const sourceDiscenti = getStoredOrDefault<Discente[]>('discenti', INITIAL_DISCENTI);
+              const batch = writeBatch(db);
+              sourceDiscenti.forEach((disc) => {
+                batch.set(doc(db, discentiPath, disc.id), cleanUndefined(disc), { merge: true });
+              });
+              batch.commit().catch((e) => console.warn('Failed to seed discenti to Cloud:', e));
             }
           }
         },
@@ -1669,7 +1684,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Failed to listen to discenti:', err);
     }
 
-    // 8. Listen to Faculty
+    // 8. Listen to Faculty (Continuous Bidirectional Persistence)
     const facultyPath = 'faculty';
     try {
       const unsubFaculty = onSnapshot(
@@ -1696,7 +1711,21 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
             if (list.length > 0) {
               setFaculty(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(list));
+              } catch (e) {}
               setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            // Self-healing: Seed faculty on Cloud Firestore if collection is empty
+            if (!isQuotaExhausted() && !hasSeededFacultyRef.current) {
+              hasSeededFacultyRef.current = true;
+              const sourceFaculty = getStoredOrDefault<Faculty[]>('faculty', INITIAL_FACULTY);
+              const batch = writeBatch(db);
+              sourceFaculty.forEach((fac) => {
+                batch.set(doc(db, facultyPath, fac.id), cleanUndefined(fac), { merge: true });
+              });
+              batch.commit().catch((e) => console.warn('Failed to seed faculty to Cloud:', e));
             }
           }
         },
@@ -1735,7 +1764,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
             if (list.length > 0) {
               setTechnicians(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'technicians', JSON.stringify(list));
+              } catch (e) {}
               setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            if (!isQuotaExhausted() && !hasSeededTechsRef.current) {
+              hasSeededTechsRef.current = true;
+              const sourceTechs = getStoredOrDefault<Technician[]>('technicians', INITIAL_TECHNICIANS);
+              const batch = writeBatch(db);
+              sourceTechs.forEach((tech) => {
+                batch.set(doc(db, techsPath, tech.id), cleanUndefined(tech), { merge: true });
+              });
+              batch.commit().catch(() => {});
             }
           }
         },
@@ -1772,7 +1814,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
             if (list.length > 0) {
               setDirectors(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(list));
+              } catch (e) {}
               setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            if (!isQuotaExhausted() && !hasSeededDirsRef.current) {
+              hasSeededDirsRef.current = true;
+              const sourceDirs = getStoredOrDefault<Director[]>('directors', INITIAL_DIRECTORS);
+              const batch = writeBatch(db);
+              sourceDirs.forEach((dir) => {
+                batch.set(doc(db, directorsPath, dir.id), cleanUndefined(dir), { merge: true });
+              });
+              batch.commit().catch(() => {});
             }
           }
         },
@@ -1809,7 +1864,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
             if (list.length > 0) {
               setRegiaStaff(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'regiaStaff', JSON.stringify(list));
+              } catch (e) {}
               setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            if (!isQuotaExhausted() && !hasSeededRegiaRef.current) {
+              hasSeededRegiaRef.current = true;
+              const sourceRegia = getStoredOrDefault<RegiaStaff[]>('regiaStaff', INITIAL_REGIA_STAFF);
+              const batch = writeBatch(db);
+              sourceRegia.forEach((r) => {
+                batch.set(doc(db, regiaPath, r.id), cleanUndefined(r), { merge: true });
+              });
+              batch.commit().catch(() => {});
             }
           }
         },
@@ -1847,7 +1915,20 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
             if (list.length > 0) {
               setGuests(list);
+              try {
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'guests', JSON.stringify(list));
+              } catch (e) {}
               setLastSyncTimestamp(Date.now());
+            }
+          } else {
+            if (!isQuotaExhausted() && !hasSeededGuestsRef.current) {
+              hasSeededGuestsRef.current = true;
+              const sourceGuests = getStoredOrDefault<Guest[]>('guests', INITIAL_GUESTS);
+              const batch = writeBatch(db);
+              sourceGuests.forEach((g) => {
+                batch.set(doc(db, guestsPath, g.id), cleanUndefined(g), { merge: true });
+              });
+              batch.commit().catch(() => {});
             }
           }
         },
@@ -2770,8 +2851,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Discenti CRUD
   const updateDiscente = useCallback((id: string, updates: Partial<Discente>) => {
-    setDiscenti((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
-    setDoc(doc(db, 'discenti', id), updates, { merge: true }).catch((err) => {
+    setDiscenti((prev) => {
+      const updated = prev.map((d) => (d.id === id ? { ...d, ...updates } : d));
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'discenti', id), cleanUndefined(updates), { merge: true }).catch((err) => {
       handleFirestoreError(err, OperationType.UPDATE, `discenti/${id}`);
     });
   }, []);
@@ -2779,14 +2866,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addDiscente = useCallback((newDiscente: Omit<Discente, 'id'>) => {
     const id = `disc-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const fullDiscente: Discente = { ...newDiscente, id };
-    setDiscenti((prev) => [...prev, fullDiscente]);
-    setDoc(doc(db, 'discenti', id), fullDiscente).catch((err) => {
+    setDiscenti((prev) => {
+      const updated = [...prev, fullDiscente];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'discenti', id), cleanUndefined(fullDiscente)).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `discenti/${id}`);
     });
   }, []);
 
   const deleteDiscente = useCallback((id: string) => {
-    setDiscenti((prev) => prev.filter((d) => d.id !== id));
+    setDiscenti((prev) => {
+      const updated = prev.filter((d) => d.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     deleteDoc(doc(db, 'discenti', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `discenti/${id}`);
     });
@@ -3031,8 +3130,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Faculty CRUD
   const updateFaculty = useCallback((id: string, updates: Partial<Faculty>) => {
-    setFaculty((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)));
-    setDoc(doc(db, 'faculty', id), updates, { merge: true }).catch((err) => {
+    setFaculty((prev) => {
+      const updated = prev.map((f) => (f.id === id ? { ...f, ...updates } : f));
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'faculty', id), cleanUndefined(updates), { merge: true }).catch((err) => {
       handleFirestoreError(err, OperationType.UPDATE, `faculty/${id}`);
     });
   }, []);
@@ -3040,14 +3145,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addFaculty = useCallback((newFaculty: Omit<Faculty, 'id'>) => {
     const id = `fac-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const fullFaculty: Faculty = { ...newFaculty, id };
-    setFaculty((prev) => [...prev, fullFaculty]);
-    setDoc(doc(db, 'faculty', id), fullFaculty).catch((err) => {
+    setFaculty((prev) => {
+      const updated = [...prev, fullFaculty];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'faculty', id), cleanUndefined(fullFaculty)).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `faculty/${id}`);
     });
   }, []);
 
   const deleteFaculty = useCallback((id: string) => {
-    setFaculty((prev) => prev.filter((f) => f.id !== id));
+    setFaculty((prev) => {
+      const updated = prev.filter((f) => f.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     deleteDoc(doc(db, 'faculty', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `faculty/${id}`);
     });
@@ -3055,8 +3172,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Technician CRUD
   const updateTechnician = useCallback((id: string, updates: Partial<Technician>) => {
-    setTechnicians((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
-    setDoc(doc(db, 'technicians', id), updates, { merge: true }).catch((err) => {
+    setTechnicians((prev) => {
+      const updated = prev.map((t) => (t.id === id ? { ...t, ...updates } : t));
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'technicians', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'technicians', id), cleanUndefined(updates), { merge: true }).catch((err) => {
       handleFirestoreError(err, OperationType.UPDATE, `technicians/${id}`);
     });
   }, []);
@@ -3064,14 +3187,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addTechnician = useCallback((newTech: Omit<Technician, 'id'>) => {
     const id = `tech-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const fullTech: Technician = { ...newTech, id };
-    setTechnicians((prev) => [...prev, fullTech]);
-    setDoc(doc(db, 'technicians', id), fullTech).catch((err) => {
+    setTechnicians((prev) => {
+      const updated = [...prev, fullTech];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'technicians', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'technicians', id), cleanUndefined(fullTech)).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `technicians/${id}`);
     });
   }, []);
 
   const deleteTechnician = useCallback((id: string) => {
-    setTechnicians((prev) => prev.filter((t) => t.id !== id));
+    setTechnicians((prev) => {
+      const updated = prev.filter((t) => t.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'technicians', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     deleteDoc(doc(db, 'technicians', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `technicians/${id}`);
     });
@@ -3080,10 +3215,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkUpdateTechnicians = useCallback(async (updatedList: Technician[]) => {
     setTechnicians(updatedList);
     try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'technicians', JSON.stringify(updatedList));
+    } catch (e) {}
+    try {
       const batch = writeBatch(db);
       updatedList.forEach((t) => {
         const ref = doc(db, 'technicians', t.id);
-        batch.set(ref, t, { merge: true });
+        batch.set(ref, cleanUndefined(t), { merge: true });
       });
       await batch.commit();
     } catch (err) {
@@ -3094,10 +3232,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkUpdateFaculty = useCallback(async (updatedList: Faculty[]) => {
     setFaculty(updatedList);
     try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'faculty', JSON.stringify(updatedList));
+    } catch (e) {}
+    try {
       const batch = writeBatch(db);
       updatedList.forEach((f) => {
         const ref = doc(db, 'faculty', f.id);
-        batch.set(ref, f, { merge: true });
+        batch.set(ref, cleanUndefined(f), { merge: true });
       });
       await batch.commit();
     } catch (err) {
@@ -3108,10 +3249,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkUpdateDiscenti = useCallback(async (updatedList: Discente[]) => {
     setDiscenti(updatedList);
     try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'discenti', JSON.stringify(updatedList));
+    } catch (e) {}
+    try {
       const batch = writeBatch(db);
       updatedList.forEach((d) => {
         const ref = doc(db, 'discenti', d.id);
-        batch.set(ref, d, { merge: true });
+        batch.set(ref, cleanUndefined(d), { merge: true });
       });
       await batch.commit();
     } catch (err) {
@@ -3122,12 +3266,16 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Director CRUD
   const updateDirector = useCallback((id: string, updates: Partial<Director>) => {
     if (updates.isMaster) {
-      setDirectors((prev) =>
-        prev.map((d) => ({
+      setDirectors((prev) => {
+        const updated = prev.map((d) => ({
           ...d,
           isMaster: d.id === id,
-        }))
-      );
+        }));
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
       // Update in firestore for all affected directors
       directors.forEach((d) => {
         const shouldBeMaster = d.id === id;
@@ -3138,8 +3286,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       });
     } else {
-      setDirectors((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
-      setDoc(doc(db, 'directors', id), updates, { merge: true }).catch((err) => {
+      setDirectors((prev) => {
+        const updated = prev.map((d) => (d.id === id ? { ...d, ...updates } : d));
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+      setDoc(doc(db, 'directors', id), cleanUndefined(updates), { merge: true }).catch((err) => {
         handleFirestoreError(err, OperationType.UPDATE, `directors/${id}`);
       });
     }
@@ -3148,14 +3302,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addDirector = useCallback((newDirector: Omit<Director, 'id'>) => {
     const id = `dir-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const fullDirector: Director = { ...newDirector, id };
-    setDirectors((prev) => [...prev, fullDirector]);
-    setDoc(doc(db, 'directors', id), fullDirector).catch((err) => {
+    setDirectors((prev) => {
+      const updated = [...prev, fullDirector];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'directors', id), cleanUndefined(fullDirector)).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `directors/${id}`);
     });
   }, []);
 
   const deleteDirector = useCallback((id: string) => {
-    setDirectors((prev) => prev.filter((d) => d.id !== id));
+    setDirectors((prev) => {
+      const updated = prev.filter((d) => d.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     deleteDoc(doc(db, 'directors', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `directors/${id}`);
     });
@@ -3164,10 +3330,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkUpdateDirectors = useCallback(async (updatedList: Director[]) => {
     setDirectors(updatedList);
     try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'directors', JSON.stringify(updatedList));
+    } catch (e) {}
+    try {
       const batch = writeBatch(db);
       updatedList.forEach((d) => {
         const ref = doc(db, 'directors', d.id);
-        batch.set(ref, d, { merge: true });
+        batch.set(ref, cleanUndefined(d), { merge: true });
       });
       await batch.commit();
     } catch (err) {
@@ -3178,12 +3347,16 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Regia Staff CRUD
   const updateRegiaStaff = useCallback((id: string, updates: Partial<RegiaStaff>) => {
     if (updates.isMaster) {
-      setRegiaStaff((prev) =>
-        prev.map((r) => ({
+      setRegiaStaff((prev) => {
+        const updated = prev.map((r) => ({
           ...r,
           isMaster: r.id === id,
-        }))
-      );
+        }));
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'regiaStaff', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
       regiaStaff.forEach((r) => {
         const shouldBeMaster = r.id === id;
         if (r.isMaster !== shouldBeMaster) {
@@ -3193,8 +3366,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       });
     } else {
-      setRegiaStaff((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
-      setDoc(doc(db, 'regiaStaff', id), updates, { merge: true }).catch((err) => {
+      setRegiaStaff((prev) => {
+        const updated = prev.map((r) => (r.id === id ? { ...r, ...updates } : r));
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'regiaStaff', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+      setDoc(doc(db, 'regiaStaff', id), cleanUndefined(updates), { merge: true }).catch((err) => {
         handleFirestoreError(err, OperationType.UPDATE, `regiaStaff/${id}`);
       });
     }
@@ -3203,14 +3382,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addRegiaStaff = useCallback((newRegia: Omit<RegiaStaff, 'id'>) => {
     const id = `regia-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const fullRegia: RegiaStaff = { ...newRegia, id };
-    setRegiaStaff((prev) => [...prev, fullRegia]);
-    setDoc(doc(db, 'regiaStaff', id), fullRegia).catch((err) => {
+    setRegiaStaff((prev) => {
+      const updated = [...prev, fullRegia];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'regiaStaff', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'regiaStaff', id), cleanUndefined(fullRegia)).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `regiaStaff/${id}`);
     });
   }, []);
 
   const deleteRegiaStaff = useCallback((id: string) => {
-    setRegiaStaff((prev) => prev.filter((r) => r.id !== id));
+    setRegiaStaff((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'regiaStaff', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     deleteDoc(doc(db, 'regiaStaff', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `regiaStaff/${id}`);
     });
@@ -3219,10 +3410,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkUpdateRegiaStaff = useCallback(async (updatedList: RegiaStaff[]) => {
     setRegiaStaff(updatedList);
     try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'regiaStaff', JSON.stringify(updatedList));
+    } catch (e) {}
+    try {
       const batch = writeBatch(db);
       updatedList.forEach((r) => {
         const ref = doc(db, 'regiaStaff', r.id);
-        batch.set(ref, r, { merge: true });
+        batch.set(ref, cleanUndefined(r), { merge: true });
       });
       await batch.commit();
     } catch (err) {
@@ -3232,8 +3426,14 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Guests CRUD
   const updateGuest = useCallback((id: string, updates: Partial<Guest>) => {
-    setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, ...updates } : g)));
-    setDoc(doc(db, 'guests', id), updates, { merge: true }).catch((err) => {
+    setGuests((prev) => {
+      const updated = prev.map((g) => (g.id === id ? { ...g, ...updates } : g));
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'guests', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'guests', id), cleanUndefined(updates), { merge: true }).catch((err) => {
       handleFirestoreError(err, OperationType.UPDATE, `guests/${id}`);
     });
   }, []);
@@ -3241,14 +3441,26 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addGuest = useCallback((newGuest: Omit<Guest, 'id'>) => {
     const id = `guest-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const fullGuest: Guest = { ...newGuest, id };
-    setGuests((prev) => [...prev, fullGuest]);
-    setDoc(doc(db, 'guests', id), fullGuest).catch((err) => {
+    setGuests((prev) => {
+      const updated = [...prev, fullGuest];
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'guests', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    setDoc(doc(db, 'guests', id), cleanUndefined(fullGuest)).catch((err) => {
       handleFirestoreError(err, OperationType.CREATE, `guests/${id}`);
     });
   }, []);
 
   const deleteGuest = useCallback((id: string) => {
-    setGuests((prev) => prev.filter((g) => g.id !== id));
+    setGuests((prev) => {
+      const updated = prev.filter((g) => g.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'guests', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     deleteDoc(doc(db, 'guests', id)).catch((err) => {
       handleFirestoreError(err, OperationType.DELETE, `guests/${id}`);
     });
@@ -3257,10 +3469,13 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkUpdateGuests = useCallback(async (updatedList: Guest[]) => {
     setGuests(updatedList);
     try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'guests', JSON.stringify(updatedList));
+    } catch (e) {}
+    try {
       const batch = writeBatch(db);
       updatedList.forEach((g) => {
         const ref = doc(db, 'guests', g.id);
-        batch.set(ref, g, { merge: true });
+        batch.set(ref, cleanUndefined(g), { merge: true });
       });
       await batch.commit();
     } catch (err) {

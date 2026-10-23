@@ -253,12 +253,11 @@ export async function renderThermalLabelToCanvas(
   ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
 
   // Anti-clipping safety margin:
-  // For 40x30 mm (4cm x 3cm) or Labelnize PM240, apply 1.5mm safe physical edge margin
-  // (12px at 203 DPI, 18px at 300 DPI) to prevent clipping by thermal printhead dead-zone or paper drift.
-  const isPm240Profile = mergedConfig.printerModel === 'pm240' || (mergedConfig.size === '40x30' && mergedConfig.dpi === 203);
+  // Calibrated to 1.0mm - 1.2mm physical edge margin (8-10px at 203 DPI, 12-14px at 300 DPI)
+  // to prevent clipping by thermal printhead dead-zone while maximizing printable content area.
   const inset = mergedConfig.size === '40x30'
-    ? Math.max(12, Math.round((isPm240Profile ? 15 : 12) * scale))
-    : Math.round(8 * scale);
+    ? Math.max(8, Math.round(10 * scale))
+    : Math.max(10, Math.round(12 * scale));
 
   ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
 
@@ -683,7 +682,60 @@ export async function downloadThermalLabelJpg(
 }
 
 /**
- * Opens browser print dialog specifically styled for thermal label printers.
+ * Generates and triggers instant download of an exact 1:1 millimeter vector-sized PDF for a single label.
+ * The PDF page geometry matches [widthMm, heightMm] perfectly, bypassing browser print scaling bugs
+ * and eliminating cut-off borders or shrunk layouts.
+ */
+export async function downloadSinglePdf1to1(
+  person: AnyParticipant,
+  category: ParticipantCategory,
+  config: Partial<ThermalLabelConfig> = {},
+  teamName?: string,
+  customBaseUrl?: string
+): Promise<void> {
+  const mergedConfig: ThermalLabelConfig = { ...DEFAULT_THERMAL_CONFIG, ...config };
+  const { widthMm, heightMm } = getLabelPixelDimensions(
+    mergedConfig.size,
+    mergedConfig.orientation,
+    mergedConfig.dpi
+  );
+
+  const orientation = mergedConfig.orientation === 'portrait' ? 'portrait' : 'landscape';
+
+  const doc = new jsPDF({
+    orientation,
+    unit: 'mm',
+    format: [widthMm, heightMm],
+    compress: true,
+  });
+
+  // Lock PDF print scaling to 100% (No auto-shrink / fit-to-page distortion)
+  doc.viewerPreferences({ PrintScaling: 'None' }, true);
+
+  const canvas = await renderThermalLabelToCanvas(
+    person,
+    category,
+    mergedConfig,
+    teamName,
+    customBaseUrl
+  );
+  const imgData = canvas.toDataURL('image/jpeg', 0.98);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+
+  const badgeCode = (person as any).badgeCode || person.id || 'PASS';
+  const cleanName = (person.name || 'operatore').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const sizeName = mergedConfig.size || '50x80';
+  const filename = `ETICHETTA_1a1_${badgeCode}_${cleanName}_${sizeName}mm.pdf`;
+
+  doc.save(filename);
+}
+
+/**
+ * Opens browser print dialog specifically calibrated for thermal label printers (e.g. Labelnize PM240, 40x30 and 50x80).
+ * Enforces strict zero margins (@page { margin: 0 !important; }), full-bleed dimensional layout,
+ * and delayed print spooling to prevent Chrome auto-shrink and boundary clipping.
  */
 export function printThermalLabel(
   canvas: HTMLCanvasElement,
@@ -703,40 +755,136 @@ export function printThermalLabel(
 
   win.document.write(`
     <!DOCTYPE html>
-    <html>
+    <html lang="it">
       <head>
-        <title>Stampa Etichetta Termoadesiva HITTER</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Stampa Etichetta Termoadesiva HITTER (${widthMm}x${heightMm} mm)</title>
         <style>
           @page {
             size: ${widthMm}mm ${heightMm}mm;
-            margin: 0;
+            margin: 0mm !important;
           }
           * {
             box-sizing: border-box;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            width: ${widthMm}mm;
-            height: ${heightMm}mm;
-            overflow: hidden;
+          @media print {
+            html, body {
+              width: ${widthMm}mm !important;
+              height: ${heightMm}mm !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              overflow: hidden !important;
+              background: #FFFFFF !important;
+            }
+            .screen-guide {
+              display: none !important;
+            }
+            .label-wrapper {
+              width: ${widthMm}mm !important;
+              height: ${heightMm}mm !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              overflow: hidden !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .label-img {
+              width: ${widthMm}mm !important;
+              height: ${heightMm}mm !important;
+              display: block !important;
+              object-fit: fill !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              image-rendering: -webkit-optimize-contrast;
+              image-rendering: crisp-edges;
+            }
           }
-          img {
-            width: ${widthMm}mm;
-            height: ${heightMm}mm;
-            display: block;
-            image-rendering: pixelated;
+          @media screen {
+            body {
+              margin: 0;
+              padding: 24px;
+              background: #111827;
+              color: #F3F4F6;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              box-sizing: border-box;
+            }
+            .screen-guide {
+              background: #1F2937;
+              border: 1px solid #374151;
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 20px;
+              max-width: 440px;
+              font-size: 12px;
+              line-height: 1.6;
+              text-align: left;
+            }
+            .screen-guide strong {
+              color: #F59E0B;
+            }
+            .label-wrapper {
+              background: #FFFFFF;
+              border: 1px solid #6B7280;
+              box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+              width: ${widthMm}mm;
+              height: ${heightMm}mm;
+              overflow: hidden;
+            }
+            .label-img {
+              width: 100%;
+              height: 100%;
+              display: block;
+              object-fit: fill;
+            }
+            .btn-reprint {
+              margin-top: 16px;
+              padding: 8px 16px;
+              background: #F59E0B;
+              color: #000000;
+              font-weight: 800;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 13px;
+              text-transform: uppercase;
+            }
+            .btn-reprint:hover {
+              background: #D97706;
+            }
           }
         </style>
       </head>
       <body>
-        <img src="${dataUrl}" onload="window.print();window.close();" />
+        <div class="screen-guide">
+          <strong>ISTRUZIONI PERFEZIONAMENTO STAMPANTE TERMICA:</strong><br />
+          • Formato carta nel driver: <strong>${widthMm} × ${heightMm} mm</strong><br />
+          • Margini di stampa: <strong>Nessuno (0 mm)</strong><br />
+          • Scala: <strong>100% (Effettiva / Dimensione reale)</strong>
+        </div>
+
+        <div class="label-wrapper">
+          <img class="label-img" src="${dataUrl}" alt="Etichetta Termica" />
+        </div>
+
+        <button class="btn-reprint screen-guide" onclick="window.print()">
+          Riapri Dialogo Stampa
+        </button>
+
+        <script>
+          window.addEventListener('load', function() {
+            setTimeout(function() {
+              window.print();
+            }, 350);
+          });
+        </script>
       </body>
     </html>
   `);
@@ -769,6 +917,9 @@ export async function generateMultiPagePdfForThermalRoll(
     compress: true,
   });
 
+  // Lock PDF print scaling to 100% (No auto-shrink / fit-to-page distortion)
+  doc.viewerPreferences({ PrintScaling: 'None' }, true);
+
   const total = items.length;
 
   for (let i = 0; i < total; i++) {
@@ -790,7 +941,9 @@ export async function generateMultiPagePdfForThermalRoll(
       customBaseUrl
     );
     const imgData = canvas.toDataURL('image/jpeg', 0.98);
-    doc.addImage(imgData, 'JPEG', 0, 0, widthMm, heightMm, undefined, 'FAST');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
   }
 
   return doc;
@@ -826,57 +979,130 @@ export function printBatchThermalRoll(
 
   printWindow.document.write(`
     <!DOCTYPE html>
-    <html>
+    <html lang="it">
       <head>
         <meta charset="utf-8" />
-        <title>Stampa Rotolo Termico (${canvases.length} Etichette)</title>
+        <title>Stampa Rotolo Termico (${canvases.length} Etichette - ${widthMm}x${heightMm} mm)</title>
         <style>
           @page {
             size: ${widthMm}mm ${heightMm}mm;
-            margin: 0;
+            margin: 0mm !important;
           }
           * {
             box-sizing: border-box;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          html, body {
-            margin: 0;
-            padding: 0;
-            background: #FFFFFF;
+          @media print {
+            html, body {
+              margin: 0mm !important;
+              padding: 0mm !important;
+              background: #FFFFFF !important;
+            }
+            .screen-guide {
+              display: none !important;
+            }
+            .label-page {
+              width: ${widthMm}mm !important;
+              height: ${heightMm}mm !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              overflow: hidden !important;
+            }
+            .label-img {
+              width: ${widthMm}mm !important;
+              height: ${heightMm}mm !important;
+              object-fit: fill !important;
+              display: block !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              image-rendering: -webkit-optimize-contrast;
+              image-rendering: crisp-edges;
+            }
           }
-          .label-page {
-            width: ${widthMm}mm;
-            height: ${heightMm}mm;
-            page-break-after: always;
-            break-after: page;
-            page-break-inside: avoid;
-            break-inside: avoid;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-          }
-          .label-img {
-            width: ${widthMm}mm;
-            height: ${heightMm}mm;
-            display: block;
-            image-rendering: pixelated;
-            margin: 0;
-            padding: 0;
+          @media screen {
+            body {
+              margin: 0;
+              padding: 24px;
+              background: #111827;
+              color: #F3F4F6;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              box-sizing: border-box;
+            }
+            .screen-guide {
+              background: #1F2937;
+              border: 1px solid #374151;
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 24px;
+              max-width: 440px;
+              font-size: 12px;
+              line-height: 1.6;
+              text-align: left;
+            }
+            .screen-guide strong {
+              color: #F59E0B;
+            }
+            .label-page {
+              width: ${widthMm}mm;
+              height: ${heightMm}mm;
+              background: #FFFFFF;
+              border: 1px solid #4B5563;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+              margin-bottom: 16px;
+              overflow: hidden;
+            }
+            .label-img {
+              width: 100%;
+              height: 100%;
+              display: block;
+              object-fit: fill;
+            }
+            .btn-reprint {
+              margin-top: 16px;
+              padding: 8px 16px;
+              background: #F59E0B;
+              color: #000000;
+              font-weight: 800;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 13px;
+              text-transform: uppercase;
+            }
           }
         </style>
       </head>
       <body>
+        <div class="screen-guide">
+          <strong>ROTOLO TERMICO (${canvases.length} ETICHETTE):</strong><br />
+          • Formato carta: <strong>${widthMm} × ${heightMm} mm</strong><br />
+          • Margini: <strong>Nessuno (0 mm)</strong><br />
+          • Scala: <strong>100% (Effettiva)</strong>
+        </div>
+
         ${pagesHtml}
+
+        <button class="btn-reprint screen-guide" onclick="window.print()">
+          Riapri Dialogo Stampa
+        </button>
+
         <script>
-          window.onload = function() {
+          window.addEventListener('load', function() {
             setTimeout(function() {
               window.print();
-            }, 350);
-          };
+            }, 400);
+          });
         </script>
       </body>
     </html>
