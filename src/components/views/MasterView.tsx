@@ -196,27 +196,19 @@ export const MasterView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1 text-xs font-mono">
               <span className="text-amber-200/90 font-medium">
-                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentMaster.role || currentMaster.title}</strong>
+                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentMaster.role || currentMaster.title || 'Super-Admin'}</strong>
               </span>
-              {currentMaster.organization && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-300">
-                    {isEn ? 'Org:' : 'Ente:'} <strong className="text-white">{currentMaster.organization}</strong>
-                  </span>
-                </>
-              )}
-              {currentMaster.email && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-400">
-                    Email: <span className="text-amber-300">{currentMaster.email}</span>
-                  </span>
-                </>
-              )}
               <span className="text-neutral-600 hidden sm:inline">•</span>
               <span className="text-neutral-300">
-                Tel: <span className="text-amber-400 font-bold">{currentMaster.phone}</span>
+                {isEn ? 'Org:' : 'Ente:'} <strong className={currentMaster.organization ? 'text-white' : 'text-neutral-500 italic'}>{currentMaster.organization || (isEn ? 'To be filled' : 'Da compilare')}</strong>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-400">
+                Email: <span className={currentMaster.email ? 'text-amber-300' : 'text-neutral-500 italic'}>{currentMaster.email || (isEn ? 'To be filled' : 'Da compilare')}</span>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-300">
+                Tel: <span className={currentMaster.phone ? 'text-amber-400 font-bold' : 'text-neutral-500 italic'}>{currentMaster.phone || (isEn ? 'To be filled' : 'Da compilare')}</span>
               </span>
             </div>
 

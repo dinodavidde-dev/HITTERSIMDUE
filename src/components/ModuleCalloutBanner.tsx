@@ -74,7 +74,7 @@ export const ModuleCalloutBanner: React.FC = () => {
     let operatorRoleName = isEn ? 'Plenary Operator' : 'Operatore Plenario';
     if (userRole === 'discente') {
       const disc = discenti.find((d) => d.id === selectedDiscenteId) || discenti[0];
-      if (disc) operatorRoleName = isEn ? `Participant: ${disc.name} (${disc.role})` : `Discente: ${disc.name} (${disc.role})`;
+      if (disc) operatorRoleName = isEn ? `Participant: ${disc.name} (${disc.badgeCode || 'DISC'})` : `Discente: ${disc.name} (${disc.badgeCode || 'DISC'})`;
     } else if (userRole === 'faculty') {
       const fac = faculty.find((f) => f.id === selectedFacultyId) || faculty[0];
       if (fac) operatorRoleName = isEn ? `Faculty: ${fac.name} (${fac.title})` : `Faculty: ${fac.name} (${fac.title})`;

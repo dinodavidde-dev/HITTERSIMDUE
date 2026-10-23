@@ -520,9 +520,9 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
                 <div className="mt-3 pt-2.5 border-t border-emerald-900/60 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-400">
                   <div className="flex items-center gap-3">
                     <span>
-                      {isEn ? 'Role:' : 'Ruolo:'}{' '}
-                      <strong className={discente.activeScenarioRole ? 'text-cyan-300 font-bold' : 'text-neutral-400'}>
-                        {discente.activeScenarioRole ? `⚡ ${discente.activeScenarioRole}` : (isEn ? 'Pending Faculty assignment' : 'In attesa del Faculty')}
+                      {isEn ? 'Activity:' : 'Attività:'}{' '}
+                      <strong className="text-emerald-400 font-bold">
+                        {entry.wsType || 'Skill Station Workshop'}
                       </strong>
                     </span>
                     <span>
@@ -582,12 +582,16 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
               {/* Informazioni Ruolo e Faculty (Rapporto 1:1) */}
               <div className="mt-2 pt-2 border-t border-neutral-800/60 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-400">
                 <div className="flex items-center gap-3">
-                  <span>
-                    {isEn ? 'Role:' : 'Ruolo:'}{' '}
-                    <strong className={discente.activeScenarioRole ? 'text-cyan-300 font-bold' : 'text-neutral-400'}>
-                      {discente.activeScenarioRole ? `⚡ ${discente.activeScenarioRole}` : (isEn ? 'Pending Faculty assignment' : 'In attesa del Faculty')}
-                    </strong>
-                  </span>
+                  {(entry.iconType === 'tccc' || entry.iconType === 'shock') && (
+                    <span>
+                      {isEn ? 'Role:' : 'Ruolo:'}{' '}
+                      <strong className={entry.isCurrentActive && discente.activeScenarioRole ? 'text-cyan-300 font-bold' : 'text-neutral-400'}>
+                        {entry.isCurrentActive && discente.activeScenarioRole
+                          ? `⚡ ${discente.activeScenarioRole}`
+                          : (isEn ? 'Assigned in Pre-Alert by Faculty' : 'Assegnato in Pre-Allerta dal Faculty')}
+                      </strong>
+                    </span>
+                  )}
                   <span>
                     Faculty: <strong className="text-orange-400">{assignedFaculty.badgeCode}</strong> ({assignedFaculty.name})
                   </span>

@@ -132,29 +132,21 @@ export const DirettoriView: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 pt-1 text-xs font-mono">
-              {(currentDirector.role || currentDirector.title) && (
-                <span className="text-yellow-200/90 font-medium">
-                  {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentDirector.role || currentDirector.title}</strong>
-                </span>
-              )}
-              {currentDirector.organization && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-300">{isEn ? 'Organization:' : 'Ente:'} <strong className="text-white">{currentDirector.organization}</strong></span>
-                </>
-              )}
-              {currentDirector.email && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-400">Email: <span className="text-yellow-300">{currentDirector.email}</span></span>
-                </>
-              )}
-              {currentDirector.phone && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-300">{isEn ? 'Phone:' : 'Tel:'} <span className="text-yellow-400 font-bold">{currentDirector.phone}</span></span>
-                </>
-              )}
+              <span className="text-yellow-200/90 font-medium">
+                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentDirector.role || currentDirector.title || (isEn ? 'Director' : 'Direttore')}</strong>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-300">
+                {isEn ? 'Organization:' : 'Ente:'} <strong className={currentDirector.organization ? 'text-white' : 'text-neutral-500 italic'}>{currentDirector.organization || (isEn ? 'To be filled' : 'Da compilare')}</strong>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-400">
+                Email: <span className={currentDirector.email ? 'text-yellow-300' : 'text-neutral-500 italic'}>{currentDirector.email || (isEn ? 'To be filled' : 'Da compilare')}</span>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-300">
+                {isEn ? 'Phone:' : 'Tel:'} <span className={currentDirector.phone ? 'text-yellow-400 font-bold' : 'text-neutral-500 italic'}>{currentDirector.phone || (isEn ? 'To be filled' : 'Da compilare')}</span>
+              </span>
             </div>
 
             {canSelectOperator && directors.length > 0 ? (

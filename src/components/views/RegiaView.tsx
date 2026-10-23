@@ -199,22 +199,20 @@ export const RegiaView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1 text-xs font-mono">
               <span className="text-pink-200/90 font-medium">
-                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentRegia.role || currentRegia.title}</strong>
+                {isEn ? 'Role:' : 'Ruolo:'} <strong className="text-white">{currentRegia.role || currentRegia.title || 'Regia'}</strong>
               </span>
-              {currentRegia.organization && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-300">{isEn ? 'Org:' : 'Ente:'} <strong className="text-white">{currentRegia.organization}</strong></span>
-                </>
-              )}
-              {currentRegia.email && (
-                <>
-                  <span className="text-neutral-600 hidden sm:inline">•</span>
-                  <span className="text-neutral-400">Email: <span className="text-pink-300">{currentRegia.email}</span></span>
-                </>
-              )}
               <span className="text-neutral-600 hidden sm:inline">•</span>
-              <span className="text-neutral-300">Tel: <span className="text-pink-400 font-bold">{currentRegia.phone}</span></span>
+              <span className="text-neutral-300">
+                {isEn ? 'Org:' : 'Ente:'} <strong className={currentRegia.organization ? 'text-white' : 'text-neutral-500 italic'}>{currentRegia.organization || (isEn ? 'To be filled' : 'Da compilare')}</strong>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-400">
+                Email: <span className={currentRegia.email ? 'text-pink-300' : 'text-neutral-500 italic'}>{currentRegia.email || (isEn ? 'To be filled' : 'Da compilare')}</span>
+              </span>
+              <span className="text-neutral-600 hidden sm:inline">•</span>
+              <span className="text-neutral-300">
+                Tel: <span className={currentRegia.phone ? 'text-pink-400 font-bold' : 'text-neutral-500 italic'}>{currentRegia.phone || (isEn ? 'To be filled' : 'Da compilare')}</span>
+              </span>
             </div>
 
             {regiaStaff.length > 0 && (

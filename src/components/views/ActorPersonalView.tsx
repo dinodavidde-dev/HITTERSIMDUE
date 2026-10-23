@@ -310,18 +310,18 @@ export const ActorPersonalView: React.FC<ActorPersonalViewProps> = ({ actorId })
 
             {/* Sizes & Slot */}
             <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-              {currentActor.clothingSize && (
-                <div className="p-2 bg-neutral-900 border border-neutral-850">
-                  <span className="text-[10px] text-neutral-400 block uppercase">{isEn ? 'Uniform Size' : 'Taglia Divisa'}:</span>
-                  <strong className="text-white text-sm">{currentActor.clothingSize}</strong>
-                </div>
-              )}
-              {currentActor.slotNumber ? (
-                <div className="p-2 bg-neutral-900 border border-neutral-850">
-                  <span className="text-[10px] text-neutral-400 block uppercase">{isEn ? 'Slot Number' : 'Postazione Slot'}:</span>
-                  <strong className="text-rose-400 text-sm">ATT-{String(currentActor.slotNumber).padStart(2, '0')}</strong>
-                </div>
-              ) : null}
+              <div className="p-2 bg-neutral-900 border border-neutral-850">
+                <span className="text-[10px] text-neutral-400 block uppercase">{isEn ? 'Uniform Size' : 'Taglia Divisa'}:</span>
+                <strong className={currentActor.clothingSize ? "text-white text-sm" : "text-neutral-500 italic text-sm"}>
+                  {currentActor.clothingSize || (isEn ? 'To be assigned' : 'Da assegnare')}
+                </strong>
+              </div>
+              <div className="p-2 bg-neutral-900 border border-neutral-850">
+                <span className="text-[10px] text-neutral-400 block uppercase">{isEn ? 'Slot Number' : 'Postazione Slot'}:</span>
+                <strong className={currentActor.slotNumber ? "text-rose-400 text-sm" : "text-neutral-500 italic text-sm"}>
+                  {currentActor.slotNumber ? `ATT-${String(currentActor.slotNumber).padStart(2, '0')}` : (isEn ? 'Not assigned' : 'Non assegnata')}
+                </strong>
+              </div>
             </div>
 
             {/* Allergy Banner */}
@@ -373,7 +373,7 @@ export const ActorPersonalView: React.FC<ActorPersonalViewProps> = ({ actorId })
                   </strong>
                 </div>
 
-                {assignedTruccatrice.phone && (
+                {assignedTruccatrice.phone ? (
                   <a
                     href={`tel:${assignedTruccatrice.phone}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-emerald-400 border border-emerald-700/60 font-mono text-xs font-bold uppercase transition-colors"
@@ -381,6 +381,11 @@ export const ActorPersonalView: React.FC<ActorPersonalViewProps> = ({ actorId })
                     <Phone className="w-3 h-3" />
                     <span>{assignedTruccatrice.phone}</span>
                   </a>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 text-neutral-500 italic border border-neutral-800 font-mono text-xs">
+                    <Phone className="w-3 h-3 text-neutral-600" />
+                    <span>{isEn ? 'Phone: To be filled' : 'Tel: Da compilare'}</span>
+                  </span>
                 )}
               </div>
             ) : (

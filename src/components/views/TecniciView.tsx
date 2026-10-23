@@ -292,30 +292,34 @@ export const TecniciView: React.FC = () => {
               </div>
             </div>
 
-            {(currentTech.nationality || currentTech.phone || currentTech.organization) && (
-              <div className="pt-3 mt-3 border-t border-neutral-800">
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
-                  {currentTech.nationality && (
-                    <div>
-                      <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
-                      <strong className="text-white truncate block">{currentTech.nationality}</strong>
-                    </div>
-                  )}
-                  {currentTech.phone && (
-                    <div>
-                      <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
-                      <strong className="text-white truncate block">{currentTech.phone}</strong>
-                    </div>
-                  )}
-                  {currentTech.organization && (
-                    <div className="col-span-2">
-                      <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Organization:' : 'Ente:'}</span>
-                      <strong className="text-white truncate block">{currentTech.organization}</strong>
-                    </div>
-                  )}
+            <div className="pt-3 mt-3 border-t border-neutral-800">
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
+                <div>
+                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                  <strong className={`truncate block ${currentTech.nationality ? 'text-white' : 'text-neutral-500 italic'}`}>
+                    {currentTech.nationality || (isEn ? 'Not specified' : 'Non specificata')}
+                  </strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
+                  <strong className={`truncate block ${currentTech.phone ? 'text-pink-300' : 'text-neutral-500 italic'}`}>
+                    {currentTech.phone || (isEn ? 'To be filled' : 'Da compilare')}
+                  </strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Organization:' : 'Ente:'}</span>
+                  <strong className={`truncate block ${currentTech.organization ? 'text-white' : 'text-neutral-500 italic'}`} title={currentTech.organization}>
+                    {currentTech.organization || (isEn ? 'To be filled' : 'Da compilare')}
+                  </strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-neutral-400 uppercase">Email:</span>
+                  <strong className={`truncate block ${currentTech.email ? 'text-pink-300' : 'text-neutral-500 italic'}`} title={currentTech.email}>
+                    {currentTech.email || (isEn ? 'To be filled' : 'Da compilare')}
+                  </strong>
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Card 2: Simulatori Pazienti Presidiati */}
@@ -577,6 +581,28 @@ export const TecniciView: React.FC = () => {
                   <Radio className="w-3 h-3 text-pink-400" />
                   <strong className="text-pink-300">CH-3 TECNICI</strong>
                   <span className="text-[10px] text-neutral-400">({isEn ? 'Active listening' : 'In ascolto'})</span>
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[11px] font-mono text-neutral-400">
+                <span>
+                  <span className="text-neutral-500">{isEn ? 'Ente: ' : 'Ente: '}</span>
+                  <span className={currentTech.organization ? 'text-neutral-200' : 'text-neutral-500 italic'}>
+                    {currentTech.organization || (isEn ? 'To be filled' : 'Da compilare')}
+                  </span>
+                </span>
+                <span className="text-neutral-700">•</span>
+                <span>
+                  <span className="text-neutral-500">Tel: </span>
+                  <span className={currentTech.phone ? 'text-pink-300' : 'text-neutral-500 italic'}>
+                    {currentTech.phone || (isEn ? 'To be filled' : 'Da compilare')}
+                  </span>
+                </span>
+                <span className="text-neutral-700">•</span>
+                <span>
+                  <span className="text-neutral-500">Email: </span>
+                  <span className={currentTech.email ? 'text-pink-300' : 'text-neutral-500 italic'}>
+                    {currentTech.email || (isEn ? 'To be filled' : 'Da compilare')}
+                  </span>
                 </span>
               </div>
             </div>

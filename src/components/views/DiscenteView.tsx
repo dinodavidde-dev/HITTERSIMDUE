@@ -188,10 +188,17 @@ export const DiscenteView: React.FC = () => {
 
   // Current scenario type (TCCC vs SHOCKROOM)
   const currentScenarioType: 'TCCC' | 'SHOCKROOM' | null = isCurrentTCCC ? 'TCCC' : isCurrentShockRoom ? 'SHOCKROOM' : null;
-  const isMatchingScenarioType = !currentDiscente.activeScenarioType || !currentScenarioType || currentDiscente.activeScenarioType === currentScenarioType;
 
-  // Ruolo operativo di scenario (supporta sia activeScenarioRole che assignedRole)
-  const currentAssignedRole = currentDiscente.assignedRole || currentDiscente.activeScenarioRole;
+  // Ruolo operativo assegnato dal Faculty (activeScenarioRole o assignedRole)
+  const currentAssignedRole = currentDiscente.activeScenarioRole || currentDiscente.assignedRole;
+
+  // Has the Faculty actually assigned the role for THIS scenario?
+  // Crucial requirement: must be during TCCC or Shock Room scenario phase AND assigned by Faculty
+  const hasFacultyAssigned = Boolean(
+    currentAssignedRole &&
+    currentScenarioType &&
+    (currentDiscente.activeScenarioType === currentScenarioType || currentDiscente.activeScenarioAssignedBy)
+  );
 
   // Crucial requirement: Show role ONLY AFTER assignment by Faculty, and KEEP IT VISIBLE UNTIL THE END OF THE DEBRIEFING
   // Keep local memory for the active scenario so that when Firestore cleans up during debriefing/completion,
@@ -199,23 +206,23 @@ export const DiscenteView: React.FC = () => {
   const [cachedDebriefRole, setCachedDebriefRole] = useState<{ role: string; type?: string } | null>(null);
 
   useEffect(() => {
-    if (currentAssignedRole) {
+    if (hasFacultyAssigned && currentAssignedRole) {
       setCachedDebriefRole({
         role: currentAssignedRole,
-        type: currentDiscente.activeScenarioType,
+        type: currentDiscente.activeScenarioType || currentScenarioType || undefined,
       });
     } else if (!isScenarioActivePhase || isPauseOrResetActivity || isWorkshopActivity) {
       setCachedDebriefRole(null);
     }
-  }, [currentAssignedRole, isScenarioActivePhase, isPauseOrResetActivity, isWorkshopActivity, currentDiscente.activeScenarioType]);
+  }, [hasFacultyAssigned, currentAssignedRole, isScenarioActivePhase, isPauseOrResetActivity, isWorkshopActivity, currentDiscente.activeScenarioType, currentScenarioType]);
 
-  const activeRoleName = currentAssignedRole || (isDebriefingPhase ? cachedDebriefRole?.role : undefined);
+  const activeRoleName = (hasFacultyAssigned ? currentAssignedRole : undefined) || (isDebriefingPhase && cachedDebriefRole ? cachedDebriefRole.role : undefined);
 
-  // Crucial requirement: Show role ONLY AFTER assignment by Faculty, and KEEP IT VISIBLE UNTIL THE END OF THE DEBRIEFING
+  // Crucial requirement: Show role ONLY starting from Pre-Allerta of TCCC or Shock Room, and ONLY AFTER assignment by Faculty
   const isScenarioRoleActive = Boolean(
     activeRoleName &&
-    isMatchingScenarioType &&
-    isScenarioActivePhase
+    isScenarioActivePhase &&
+    (hasFacultyAssigned || (isDebriefingPhase && cachedDebriefRole))
   );
 
   const formatTimer = (secs: number) => {
@@ -351,14 +358,35 @@ export const DiscenteView: React.FC = () => {
                 </h1>
                 <span className="px-2.5 py-1 font-mono text-[11px] font-bold rounded border bg-neutral-900 text-neutral-400 border-neutral-800 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{isEn ? 'Role: Pending Faculty assignment' : 'Ruolo: In attesa del Faculty'}</span>
+                  <span>{isEn ? 'Role: Assigned in Pre-Alert by Faculty' : 'Ruolo: Assegnato in Pre-Allerta dal Faculty'}</span>
                 </span>
               </div>
-              {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).length > 0 && (
-                <p className="text-neutral-300 text-xs sm:text-sm font-mono">
-                  {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).join(' • ')}
-                </p>
-              )}
+              <div className="pt-2 mt-2 border-t border-neutral-800/80 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+                <div>
+                  <span className="text-[10px] text-neutral-400 uppercase block">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                  <strong className={currentDiscente.nationality ? 'text-white' : 'text-neutral-500 italic'}>
+                    {currentDiscente.nationality || (isEn ? 'Not specified' : 'Non specificata')}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-neutral-400 uppercase block">{isEn ? 'Organization:' : 'Ente / Struttura:'}</span>
+                  <strong className={`truncate block ${currentDiscente.organization ? 'text-white' : 'text-neutral-500 italic'}`} title={currentDiscente.organization || undefined}>
+                    {currentDiscente.organization || (isEn ? 'To be filled' : 'Da compilare')}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-neutral-400 uppercase block">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
+                  <strong className={currentDiscente.phone ? 'text-cyan-300' : 'text-neutral-500 italic'}>
+                    {currentDiscente.phone || (isEn ? 'To be filled' : 'Da compilare')}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-neutral-400 uppercase block">Email:</span>
+                  <strong className={`truncate block ${currentDiscente.email ? 'text-cyan-200' : 'text-neutral-500 italic'}`} title={currentDiscente.email || undefined}>
+                    {currentDiscente.email || (isEn ? 'To be filled' : 'Da compilare')}
+                  </strong>
+                </div>
+              </div>
             </div>
 
             {/* Info Integrate: Gruppo, Squadra, Faculty Tutor & Pass QR */}
@@ -563,11 +591,35 @@ export const DiscenteView: React.FC = () => {
                 </span>
               )}
             </div>
-            {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).length > 0 && (
-              <p className="text-neutral-400 text-xs font-mono">
-                {[currentDiscente.role, currentDiscente.nationality, currentDiscente.organization].filter(Boolean).join(' • ')}
-              </p>
-            )}
+            <div className="pt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-neutral-400">
+              <span>
+                <span className="text-neutral-500">{isEn ? 'Naz: ' : 'Naz: '}</span>
+                <span className={currentDiscente.nationality ? 'text-neutral-200' : 'text-neutral-500 italic'}>
+                  {currentDiscente.nationality || (isEn ? 'Not specified' : 'Non specificata')}
+                </span>
+              </span>
+              <span className="text-neutral-700">•</span>
+              <span>
+                <span className="text-neutral-500">{isEn ? 'Ente: ' : 'Ente: '}</span>
+                <span className={currentDiscente.organization ? 'text-neutral-200' : 'text-neutral-500 italic'}>
+                  {currentDiscente.organization || (isEn ? 'To be filled' : 'Da compilare')}
+                </span>
+              </span>
+              <span className="text-neutral-700">•</span>
+              <span>
+                <span className="text-neutral-500">Tel: </span>
+                <span className={currentDiscente.phone ? 'text-cyan-300' : 'text-neutral-500 italic'}>
+                  {currentDiscente.phone || (isEn ? 'To be filled' : 'Da compilare')}
+                </span>
+              </span>
+              <span className="text-neutral-700">•</span>
+              <span>
+                <span className="text-neutral-500">Email: </span>
+                <span className={currentDiscente.email ? 'text-cyan-200' : 'text-neutral-500 italic'}>
+                  {currentDiscente.email || (isEn ? 'To be filled' : 'Da compilare')}
+                </span>
+              </span>
+            </div>
           </div>
 
           {/* Info Integrate nel riquadro: Faculty, Gruppo, Squadra & Azioni */}
@@ -644,9 +696,13 @@ export const DiscenteView: React.FC = () => {
         onSyncToLive={() => setInspectedSlot(null)}
         roleLabel={isEn ? `Learner (${currentDiscente.badgeCode})` : `Discente (${currentDiscente.badgeCode})`}
         stationContext={
-          isEn
-            ? `Group ${groupLabel} • Team ${currentDiscente.teamId} (${currentDiscente.role || 'Operator'})`
-            : `Gruppo ${groupLabel} • Squadra ${currentDiscente.teamId} (${currentDiscente.role || 'Operatore'})`
+          isScenarioRoleActive && activeRoleName
+            ? (isEn
+                ? `Group ${groupLabel} • Team ${currentDiscente.teamId} (${activeRoleName})`
+                : `Gruppo ${groupLabel} • Squadra ${currentDiscente.teamId} (${activeRoleName})`)
+            : (isEn
+                ? `Group ${groupLabel} • Team ${currentDiscente.teamId}`
+                : `Gruppo ${groupLabel} • Squadra ${currentDiscente.teamId}`)
         }
       />
 

@@ -535,48 +535,48 @@ export const FacultyView: React.FC = () => {
                 <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight break-words">
                   {currentFaculty.name}
                 </h2>
-                {currentFaculty.title && (
-                  <p className="text-amber-300 font-medium text-xs sm:text-sm pt-0.5 break-words">
-                    {currentFaculty.title}
-                  </p>
-                )}
-                {currentFaculty.specialty && (
-                  <p className="text-neutral-400 text-xs pt-0.5 break-words">
-                    {currentFaculty.specialty}
-                  </p>
-                )}
+                <p className={`text-xs sm:text-sm pt-0.5 break-words ${currentFaculty.title ? 'text-amber-300 font-medium' : 'text-neutral-500 italic'}`}>
+                  {currentFaculty.title || (isEn ? 'Title: To be filled' : 'Qualifica: Da compilare')}
+                </p>
+                <p className={`text-xs pt-0.5 break-words ${currentFaculty.specialty ? 'text-neutral-400' : 'text-neutral-500 italic'}`}>
+                  {currentFaculty.specialty || (isEn ? 'Specialty: To be filled' : 'Specialità: Da compilare')}
+                </p>
               </div>
             </div>
 
             <div className="pt-3 mt-3 border-t border-neutral-800 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
-              {currentFaculty.assignedTeamId > 0 && (
-                <div>
-                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Assigned 1:1 Team:' : 'Squadra 1:1 Assegnata:'}</span>
-                  <strong className="text-amber-300 block">
-                    {isEn ? `Group ${facultyGroup} • Team #${currentFaculty.assignedTeamId}` : `Gruppo ${facultyGroup} • Squadra #${currentFaculty.assignedTeamId}`}
-                  </strong>
-                </div>
-              )}
-              {(currentFaculty.organization || (currentFaculty as any).affiliation) && (
-                <div className="truncate">
-                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Affiliation:' : 'Affiliazione:'}</span>
-                  <strong className="text-white truncate block" title={currentFaculty.organization || (currentFaculty as any).affiliation}>
-                    {currentFaculty.organization || (currentFaculty as any).affiliation}
-                  </strong>
-                </div>
-              )}
-              {currentFaculty.phone && (
-                <div>
-                  <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
-                  <strong className="text-amber-300 block">{currentFaculty.phone}</strong>
-                </div>
-              )}
-              {(currentFaculty as any).email && (
-                <div className="truncate">
-                  <span className="block text-[10px] text-neutral-400 uppercase">Email:</span>
-                  <strong className="text-amber-200 truncate block">{(currentFaculty as any).email}</strong>
-                </div>
-              )}
+              <div>
+                <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Assigned 1:1 Team:' : 'Squadra 1:1 Assegnata:'}</span>
+                <strong className={currentFaculty.assignedTeamId > 0 ? "text-amber-300 block" : "text-neutral-500 italic block"}>
+                  {currentFaculty.assignedTeamId > 0
+                    ? (isEn ? `Group ${facultyGroup} • Team #${currentFaculty.assignedTeamId}` : `Gruppo ${facultyGroup} • Squadra #${currentFaculty.assignedTeamId}`)
+                    : (isEn ? 'Not assigned' : 'Non assegnata')}
+                </strong>
+              </div>
+              <div>
+                <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Nationality:' : 'Nazionalità:'}</span>
+                <strong className={`truncate block ${currentFaculty.nationality ? 'text-white' : 'text-neutral-500 italic'}`}>
+                  {currentFaculty.nationality || (isEn ? 'Not specified' : 'Non specificata')}
+                </strong>
+              </div>
+              <div className="truncate">
+                <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Affiliation / Org:' : 'Affiliazione / Ente:'}</span>
+                <strong className={`truncate block ${(currentFaculty.organization || (currentFaculty as any).affiliation) ? 'text-white' : 'text-neutral-500 italic'}`} title={currentFaculty.organization || (currentFaculty as any).affiliation}>
+                  {currentFaculty.organization || (currentFaculty as any).affiliation || (isEn ? 'To be filled' : 'Da compilare')}
+                </strong>
+              </div>
+              <div>
+                <span className="block text-[10px] text-neutral-400 uppercase">{isEn ? 'Phone / Radio:' : 'Telefono / Radio:'}</span>
+                <strong className={currentFaculty.phone ? "text-amber-300 block" : "text-neutral-500 italic block"}>
+                  {currentFaculty.phone || (isEn ? 'To be filled' : 'Da compilare')}
+                </strong>
+              </div>
+              <div className="truncate sm:col-span-2">
+                <span className="block text-[10px] text-neutral-400 uppercase">Email:</span>
+                <strong className={`truncate block ${(currentFaculty as any).email ? "text-amber-200" : "text-neutral-500 italic"}`}>
+                  {(currentFaculty as any).email || (isEn ? 'To be filled' : 'Da compilare')}
+                </strong>
+              </div>
             </div>
           </div>
         </div>
@@ -892,11 +892,9 @@ export const FacultyView: React.FC = () => {
                 ? `Station #${currentTeamPatientId}`
                 : `Postazione #${currentTeamPatientId}`}
             </span>
-            {(currentFaculty.title || currentFaculty.organization) && (
-              <span className="text-neutral-400 text-[11px] truncate">
-                {[currentFaculty.title, currentFaculty.organization].filter(Boolean).join(' • ')}
-              </span>
-            )}
+            <span className="text-neutral-400 text-[11px] truncate">
+              <span className={currentFaculty.title ? 'text-neutral-300' : 'text-neutral-500 italic'}>{currentFaculty.title || (isEn ? 'Faculty' : 'Docente')}</span> • <span className={currentFaculty.organization ? 'text-neutral-300' : 'text-neutral-500 italic'}>{currentFaculty.organization || (isEn ? 'Org: To be filled' : 'Ente: Da compilare')}</span> • <span className={currentFaculty.phone ? 'text-amber-300' : 'text-neutral-500 italic'}>{currentFaculty.phone || (isEn ? 'Tel: To be filled' : 'Tel: Da compilare')}</span>
+            </span>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
