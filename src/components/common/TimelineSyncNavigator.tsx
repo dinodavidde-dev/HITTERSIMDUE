@@ -457,7 +457,7 @@ export const TimelineSyncNavigator: React.FC<TimelineSyncNavigatorProps> = ({
             {daySlots.map((slot, idx) => {
               const isSlotLive = slot.id === masterCurrentSlot?.id;
               const isSlotCurrent = slot.id === currentSlot?.id;
-              const isNightMascal = slot.id === 'd2-mascal-scenario';
+              const isNightMascal = slot.id === 'd3-mascal-scenario' || slot.id === 'd2-mascal-scenario' || slot.id.includes('mascal');
 
               return (
                 <button

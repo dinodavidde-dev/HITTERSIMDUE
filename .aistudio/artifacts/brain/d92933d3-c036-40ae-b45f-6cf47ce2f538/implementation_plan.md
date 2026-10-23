@@ -1,91 +1,91 @@
-# Sincronizzazione Anagrafica Partecipanti & Persistenza Cloud Firestore con Sistema Stampa
+# Risoluzione Accesso QR Stampati e Reindirizzamento Diretto
 
-Piano esecutivo completato per garantire la persistenza continua e indistruttibile di tutti i dati dei partecipanti (Discenti, Faculty, Tecnici, Direzione, Regia, Ospiti) su Cloud Firestore e in cache locale, impedendo qualsiasi azzeramento o sovrascrittura all'avvio dell'applicazione su Cloud e sincronizzando in tempo reale il generatore di etichette e badge termici.
+Piano operativo per rendere immediatamente accessibili e funzionanti su tutti i dispositivi i QR code già stampati e consegnati, eliminando il blocco di autenticazione Google e garantendo il caricamento diretto della scheda personale del partecipante.
 
 ---
 
-## Decisioni Confermate dall'Utente
+### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> - **Sincronizzazione Bidirezionale Automatica**: I dati anagrafici sono synchronizzati in tempo reale tra Cloud Firestore e storage locale, garantendo continuità su qualsiasi dispositivo o URL cloud.
-> - **Integrazione Stampa in Tempo Reale**: Il generatore di etichette termiche (50×80 mm e 40×30 mm), i PDF 1:1 millimetrici e i rotoli recepiscono immediatamente ogni modifica anagrafica senza riavvio.
-> - **Protezione Contro Sovrascritture**: Eliminazione del vincolo rigido che reimpostava l'anagrafica all'avvio; protezione dei dati caricati prima, durante e dopo ogni sessione addestrativa.
+> I QR code già stampati contengono l'URL del servizio Cloud Run (dominio `ais-dev-...run.app` o `ais-pre-...run.app`). La richiesta di login Google rilevata dagli smartphone è generata dal filtro IAM di Google Cloud Run (invocazione autenticata) quando la risorsa è impostata per consentire l'accesso solo all'account proprietario (`DinoDavidde@gmail.com`).
+
+- **Decisione Confermata 1 (Integrità QR Stampati)**: Nessun QR verrà ristampato. La soluzione agisce a livello di policy di accesso e di routing dell'applicazione per preservare al 100% i codici già fisicamente distribuiti a discenti e faculty.
+- **Decisione Confermata 2 (Comportamento Utente)**: Attivazione del caricamento automatico immediato della scheda personale del discente (visuale `DISC-xx`, squadra assegnata e rotazione TCCC / Shock Room / WS) non appena il QR viene inquadrato.
+- **Decisione Confermata 3 (Zero Barriere Client)**: Nessun account Google, password o installazione richiesta sullo smartphone del discente.
 
 ---
 
-## 1. Architettura di Sistema & Flusso Dati
+## 1. Diagnosi del Problema Tecnico
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       SORGENTI DATI ANAGRAFICA                              │
-│   • Roster Ufficiale Corso (60 Discenti DISC-01..60, 12 Faculty, 12 Tech)   │
-│   • Import CSV / Excel / TSV da Operatore Direzione / Regia                 │
-│   • Modifiche Individuali da Console Ruoli e Schede Personali              │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    GESTORE PERSISTENZA IBRIDA RESILIENTE                    │
-│   ┌────────────────────────────────┐   ┌────────────────────────────────┐   │
-│   │   Cloud Firestore (Remoto)     │   │     LocalStorage / IndexedDB   │   │
-│   │   • Collections: discenti,     │◄─►│   • Cache offline immediata    │   │
-│   │     faculty, technicians,      │   │   • Protezione anti-wiping     │   │
-│   │     directors, regiaStaff      │   │   • Backup snapshot di sicurezza│  │
-│   └────────────────────────────────┘   └────────────────────────────────┘   │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ Sincronizzazione Reattiva
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                       SISTEMA DI STAMPA & BADGE                             │
-│   ┌────────────────────────────────┐   ┌────────────────────────────────┐   │
-│   │  Generatore Etichette Termiche │   │    Badge Pass & QR Personale   │   │
-│   │  • PDF 1:1 Millimetrico Reale  │   │  • Generazione real-time QR    │   │
-│   │  • Formati 40×30 / 50×80 mm    │   │  • Redirect anagrafica live    │   │
-│   │  • Rotolo Continuo Multipagina │   │  • Stampa badge operatore      │   │
-│   └────────────────────────────────┘   └────────────────────────────────┘   │
+│                       FLUSSO ATTUALE CON BLOCCO                             │
 └─────────────────────────────────────────────────────────────────────────────┘
+  QR Stampato                         Cloud Run Gateway              Smartphone
+ [ais-dev-.../?id=disc-05] ───────► [Controllo IAM Cloud Run] ───► [Chiede Login Google]
+                                             │                               │
+                                      (Manca allUsers)                 (Blocco Utente)
+```
+
+1. **Origine del Login Google**: L'infrastruttura Google Cloud Run dell'ambiente di sviluppo (`ais-dev`) blocca le connessioni che non dispongono dell'header di autorizzazione IAM, reindirizzando il browser mobile alla pagina di login Google.
+2. **Obiettivo**: Riconfigurare la policy di invocazione (o reindirizzare sul canale pubblico `ais-pre` privo di restrizioni IAM) e strutturare l'applicazione affinché esegua il routing istantaneo alla vista del discente/tutor.
+
+---
+
+## 2. Architettura della Soluzione (Mantenimento QR Esistenti)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ARCHITETTURA RISOLUTIVA A DOPPIO LIVELLO                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  LIVELLO 1: INFRASTRUTTURA CLOUD RUN (Risoluzione Login)
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ 1. Assegnazione ruolo "Cloud Run Invoker" al principal "allUsers"       │
+  │    sul servizio ais-dev-g6diswz5dmttn7dixahrpb-714965592473             │
+  │ 2. In alternativa: Proxy redirect trasparente da ais-dev a ais-pre     │
+  └─────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+  LIVELLO 2: RUNTIME APPLICATION (Redirect Immediato Scheda Personale)
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ 1. Parsing istantaneo pre-render dei parametri URL (id, badge, view)    │
+  │ 2. Bypass totale di schermate di attesa o timeline pubblica             │
+  │ 3. Attivazione automatica di DiscenteView / FacultyView / TecniciView   │
+  │ 4. Persistenza locale (localStorage) per mantenere la sessione attiva   │
+  └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Diagnosi & Cause della Scomparsa Dati su Cloud (Risolte)
+## 3. Piano Operativo di Esecuzione
 
-1. **Condizione di Reset Rigido all'Avvio (`CourseContext.tsx`) [RISOLTO]**:
-   - Rimosso il controllo hardcoded (`stored.length !== 68 || stored[0]?.name !== 'Ahern Ellen'`) che, ad ogni riavvio dell'app su un nuovo dominio o dispositivo cloud, cancellava qualsiasi modifica o importazione personalizzata ripristinando l'array iniziale di fallback.
-2. **Assenza di Auto-Seeding / Idratazione su Firestore [RISOLTO]**:
-   - Implementato l'auto-seeding protetto con guardie ref (`hasSeededDiscentiRef`, `hasSeededFacultyRef`, ecc.): se Firestore è vuoto al primo avvio su cloud, popola in modo trasparente i record iniziali senza sovrascrivere modifiche successive. Se Firestore contiene già dati, li sincronizza istantaneamente in locale e nello stato React.
-3. **Mancanza di Campi nelle Regole di Sicurezza (`firestore.rules`) [RISOLTO & DEPLOYED]**:
-   - `isValidDiscente`, `isValidFaculty`, `isValidTechnician`, `isValidDirector`, `isValidGuest` aggiornati con tutti i campi operativi anagrafici (`specialty`, `organization`, `phone`, `email`, `notes`, `clothingSize`, `professione`, `experience`) e regole distribuite via Cloud Deploy.
-4. **Rimozione Valori `undefined` nei Batch Firestore [RISOLTO]**:
-   - Aggiunta la funzione `cleanUndefined` su tutte le operazioni `bulkUpdateDiscenti`, `bulkUpdateFaculty`, `bulkUpdateTechnicians`, `bulkUpdateDirectors`, `bulkUpdateRegiaStaff`, `bulkUpdateGuests` e nelle singole operazioni CRUD, eliminando i crash di Firestore JS SDK causati da campi facoltativi indefiniti.
+### Fase 1: Sblocco dell'Accesso Pubblico su Google Cloud Run (Zero Login)
+Per consentire a chiunque scansioni il QR di accedere senza account Google:
+1. **Verifica Permessi Cloud Run**:
+   - Sul progetto Google Cloud, aprire il servizio Cloud Run corrispondente ad `ais-dev-g6diswz5dmttn7dixahrpb-714965592473`.
+   - Nella scheda **Sicurezza / Trigger** (o **Autorizzazioni / IAM**), aggiungere il principal:
+     - **Nuovo membro / Principal**: `allUsers`
+     - **Ruolo**: `Cloud Run Invoker` (`roles/run.invoker`)
+   - Questo comando elimina all'istante la schermata di login Google per chiunque inquadri il QR stampato.
 
----
+### Fase 2: Rafforzamento del Routing di Decodifica Rapida (`App.tsx` & `CourseContext.tsx`)
+1. **Decodifica Aggressiva All'Avvio**:
+   - Se l'URL contiene parametri come `id=disc-05`, `badge=DISC-05`, o `discente=DISC-05`, forzare immediatamente lo stato `currentTab = 'discente'` e `selectedDiscenteId = 'disc-5'` prima ancora che venga caricata la navbar o la timeline pubblica.
+   - Inibire qualsiasi modale di benvenuto o blocco interattivo se la sessione proviene da QR scan (`isFromQR = true`).
+2. **Auto-Recovery se l'Utente viene reindirizzato con sessione troncata**:
+   - Memorizzare la matricola decodificata in `localStorage.setItem('last_scanned_badge', code)`: se il browser ricarica la pagina o l'utente chiude e riapre il browser, rientra direttamente nella sua scheda senza dover rifare la scansione.
 
-## 3. Interventi Eseguiti
-
-### Fase A: Ristrutturazione Persistenza Resiliente (`CourseContext.tsx`) [COMPLETATA]
-- Vincoli distruttivi eliminati: il caricamento da `localStorage` non forza più il reset se la lunghezza è diversa da 68 o se il primo nome è cambiato.
-- Idratazione continua bidirezionale Firestore ↔ LocalStorage attiva con `onSnapshot` su tutte le collezioni didattiche.
-- Tutte le modifiche (singole o bulk) scrivono simultaneamente su `localStorage` e inviano a Firestore documenti depurati con `cleanUndefined` e clausola `{ merge: true }`.
-
-### Fase B: Aggiornamento Regole di Sicurezza (`firestore.rules`) [COMPLETATA]
-- Regole ampliate per validare tutti i campi anagrafici e didattici.
-- Eseguito deploy con esito positivo sul progetto Cloud Firestore (`ai-studio-traumasimdirecto-d92933d3-c036-40ae-b45f-6cf47ce2f538`).
-
-### Fase C: Sincronizzazione Reattiva con il Sistema di Stampa [COMPLETATA]
-- `ThermalLabelGeneratorModal` aggiornato con reattività in tempo reale: la lista unificata delle figure didattiche (`allCourseFigures`) ricalcola istantaneamente preview, codici QR e layout a ogni aggiornamento anagrafico.
-- Aggiunta sincronizzazione automatica della figura correntemente selezionata se i suoi dati vengono modificati in anagrafica o sincronizzati dal Cloud.
-- Aggiunto badge visivo di stato di sincronizzazione Cloud nell'intestazione del generatore: `CLOUD FIRESTORE: LIVE SYNC`.
-- **Calibrazione Geometrica 1:1 per Formato 40 × 30 mm**:
-  * Dimensioni fisiche bloccate esattamente a **40.00 mm × 30.00 mm** (MediaBox: `[0 0 113.3858 85.0394]` pt).
-  * Inserita nel catalogo PDF la direttiva nativa `/ViewerPreferences << /PrintScaling /None >>` per disabilitare il ridimensionamento automatico ("Adatta alla pagina" o "Riduci pagine sovradimensionate") nei visualizzatori PDF (Acrobat, Chrome, Edge, Preview).
-  * Mappatura dell'immagine canvas alle coordinate interne millimetriche `doc.internal.pageSize.getWidth()` e `doc.internal.pageSize.getHeight()` garantendo zero deformazioni e margine anti-clipping di 1.5mm.
-  * Compatibilità piena sia per il download del singolo PDF 1:1 sia per il PDF multipagina a rotolo continuo (`generateMultiPagePdfForThermalRoll`).
+### Fase 3: Fallback Tastierino Rapido di Emergenza
+1. Per prevenire qualsiasi problema di fotocamera o blocco dei browser su telefoni più datati, inserire nella pagina un micro-tastierino rapido ad 1 tocco:
+   - Campo *"Inserisci la tua matricola"* (es. `05` o `DISC-05`).
+   - Tasto rapido che porta istantaneamente alla scheda dell'allievo con lo stesso identico stato del QR.
 
 ---
 
-## 4. Verifica & Collaudo
+## 4. Verifica e Collaudo
 
-1. **Lint Check**: Eseguito `npm run lint` (`tsc --noEmit`) con esito 0 errori.
-2. **Compile Check**: Eseguito `npm run build` con esito positivo e bundle ottimizzato.
-3. **Persistenza & Stampa**: Nessun dato viene azzerato all'avvio, prima, durante o dopo sessioni didattiche; anteprime e stampe sempre allineate al millimetro e al dato più recente.
+1. Test di scansione dell'URL `https://ais-dev-g6diswz5dmttn7dixahrpb-714965592473.europe-west2.run.app/?view=discente&id=disc-05&badge=DISC-05&qr=1` da finestra di navigazione in incognito (senza alcun account Google attivo).
+2. Verifica che non appaia la schermata di login Google.
+3. Verifica che la pagina aperta mostri direttamente la vista dell'Allievo DISC-05 (Squadra BRAVO, Turno Day 2/Day 3, Ruolo e orari).
+4. Verifica di non-regressione per Faculty e Tecnici.

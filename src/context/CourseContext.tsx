@@ -50,6 +50,7 @@ import {
 import { computeHomogeneousTruccoDistribution } from '../utils/truccoBalancer';
 import { PROTESI_CATALOG } from '../data/protesiCatalog';
 import { cleanUndefined } from '../utils/teamUtils';
+import { isParticipantMatch } from '../utils/qrCodeUtils';
 import { Language, translations } from '../i18n/translations';
 import { translateSlot, translatePatient } from '../utils/courseTranslation';
 import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
@@ -408,22 +409,71 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return 'en';
   });
-  const [userRole, setUserRole] = useState<UserRole>(() => {
+  const [userRole, setUserRoleState] = useState<UserRole>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
+      const viewParam = (params.get('view') || '').toLowerCase();
       const roleParam = (params.get('role') || '').toLowerCase();
+      const codeParam = (params.get('badge') || params.get('id') || params.get('matricola') || params.get('code') || '').toLowerCase();
 
-      // If explicitly public or guest
+      // Check personal participant identifiers first
       if (
-        viewParam === 'public' ||
-        viewParam === 'pubblico' ||
-        viewParam === 'true' ||
-        viewParam === '1' ||
-        viewParam === 'ospite' ||
-        roleParam === 'ospite'
+        viewParam === 'discente' ||
+        viewParam === 'discenti' ||
+        roleParam === 'discente' ||
+        codeParam.startsWith('disc') ||
+        params.get('discente') ||
+        params.get('student')
       ) {
-        return 'ospite';
+        return 'discente';
+      }
+
+      if (
+        viewParam === 'faculty' ||
+        roleParam === 'faculty' ||
+        codeParam.startsWith('fac') ||
+        params.get('faculty') ||
+        params.get('tutor')
+      ) {
+        return 'faculty';
+      }
+
+      if (
+        viewParam === 'tecnici' ||
+        viewParam === 'tecnico' ||
+        viewParam === 'attore' ||
+        viewParam === 'truccatore' ||
+        roleParam === 'tecnico' ||
+        codeParam.startsWith('tech') ||
+        codeParam.startsWith('att') ||
+        codeParam.startsWith('act') ||
+        codeParam.startsWith('truc') ||
+        params.get('tecnico') ||
+        params.get('tech')
+      ) {
+        return 'tecnico';
+      }
+
+      if (
+        viewParam === 'direttori' ||
+        viewParam === 'direttore' ||
+        roleParam === 'direttore' ||
+        codeParam.startsWith('dir') ||
+        params.get('direttore') ||
+        params.get('director')
+      ) {
+        return 'direttore';
+      }
+
+      if (
+        viewParam === 'regia' ||
+        viewParam === 'regia_asset' ||
+        viewParam === 'asset' ||
+        roleParam === 'regia' ||
+        codeParam.startsWith('reg') ||
+        params.get('regia')
+      ) {
+        return 'regia';
       }
 
       if (
@@ -435,11 +485,54 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ) {
         return 'master';
       }
-      if (roleParam === 'discente' || params.get('discente') || params.get('student')) return 'discente';
-      if (roleParam === 'faculty' || params.get('faculty') || params.get('tutor')) return 'faculty';
-      if (roleParam === 'tecnico' || params.get('tecnico') || params.get('tech')) return 'tecnico';
-      if (roleParam === 'direttore' || params.get('direttore')) return 'direttore';
-      if (roleParam === 'regia' || params.get('regia')) return 'regia';
+
+      // If explicitly public or guest
+      if (
+        viewParam === 'public' ||
+        viewParam === 'pubblico' ||
+        viewParam === 'ospite' ||
+        roleParam === 'ospite'
+      ) {
+        return 'ospite';
+      }
+
+      if (
+        viewParam === 'tecnici' ||
+        viewParam === 'tecnico' ||
+        viewParam === 'attore' ||
+        viewParam === 'truccatore' ||
+        roleParam === 'tecnico' ||
+        codeParam.startsWith('tech') ||
+        codeParam.startsWith('att') ||
+        codeParam.startsWith('act') ||
+        codeParam.startsWith('truc') ||
+        params.get('tecnico') ||
+        params.get('tech')
+      ) {
+        return 'tecnico';
+      }
+
+      if (
+        viewParam === 'direttori' ||
+        viewParam === 'direttore' ||
+        roleParam === 'direttore' ||
+        codeParam.startsWith('dir') ||
+        params.get('direttore') ||
+        params.get('director')
+      ) {
+        return 'direttore';
+      }
+
+      if (
+        viewParam === 'regia' ||
+        viewParam === 'regia_asset' ||
+        viewParam === 'asset' ||
+        roleParam === 'regia' ||
+        codeParam.startsWith('reg') ||
+        params.get('regia')
+      ) {
+        return 'regia';
+      }
 
       // If stored role exists, use it
       const stored = localStorage.getItem(STORAGE_KEY_PREFIX + 'userRole');
@@ -455,6 +548,15 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return 'ospite';
   });
+
+  const setUserRole = useCallback((role: UserRole) => {
+    setUserRoleState(role);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'userRole', JSON.stringify(role));
+      } catch (e) {}
+    }
+  }, []);
   const [openedByRole, setOpenedByRoleState] = useState<'regia' | 'direttore' | 'master' | null>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -690,8 +792,22 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Reactive Timeline Slots with IndexedDB Offline/Flexibility Persistence
   const [timelineSlots, setTimelineSlots] = useState<TimelineSlot[]>(() => INITIAL_TIMELINE_SLOTS);
 
-  // Load cached slots from IndexedDB on startup if available
+  // Load cached slots from IndexedDB on startup if available, ensuring updated schedule version
   useEffect(() => {
+    const SCHEDULE_VERSION = 'v3_mascal_day2_only';
+    const storedVersion = localStorage.getItem('trauma_schedule_version');
+    if (storedVersion !== SCHEDULE_VERSION) {
+      localDb.cachedSlots.clear().then(() => {
+        return localDb.cachedSlots.bulkPut(INITIAL_TIMELINE_SLOTS);
+      }).then(() => {
+        localStorage.setItem('trauma_schedule_version', SCHEDULE_VERSION);
+        setTimelineSlots(INITIAL_TIMELINE_SLOTS);
+      }).catch(() => {
+        setTimelineSlots(INITIAL_TIMELINE_SLOTS);
+      });
+      return;
+    }
+
     localDb.cachedSlots.toArray().then((saved) => {
       if (saved && saved.length > 0) {
         setTimelineSlots(saved.sort((a, b) => (a.day - b.day) || (a.startMinutes - b.startMinutes)));
@@ -746,11 +862,11 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [openedByRole]);
 
   const getSlotDurationSeconds = (slot: TimelineSlot) => {
-    if (slot.id === 'd2-setup-1' || slot.id === 'd2-setup-2') return 1800; // 30 mins (08:00 - 08:30)
-    if (slot.id === 'd2-chiusura' || slot.id === 'd3-setup-1') return 34200; // 9h 30m (23:00 Day 2 to 08:30 Day 3)
-    if (slot.id === 'd3-chiusura') return 9000; // 2h 30m (18:00 to 20:30 Day 3)
-    if (slot.id === 'd2-mascal-scenario') return 7200; // 120 mins (21:00 - 23:00)
-    if (slot.id === 'd2-pausa-cena') return 7200; // 120 mins (18:00 - 20:00)
+    if (slot.id === 'd2-setup-1' || slot.id === 'd2-setup-2' || slot.id === 'd3-setup-1' || slot.id === 'd3-setup-2') return 1800; // 30 mins (08:00 - 08:30)
+    if (slot.id === 'd2-chiusura') return 900; // 15 mins (17:45 - 18:00 Day 1)
+    if (slot.id === 'd3-chiusura') return 1800; // 30 mins (23:00 - 23:30 Day 2)
+    if (slot.id === 'd3-mascal-scenario' || slot.id === 'd2-mascal-scenario') return 7200; // 120 mins (21:00 - 23:00)
+    if (slot.id === 'd3-pausa-cena' || slot.id === 'd2-pausa-cena') return 7200; // 120 mins (18:00 - 20:00)
     return slot.durationMinutes * 60;
   };
 
@@ -903,52 +1019,156 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [activeFacultyTeamId, setActiveFacultyTeamId] = useState<number>(1);
   const [activeTechPatientId, setActiveTechPatientId] = useState<number>(1);
-  const [selectedDiscenteId, setSelectedDiscenteId] = useState<string>(() =>
-    getStoredOrDefault('selectedDiscenteId', 'disc-1')
-  );
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(() =>
-    getStoredOrDefault('selectedFacultyId', 'fac-1')
-  );
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>(() =>
-    getStoredOrDefault('selectedTechnicianId', 'tech-1')
-  );
-  const [selectedDirectorId, setSelectedDirectorId] = useState<string>(() =>
-    getStoredOrDefault('selectedDirectorId', 'dir-1')
-  );
-  const [selectedRegiaId, setSelectedRegiaId] = useState<string>(() =>
-    getStoredOrDefault('selectedRegiaId', 'regia-1')
-  );
-  const [selectedGuestId, setSelectedGuestId] = useState<string>(() =>
-    getStoredOrDefault('selectedGuestId', 'guest-1')
-  );
+  const [selectedDiscenteId, setSelectedDiscenteIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('discente') || params.get('student') || params.get('id') || params.get('badge');
+      if (target) {
+        const found = INITIAL_DISCENTI.find((d) => isParticipantMatch(d, target));
+        return found ? found.id : target;
+      }
+    }
+    return getStoredOrDefault('selectedDiscenteId', 'disc-1');
+  });
+  const setSelectedDiscenteId = useCallback((id: string) => {
+    setSelectedDiscenteIdState(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'selectedDiscenteId', JSON.stringify(id));
+      } catch (e) {}
+    }
+  }, []);
+
+  const [selectedFacultyId, setSelectedFacultyIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('faculty') || params.get('tutor') || params.get('id') || params.get('badge');
+      if (target) {
+        const found = INITIAL_FACULTY.find((f) => isParticipantMatch(f, target));
+        return found ? found.id : target;
+      }
+    }
+    return getStoredOrDefault('selectedFacultyId', 'fac-1');
+  });
+  const setSelectedFacultyId = useCallback((id: string) => {
+    setSelectedFacultyIdState(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'selectedFacultyId', JSON.stringify(id));
+      } catch (e) {}
+    }
+  }, []);
+
+  const [selectedTechnicianId, setSelectedTechnicianIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('tecnico') || params.get('tech') || params.get('id') || params.get('badge');
+      if (target) {
+        const found = INITIAL_TECHNICIANS.find((t) => isParticipantMatch(t, target));
+        return found ? found.id : target;
+      }
+    }
+    return getStoredOrDefault('selectedTechnicianId', 'tech-1');
+  });
+  const setSelectedTechnicianId = useCallback((id: string) => {
+    setSelectedTechnicianIdState(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'selectedTechnicianId', JSON.stringify(id));
+      } catch (e) {}
+    }
+  }, []);
+
+  const [selectedDirectorId, setSelectedDirectorIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('direttore') || params.get('director') || params.get('id') || params.get('badge');
+      if (target) {
+        const found = INITIAL_DIRECTORS.find((d) => isParticipantMatch(d, target));
+        return found ? found.id : target;
+      }
+    }
+    return getStoredOrDefault('selectedDirectorId', 'dir-1');
+  });
+  const setSelectedDirectorId = useCallback((id: string) => {
+    setSelectedDirectorIdState(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'selectedDirectorId', JSON.stringify(id));
+      } catch (e) {}
+    }
+  }, []);
+
+  const [selectedRegiaId, setSelectedRegiaIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('regia') || params.get('id') || params.get('badge');
+      if (target) {
+        const found = INITIAL_REGIA_STAFF.find((r) => isParticipantMatch(r, target));
+        return found ? found.id : target;
+      }
+    }
+    return getStoredOrDefault('selectedRegiaId', 'regia-1');
+  });
+  const setSelectedRegiaId = useCallback((id: string) => {
+    setSelectedRegiaIdState(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'selectedRegiaId', JSON.stringify(id));
+      } catch (e) {}
+    }
+  }, []);
+
+  const [selectedGuestId, setSelectedGuestIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('ospite') || params.get('guest') || params.get('id') || params.get('badge');
+      if (target) {
+        const found = INITIAL_GUESTS.find((g) => isParticipantMatch(g, target));
+        return found ? found.id : target;
+      }
+    }
+    return getStoredOrDefault('selectedGuestId', 'guest-1');
+  });
+  const setSelectedGuestId = useCallback((id: string) => {
+    setSelectedGuestIdState(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'selectedGuestId', JSON.stringify(id));
+      } catch (e) {}
+    }
+  }, []);
   const [currentTab, setCurrentTabState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      const storedTab = localStorage.getItem(STORAGE_KEY_PREFIX + 'active_tab');
       const params = new URLSearchParams(window.location.search);
-      const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
+      const viewParam = (params.get('view') || '').toLowerCase();
+      const codeParam = (params.get('badge') || params.get('id') || params.get('matricola') || params.get('code') || '').toLowerCase();
+
+      // Check personal participant identifiers first
+      if (viewParam === 'discente' || viewParam === 'discenti' || params.get('discente') || params.get('student') || codeParam.startsWith('disc')) return 'discente';
+      if (viewParam === 'faculty' || params.get('faculty') || params.get('tutor') || codeParam.startsWith('fac')) return 'faculty';
+      if (viewParam === 'tecnici' || viewParam === 'tecnico' || params.get('tecnico') || params.get('tech') || codeParam.startsWith('tech')) return 'tecnici';
+      if (viewParam === 'attore' || params.get('attore') || codeParam.startsWith('att') || codeParam.startsWith('act')) return 'attore';
+      if (viewParam === 'truccatore' || params.get('truccatore') || codeParam.startsWith('truc')) return 'truccatore';
+      if (viewParam === 'direttori' || viewParam === 'direttore' || params.get('direttore') || params.get('director') || codeParam.startsWith('dir')) return 'direttori';
+      if (viewParam === 'regia' || params.get('regia') || codeParam.startsWith('reg')) return 'regia';
+      if (viewParam === 'master' || params.get('master') || params.get('pin') === '251201' || params.get('code') === '251201') return 'master';
+
       if (
         viewParam === 'public' ||
         viewParam === 'pubblico' ||
-        viewParam === 'true' ||
-        viewParam === '1' ||
         viewParam === 'ospite'
       ) {
         return 'public';
       }
-      if (viewParam) return viewParam;
-      const hasSpecificParam =
-        params.get('discente') ||
-        params.get('faculty') ||
-        params.get('tecnico') ||
-        params.get('direttore') ||
-        params.get('regia') ||
-        params.get('ospite') ||
-        params.get('badge') ||
-        params.get('id') ||
-        params.get('role');
-      if (hasSpecificParam) {
-        return 'public'; // Will be resolved by App.tsx
+
+      if (viewParam) {
+        if (viewParam === 'tecnico' || viewParam === 'technician') return 'tecnici';
+        if (viewParam === 'direttore' || viewParam === 'director') return 'direttori';
+        return viewParam;
       }
+
+      const storedTab = localStorage.getItem(STORAGE_KEY_PREFIX + 'active_tab');
       if (storedTab) {
         try {
           const parsed = JSON.parse(storedTab);
@@ -4045,8 +4265,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
         case 'night_scenario': {
           setActiveDayState(2);
-          const idx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd2-mascal-scenario');
-          const targetIdx = idx !== -1 ? idx : INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd2-gate-discenti-notturno');
+          const idx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd3-mascal-scenario' || s.id === 'd2-mascal-scenario');
+          const targetIdx = idx !== -1 ? idx : INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd3-gate-discenti-notturno' || s.id === 'd2-gate-discenti-notturno');
           const resolvedIdx = targetIdx !== -1 ? targetIdx : 0;
           setActiveSlotIndexState(resolvedIdx);
           const s = INITIAL_TIMELINE_SLOTS[resolvedIdx];

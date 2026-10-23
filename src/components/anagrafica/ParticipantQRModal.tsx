@@ -124,7 +124,45 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
     // Open in new tab/window tagged with origin
     const origin = (userRole === 'regia' || currentTab === 'regia') ? 'regia' : (userRole === 'direttore' || currentTab === 'direttori') ? 'direttore' : undefined;
     const directUrl = getParticipantPersonalPageUrl(person, category, undefined, origin);
-    window.open(directUrl, '_blank', 'noopener,noreferrer');
+
+    // Update in-app state immediately so that navigation happens reliably in all environments (PWA, iFrame, mobile)
+    if (category === 'discenti' || category === 'discente') {
+      setSelectedDiscenteId(person.id);
+      setCurrentTab('discente');
+      setUserRole(origin ? origin : 'discente');
+    } else if (category === 'faculty') {
+      setSelectedFacultyId(person.id);
+      setCurrentTab('faculty');
+      setUserRole(origin ? origin : 'faculty');
+    } else if (category === 'tecnici') {
+      setSelectedTechnicianId(person.id);
+      setCurrentTab('tecnici');
+      setUserRole(origin ? origin : 'tecnico');
+    } else if (category === 'direttori') {
+      setSelectedDirectorId(person.id);
+      setCurrentTab('direttori');
+      setUserRole('direttore');
+    } else if (category === 'regia') {
+      setSelectedRegiaId(person.id);
+      setCurrentTab('regia');
+      setUserRole('regia');
+    } else if (category === 'ospiti') {
+      setSelectedGuestId(person.id);
+      setCurrentTab('public');
+      setUserRole('ospite');
+    }
+
+    try {
+      window.history.pushState({}, '', directUrl);
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      window.open(directUrl, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      // ignore popup blockers
+    }
     onClose();
   };
 

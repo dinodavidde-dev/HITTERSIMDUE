@@ -1,6 +1,6 @@
 {
-  "summary":  "Completamento della sincronizzazione bidirezionale dell'anagrafica con Firestore e integrazione real-time con il generatore di etichette e badge termici. Persistenza continua garantita prima, durante e dopo ogni avvio dell'app.",
-  "updatedAt":  "2026-10-23T00:00:00.472619656Z",
+  "summary":  "Piano operativo e architetturale per mantenere validi i codici QR già stampati e distribuiti, eliminando la richiesta di login Google e attivando il redirect automatico immediato alla visuale personale di ogni partecipante.",
+  "updatedAt":  "2026-10-23T21:23:40.390241949Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

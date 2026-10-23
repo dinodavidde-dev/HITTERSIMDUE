@@ -39,6 +39,7 @@ import { balanceDiscentiWorkload, BalancingReport } from '../../utils/staffBalan
 import { MascalTriageGuideCard } from '../discente/MascalTriageGuideCard';
 import { TimelineSyncNavigator } from '../common/TimelineSyncNavigator';
 import { useCourseAuthorization } from '../../hooks/useCourseAuthorization';
+import { isParticipantMatch } from '../../utils/qrCodeUtils';
 
 export const DiscenteView: React.FC = () => {
   const [showQRModal, setShowQRModal] = useState(false);
@@ -90,14 +91,23 @@ export const DiscenteView: React.FC = () => {
   const [discentiBalancingReport, setDiscentiBalancingReport] = useState<BalancingReport<Discente> | null>(null);
   const [isBalancingModalOpen, setIsBalancingModalOpen] = useState(false);
 
-  const currentDiscente = discenti.find((d) => d.id === selectedDiscenteId) || discenti[0] || {
-    id: 'disc-1',
-    name: 'Mario Rossi',
-    role: 'Medico di Emergenza',
-    teamId: 1,
-    nationality: 'Italiana',
-    badgeCode: 'DISC-01',
-  };
+  const currentDiscente =
+    discenti.find((d) => isParticipantMatch(d, selectedDiscenteId)) ||
+    discenti.find((d) => d.id === selectedDiscenteId) ||
+    discenti[0] || {
+      id: 'disc-1',
+      name: 'Mario Rossi',
+      role: 'Medico di Emergenza',
+      teamId: 1,
+      nationality: 'Italiana',
+      badgeCode: 'DISC-01',
+    };
+
+  useEffect(() => {
+    if (currentDiscente && currentDiscente.id !== selectedDiscenteId && isParticipantMatch(currentDiscente, selectedDiscenteId)) {
+      setSelectedDiscenteId(currentDiscente.id);
+    }
+  }, [currentDiscente, selectedDiscenteId, setSelectedDiscenteId]);
 
   const studentGroup: GroupType = currentDiscente.teamId <= 3 ? 'A' : currentDiscente.teamId <= 6 ? 'B' : currentDiscente.teamId <= 9 ? 'C' : 'D';
   const groupLabel = studentGroup === 'A' ? 'ALPHA' : studentGroup === 'B' ? 'BRAVO' : studentGroup === 'C' ? 'CHARLIE' : 'DELTA';
@@ -946,9 +956,9 @@ export const DiscenteView: React.FC = () => {
         if (!act) return null;
 
         // Verifica fasi speciali notturne del Day 2
-        const isMascalActive = currentSlot?.id === 'd2-mascal-scenario' || (currentSlot?.id === 'd2-gate-discenti-notturno' && activeDay === 2);
-        const isNightClassifiedPreGate = activeDay === 2 && (currentSlot?.id === 'd2-staff-briefing-notturno' || currentSlot?.id === 'd2-pausa-cena');
-        const isNightChiusuraDay2 = activeDay === 2 && currentSlot?.id === 'd2-chiusura';
+        const isMascalActive = currentSlot?.id === 'd3-mascal-scenario' || currentSlot?.id === 'd2-mascal-scenario' || ((currentSlot?.id === 'd3-gate-discenti-notturno' || currentSlot?.id === 'd2-gate-discenti-notturno') && activeDay === 2);
+        const isNightClassifiedPreGate = activeDay === 2 && (currentSlot?.id === 'd3-staff-briefing-notturno' || currentSlot?.id === 'd2-staff-briefing-notturno' || currentSlot?.id === 'd3-pausa-cena' || currentSlot?.id === 'd2-pausa-cena');
+        const isNightChiusuraDay2 = activeDay === 2 && (currentSlot?.id === 'd3-chiusura' || (currentSlot?.period === 'notturno' && currentSlot?.id.includes('chiusura')));
 
         if (isNightClassifiedPreGate) {
           return (

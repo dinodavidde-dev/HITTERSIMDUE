@@ -2871,99 +2871,19 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     }
   },
   {
-    id: 'd2-chiusura-pomeriggio',
+    id: 'd2-chiusura',
     day: 1,
     period: 'pomeriggio',
     timeRange: '17:45 - 18:00',
     startMinutes: 1065,
     durationMinutes: 15,
-    title: 'Chiusura Sessione Diurna Day 1',
-    description: 'Debriefing clinico pomeridiano e transizione alla fascia serale.',
+    title: 'Chiusura Sessione Diurna Day 1 & Countdown Day 2',
+    description: 'Debriefing clinico pomeridiano, chiusura ufficiale Day 1 e transizione al riposo notturno. Convocazione Day 2 alle ore 08:30.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Chiusura Blocchi Diurni', location: 'Aula Plenaria' },
-      B: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Chiusura Blocchi Diurni', location: 'Aula Plenaria' },
-      C: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Chiusura Blocchi Diurni', location: 'Aula Plenaria' },
-      D: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Chiusura Blocchi Diurni', location: 'Aula Plenaria' }
-    }
-  },
-  {
-    id: 'd2-pausa-cena',
-    day: 1,
-    period: 'notturno',
-    timeRange: '18:00 - 20:00',
-    startMinutes: 1080,
-    durationMinutes: 120,
-    title: 'Pausa Cena Protetta & Standby Operativo',
-    description: 'Pausa protetta 120 min. Riposo allievi e standby in vista della convocazione notturna.',
-    groupActivities: {
-      A: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale', location: 'Mensa Campus & Alloggi' },
-      B: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale', location: 'Mensa Campus & Alloggi' },
-      C: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale', location: 'Mensa Campus & Alloggi' },
-      D: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale', location: 'Mensa Campus & Alloggi' }
-    }
-  },
-  {
-    id: 'd2-staff-briefing-notturno',
-    day: 1,
-    period: 'notturno',
-    timeRange: '20:00 - 20:30',
-    startMinutes: 1200,
-    durationMinutes: 30,
-    title: 'Convocazione Tassativa Staff (Tech, Attori, Trucco, Faculty)',
-    description: 'Tassativo: convocazione staff entro le 20:00. Briefing segreto di regia, check radio CH-1/CH-3 e allestimento dinamico postazioni in penombra. Gate discenti chiuso.',
-    groupActivities: {
-      A: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-01', 'FAC-02', 'FAC-03'] },
-      B: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-04', 'FAC-05', 'FAC-06'] },
-      C: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-07', 'FAC-08', 'FAC-09'] },
-      D: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-10', 'FAC-11', 'FAC-12'] }
-    }
-  },
-  {
-    id: 'd2-gate-discenti-notturno',
-    day: 1,
-    period: 'notturno',
-    timeRange: '20:30 - 21:00',
-    startMinutes: 1230,
-    durationMinutes: 30,
-    title: 'Apertura Gate Discenti & Accoglienza Notturna',
-    description: 'Apertura del gate discenti ore 20:30. Raduno e allineamento di tutti i 60 allievi. Istruzioni operative comunicate verbalmente sul posto.',
-    groupActivities: {
-      A: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' },
-      B: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' },
-      C: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' },
-      D: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' }
-    }
-  },
-  {
-    id: 'd2-mascal-scenario',
-    day: 1,
-    period: 'notturno',
-    timeRange: '21:00 - 23:00',
-    startMinutes: 1260,
-    durationMinutes: 120,
-    title: 'SCENARIO NOTTURNO MASCAL (Mass Casualty Incident)',
-    description: 'Sessione plenaria ad altissima intensità: tutti i 60 allievi (ALPHA, BRAVO, CHARLIE, DELTA) operano simultaneamente. Triage START/Tattico, stabilizzazione e procedure on-demand a sorpresa senza programmazione statica.',
-    groupActivities: {
-      A: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' },
-      B: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' },
-      C: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' },
-      D: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' }
-    }
-  },
-  {
-    id: 'd2-chiusura',
-    day: 1,
-    period: 'notturno',
-    timeRange: '23:00 - 23:15',
-    startMinutes: 1380,
-    durationMinutes: 15,
-    title: 'Chiusura Day 1 & Countdown Day 2',
-    description: 'Cessato allarme MASCAL, hot debriefing rapido e attivazione countdown per il Day 3 (ore 08:30).',
-    groupActivities: {
-      A: { activityType: 'debriefing', title: 'Hot Debriefing & Chiusura Day 1', subtitle: 'Cessato allarme ore 23:00 ➔ Ripresa Countdown per Day 2', location: 'Aula Plenaria' },
-      B: { activityType: 'debriefing', title: 'Hot Debriefing & Chiusura Day 1', subtitle: 'Cessato allarme ore 23:00 ➔ Ripresa Countdown per Day 2', location: 'Aula Plenaria' },
-      C: { activityType: 'debriefing', title: 'Hot Debriefing & Chiusura Day 1', subtitle: 'Cessato allarme ore 23:00 ➔ Ripresa Countdown per Day 2', location: 'Aula Plenaria' },
-      D: { activityType: 'debriefing', title: 'Hot Debriefing & Chiusura Day 1', subtitle: 'Cessato allarme ore 23:00 ➔ Ripresa Countdown per Day 2', location: 'Aula Plenaria' }
+      A: { activityType: 'debriefing', title: 'Debriefing Pomeridiano & Chiusura Day 1', subtitle: 'Conclusione Lavori • Riposo fino alle 08:30 Day 2', location: 'Aula Plenaria' },
+      B: { activityType: 'debriefing', title: 'Debriefing Pomeridiano & Chiusura Day 1', subtitle: 'Conclusione Lavori • Riposo fino alle 08:30 Day 2', location: 'Aula Plenaria' },
+      C: { activityType: 'debriefing', title: 'Debriefing Pomeridiano & Chiusura Day 1', subtitle: 'Conclusione Lavori • Riposo fino alle 08:30 Day 2', location: 'Aula Plenaria' },
+      D: { activityType: 'debriefing', title: 'Debriefing Pomeridiano & Chiusura Day 1', subtitle: 'Conclusione Lavori • Riposo fino alle 08:30 Day 2', location: 'Aula Plenaria' }
     }
   },
 
@@ -3513,19 +3433,99 @@ export const INITIAL_TIMELINE_SLOTS: TimelineSlot[] = [
     }
   },
   {
-    id: 'd3-chiusura',
+    id: 'd3-chiusura-pomeriggio',
     day: 2,
     period: 'pomeriggio',
     timeRange: '17:45 - 18:00',
     startMinutes: 1065,
     durationMinutes: 15,
-    title: 'Chiusura Plenaria & Consegna Attestati',
-    description: 'Debriefing collegiale finale, restituzione clinica e chiusura corso.',
+    title: 'Chiusura Sessione Diurna & Standby MASCAL',
+    description: 'Debriefing clinico pomeridiano delle rotazioni ordinarie e preparazione alla maxi-emergenza notturna MASCAL.',
     groupActivities: {
-      A: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' },
-      B: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' },
-      C: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' },
-      D: { activityType: 'debriefing', title: 'Chiusura Corso & Attestati', subtitle: 'Plenaria finale', location: 'Aula Magna' }
+      A: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Standby Operativo MASCAL', location: 'Aula Plenaria' },
+      B: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Standby Operativo MASCAL', location: 'Aula Plenaria' },
+      C: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Standby Operativo MASCAL', location: 'Aula Plenaria' },
+      D: { activityType: 'debriefing', title: 'Debriefing Pomeridiano', subtitle: 'Standby Operativo MASCAL', location: 'Aula Plenaria' }
+    }
+  },
+  {
+    id: 'd3-pausa-cena',
+    day: 2,
+    period: 'notturno',
+    timeRange: '18:00 - 20:00',
+    startMinutes: 1080,
+    durationMinutes: 120,
+    title: 'Pausa Cena Protetta & Standby Operativo MASCAL',
+    description: 'Pausa protetta 120 min. Riposo allievi e standby in vista della convocazione notturna MASCAL.',
+    groupActivities: {
+      A: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale MASCAL', location: 'Mensa Campus & Alloggi' },
+      B: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale MASCAL', location: 'Mensa Campus & Alloggi' },
+      C: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale MASCAL', location: 'Mensa Campus & Alloggi' },
+      D: { activityType: 'pause', title: 'Pausa Cena Protetta', subtitle: 'Standby Operativo Serale MASCAL', location: 'Mensa Campus & Alloggi' }
+    }
+  },
+  {
+    id: 'd3-staff-briefing-notturno',
+    day: 2,
+    period: 'notturno',
+    timeRange: '20:00 - 20:30',
+    startMinutes: 1200,
+    durationMinutes: 30,
+    title: 'Convocazione Tassativa Staff MASCAL (Tech, Attori, Trucco, Faculty)',
+    description: 'Tassativo: convocazione staff entro le 20:00. Briefing segreto di regia, check radio CH-1/CH-3 e allestimento dinamico postazioni in penombra. Gate discenti chiuso.',
+    groupActivities: {
+      A: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-01', 'FAC-02', 'FAC-03'] },
+      B: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-04', 'FAC-05', 'FAC-06'] },
+      C: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-07', 'FAC-08', 'FAC-09'] },
+      D: { activityType: 'workshop', title: 'Staff Briefing & Allestimento (Riservato)', subtitle: 'Convocazione Staff entro le 20:00 • Gate Discenti Chiuso', location: 'Centrale Regia & Campo Tattico', facultyInvolved: ['FAC-10', 'FAC-11', 'FAC-12'] }
+    }
+  },
+  {
+    id: 'd3-gate-discenti-notturno',
+    day: 2,
+    period: 'notturno',
+    timeRange: '20:30 - 21:00',
+    startMinutes: 1230,
+    durationMinutes: 30,
+    title: 'Apertura Gate Discenti & Accoglienza Notturna MASCAL',
+    description: 'Apertura del gate discenti ore 20:30. Raduno e allineamento di tutti i 60 allievi. Istruzioni operative comunicate verbalmente sul posto.',
+    groupActivities: {
+      A: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' },
+      B: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' },
+      C: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' },
+      D: { activityType: 'plenary', title: 'Apertura Gate 20:30 & Briefing Verbale', subtitle: 'Istruzioni operative comunicate verbalmente • Schede Triage MASCAL attive', location: 'Gate Centrale & Piazzale Operativo' }
+    }
+  },
+  {
+    id: 'd3-mascal-scenario',
+    day: 2,
+    period: 'notturno',
+    timeRange: '21:00 - 23:00',
+    startMinutes: 1260,
+    durationMinutes: 120,
+    title: 'SCENARIO NOTTURNO MASCAL (Mass Casualty Incident)',
+    description: 'Sessione plenaria ad altissima intensità: tutti i 60 allievi (ALPHA, BRAVO, CHARLIE, DELTA) operano simultaneamente. Triage START/Tattico, stabilizzazione e procedure on-demand a sorpresa senza programmazione statica.',
+    groupActivities: {
+      A: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' },
+      B: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' },
+      C: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' },
+      D: { activityType: 'scenario_extra', title: 'SCENARIO MASCAL PLENARIO', subtitle: 'Triage Tattico & Stabilizzazione • Tutti i 60 Discenti congiunti', location: 'Area Tattica Esterna & Ospedale da Campo' }
+    }
+  },
+  {
+    id: 'd3-chiusura',
+    day: 2,
+    period: 'notturno',
+    timeRange: '23:00 - 23:30',
+    startMinutes: 1380,
+    durationMinutes: 30,
+    title: 'Chiusura Plenaria Finale, Debriefing MASCAL & Consegna Attestati',
+    description: 'Cessato allarme MASCAL, hot debriefing collegiale finale, restituzione clinica e chiusura solenne del corso.',
+    groupActivities: {
+      A: { activityType: 'debriefing', title: 'Debriefing MASCAL & Consegna Attestati', subtitle: 'Chiusura Corso & Restituzione Clinica', location: 'Aula Magna' },
+      B: { activityType: 'debriefing', title: 'Debriefing MASCAL & Consegna Attestati', subtitle: 'Chiusura Corso & Restituzione Clinica', location: 'Aula Magna' },
+      C: { activityType: 'debriefing', title: 'Debriefing MASCAL & Consegna Attestati', subtitle: 'Chiusura Corso & Restituzione Clinica', location: 'Aula Magna' },
+      D: { activityType: 'debriefing', title: 'Debriefing MASCAL & Consegna Attestati', subtitle: 'Chiusura Corso & Restituzione Clinica', location: 'Aula Magna' }
     }
   }
 ];

@@ -83,10 +83,22 @@ export function getParticipantPersonalPageUrl(
   url.searchParams.set('view', viewParam);
   url.searchParams.set('id', person.id);
   url.searchParams.set('badge', badge);
-  if (category === 'truccatori') {
+  if (category === 'discenti' || category === 'discente') {
+    url.searchParams.set('discente', badge);
+    url.searchParams.set('student', badge);
+  } else if (category === 'faculty') {
+    url.searchParams.set('faculty', badge);
+    url.searchParams.set('tutor', badge);
+  } else if (category === 'tecnici') {
+    url.searchParams.set('tecnico', badge);
+    url.searchParams.set('tech', badge);
+  } else if (category === 'direttori') {
+    url.searchParams.set('direttore', badge);
+  } else if (category === 'regia') {
+    url.searchParams.set('regia', badge);
+  } else if (category === 'truccatori') {
     url.searchParams.set('truccatore', badge);
-  }
-  if (category === 'attori') {
+  } else if (category === 'attori') {
     url.searchParams.set('attore', badge);
   }
   url.searchParams.set('qr', '1');
@@ -203,6 +215,38 @@ export async function generateParticipantQRCodeDataUrl(
 }
 
 /**
+ * Normalizes participant codes, badges, or IDs by removing hyphens, spaces, and leading zeros.
+ * Example: 'DISC-01', 'disc-1', 'disc01' -> 'disc1'
+ */
+export function normalizeParticipantCode(code?: string): string {
+  if (!code) return '';
+  const clean = code.trim().toLowerCase().replace(/[\s\-_]/g, '');
+  return clean.replace(/^([a-z]+)0+(\d+)$/, '$1$2');
+}
+
+/**
+ * Checks if a participant matches a given query string (by badgeCode, id, or name).
+ * Works seamlessly whether query contains leading zeros, dashes, or full names.
+ */
+export function isParticipantMatch(person: AnyParticipant, query?: string): boolean {
+  if (!person || !query) return false;
+  const qClean = query.trim().toLowerCase();
+  if (!qClean) return false;
+
+  const qNorm = normalizeParticipantCode(query);
+  const idNorm = normalizeParticipantCode(person.id);
+  const badgeNorm = normalizeParticipantCode((person as any).badgeCode);
+
+  if (qNorm && (qNorm === idNorm || qNorm === badgeNorm)) return true;
+  if ((person.id || '').toLowerCase() === qClean) return true;
+  if (((person as any).badgeCode || '').toLowerCase() === qClean) return true;
+  if ((person.name || '').toLowerCase() === qClean) return true;
+  if ((person.name || '').toLowerCase().includes(qClean)) return true;
+
+  return false;
+}
+
+/**
  * Searches and resolves a participant by badge code, ID, or scanned URL.
  */
 export function resolveParticipantByQuery(
@@ -216,108 +260,81 @@ export function resolveParticipantByQuery(
     guests: Guest[];
     teams: Team[];
     makeupArtists?: MakeupArtist[];
+    actors?: CourseActor[];
   }
 ): { person: AnyParticipant; category: ParticipantCategory; team?: Team } | null {
   if (!query || !query.trim()) return null;
   const q = query.trim();
 
   // Check if query is a URL with search params
-  let targetId = q;
-  let targetBadge = q.toUpperCase();
+  const candidates: string[] = [q];
 
   try {
     if (q.includes('?') || q.startsWith('http')) {
       const url = new URL(q, 'https://dummy.med');
-      const idParam = url.searchParams.get('id');
-      const badgeParam = url.searchParams.get('badge') || url.searchParams.get('truccatore');
-      if (idParam) targetId = idParam;
-      if (badgeParam) targetBadge = badgeParam.toUpperCase();
+      const params = url.searchParams;
+      ['id', 'badge', 'discente', 'student', 'faculty', 'tutor', 'tecnico', 'tech', 'direttore', 'regia', 'truccatore', 'attore'].forEach((key) => {
+        const val = params.get(key);
+        if (val) candidates.push(val);
+      });
     }
   } catch (e) {
-    // Not a valid URL, keep string as-is
+    // Not a valid URL, keep candidates as-is
   }
 
-  const idLower = targetId.toLowerCase();
-  const badgeUpper = targetBadge.toUpperCase();
+  for (const candidate of candidates) {
+    // 1. Search Discenti
+    const disc = data.discenti.find((d) => isParticipantMatch(d, candidate));
+    if (disc) {
+      const team = data.teams.find((t) => t.id === disc.teamId);
+      return { person: disc, category: 'discenti', team };
+    }
 
-  // 1. Search Discenti
-  const disc = data.discenti.find(
-    (d) =>
-      (d?.id || '').toLowerCase() === idLower ||
-      (d?.badgeCode || '').toUpperCase() === badgeUpper ||
-      (d?.name || '').toLowerCase() === idLower
-  );
-  if (disc) {
-    const team = data.teams.find((t) => t.id === disc.teamId);
-    return { person: disc, category: 'discenti', team };
-  }
+    // 2. Search Faculty
+    const fac = data.faculty.find((f) => isParticipantMatch(f, candidate));
+    if (fac) {
+      const team = data.teams.find((t) => t.id === fac.assignedTeamId);
+      return { person: fac, category: 'faculty', team };
+    }
 
-  // 2. Search Faculty
-  const fac = data.faculty.find(
-    (f) =>
-      (f?.id || '').toLowerCase() === idLower ||
-      (f?.badgeCode || '').toUpperCase() === badgeUpper ||
-      (f?.name || '').toLowerCase() === idLower
-  );
-  if (fac) {
-    const team = data.teams.find((t) => t.id === fac.assignedTeamId);
-    return { person: fac, category: 'faculty', team };
-  }
+    // 3. Search Technicians
+    const tech = data.technicians.find((t) => isParticipantMatch(t, candidate));
+    if (tech) {
+      return { person: tech, category: 'tecnici' };
+    }
 
-  // 3. Search Technicians
-  const tech = data.technicians.find(
-    (t) =>
-      (t?.id || '').toLowerCase() === idLower ||
-      (t?.badgeCode || '').toUpperCase() === badgeUpper ||
-      (t?.name || '').toLowerCase() === idLower
-  );
-  if (tech) {
-    return { person: tech, category: 'tecnici' };
-  }
+    // 4. Search Directors
+    const dir = data.directors.find((d) => isParticipantMatch(d, candidate));
+    if (dir) {
+      return { person: dir, category: 'direttori' };
+    }
 
-  // 4. Search Directors
-  const dir = data.directors.find(
-    (d) =>
-      (d?.id || '').toLowerCase() === idLower ||
-      (d?.badgeCode || '').toUpperCase() === badgeUpper ||
-      (d?.name || '').toLowerCase() === idLower
-  );
-  if (dir) {
-    return { person: dir, category: 'direttori' };
-  }
+    // 5. Search Regia Staff
+    const reg = data.regiaStaff.find((r) => isParticipantMatch(r, candidate));
+    if (reg) {
+      return { person: reg, category: 'regia' };
+    }
 
-  // 5. Search Regia Staff
-  const reg = data.regiaStaff.find(
-    (r) =>
-      (r?.id || '').toLowerCase() === idLower ||
-      (r?.badgeCode || '').toUpperCase() === badgeUpper ||
-      (r?.name || '').toLowerCase() === idLower
-  );
-  if (reg) {
-    return { person: reg, category: 'regia' };
-  }
+    // 6. Search Actors
+    if (data.actors) {
+      const actor = data.actors.find((a) => isParticipantMatch(a, candidate));
+      if (actor) {
+        return { person: actor, category: 'attori' };
+      }
+    }
 
-  // 6. Search Guests
-  const guest = data.guests.find(
-    (g) =>
-      (g?.id || '').toLowerCase() === idLower ||
-      (g?.badgeCode || '').toUpperCase() === badgeUpper ||
-      (g?.name || '').toLowerCase() === idLower
-  );
-  if (guest) {
-    return { person: guest, category: 'ospiti' };
-  }
+    // 7. Search Makeup Artists
+    if (data.makeupArtists) {
+      const truc = data.makeupArtists.find((m) => isParticipantMatch(m, candidate));
+      if (truc) {
+        return { person: truc, category: 'truccatori' };
+      }
+    }
 
-  // 7. Search Makeup Artists
-  if (data.makeupArtists) {
-    const truc = data.makeupArtists.find(
-      (m) =>
-        (m?.id || '').toLowerCase() === idLower ||
-        (m?.badgeCode || '').toUpperCase() === badgeUpper ||
-        (m?.name || '').toLowerCase() === idLower
-    );
-    if (truc) {
-      return { person: truc, category: 'truccatori' };
+    // 8. Search Guests
+    const guest = data.guests.find((g) => isParticipantMatch(g, candidate));
+    if (guest) {
+      return { person: guest, category: 'ospiti' };
     }
   }
 

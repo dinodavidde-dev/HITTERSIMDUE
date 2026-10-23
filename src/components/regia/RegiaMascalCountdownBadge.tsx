@@ -30,26 +30,26 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
   const isEn = language === 'en';
   const [justJumped, setJustJumped] = useState(false);
 
-  // Trova lo slot ufficiale del MASCAL Day 1 (21:00 - 23:00)
+  // Trova lo slot ufficiale del MASCAL Day 2 (21:00 - 23:00)
   const mascalSlotIndex = useMemo(() => {
-    return INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd2-mascal-scenario');
+    return INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd3-mascal-scenario' || s.id === 'd2-mascal-scenario');
   }, []);
 
   const mascalSlot = useMemo(() => {
     return mascalSlotIndex >= 0 ? INITIAL_TIMELINE_SLOTS[mascalSlotIndex] : null;
   }, [mascalSlotIndex]);
 
-  // Calcolo dello stato operativo rispetto a MASCAL
-  const isMascalActive = currentSlot?.id === 'd2-mascal-scenario';
-  const isMascalPreAlert = currentSlot?.id === 'd2-gate-discenti-notturno'; // 20:30 - 21:00
-  const isMascalStaffSetup = currentSlot?.id === 'd2-staff-briefing-notturno'; // 20:00 - 20:30
+  // Calcolo dello stato operativo rispetto a MASCAL (Day 2)
+  const isMascalActive = currentSlot?.id === 'd3-mascal-scenario' || currentSlot?.id === 'd2-mascal-scenario';
+  const isMascalPreAlert = currentSlot?.id === 'd3-gate-discenti-notturno' || currentSlot?.id === 'd2-gate-discenti-notturno'; // 20:30 - 21:00
+  const isMascalStaffSetup = currentSlot?.id === 'd3-staff-briefing-notturno' || currentSlot?.id === 'd2-staff-briefing-notturno'; // 20:00 - 20:30
 
   // Calcolo delta tempo in minuti dallo slot corrente a MASCAL (21:00 = 1260 minuti)
   const mascalStartMinutes = 1260; // 21:00
   const currentSlotMinutes = currentSlot?.startMinutes ?? 540;
 
-  const isBeforeMascalOnDay1 = activeDay === 1 && currentSlotMinutes < mascalStartMinutes;
-  const isAfterMascalOnDay1 = activeDay === 1 && currentSlotMinutes >= 1380; // dopo le 23:00
+  const isBeforeMascalOnDay2 = activeDay === 2 && currentSlotMinutes < mascalStartMinutes;
+  const isAfterMascalOnDay2 = activeDay === 2 && currentSlotMinutes >= 1380; // dopo le 23:00
 
   const timeRemainingLabel = useMemo(() => {
     // 1. Sincronizzazione con il Gate Apertura: se il corso non è ancora iniziato ed è attivo il countdown gate
@@ -74,7 +74,7 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
       return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
-    if (activeDay === 1 && isBeforeMascalOnDay1) {
+    if (activeDay === 2 && isBeforeMascalOnDay2) {
       const deltaMin = mascalStartMinutes - currentSlotMinutes;
       const hours = Math.floor(deltaMin / 60);
       const mins = deltaMin % 60;
@@ -84,23 +84,23 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
       return `T- ${mins}m 00s`;
     }
 
-    if (isAfterMascalOnDay1) {
+    if (isAfterMascalOnDay2) {
       return isEn ? 'COMPLETED' : 'CONCLUSA';
     }
 
-    if (activeDay === 2) {
-      return isEn ? 'DAY 1 COMPLETED' : 'DAY 1 CONCLUSA';
+    if (activeDay === 1) {
+      return isEn ? 'SCHEDULED DAY 2' : 'PREVISTA DAY 2';
     }
 
     return '21:00';
-  }, [isMascalActive, timerSeconds, activeDay, isBeforeMascalOnDay1, isAfterMascalOnDay1, currentSlotMinutes, isEn]);
+  }, [isMascalActive, timerSeconds, activeDay, isBeforeMascalOnDay2, isAfterMascalOnDay2, currentSlotMinutes, isEn]);
 
   const handleQuickJump = () => {
     if (mascalSlotIndex === -1) return;
 
-    // Cambia al Day 1 se attualmente in Day 2
-    if (activeDay !== 1) {
-      setActiveDay(1);
+    // Cambia al Day 2 se attualmente in Day 1
+    if (activeDay !== 2) {
+      setActiveDay(2);
     }
 
     // Imposta lo slot attivo su MASCAL
@@ -134,7 +134,7 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
           <div className="flex items-center gap-1.5 text-purple-300">
             <Moon className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-wider">
-              {isEn ? 'DAY 1 MASCAL (21:00)' : 'MASCAL DAY 1 (21:00)'}
+              {isEn ? 'DAY 2 MASCAL (21:00)' : 'MASCAL DAY 2 (21:00)'}
             </span>
           </div>
 

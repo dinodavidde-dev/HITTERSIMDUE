@@ -16,7 +16,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useCourse } from '../context/CourseContext';
-import { resolveParticipantByQuery, AnyParticipant, ParticipantCategory } from '../utils/qrCodeUtils';
+import { resolveParticipantByQuery, getParticipantPersonalPageUrl, AnyParticipant, ParticipantCategory } from '../utils/qrCodeUtils';
 import { ParticipantQRModal } from './anagrafica/ParticipantQRModal';
 
 interface QRScannerModalProps {
@@ -33,6 +33,8 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
     directors,
     regiaStaff,
     guests,
+    actors,
+    makeupArtists,
     teams,
     setCurrentTab,
     setSelectedDiscenteId,
@@ -71,6 +73,8 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
       regiaStaff,
       guests,
       teams,
+      actors,
+      makeupArtists,
     });
 
     if (result) {
@@ -102,6 +106,12 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
       setSelectedTechnicianId(person.id);
       setCurrentTab('tecnici');
       setUserRole('tecnico');
+    } else if (category === 'attori') {
+      setCurrentTab('attore');
+      setUserRole('tecnico');
+    } else if (category === 'truccatori') {
+      setCurrentTab('truccatore');
+      setUserRole('tecnico');
     } else if (category === 'direttori') {
       setSelectedDirectorId(person.id);
       setUserRole('direttore');
@@ -114,6 +124,14 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose 
       setSelectedGuestId(person.id);
       setUserRole('ospite');
       setCurrentTab('public');
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const pageUrl = getParticipantPersonalPageUrl(person, category);
+        window.history.pushState(null, '', pageUrl);
+        window.dispatchEvent(new CustomEvent('trauma_qr_navigate'));
+      } catch (e) {}
     }
 
     onClose();

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCourse } from '../../context/CourseContext';
 import { INITIAL_TIMELINE_SLOTS } from '../../data/initialData';
+import { isParticipantMatch } from '../../utils/qrCodeUtils';
 import {
   Activity,
   CheckCircle2,
@@ -77,6 +78,7 @@ export const TecniciView: React.FC = () => {
 
   // Current active technician
   const currentTech =
+    technicians.find((t) => isParticipantMatch(t, selectedTechnicianId)) ||
     technicians.find((t) => t.id === selectedTechnicianId) ||
     technicians[0] || {
       id: 'tech-1',
@@ -87,6 +89,12 @@ export const TecniciView: React.FC = () => {
       assignedStations: ['Ambiente Tattico 1', 'Box Shock Room 1', 'WS1'],
       phone: '+39 333 1234567',
     };
+
+  useEffect(() => {
+    if (currentTech && currentTech.id !== selectedTechnicianId && isParticipantMatch(currentTech, selectedTechnicianId)) {
+      setSelectedTechnicianId(currentTech.id);
+    }
+  }, [currentTech, selectedTechnicianId, setSelectedTechnicianId]);
 
   const currentTechIdx = technicians.findIndex((t) => t.id === currentTech.id);
   const partnerTech =

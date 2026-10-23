@@ -283,9 +283,9 @@ export const DiscentePersonalTimeline: React.FC<DiscentePersonalTimelineProps> =
         let locationName = act?.location ? translateLocation(act.location, language) : (isEn ? 'Course Venue' : 'Sede del Corso');
         let iconType: 'tccc' | 'shock' | 'workshop' | 'pause' | 'clock' = 'clock';
 
-        const isMascal = text.includes('mascal') || current.id === 'd2-mascal-scenario';
-        const isNightGate = current.id === 'd2-gate-discenti-notturno';
-        const isNightStaff = current.id === 'd2-staff-briefing-notturno';
+        const isMascal = text.includes('mascal') || current.id === 'd3-mascal-scenario' || current.id === 'd2-mascal-scenario';
+        const isNightGate = current.id === 'd3-gate-discenti-notturno' || current.id === 'd2-gate-discenti-notturno';
+        const isNightStaff = current.id === 'd3-staff-briefing-notturno' || current.id === 'd2-staff-briefing-notturno';
 
         if (isMascal) {
           badgeText = isEn ? 'MASCAL NIGHT SCENARIO (21:00)' : 'SCENARIO NOTTURNO MASCAL (21:00)';

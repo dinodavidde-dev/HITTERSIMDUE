@@ -35,6 +35,7 @@ import { CourseStartGateAuthorizationModal } from './components/common/CourseSta
 import { ScenarioBlockConfirmationModal } from './components/regia/ScenarioBlockConfirmationModal';
 import { MacroBlockStandbyIndicator } from './components/common/MacroBlockStandbyIndicator';
 import { TacticalMapModal } from './components/common/TacticalMapModal';
+import { resolveParticipantByQuery, isParticipantMatch } from './utils/qrCodeUtils';
 
 const CourseMainContent: React.FC = () => {
   const {
@@ -83,9 +84,24 @@ const CourseMainContent: React.FC = () => {
     setIsTacticalMapOpen,
   } = useCourse();
 
-  const [selectedMakeupArtistId, setSelectedMakeupArtistId] = useState<string | null>(null);
-  const [selectedActorId, setSelectedActorId] = useState<string | null>(null);
-  const initialUrlHandledRef = useRef<boolean>(false);
+  const [selectedMakeupArtistId, setSelectedMakeupArtistId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('truccatore') || (params.get('view') === 'truccatore' ? (params.get('id') || params.get('badge')) : null);
+      if (target) return target;
+    }
+    return null;
+  });
+  const [selectedActorId, setSelectedActorId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('attore') || (params.get('view') === 'attore' ? (params.get('id') || params.get('badge')) : null);
+      if (target) return target;
+    }
+    return null;
+  });
+
+  const lastProcessedSearchRef = useRef<string | null>(null);
 
   // Check URL parameters for instant unique QR Code direct navigation
   useEffect(() => {
@@ -95,10 +111,11 @@ const CourseMainContent: React.FC = () => {
       // STRICT ANCHORING: Initial URL routing runs strictly ONCE on mount.
       // Once handled, subsequent re-renders, participant updates or background Firestore syncs
       // must NEVER overwrite currentTab or kick the user out of Regia (or any active tab)!
-      if (initialUrlHandledRef.current) {
+      // Avoid re-processing if URL parameters have not changed
+      if (lastProcessedSearchRef.current === currentSearch) {
         return;
       }
-      initialUrlHandledRef.current = true;
+      lastProcessedSearchRef.current = currentSearch;
 
       const params = new URLSearchParams(currentSearch);
       const fromParam = params.get('from') || params.get('openedBy') || params.get('source');
@@ -126,27 +143,38 @@ const CourseMainContent: React.FC = () => {
       const regiaParam = params.get('regia');
       const guestParam = params.get('ospite') || params.get('guest');
       const idParam = params.get('id');
-      const badgeParam = params.get('badge') || params.get('qr');
+      const badgeParam = params.get('badge') || params.get('matricola') || params.get('code');
       const roleParam = params.get('role');
       const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
 
+      const hasPersonalParam = Boolean(
+        discenteParam ||
+        facultyParam ||
+        techParam ||
+        direttoreParam ||
+        regiaParam ||
+        guestParam ||
+        idParam ||
+        badgeParam ||
+        params.get('attore') ||
+        params.get('truccatore')
+      );
+
       // 1. Check explicit view or role parameter
       const isPublicViewParam =
-        viewParam === 'public' ||
-        viewParam === 'pubblico' ||
-        viewParam === 'true' ||
-        viewParam === '1' ||
-        viewParam === 'ospite' ||
-        params.get('public') === 'true' ||
-        params.get('public') === '1' ||
-        params.get('public') === '';
+        !hasPersonalParam &&
+        (viewParam === 'public' ||
+          viewParam === 'pubblico' ||
+          viewParam === 'ospite' ||
+          params.get('public') === 'true' ||
+          params.get('public') === '1');
 
       if (isPublicViewParam) {
         setCurrentTab('public');
         if (!roleParam) {
           setUserRole('ospite');
         }
-      } else if (!viewParam && !roleParam && !discenteParam && !facultyParam && !techParam && !direttoreParam && !regiaParam && !guestParam && !idParam && !badgeParam) {
+      } else if (!viewParam && !roleParam && !hasPersonalParam) {
         // Cold-start default ONLY: never overwrite currentTab if user has selected another view
         if (!currentTab || currentTab === 'public') {
           setCurrentTab('public');
@@ -160,24 +188,21 @@ const CourseMainContent: React.FC = () => {
         setUserRole(isFromAdmin ? (fromParam as any) : 'discente');
         const target = discenteParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = discenti.find(
-            (d) => (d?.id || '').toLowerCase() === targetLower || (d?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = discenti.find((d) => isParticipantMatch(d, target));
           if (found) setSelectedDiscenteId(found.id);
+          else setSelectedDiscenteId(target);
         }
       } else if (viewParam === 'faculty' || viewParam === 'tutor' || roleParam === 'faculty' || facultyParam) {
         setCurrentTab('faculty');
         setUserRole(isFromAdmin ? (fromParam as any) : 'faculty');
         const target = facultyParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = faculty.find(
-            (f) => (f?.id || '').toLowerCase() === targetLower || (f?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = faculty.find((f) => isParticipantMatch(f, target));
           if (found) {
             setSelectedFacultyId(found.id);
             if (found.assignedTeamId) setActiveFacultyTeamId(found.assignedTeamId);
+          } else {
+            setSelectedFacultyId(target);
           }
         }
       } else if (
@@ -192,11 +217,9 @@ const CourseMainContent: React.FC = () => {
         setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
         const target = techParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = technicians.find(
-            (t) => (t?.id || '').toLowerCase() === targetLower || (t?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = technicians.find((t) => isParticipantMatch(t, target));
           if (found) setSelectedTechnicianId(found.id);
+          else setSelectedTechnicianId(target);
         }
       } else if (viewParam === 'attore' || params.get('attore') || roleParam === 'attore') {
         setCurrentTab('attore');
@@ -204,13 +227,7 @@ const CourseMainContent: React.FC = () => {
         const actorParam = params.get('attore');
         const target = actorParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = (actors || []).find(
-            (a) =>
-              (a?.id || '').toLowerCase() === targetLower ||
-              (a?.badgeCode || '').toLowerCase() === targetLower ||
-              (a?.badgeCode || '').toLowerCase().replace('-', '') === targetLower.replace('-', '')
-          );
+          const found = (actors || []).find((a) => isParticipantMatch(a, target));
           if (found) setSelectedActorId(found.id);
           else setSelectedActorId(target);
         }
@@ -220,13 +237,9 @@ const CourseMainContent: React.FC = () => {
         const truccatoreParam = params.get('truccatore');
         const target = truccatoreParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = makeupArtists.find(
-            (m) =>
-              (m?.id || '').toLowerCase() === targetLower ||
-              (m?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = (makeupArtists || []).find((m) => isParticipantMatch(m, target));
           if (found) setSelectedMakeupArtistId(found.id);
+          else setSelectedMakeupArtistId(target);
         }
       } else if (viewParam === 'trucco' || viewParam === 'moulage') {
         setCurrentTab('trucco');
@@ -245,22 +258,18 @@ const CourseMainContent: React.FC = () => {
         setUserRole('direttore');
         const target = direttoreParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = directors.find(
-            (d) => (d?.id || '').toLowerCase() === targetLower || (d?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = directors.find((d) => isParticipantMatch(d, target));
           if (found) setSelectedDirectorId(found.id);
+          else setSelectedDirectorId(target);
         }
       } else if (viewParam === 'regia' || roleParam === 'regia' || regiaParam) {
         setCurrentTab('regia');
         setUserRole('regia');
         const target = regiaParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = regiaStaff.find(
-            (r) => (r?.id || '').toLowerCase() === targetLower || (r?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = regiaStaff.find((r) => isParticipantMatch(r, target));
           if (found) setSelectedRegiaId(found.id);
+          else setSelectedRegiaId(target);
         }
       } else if (viewParam === 'regia_asset' || viewParam === 'asset') {
         setCurrentTab('regia_asset');
@@ -271,20 +280,17 @@ const CourseMainContent: React.FC = () => {
         setUserRole(isFromAdmin ? (fromParam as any) : 'ospite');
         const target = guestParam || idParam || badgeParam;
         if (target) {
-          const targetLower = target.toLowerCase();
-          const found = guests.find(
-            (g) => (g?.id || '').toLowerCase() === targetLower || (g?.badgeCode || '').toLowerCase() === targetLower
-          );
+          const found = guests.find((g) => isParticipantMatch(g, target));
           if (found) setSelectedGuestId(found.id);
         }
       }
 
       // 2. If badgeParam or idParam was supplied without viewParam, resolve participant automatically
       if (!viewParam && (badgeParam || idParam)) {
-        const query = (badgeParam || idParam)!.toLowerCase();
+        const query = (badgeParam || idParam)!;
 
         // Check Discenti
-        const foundDisc = discenti.find((d) => (d?.badgeCode || '').toLowerCase() === query || (d?.id || '').toLowerCase() === query);
+        const foundDisc = discenti.find((d) => isParticipantMatch(d, query));
         if (foundDisc) {
           setSelectedDiscenteId(foundDisc.id);
           setCurrentTab('discente');
@@ -293,7 +299,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Faculty
-        const foundFac = faculty.find((f) => (f?.badgeCode || '').toLowerCase() === query || (f?.id || '').toLowerCase() === query);
+        const foundFac = faculty.find((f) => isParticipantMatch(f, query));
         if (foundFac) {
           setSelectedFacultyId(foundFac.id);
           if (foundFac.assignedTeamId) setActiveFacultyTeamId(foundFac.assignedTeamId);
@@ -303,7 +309,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Technicians
-        const foundTech = technicians.find((t) => (t?.badgeCode || '').toLowerCase() === query || (t?.id || '').toLowerCase() === query);
+        const foundTech = technicians.find((t) => isParticipantMatch(t, query));
         if (foundTech) {
           setSelectedTechnicianId(foundTech.id);
           setCurrentTab('tecnici');
@@ -312,7 +318,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Directors
-        const foundDir = directors.find((d) => (d?.badgeCode || '').toLowerCase() === query || (d?.id || '').toLowerCase() === query);
+        const foundDir = directors.find((d) => isParticipantMatch(d, query));
         if (foundDir) {
           setSelectedDirectorId(foundDir.id);
           setCurrentTab('direttori');
@@ -321,7 +327,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Regia
-        const foundReg = regiaStaff.find((r) => (r?.badgeCode || '').toLowerCase() === query || (r?.id || '').toLowerCase() === query);
+        const foundReg = regiaStaff.find((r) => isParticipantMatch(r, query));
         if (foundReg) {
           setSelectedRegiaId(foundReg.id);
           setCurrentTab('regia');
@@ -330,9 +336,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Makeup Artists
-        const foundTruc = makeupArtists.find(
-          (m) => (m?.badgeCode || '').toLowerCase() === query || (m?.id || '').toLowerCase() === query
-        );
+        const foundTruc = (makeupArtists || []).find((m) => isParticipantMatch(m, query));
         if (foundTruc) {
           setSelectedMakeupArtistId(foundTruc.id);
           setCurrentTab('truccatore');
@@ -341,12 +345,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Actors (ATT-01 .. ATT-08 / ACT-01 .. ACT-08)
-        const foundActor = (actors || []).find(
-          (a) =>
-            (a?.badgeCode || '').toLowerCase() === query ||
-            (a?.id || '').toLowerCase() === query ||
-            (a?.badgeCode || '').toLowerCase().replace('-', '') === query.replace('-', '')
-        );
+        const foundActor = (actors || []).find((a) => isParticipantMatch(a, query));
         if (foundActor) {
           setSelectedActorId(foundActor.id);
           setCurrentTab('attore');
@@ -355,7 +354,7 @@ const CourseMainContent: React.FC = () => {
         }
 
         // Check Guests - Simply show the public view
-        const foundGuest = guests.find((g) => (g?.badgeCode || '').toLowerCase() === query || (g?.id || '').toLowerCase() === query);
+        const foundGuest = guests.find((g) => isParticipantMatch(g, query));
         if (foundGuest) {
           setSelectedGuestId(foundGuest.id);
           setCurrentTab('public');
@@ -363,7 +362,6 @@ const CourseMainContent: React.FC = () => {
           return;
         }
       }
-      initialUrlHandledRef.current = true;
     }
   }, [
     discenti,
@@ -383,6 +381,105 @@ const CourseMainContent: React.FC = () => {
     setActiveFacultyTeamId,
     setUserRole,
     setCurrentTab,
+  ]);
+
+  // Handle dynamic in-app URL navigation, popstate or external scan events without reload
+  useEffect(() => {
+    const handleUrlChange = () => {
+      lastProcessedSearchRef.current = null;
+      if (typeof window !== 'undefined') {
+        const currentSearch = window.location.search;
+        if (currentSearch) {
+          const params = new URLSearchParams(currentSearch);
+          const q =
+            params.get('badge') ||
+            params.get('id') ||
+            params.get('discente') ||
+            params.get('faculty') ||
+            params.get('tecnico') ||
+            params.get('attore') ||
+            params.get('truccatore');
+          if (q) {
+            const resolved = resolveParticipantByQuery(q, {
+              discenti,
+              faculty,
+              technicians,
+              directors,
+              regiaStaff,
+              guests,
+              teams,
+              makeupArtists,
+              actors,
+            });
+            if (resolved) {
+              const { person, category, team } = resolved;
+              if (category === 'discenti') {
+                setSelectedDiscenteId(person.id);
+                setCurrentTab('discente');
+                setUserRole('discente');
+              } else if (category === 'faculty') {
+                setSelectedFacultyId(person.id);
+                if (team?.id || (person as any).assignedTeamId) {
+                  setActiveFacultyTeamId(team?.id || (person as any).assignedTeamId);
+                }
+                setCurrentTab('faculty');
+                setUserRole('faculty');
+              } else if (category === 'tecnici') {
+                setSelectedTechnicianId(person.id);
+                setCurrentTab('tecnici');
+                setUserRole('tecnico');
+              } else if (category === 'attori') {
+                setSelectedActorId(person.id);
+                setCurrentTab('attore');
+                setUserRole('tecnico');
+              } else if (category === 'truccatori') {
+                setSelectedMakeupArtistId(person.id);
+                setCurrentTab('truccatore');
+                setUserRole('tecnico');
+              } else if (category === 'direttori') {
+                setSelectedDirectorId(person.id);
+                setCurrentTab('direttori');
+                setUserRole('direttore');
+              } else if (category === 'regia') {
+                setSelectedRegiaId(person.id);
+                setCurrentTab('regia');
+                setUserRole('regia');
+              } else if (category === 'ospiti') {
+                setSelectedGuestId(person.id);
+                setCurrentTab('public');
+                setUserRole('ospite');
+              }
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('trauma_qr_navigate', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('trauma_qr_navigate', handleUrlChange);
+    };
+  }, [
+    discenti,
+    faculty,
+    technicians,
+    directors,
+    regiaStaff,
+    guests,
+    teams,
+    makeupArtists,
+    actors,
+    setCurrentTab,
+    setUserRole,
+    setSelectedDiscenteId,
+    setSelectedFacultyId,
+    setSelectedTechnicianId,
+    setSelectedDirectorId,
+    setSelectedRegiaId,
+    setSelectedGuestId,
+    setActiveFacultyTeamId,
   ]);
 
   const renderActiveView = () => {

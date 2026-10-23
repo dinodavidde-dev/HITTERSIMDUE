@@ -39,6 +39,7 @@ import { getGroupPhaseDetails, GroupPhaseEnrichedDetails } from '../../utils/gro
 import { translateSlot, translateLocation } from '../../utils/courseTranslation';
 import { RomaSudWeatherTicker } from '../public/RomaSudWeatherTicker';
 import { EmergencyAccessQRCard } from '../public/EmergencyAccessQRCard';
+import { QuickParticipantBar } from '../common/QuickParticipantBar';
 import { playSystemBeep } from '../../utils/audio';
 
 // Metadata for the 4 macro-groups
@@ -806,6 +807,9 @@ export const PublicTimelineView: React.FC = () => {
     <div className="space-y-3 sm:space-y-4 pb-12 w-full max-w-full 2xl:max-w-[1850px] mx-auto px-1.5 sm:px-3 md:px-4">
       {/* Real-time Weather Telemetry Scrolling Bar for Roma Sud (EUR / Cecchignola tactical grounds) */}
       <RomaSudWeatherTicker language={language} />
+
+      {/* Quick Direct Participant Access Bar */}
+      <QuickParticipantBar />
 
       {/* 1. Official Pre-Course or Scheduled Countdown Alert Banner */}
       {renderCountdownBanner()}

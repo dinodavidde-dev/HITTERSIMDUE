@@ -34,6 +34,7 @@ import {
 } from '../../utils/scenarioRoleHelper';
 import { TimelineSyncNavigator } from '../common/TimelineSyncNavigator';
 import { MascalFacultyTriageDashboard } from '../faculty/MascalFacultyTriageDashboard';
+import { isParticipantMatch } from '../../utils/qrCodeUtils';
 
 export const FacultyView: React.FC = () => {
   const {
@@ -75,7 +76,16 @@ export const FacultyView: React.FC = () => {
   const [isPreAlertFlashMuted, setIsPreAlertFlashMuted] = useState(false);
   const [isPreAlertBannerDismissed, setIsPreAlertBannerDismissed] = useState(false);
 
-  const rawFaculty = faculty.find((f) => f.id === selectedFacultyId) || faculty[0];
+  const rawFaculty =
+    faculty.find((f) => isParticipantMatch(f, selectedFacultyId)) ||
+    faculty.find((f) => f.id === selectedFacultyId) ||
+    faculty[0];
+
+  useEffect(() => {
+    if (rawFaculty && rawFaculty.id !== selectedFacultyId && isParticipantMatch(rawFaculty, selectedFacultyId)) {
+      setSelectedFacultyId(rawFaculty.id);
+    }
+  }, [rawFaculty, selectedFacultyId, setSelectedFacultyId]);
   const currentFaculty = rawFaculty
     ? {
         ...rawFaculty,
@@ -341,11 +351,14 @@ export const FacultyView: React.FC = () => {
     }
   }, [isEffectivePreAllerta, currentSlot?.id, selectedFacultyId, activeScenarioType]);
 
-  // Rilevamento sessione notturna MASCAL (Day 1 ore 21:00 - 23:00)
+  // Rilevamento sessione notturna MASCAL (Day 2 ore 21:00 - 23:00)
   const isMascalSession = Boolean(
+    effectiveSlot?.id === 'd3-mascal-scenario' ||
     effectiveSlot?.id === 'd2-mascal-scenario' ||
+    effectiveSlot?.id === 'd3-gate-discenti-notturno' ||
     effectiveSlot?.id === 'd2-gate-discenti-notturno' ||
     effectiveSlot?.period === 'notturno' ||
+    effectiveSlot?.id.includes('mascal') ||
     (effectiveSlot?.timeRange || '').includes('21:00')
   );
 
