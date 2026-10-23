@@ -35,7 +35,7 @@ import { CourseStartGateAuthorizationModal } from './components/common/CourseSta
 import { ScenarioBlockConfirmationModal } from './components/regia/ScenarioBlockConfirmationModal';
 import { MacroBlockStandbyIndicator } from './components/common/MacroBlockStandbyIndicator';
 import { TacticalMapModal } from './components/common/TacticalMapModal';
-import { resolveParticipantByQuery, isParticipantMatch } from './utils/qrCodeUtils';
+import { resolveParticipantByQuery, isParticipantMatch, verifyParticipantAuthToken } from './utils/qrCodeUtils';
 
 const CourseMainContent: React.FC = () => {
   const {
@@ -82,6 +82,9 @@ const CourseMainContent: React.FC = () => {
     rollbackScheduleModification,
     isTacticalMapOpen,
     setIsTacticalMapOpen,
+    authStatus,
+    setAuthStatus,
+    authorizedParticipant,
   } = useCourse();
 
   const [selectedMakeupArtistId, setSelectedMakeupArtistId] = useState<string | null>(() => {
@@ -103,265 +106,502 @@ const CourseMainContent: React.FC = () => {
 
   const lastProcessedSearchRef = useRef<string | null>(null);
 
-  // Check URL parameters for instant unique QR Code direct navigation
+  // Check URL parameters for instant unique QR Code direct navigation with granular parsing tracking
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const currentSearch = window.location.search;
+    if (typeof window === 'undefined') return;
 
-      // STRICT ANCHORING: Initial URL routing runs strictly ONCE on mount.
-      // Once handled, subsequent re-renders, participant updates or background Firestore syncs
-      // must NEVER overwrite currentTab or kick the user out of Regia (or any active tab)!
-      // Avoid re-processing if URL parameters have not changed
-      if (lastProcessedSearchRef.current === currentSearch) {
+    // STEP 1: Capture Raw URL and Context Auth State
+    const rawSearch = window.location.search;
+    const rawHash = window.location.hash;
+    const rawHref = window.location.href;
+    const rawPath = window.location.pathname;
+
+    console.log('[APP_URL_PARSER] [Step 1: Capture Raw URL & State]', {
+      href: rawHref,
+      search: rawSearch,
+      hash: rawHash,
+      pathname: rawPath,
+      currentTab,
+      userRole,
+      authStatus,
+      authorizedParticipantId: authorizedParticipant?.id || null,
+      openedByRole,
+    });
+
+    // STEP 2: Determine effective query string (fallback to hash if search is empty)
+    let effectiveSearch = rawSearch;
+    if ((!effectiveSearch || effectiveSearch === '?') && rawHash && rawHash.includes('?')) {
+      effectiveSearch = rawHash.substring(rawHash.indexOf('?'));
+      console.log('[APP_URL_PARSER] [Step 2: Effective query extracted from hash fragment]', effectiveSearch);
+    } else {
+      console.log('[APP_URL_PARSER] [Step 2: Effective query from search]', effectiveSearch || '(empty)');
+    }
+
+    // Processing signature to prevent infinite redirect loops while allowing valid updates
+    const processingSignature = `${effectiveSearch}|auth:${authStatus}|part:${authorizedParticipant?.id || 'none'}|tab:${currentTab}|role:${userRole}`;
+    if (lastProcessedSearchRef.current === processingSignature) {
+      console.log('[APP_URL_PARSER] [Step 2 Guard: Signature already processed, skipping redundant execution]', { processingSignature });
+      return;
+    }
+    lastProcessedSearchRef.current = processingSignature;
+
+    // STEP 3: URLSearchParams Extraction
+    const params = new URLSearchParams(effectiveSearch || '');
+    const tokenParam = (params.get('token') || params.get('auth_token') || params.get('authToken') || params.get('t') || params.get('auth') || '').trim();
+    const hashParam = (params.get('h') || params.get('hash') || '').trim();
+    const discenteParam = (params.get('discente') || params.get('student') || '').trim();
+    const facultyParam = (params.get('faculty') || params.get('tutor') || '').trim();
+    const techParam = (params.get('tecnico') || params.get('technician') || params.get('tech') || '').trim();
+    const direttoreParam = (params.get('direttore') || params.get('director') || '').trim();
+    const regiaParam = (params.get('regia') || '').trim();
+    const guestParam = (params.get('ospite') || params.get('guest') || '').trim();
+    const idParam = (params.get('id') || '').trim();
+    const badgeParam = (params.get('badge') || params.get('matricola') || params.get('code') || '').trim();
+    const attoreParam = (params.get('attore') || '').trim();
+    const truccatoreParam = (params.get('truccatore') || '').trim();
+    const roleParam = (params.get('role') || '').trim();
+    const viewParam = (params.get('view') || params.get('public') || '').toLowerCase().trim();
+    const fromParam = (params.get('from') || params.get('openedBy') || params.get('source') || '').trim();
+    const isQrParam = params.get('qr') === '1' || params.get('qr') === 'true';
+    const freeAccessParam =
+      params.get('free_access') === '1' ||
+      params.get('freeAccess') === 'true' ||
+      params.get('mode') === 'free_access' ||
+      params.get('accesso') === 'libero';
+
+    console.log('[APP_URL_PARSER] [Step 3: Granular Extracted Parameters]', {
+      tokenParam: tokenParam || null,
+      hashParam: hashParam || null,
+      badgeParam: badgeParam || null,
+      idParam: idParam || null,
+      discenteParam: discenteParam || null,
+      facultyParam: facultyParam || null,
+      techParam: techParam || null,
+      direttoreParam: direttoreParam || null,
+      regiaParam: regiaParam || null,
+      guestParam: guestParam || null,
+      attoreParam: attoreParam || null,
+      truccatoreParam: truccatoreParam || null,
+      roleParam: roleParam || null,
+      viewParam: viewParam || null,
+      fromParam: fromParam || null,
+      isQrParam,
+      freeAccessParam,
+    });
+
+    const isFromAdmin = fromParam === 'regia' || fromParam === 'direttore' || fromParam === 'master';
+    if (isFromAdmin && openedByRole !== fromParam) {
+      console.log('[APP_URL_PARSER] [Admin Detection] Setting openedByRole:', fromParam);
+      setOpenedByRole(fromParam as 'regia' | 'direttore' | 'master');
+    }
+
+    if (freeAccessParam) {
+      console.log('[APP_URL_PARSER] [Free Access Detected] Navigating to Public view and opening Area Discenti');
+      if (currentTab !== 'public') setCurrentTab('public');
+      setIsAreaDiscentiModalOpen(true);
+      return;
+    }
+
+    // STEP 4: Token Verification & Participant Authentication
+    console.log('[APP_URL_PARSER] [Step 4: Executing verifyParticipantAuthToken on query]');
+    const tokenVerification = verifyParticipantAuthToken(effectiveSearch, {
+      discenti,
+      faculty,
+      technicians,
+      directors,
+      regiaStaff,
+      guests,
+      makeupArtists,
+      actors,
+    });
+
+    console.log('[APP_URL_PARSER] [Step 4 Verification Result]', {
+      isAuthorized: tokenVerification.isAuthorized,
+      authStatus: tokenVerification.authStatus,
+      badgeCode: tokenVerification.badgeCode,
+      category: tokenVerification.category,
+      source: tokenVerification.source,
+      participantName: tokenVerification.participant?.name || null,
+    });
+
+    if (tokenVerification.isAuthorized && authStatus !== 'authorized') {
+      console.log('[APP_URL_PARSER] [Updating authStatus -> authorized in CourseContext]');
+      setAuthStatus('authorized');
+    }
+
+    // STEP 5: Routing Decision & Destination Resolution
+    const candidateParticipant = tokenVerification.participant || authorizedParticipant;
+    const candidateCategory = tokenVerification.category || (candidateParticipant ? (
+      discenti.some((d) => d.id === candidateParticipant.id) ? 'discenti' :
+      faculty.some((f) => f.id === candidateParticipant.id) ? 'faculty' :
+      technicians.some((t) => t.id === candidateParticipant.id) ? 'tecnici' :
+      directors.some((d) => d.id === candidateParticipant.id) ? 'direttori' :
+      regiaStaff.some((r) => r.id === candidateParticipant.id) ? 'regia' :
+      (makeupArtists || []).some((m) => m.id === candidateParticipant.id) ? 'truccatori' :
+      (actors || []).some((a) => a.id === candidateParticipant.id) ? 'attori' : 'ospiti'
+    ) : null);
+
+    const hasPersonalParam = Boolean(
+      tokenParam ||
+      hashParam ||
+      discenteParam ||
+      facultyParam ||
+      techParam ||
+      direttoreParam ||
+      regiaParam ||
+      guestParam ||
+      idParam ||
+      badgeParam ||
+      attoreParam ||
+      truccatoreParam
+    );
+
+    console.log('[APP_URL_PARSER] [Step 5: Routing Evaluation]', {
+      hasPersonalParam,
+      tokenVerificationAuthorized: tokenVerification.isAuthorized,
+      candidateParticipantId: candidateParticipant?.id || null,
+      candidateCategory,
+      viewParam,
+      roleParam,
+    });
+
+    // 5A: Direct Token / Pre-authorized Participant Routing (Highest Priority)
+    if (tokenVerification.isAuthorized && candidateParticipant && candidateCategory) {
+      console.log(`[APP_URL_PARSER] [Step 5A: Applying Direct Token Route] -> ${candidateCategory} (${candidateParticipant.id})`);
+      if (candidateCategory === 'discenti') {
+        if (currentTab !== 'discente') setCurrentTab('discente');
+        if (userRole !== 'discente') setUserRole('discente');
+        setSelectedDiscenteId(candidateParticipant.id);
+        return;
+      } else if (candidateCategory === 'faculty') {
+        if (currentTab !== 'faculty') setCurrentTab('faculty');
+        if (userRole !== 'faculty') setUserRole('faculty');
+        setSelectedFacultyId(candidateParticipant.id);
+        const assignedTeam = (candidateParticipant as any).assignedTeamId;
+        if (assignedTeam) setActiveFacultyTeamId(assignedTeam);
+        return;
+      } else if (candidateCategory === 'tecnici') {
+        if (currentTab !== 'tecnici') setCurrentTab('tecnici');
+        if (userRole !== 'tecnico') setUserRole('tecnico');
+        setSelectedTechnicianId(candidateParticipant.id);
+        return;
+      } else if (candidateCategory === 'truccatori') {
+        if (currentTab !== 'truccatore') setCurrentTab('truccatore');
+        if (userRole !== 'tecnico') setUserRole('tecnico');
+        setSelectedMakeupArtistId(candidateParticipant.id);
+        return;
+      } else if (candidateCategory === 'attori') {
+        if (currentTab !== 'attore') setCurrentTab('attore');
+        if (userRole !== 'tecnico') setUserRole('tecnico');
+        setSelectedActorId(candidateParticipant.id);
+        return;
+      } else if (candidateCategory === 'direttori') {
+        if (currentTab !== 'direttori') setCurrentTab('direttori');
+        if (userRole !== 'direttore') setUserRole('direttore');
+        setSelectedDirectorId(candidateParticipant.id);
+        return;
+      } else if (candidateCategory === 'regia') {
+        if (currentTab !== 'regia') setCurrentTab('regia');
+        if (userRole !== 'regia') setUserRole('regia');
+        setSelectedRegiaId(candidateParticipant.id);
+        return;
+      } else if (candidateCategory === 'ospiti') {
+        if (currentTab !== 'public') setCurrentTab('public');
+        if (userRole !== 'ospite') setUserRole('ospite');
+        setSelectedGuestId(candidateParticipant.id);
         return;
       }
-      lastProcessedSearchRef.current = currentSearch;
+    }
 
-      const params = new URLSearchParams(currentSearch);
-      const fromParam = params.get('from') || params.get('openedBy') || params.get('source');
-      const isFromAdmin = fromParam === 'regia' || fromParam === 'direttore' || fromParam === 'master';
-      if (isFromAdmin) {
-        setOpenedByRole(fromParam as 'regia' | 'direttore' | 'master');
+    // 5B: Explicit Public View Request
+    const isPublicViewParam =
+      !hasPersonalParam &&
+      (viewParam === 'public' ||
+        viewParam === 'pubblico' ||
+        viewParam === 'ospite' ||
+        params.get('public') === 'true' ||
+        params.get('public') === '1');
+
+    if (isPublicViewParam) {
+      console.log('[APP_URL_PARSER] [Step 5B: Explicit Public View Request]');
+      if (currentTab !== 'public') setCurrentTab('public');
+      if (!roleParam && userRole !== 'ospite') setUserRole('ospite');
+      return;
+    }
+
+    // 5C: Fallback when no view or personal parameter is passed
+    if (!viewParam && !roleParam && !hasPersonalParam) {
+      console.log('[APP_URL_PARSER] [Step 5C: No specific parameters present]');
+      if (authorizedParticipant && candidateCategory) {
+        console.log(`[APP_URL_PARSER] [Step 5C: Restoring active session for authorized participant] -> ${candidateCategory} (${authorizedParticipant.id})`);
+        if (candidateCategory === 'discenti') {
+          if (currentTab !== 'discente') setCurrentTab('discente');
+          if (userRole !== 'discente') setUserRole('discente');
+          setSelectedDiscenteId(authorizedParticipant.id);
+          return;
+        } else if (candidateCategory === 'faculty') {
+          if (currentTab !== 'faculty') setCurrentTab('faculty');
+          if (userRole !== 'faculty') setUserRole('faculty');
+          setSelectedFacultyId(authorizedParticipant.id);
+          return;
+        } else if (candidateCategory === 'tecnici') {
+          if (currentTab !== 'tecnici') setCurrentTab('tecnici');
+          if (userRole !== 'tecnico') setUserRole('tecnico');
+          setSelectedTechnicianId(authorizedParticipant.id);
+          return;
+        }
       }
-
-      // Check if student arrived via Free Access direct link / Emergency QR
-      const freeAccessParam =
-        params.get('free_access') === '1' ||
-        params.get('freeAccess') === 'true' ||
-        params.get('mode') === 'free_access' ||
-        params.get('accesso') === 'libero';
-
-      if (freeAccessParam) {
-        setCurrentTab('public');
-        setIsAreaDiscentiModalOpen(true);
-      }
-
-      const discenteParam = params.get('discente') || params.get('student');
-      const facultyParam = params.get('faculty') || params.get('tutor');
-      const techParam = params.get('tecnico') || params.get('technician') || params.get('tech');
-      const direttoreParam = params.get('direttore') || params.get('director');
-      const regiaParam = params.get('regia');
-      const guestParam = params.get('ospite') || params.get('guest');
-      const idParam = params.get('id');
-      const badgeParam = params.get('badge') || params.get('matricola') || params.get('code');
-      const roleParam = params.get('role');
-      const viewParam = (params.get('view') || params.get('public') || '').toLowerCase();
-
-      const hasPersonalParam = Boolean(
-        discenteParam ||
-        facultyParam ||
-        techParam ||
-        direttoreParam ||
-        regiaParam ||
-        guestParam ||
-        idParam ||
-        badgeParam ||
-        params.get('attore') ||
-        params.get('truccatore')
-      );
-
-      // 1. Check explicit view or role parameter
-      const isPublicViewParam =
-        !hasPersonalParam &&
-        (viewParam === 'public' ||
-          viewParam === 'pubblico' ||
-          viewParam === 'ospite' ||
-          params.get('public') === 'true' ||
-          params.get('public') === '1');
-
-      if (isPublicViewParam) {
-        setCurrentTab('public');
-        if (!roleParam) {
+      // Cold-start default ONLY: never overwrite currentTab if user has selected another view
+      if (!currentTab || currentTab === 'public') {
+        console.log('[APP_URL_PARSER] [Step 5C: Defaulting to Public Timeline view]');
+        if (currentTab !== 'public') setCurrentTab('public');
+        if (!isFromAdmin && !roleParam && userRole !== 'ospite') {
           setUserRole('ospite');
         }
-      } else if (!viewParam && !roleParam && !hasPersonalParam) {
-        // Cold-start default ONLY: never overwrite currentTab if user has selected another view
-        if (!currentTab || currentTab === 'public') {
-          setCurrentTab('public');
-          if (!isFromAdmin && !roleParam) {
-            setUserRole('ospite');
-          }
-        }
-        return;
-      } else if (viewParam === 'discente' || viewParam === 'student' || roleParam === 'discente' || discenteParam) {
-        setCurrentTab('discente');
+      }
+      return;
+    }
+
+    // 5D: Discente explicit view or parameter
+    if (viewParam === 'discente' || viewParam === 'student' || roleParam === 'discente' || discenteParam) {
+      console.log('[APP_URL_PARSER] [Step 5D: Discente Route matched]');
+      if (currentTab !== 'discente') setCurrentTab('discente');
+      if (userRole !== (isFromAdmin ? fromParam : 'discente')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'discente');
-        const target = discenteParam || idParam || badgeParam;
-        if (target) {
-          const found = discenti.find((d) => isParticipantMatch(d, target));
-          if (found) setSelectedDiscenteId(found.id);
-          else setSelectedDiscenteId(target);
-        }
-      } else if (viewParam === 'faculty' || viewParam === 'tutor' || roleParam === 'faculty' || facultyParam) {
-        setCurrentTab('faculty');
+      }
+      const target = discenteParam || idParam || badgeParam;
+      if (target) {
+        const found = discenti.find((d) => isParticipantMatch(d, target));
+        setSelectedDiscenteId(found ? found.id : target);
+      }
+      return;
+    }
+
+    // 5E: Faculty explicit view or parameter
+    if (viewParam === 'faculty' || viewParam === 'tutor' || roleParam === 'faculty' || facultyParam) {
+      console.log('[APP_URL_PARSER] [Step 5E: Faculty Route matched]');
+      if (currentTab !== 'faculty') setCurrentTab('faculty');
+      if (userRole !== (isFromAdmin ? fromParam : 'faculty')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'faculty');
-        const target = facultyParam || idParam || badgeParam;
-        if (target) {
-          const found = faculty.find((f) => isParticipantMatch(f, target));
-          if (found) {
-            setSelectedFacultyId(found.id);
-            if (found.assignedTeamId) setActiveFacultyTeamId(found.assignedTeamId);
-          } else {
-            setSelectedFacultyId(target);
-          }
+      }
+      const target = facultyParam || idParam || badgeParam;
+      if (target) {
+        const found = faculty.find((f) => isParticipantMatch(f, target));
+        if (found) {
+          setSelectedFacultyId(found.id);
+          if (found.assignedTeamId) setActiveFacultyTeamId(found.assignedTeamId);
+        } else {
+          setSelectedFacultyId(target);
         }
-      } else if (
-        viewParam === 'tecnici' ||
-        viewParam === 'tecnico' ||
-        viewParam === 'technician' ||
-        viewParam === 'tech' ||
-        roleParam === 'tecnico' ||
-        techParam
-      ) {
-        setCurrentTab('tecnici');
+      }
+      return;
+    }
+
+    // 5F: Technicians explicit view or parameter
+    if (
+      viewParam === 'tecnici' ||
+      viewParam === 'tecnico' ||
+      viewParam === 'technician' ||
+      viewParam === 'tech' ||
+      roleParam === 'tecnico' ||
+      techParam
+    ) {
+      console.log('[APP_URL_PARSER] [Step 5F: Technicians Route matched]');
+      if (currentTab !== 'tecnici') setCurrentTab('tecnici');
+      if (userRole !== (isFromAdmin ? fromParam : 'tecnico')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
-        const target = techParam || idParam || badgeParam;
-        if (target) {
-          const found = technicians.find((t) => isParticipantMatch(t, target));
-          if (found) setSelectedTechnicianId(found.id);
-          else setSelectedTechnicianId(target);
-        }
-      } else if (viewParam === 'attore' || params.get('attore') || roleParam === 'attore') {
-        setCurrentTab('attore');
+      }
+      const target = techParam || idParam || badgeParam;
+      if (target) {
+        const found = technicians.find((t) => isParticipantMatch(t, target));
+        setSelectedTechnicianId(found ? found.id : target);
+      }
+      return;
+    }
+
+    // 5G: Actors explicit view or parameter
+    if (viewParam === 'attore' || attoreParam || roleParam === 'attore') {
+      console.log('[APP_URL_PARSER] [Step 5G: Actor Route matched]');
+      if (currentTab !== 'attore') setCurrentTab('attore');
+      if (userRole !== (isFromAdmin ? fromParam : 'tecnico')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
-        const actorParam = params.get('attore');
-        const target = actorParam || idParam || badgeParam;
-        if (target) {
-          const found = (actors || []).find((a) => isParticipantMatch(a, target));
-          if (found) setSelectedActorId(found.id);
-          else setSelectedActorId(target);
-        }
-      } else if (viewParam === 'truccatore' || params.get('truccatore')) {
-        setCurrentTab('truccatore');
+      }
+      const target = attoreParam || idParam || badgeParam;
+      if (target) {
+        const found = (actors || []).find((a) => isParticipantMatch(a, target));
+        setSelectedActorId(found ? found.id : target);
+      }
+      return;
+    }
+
+    // 5H: Makeup Artists explicit view or parameter
+    if (viewParam === 'truccatore' || truccatoreParam) {
+      console.log('[APP_URL_PARSER] [Step 5H: Makeup Artist Route matched]');
+      if (currentTab !== 'truccatore') setCurrentTab('truccatore');
+      if (userRole !== (isFromAdmin ? fromParam : 'tecnico')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
-        const truccatoreParam = params.get('truccatore');
-        const target = truccatoreParam || idParam || badgeParam;
-        if (target) {
-          const found = (makeupArtists || []).find((m) => isParticipantMatch(m, target));
-          if (found) setSelectedMakeupArtistId(found.id);
-          else setSelectedMakeupArtistId(target);
-        }
-      } else if (viewParam === 'trucco' || viewParam === 'moulage') {
-        setCurrentTab('trucco');
+      }
+      const target = truccatoreParam || idParam || badgeParam;
+      if (target) {
+        const found = (makeupArtists || []).find((m) => isParticipantMatch(m, target));
+        setSelectedMakeupArtistId(found ? found.id : target);
+      }
+      return;
+    }
+
+    // 5I: Trucco view
+    if (viewParam === 'trucco' || viewParam === 'moulage') {
+      console.log('[APP_URL_PARSER] [Step 5I: Trucco General Route matched]');
+      if (currentTab !== 'trucco') setCurrentTab('trucco');
+      if (userRole !== (isFromAdmin ? fromParam : 'tecnico')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
-      } else if (
-        viewParam === 'master' ||
-        roleParam === 'master' ||
-        params.get('master') ||
-        params.get('pin') === '251201' ||
-        params.get('code') === '251201'
-      ) {
-        setCurrentTab('master');
-        setUserRole('master');
-      } else if (viewParam === 'direttori' || viewParam === 'director' || roleParam === 'direttore' || direttoreParam) {
-        setCurrentTab('direttori');
-        setUserRole('direttore');
-        const target = direttoreParam || idParam || badgeParam;
-        if (target) {
-          const found = directors.find((d) => isParticipantMatch(d, target));
-          if (found) setSelectedDirectorId(found.id);
-          else setSelectedDirectorId(target);
-        }
-      } else if (viewParam === 'regia' || roleParam === 'regia' || regiaParam) {
-        setCurrentTab('regia');
-        setUserRole('regia');
-        const target = regiaParam || idParam || badgeParam;
-        if (target) {
-          const found = regiaStaff.find((r) => isParticipantMatch(r, target));
-          if (found) setSelectedRegiaId(found.id);
-          else setSelectedRegiaId(target);
-        }
-      } else if (viewParam === 'regia_asset' || viewParam === 'asset') {
-        setCurrentTab('regia_asset');
-        setUserRole('regia');
-      } else if (viewParam === 'ospite' || viewParam === 'guest' || roleParam === 'ospite' || guestParam) {
-        // Guests are classified to simply view the public timeline
-        setCurrentTab('public');
+      }
+      return;
+    }
+
+    // 5J: Master view
+    if (
+      viewParam === 'master' ||
+      roleParam === 'master' ||
+      params.get('master') ||
+      params.get('pin') === '251201' ||
+      params.get('code') === '251201'
+    ) {
+      console.log('[APP_URL_PARSER] [Step 5J: Master Route matched]');
+      if (currentTab !== 'master') setCurrentTab('master');
+      if (userRole !== 'master') setUserRole('master');
+      return;
+    }
+
+    // 5K: Directors view
+    if (viewParam === 'direttori' || viewParam === 'director' || roleParam === 'direttore' || direttoreParam) {
+      console.log('[APP_URL_PARSER] [Step 5K: Directors Route matched]');
+      if (currentTab !== 'direttori') setCurrentTab('direttori');
+      if (userRole !== 'direttore') setUserRole('direttore');
+      const target = direttoreParam || idParam || badgeParam;
+      if (target) {
+        const found = directors.find((d) => isParticipantMatch(d, target));
+        setSelectedDirectorId(found ? found.id : target);
+      }
+      return;
+    }
+
+    // 5L: Regia view
+    if (viewParam === 'regia' || roleParam === 'regia' || regiaParam) {
+      console.log('[APP_URL_PARSER] [Step 5L: Regia Route matched]');
+      if (currentTab !== 'regia') setCurrentTab('regia');
+      if (userRole !== 'regia') setUserRole('regia');
+      const target = regiaParam || idParam || badgeParam;
+      if (target) {
+        const found = regiaStaff.find((r) => isParticipantMatch(r, target));
+        setSelectedRegiaId(found ? found.id : target);
+      }
+      return;
+    }
+
+    // 5M: Regia Asset view
+    if (viewParam === 'regia_asset' || viewParam === 'asset') {
+      console.log('[APP_URL_PARSER] [Step 5M: Regia Asset Route matched]');
+      if (currentTab !== 'regia_asset') setCurrentTab('regia_asset');
+      if (userRole !== 'regia') setUserRole('regia');
+      return;
+    }
+
+    // 5N: Guests view
+    if (viewParam === 'ospite' || viewParam === 'guest' || roleParam === 'ospite' || guestParam) {
+      console.log('[APP_URL_PARSER] [Step 5N: Guest Route matched]');
+      if (currentTab !== 'public') setCurrentTab('public');
+      if (userRole !== (isFromAdmin ? fromParam : 'ospite')) {
         setUserRole(isFromAdmin ? (fromParam as any) : 'ospite');
-        const target = guestParam || idParam || badgeParam;
-        if (target) {
-          const found = guests.find((g) => isParticipantMatch(g, target));
-          if (found) setSelectedGuestId(found.id);
-        }
+      }
+      const target = guestParam || idParam || badgeParam;
+      if (target) {
+        const found = guests.find((g) => isParticipantMatch(g, target));
+        if (found) setSelectedGuestId(found.id);
+      }
+      return;
+    }
+
+    // 5O: Automatic Badge/ID Resolution without viewParam
+    if (!viewParam && (badgeParam || idParam)) {
+      const query = (badgeParam || idParam)!;
+      console.log('[APP_URL_PARSER] [Step 5O: Resolving standalone Badge/ID query]', query);
+
+      const foundDisc = discenti.find((d) => isParticipantMatch(d, query));
+      if (foundDisc) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Discente]', foundDisc.id);
+        setSelectedDiscenteId(foundDisc.id);
+        if (currentTab !== 'discente') setCurrentTab('discente');
+        if (userRole !== 'discente') setUserRole('discente');
+        return;
       }
 
-      // 2. If badgeParam or idParam was supplied without viewParam, resolve participant automatically
-      if (!viewParam && (badgeParam || idParam)) {
-        const query = (badgeParam || idParam)!;
+      const foundFac = faculty.find((f) => isParticipantMatch(f, query));
+      if (foundFac) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Faculty]', foundFac.id);
+        setSelectedFacultyId(foundFac.id);
+        if (foundFac.assignedTeamId) setActiveFacultyTeamId(foundFac.assignedTeamId);
+        if (currentTab !== 'faculty') setCurrentTab('faculty');
+        if (userRole !== 'faculty') setUserRole('faculty');
+        return;
+      }
 
-        // Check Discenti
-        const foundDisc = discenti.find((d) => isParticipantMatch(d, query));
-        if (foundDisc) {
-          setSelectedDiscenteId(foundDisc.id);
-          setCurrentTab('discente');
-          setUserRole('discente');
-          return;
-        }
+      const foundTech = technicians.find((t) => isParticipantMatch(t, query));
+      if (foundTech) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Technician]', foundTech.id);
+        setSelectedTechnicianId(foundTech.id);
+        if (currentTab !== 'tecnici') setCurrentTab('tecnici');
+        if (userRole !== 'tecnico') setUserRole('tecnico');
+        return;
+      }
 
-        // Check Faculty
-        const foundFac = faculty.find((f) => isParticipantMatch(f, query));
-        if (foundFac) {
-          setSelectedFacultyId(foundFac.id);
-          if (foundFac.assignedTeamId) setActiveFacultyTeamId(foundFac.assignedTeamId);
-          setCurrentTab('faculty');
-          setUserRole('faculty');
-          return;
-        }
+      const foundDir = directors.find((d) => isParticipantMatch(d, query));
+      if (foundDir) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Director]', foundDir.id);
+        setSelectedDirectorId(foundDir.id);
+        if (currentTab !== 'direttori') setCurrentTab('direttori');
+        if (userRole !== 'direttore') setUserRole('direttore');
+        return;
+      }
 
-        // Check Technicians
-        const foundTech = technicians.find((t) => isParticipantMatch(t, query));
-        if (foundTech) {
-          setSelectedTechnicianId(foundTech.id);
-          setCurrentTab('tecnici');
-          setUserRole('tecnico');
-          return;
-        }
+      const foundReg = regiaStaff.find((r) => isParticipantMatch(r, query));
+      if (foundReg) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Regia]', foundReg.id);
+        setSelectedRegiaId(foundReg.id);
+        if (currentTab !== 'regia') setCurrentTab('regia');
+        if (userRole !== 'regia') setUserRole('regia');
+        return;
+      }
 
-        // Check Directors
-        const foundDir = directors.find((d) => isParticipantMatch(d, query));
-        if (foundDir) {
-          setSelectedDirectorId(foundDir.id);
-          setCurrentTab('direttori');
-          setUserRole('direttore');
-          return;
-        }
+      const foundTruc = (makeupArtists || []).find((m) => isParticipantMatch(m, query));
+      if (foundTruc) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Makeup Artist]', foundTruc.id);
+        setSelectedMakeupArtistId(foundTruc.id);
+        if (currentTab !== 'truccatore') setCurrentTab('truccatore');
+        if (userRole !== 'tecnico') setUserRole('tecnico');
+        return;
+      }
 
-        // Check Regia
-        const foundReg = regiaStaff.find((r) => isParticipantMatch(r, query));
-        if (foundReg) {
-          setSelectedRegiaId(foundReg.id);
-          setCurrentTab('regia');
-          setUserRole('regia');
-          return;
-        }
-
-        // Check Makeup Artists
-        const foundTruc = (makeupArtists || []).find((m) => isParticipantMatch(m, query));
-        if (foundTruc) {
-          setSelectedMakeupArtistId(foundTruc.id);
-          setCurrentTab('truccatore');
-          setUserRole('tecnico');
-          return;
-        }
-
-        // Check Actors (ATT-01 .. ATT-08 / ACT-01 .. ACT-08)
-        const foundActor = (actors || []).find((a) => isParticipantMatch(a, query));
-        if (foundActor) {
-          setSelectedActorId(foundActor.id);
-          setCurrentTab('attore');
+      const foundActor = (actors || []).find((a) => isParticipantMatch(a, query));
+      if (foundActor) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Actor]', foundActor.id);
+        setSelectedActorId(foundActor.id);
+        if (currentTab !== 'attore') setCurrentTab('attore');
+        if (userRole !== (isFromAdmin ? fromParam : 'tecnico')) {
           setUserRole(isFromAdmin ? (fromParam as any) : 'tecnico');
-          return;
         }
-
-        // Check Guests - Simply show the public view
-        const foundGuest = guests.find((g) => isParticipantMatch(g, query));
-        if (foundGuest) {
-          setSelectedGuestId(foundGuest.id);
-          setCurrentTab('public');
-          setUserRole('ospite');
-          return;
-        }
+        return;
       }
+
+      const foundGuest = guests.find((g) => isParticipantMatch(g, query));
+      if (foundGuest) {
+        console.log('[APP_URL_PARSER] [Step 5O: Match Guest]', foundGuest.id);
+        setSelectedGuestId(foundGuest.id);
+        if (currentTab !== 'public') setCurrentTab('public');
+        if (userRole !== 'ospite') setUserRole('ospite');
+        return;
+      }
+      console.warn('[APP_URL_PARSER] [Step 5O: No participant match found for standalone query]', query);
     }
   }, [
     discenti,
@@ -372,6 +612,12 @@ const CourseMainContent: React.FC = () => {
     directors,
     regiaStaff,
     guests,
+    authStatus,
+    setAuthStatus,
+    authorizedParticipant,
+    currentTab,
+    userRole,
+    openedByRole,
     setSelectedDiscenteId,
     setSelectedFacultyId,
     setSelectedTechnicianId,
@@ -381,6 +627,8 @@ const CourseMainContent: React.FC = () => {
     setActiveFacultyTeamId,
     setUserRole,
     setCurrentTab,
+    setIsAreaDiscentiModalOpen,
+    setOpenedByRole,
   ]);
 
   // Handle dynamic in-app URL navigation, popstate or external scan events without reload

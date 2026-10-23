@@ -50,7 +50,7 @@ import {
 import { computeHomogeneousTruccoDistribution } from '../utils/truccoBalancer';
 import { PROTESI_CATALOG } from '../data/protesiCatalog';
 import { cleanUndefined } from '../utils/teamUtils';
-import { isParticipantMatch } from '../utils/qrCodeUtils';
+import { isParticipantMatch, verifyParticipantAuthToken, AnyParticipant } from '../utils/qrCodeUtils';
 import { Language, translations } from '../i18n/translations';
 import { translateSlot, translatePatient } from '../utils/courseTranslation';
 import { playBroadcastSound, playAirRaidSiren, playLongBeep } from '../utils/audio';
@@ -293,6 +293,11 @@ interface CourseContextType {
   retryCloudConnection: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutFirebase: () => Promise<void>;
+
+  // QR Token & Pre-generated Participant Authorization
+  authStatus: 'authorized' | 'unauthorized' | 'pending';
+  setAuthStatus: (status: 'authorized' | 'unauthorized' | 'pending') => void;
+  authorizedParticipant: AnyParticipant | null;
 
   // Full App Simulation Engine (Simulazione Attività Intera App dall'Apertura Gate 08:30)
   isFullAppSimulating: boolean;
@@ -611,6 +616,58 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
   const [activeSlotIndex, setActiveSlotIndexState] = useState<number>(() => getStoredOrDefault('activeSlotIndex', 0));
 
+  // QR Token & Pre-generated Participant Authorization
+  const [authStatus, setAuthStatusState] = useState<'authorized' | 'unauthorized' | 'pending'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('trauma_auth_status') || localStorage.getItem('trauma_auth_status');
+      if (stored === 'authorized') return 'authorized';
+
+      const preMount = (window as any).__TRAUMA_PRE_MOUNT_AUTH__;
+      if (preMount?.isAuthorized) return 'authorized';
+
+      const verification = verifyParticipantAuthToken();
+      if (verification.isAuthorized) {
+        try {
+          sessionStorage.setItem('trauma_auth_status', 'authorized');
+          localStorage.setItem('trauma_auth_status', 'authorized');
+          if (verification.badgeCode) {
+            localStorage.setItem('trauma_authorized_badge', verification.badgeCode);
+          }
+        } catch (e) {}
+        return 'authorized';
+      }
+    }
+    return 'pending';
+  });
+
+  const [authorizedParticipant, setAuthorizedParticipant] = useState<AnyParticipant | null>(() => {
+    if (typeof window !== 'undefined') {
+      const preMount = (window as any).__TRAUMA_PRE_MOUNT_AUTH__;
+      if (preMount?.isAuthorized && preMount.participant) {
+        return preMount.participant;
+      }
+      const verification = verifyParticipantAuthToken();
+      if (verification.isAuthorized && verification.participant) {
+        return verification.participant;
+      }
+      try {
+        const stored = sessionStorage.getItem('trauma_authorized_participant') || localStorage.getItem('trauma_authorized_participant');
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return null;
+  });
+
+  const setAuthStatus = useCallback((status: 'authorized' | 'unauthorized' | 'pending') => {
+    setAuthStatusState(status);
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('trauma_auth_status', status);
+        localStorage.setItem('trauma_auth_status', status);
+      } catch (e) {}
+    }
+  }, []);
+
   // Firebase Auth State
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isFirebaseAuthReady, setIsFirebaseAuthReady] = useState<boolean>(false);
@@ -628,13 +685,18 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
+    // If user is already authorized via valid pre-generated QR token, do not redirect to Google login
+    if (authStatus === 'authorized') {
+      console.info('Participant already authorized via valid pre-generated QR token. Skipping Google Sign-In redirect.');
+      return;
+    }
     try {
       await fbSignInWithGoogle();
       setIsFirebaseCloudConnected(true);
     } catch (err) {
       console.error('Google Sign-In failed:', err);
     }
-  }, []);
+  }, [authStatus]);
 
   const signOutFirebase = useCallback(async () => {
     try {
@@ -1010,6 +1072,34 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return stored;
   });
+
+  // Continuous URL token & participant authorization validation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const verification = verifyParticipantAuthToken(window.location.search, {
+      discenti,
+      faculty,
+      technicians,
+      directors,
+      regiaStaff,
+      guests,
+      makeupArtists,
+      actors,
+    });
+    if (verification.isAuthorized) {
+      setAuthStatusState('authorized');
+      if (verification.participant) {
+        setAuthorizedParticipant(verification.participant);
+      }
+      try {
+        sessionStorage.setItem('trauma_auth_status', 'authorized');
+        localStorage.setItem('trauma_auth_status', 'authorized');
+        if (verification.badgeCode) {
+          localStorage.setItem('trauma_authorized_badge', verification.badgeCode);
+        }
+      } catch (e) {}
+    }
+  }, [discenti, faculty, technicians, directors, regiaStaff, guests, makeupArtists, actors]);
 
   const [evaluations, setEvaluations] = useState<TeamEvaluation[]>(() =>
     getStoredOrDefault('evaluations', [])
@@ -4702,6 +4792,9 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         retryCloudConnection,
         signInWithGoogle,
         signOutFirebase,
+        authStatus,
+        setAuthStatus,
+        authorizedParticipant,
         isFullAppSimulating,
         simulatedClockTime,
         simulatedRoleState,

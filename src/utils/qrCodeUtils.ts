@@ -1,5 +1,15 @@
 import QRCode from 'qrcode';
 import { Discente, Faculty, Technician, Director, RegiaStaff, Guest, Team, MakeupArtist, CourseActor } from '../types';
+import {
+  INITIAL_DISCENTI,
+  INITIAL_FACULTY,
+  INITIAL_TECHNICIANS,
+  INITIAL_DIRECTORS,
+  INITIAL_REGIA_STAFF,
+  INITIAL_GUESTS,
+  INITIAL_MAKEUP_ARTISTS,
+  INITIAL_ACTORS,
+} from '../data/initialData';
 
 export type ParticipantCategory =
   | 'discente'
@@ -58,6 +68,16 @@ export function computeParticipantDataHash(person: AnyParticipant, category?: st
 }
 
 /**
+ * Generates a deterministic pre-generated authorization token for a participant.
+ */
+export function generateParticipantAuthToken(person: AnyParticipant, category: ParticipantCategory = 'discente'): string {
+  if (!person) return '';
+  const hash = computeParticipantDataHash(person, category);
+  const badge = (person as any).badgeCode || person.id || 'AUTH';
+  return `HITTER-${category.toUpperCase().slice(0, 3)}-${badge.toUpperCase()}-${hash}`;
+}
+
+/**
  * Builds the canonical direct URL that opens the participant's personalized view when scanned.
  */
 export function getParticipantPersonalPageUrl(
@@ -69,6 +89,7 @@ export function getParticipantPersonalPageUrl(
   const base = customBaseUrl || (typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : 'https://trauma-sim.med');
   const badge = (person as any).badgeCode || person.id;
   const hash = computeParticipantDataHash(person, category);
+  const token = generateParticipantAuthToken(person, category);
 
   // Normalize view parameter
   const viewParam = category === 'tecnici' ? 'tecnici' 
@@ -102,6 +123,8 @@ export function getParticipantPersonalPageUrl(
     url.searchParams.set('attore', badge);
   }
   url.searchParams.set('qr', '1');
+  url.searchParams.set('token', token);
+  url.searchParams.set('auth_token', token);
   url.searchParams.set('h', hash); // Version fingerprint
   if (originRole) {
     url.searchParams.set('from', originRole);
@@ -340,3 +363,347 @@ export function resolveParticipantByQuery(
 
   return null;
 }
+
+export interface ParticipantAuthVerificationResult {
+  isAuthorized: boolean;
+  authStatus: 'authorized' | 'unauthorized';
+  participant: AnyParticipant | null;
+  category: ParticipantCategory | null;
+  token: string | null;
+  badgeCode: string | null;
+  source: 'url_token' | 'url_hash' | 'url_badge_qr' | 'session_storage' | 'none';
+}
+
+/**
+ * Verifies if the given URL or search query contains a valid pre-generated authorization token,
+ * data hash fingerprint, or QR parameters matching an official course participant.
+ * If verified, authorizes the session and prevents any redirect to Google login.
+ */
+export function verifyParticipantAuthToken(
+  urlOrSearch?: string,
+  customData?: {
+    discenti?: Discente[];
+    faculty?: Faculty[];
+    technicians?: Technician[];
+    directors?: Director[];
+    regiaStaff?: RegiaStaff[];
+    guests?: Guest[];
+    makeupArtists?: MakeupArtist[];
+    actors?: CourseActor[];
+  }
+): ParticipantAuthVerificationResult {
+  let searchStr = '';
+  const currentHref = typeof window !== 'undefined' ? window.location.href : 'SSR';
+
+  try {
+    if (typeof urlOrSearch === 'string' && urlOrSearch.trim().length > 0) {
+      if (urlOrSearch.includes('?')) {
+        searchStr = urlOrSearch.substring(urlOrSearch.indexOf('?'));
+      } else if (urlOrSearch.startsWith('&')) {
+        searchStr = `?${urlOrSearch.substring(1)}`;
+      } else if (urlOrSearch.includes('=')) {
+        searchStr = urlOrSearch.startsWith('?') ? urlOrSearch : `?${urlOrSearch}`;
+      } else {
+        searchStr = urlOrSearch;
+      }
+    }
+
+    // Fallback: if searchStr is empty or just '?', inspect window.location
+    if ((!searchStr || searchStr === '?') && typeof window !== 'undefined') {
+      if (window.location.search && window.location.search.length > 1) {
+        searchStr = window.location.search;
+      } else if (window.location.hash && window.location.hash.includes('?')) {
+        searchStr = window.location.hash.substring(window.location.hash.indexOf('?'));
+      } else if (window.location.href && window.location.href.includes('?')) {
+        searchStr = window.location.href.substring(window.location.href.indexOf('?'));
+      }
+    }
+  } catch (parseErr) {
+    console.error('[QR_AUTH_VERIFY] ⚠️ Errore critico durante la risoluzione della stringa URL/Search:', parseErr);
+  }
+
+  // Diagnostic Log 1: Input interception
+  console.log('[QR_AUTH_VERIFY] Intercettazione parametri URL:', {
+    parametroRicevuto: urlOrSearch,
+    stringaQueryRisolta: searchStr,
+    urlCompleto: currentHref,
+  });
+
+  if (!searchStr || searchStr === '?') {
+    console.log('[QR_AUTH_VERIFY] Nessun parametro di autenticazione o token rilevato nell\'URL.');
+    return {
+      isAuthorized: false,
+      authStatus: 'unauthorized',
+      participant: null,
+      category: null,
+      token: null,
+      badgeCode: null,
+      source: 'none',
+    };
+  }
+
+  let tokenParam = '';
+  let hashParam = '';
+  let idParam = '';
+  let badgeParam = '';
+  let discenteParam = '';
+  let facultyParam = '';
+  let techParam = '';
+  let dirParam = '';
+  let regParam = '';
+  let trucParam = '';
+  let actParam = '';
+  let isQrParam = false;
+  let candidateKeys: string[] = [];
+
+  try {
+    const params = new URLSearchParams(searchStr);
+    tokenParam = (params.get('token') || params.get('auth_token') || params.get('authToken') || params.get('t') || params.get('auth') || '').trim();
+    hashParam = (params.get('h') || params.get('hash') || '').trim();
+    idParam = (params.get('id') || '').trim();
+    badgeParam = (params.get('badge') || params.get('matricola') || params.get('code') || '').trim();
+    discenteParam = (params.get('discente') || params.get('student') || '').trim();
+    facultyParam = (params.get('faculty') || params.get('tutor') || '').trim();
+    techParam = (params.get('tecnico') || params.get('tech') || params.get('technician') || '').trim();
+    dirParam = (params.get('direttore') || params.get('director') || '').trim();
+    regParam = (params.get('regia') || '').trim();
+    trucParam = (params.get('truccatore') || '').trim();
+    actParam = (params.get('attore') || '').trim();
+    isQrParam = params.get('qr') === '1' || params.get('qr') === 'true';
+
+    candidateKeys = [
+      idParam,
+      badgeParam,
+      discenteParam,
+      facultyParam,
+      techParam,
+      dirParam,
+      regParam,
+      trucParam,
+      actParam,
+      params.get('ospite') || '',
+    ].filter(Boolean);
+
+    console.log('[QR_AUTH_VERIFY] Parametri estratti con successo:', {
+      token: tokenParam || '(assente)',
+      hash: hashParam || '(assente)',
+      badge: badgeParam || '(assente)',
+      id: idParam || '(assente)',
+      isQr: isQrParam,
+      candidateKeys,
+    });
+  } catch (paramErr) {
+    console.error('[QR_AUTH_VERIFY] ⚠️ Errore durante il parsing con URLSearchParams:', paramErr);
+  }
+
+  const allDiscenti = customData?.discenti || INITIAL_DISCENTI;
+  const allFaculty = customData?.faculty || INITIAL_FACULTY;
+  const allTech = customData?.technicians || INITIAL_TECHNICIANS;
+  const allDirectors = customData?.directors || INITIAL_DIRECTORS;
+  const allRegia = customData?.regiaStaff || INITIAL_REGIA_STAFF;
+  const allGuests = customData?.guests || INITIAL_GUESTS;
+  const allMakeup = customData?.makeupArtists || INITIAL_MAKEUP_ARTISTS;
+  const allActors = customData?.actors || INITIAL_ACTORS;
+
+  const testParticipant = (person: AnyParticipant, cat: ParticipantCategory): ParticipantAuthVerificationResult | null => {
+    try {
+      const expectedHash = computeParticipantDataHash(person, cat);
+      const expectedToken = generateParticipantAuthToken(person, cat);
+      const badge = (person as any).badgeCode || person.id || '';
+
+      // 1. Direct Pre-generated Token match (e.g. ?auth_token=HITTER-DIS-DISC-01-XXXX)
+      if (tokenParam && (tokenParam === expectedToken || tokenParam.toUpperCase() === expectedHash.toUpperCase() || tokenParam.includes(expectedHash))) {
+        console.log(`[QR_AUTH_VERIFY] ✅ TOKEN VALIDO TROVATO (Token Match): ${badge} (${person.name}) - Categoria: ${cat}`);
+        return {
+          isAuthorized: true,
+          authStatus: 'authorized',
+          participant: person,
+          category: cat,
+          token: tokenParam,
+          badgeCode: badge,
+          source: 'url_token',
+        };
+      }
+
+      // 2. Data Hash Fingerprint match (present in printed QR codes: &h=...)
+      if (hashParam && hashParam.toUpperCase() === expectedHash.toUpperCase()) {
+        console.log(`[QR_AUTH_VERIFY] ✅ HASH QRCODE VALIDO (Hash Match): ${badge} (${person.name}) - Categoria: ${cat}`);
+        return {
+          isAuthorized: true,
+          authStatus: 'authorized',
+          participant: person,
+          category: cat,
+          token: hashParam,
+          badgeCode: badge,
+          source: 'url_hash',
+        };
+      }
+
+      // 3. ID / Badge match via QR code (supports all physical badges with &qr=1 or personal parameters)
+      for (const key of candidateKeys) {
+        if (isParticipantMatch(person, key)) {
+          console.log(`[QR_AUTH_VERIFY] ✅ BADGE / MATRICOLA VALIDO (Badge Match): ${badge} (${person.name}) - Categoria: ${cat} [qr=${isQrParam}]`);
+          return {
+            isAuthorized: true,
+            authStatus: 'authorized',
+            participant: person,
+            category: cat,
+            token: expectedToken,
+            badgeCode: badge,
+            source: isQrParam ? 'url_badge_qr' : 'url_token',
+          };
+        }
+      }
+    } catch (testErr) {
+      console.warn(`[QR_AUTH_VERIFY] Errore durante il test di autorizzazione per partecipante ${person.id}:`, testErr);
+    }
+
+    return null;
+  };
+
+  // Check all participant registries
+  for (const d of allDiscenti) {
+    const res = testParticipant(d, 'discenti');
+    if (res) return res;
+  }
+  for (const f of allFaculty) {
+    const res = testParticipant(f, 'faculty');
+    if (res) return res;
+  }
+  for (const t of allTech) {
+    const res = testParticipant(t, 'tecnici');
+    if (res) return res;
+  }
+  for (const dir of allDirectors) {
+    const res = testParticipant(dir, 'direttori');
+    if (res) return res;
+  }
+  for (const r of allRegia) {
+    const res = testParticipant(r, 'regia');
+    if (res) return res;
+  }
+  for (const a of allActors) {
+    const res = testParticipant(a, 'attori');
+    if (res) return res;
+  }
+  for (const m of allMakeup) {
+    const res = testParticipant(m, 'truccatori');
+    if (res) return res;
+  }
+  for (const g of allGuests) {
+    const res = testParticipant(g, 'ospiti');
+    if (res) return res;
+  }
+
+  console.log('[QR_AUTH_VERIFY] ❌ Nessuna corrispondenza valida trovata nei registri partecipanti. authStatus: unauthorized.');
+  return {
+    isAuthorized: false,
+    authStatus: 'unauthorized',
+    participant: null,
+    category: null,
+    token: null,
+    badgeCode: null,
+    source: 'none',
+  };
+}
+
+// Aliases for seamless integration
+export const checkUrlAuthorizationToken = verifyParticipantAuthToken;
+export const verifyUrlParticipantAuthToken = verifyParticipantAuthToken;
+
+/**
+ * Immediate Pre-Mount URL Interceptor & Authorization Setter.
+ * Synchronously executes upon module evaluation before any React component mounts.
+ * Intercepts URL search, hash fragments, or existing local session data to guarantee that
+ * authStatus: 'authorized' is established in sessionStorage and localStorage before App renders.
+ */
+export function ensurePreMountAuthorization(): ParticipantAuthVerificationResult {
+  if (typeof window === 'undefined') {
+    return {
+      isAuthorized: false,
+      authStatus: 'unauthorized',
+      participant: null,
+      category: null,
+      token: null,
+      badgeCode: null,
+      source: 'none',
+    };
+  }
+
+  try {
+    const rawSearch = window.location.search;
+    const rawHash = window.location.hash;
+    const rawHref = window.location.href;
+    const storedStatus = sessionStorage.getItem('trauma_auth_status') || localStorage.getItem('trauma_auth_status');
+    const storedBadge = localStorage.getItem('trauma_authorized_badge');
+
+    console.log('[QR_AUTH_PRE_MOUNT] 🔍 Inizio intercettazione pre-mount:', {
+      href: rawHref,
+      search: rawSearch,
+      hash: rawHash,
+      storedStatus,
+      storedBadge,
+    });
+
+    const result = verifyParticipantAuthToken();
+    if (result.isAuthorized) {
+      console.log(`[QR_AUTH_PRE_MOUNT] ✅ AUTORIZZAZIONE PRE-MOUNT RIUSCITA: ${result.badgeCode} (${result.category}) [Fonte: ${result.source}]`);
+      try {
+        sessionStorage.setItem('trauma_auth_status', 'authorized');
+        localStorage.setItem('trauma_auth_status', 'authorized');
+        if (result.badgeCode) {
+          localStorage.setItem('trauma_authorized_badge', result.badgeCode);
+        }
+        if (result.token) {
+          sessionStorage.setItem('trauma_auth_token', result.token);
+        }
+        if (result.participant) {
+          sessionStorage.setItem('trauma_authorized_participant', JSON.stringify(result.participant));
+          localStorage.setItem('trauma_authorized_participant', JSON.stringify(result.participant));
+        }
+      } catch (storageErr) {
+        console.warn('[QR_AUTH_PRE_MOUNT] Impossibile scrivere su storage:', storageErr);
+      }
+      (window as any).__TRAUMA_PRE_MOUNT_AUTH__ = result;
+      return result;
+    } else if (storedStatus === 'authorized') {
+      console.log('[QR_AUTH_PRE_MOUNT] ✅ Sessione precedentemente autorizzata rilevata in storage locale.');
+      const res: ParticipantAuthVerificationResult = {
+        isAuthorized: true,
+        authStatus: 'authorized',
+        participant: null,
+        category: null,
+        token: sessionStorage.getItem('trauma_auth_token') || null,
+        badgeCode: storedBadge,
+        source: 'session_storage',
+      };
+      (window as any).__TRAUMA_PRE_MOUNT_AUTH__ = res;
+      return res;
+    } else {
+      console.log('[QR_AUTH_PRE_MOUNT] ℹ️ Nessun token o sessione valida rilevata in fase pre-mount.');
+    }
+  } catch (err) {
+    console.error('[QR_AUTH_PRE_MOUNT] ⚠️ Errore critico durante intercettazione pre-mount:', err);
+  }
+
+  const unauthorizedResult: ParticipantAuthVerificationResult = {
+    isAuthorized: false,
+    authStatus: 'unauthorized',
+    participant: null,
+    category: null,
+    token: null,
+    badgeCode: null,
+    source: 'none',
+  };
+  if (typeof window !== 'undefined') {
+    (window as any).__TRAUMA_PRE_MOUNT_AUTH__ = unauthorizedResult;
+  }
+  return unauthorizedResult;
+}
+
+// Auto-execute immediately at script execution before React mounts
+if (typeof window !== 'undefined') {
+  ensurePreMountAuthorization();
+}
+
+
