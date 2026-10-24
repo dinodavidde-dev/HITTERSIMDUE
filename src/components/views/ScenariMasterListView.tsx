@@ -32,6 +32,7 @@ import {
 import { ScenarioEditorModal } from '../scenari/ScenarioEditorModal';
 import { ScenarioStatusBadge } from '../ScenarioStatusBadge';
 import { translatePatient } from '../../utils/courseTranslation';
+import { RegiaMoulageCoordinationModal } from '../regia/RegiaMoulageCoordinationModal';
 
 const GROUP_FULL_NAMES: Record<GroupType, string> = {
   A: 'GRUPPO ALPHA',
@@ -64,6 +65,7 @@ export const ScenariMasterListView: React.FC = () => {
   const [selectedModalPatient, setSelectedModalPatient] = useState<SimulatorPatient | null>(null);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isMoulageCoordinationOpen, setIsMoulageCoordinationOpen] = useState(false);
 
   const getTeamInfo = (teamId: number) => {
     const team = teams.find((t) => t.id === teamId);
@@ -185,6 +187,16 @@ export const ScenariMasterListView: React.FC = () => {
               <span className="text-[10px] text-pink-300 font-normal">pazienti</span>
             </span>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsMoulageCoordinationOpen(true)}
+            className="px-3.5 py-2 bg-gradient-to-r from-pink-600 to-rose-700 hover:from-pink-500 hover:to-rose-600 text-white font-black uppercase text-xs tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-lg border border-pink-400"
+            title="Matrice Scenari S1-S8, Assegnazioni Attori e 12 Procedure"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{isEn ? 'COORDINATION & S1–S8' : 'COORDINAMENTO & S1–S8'}</span>
+          </button>
 
           <button
             type="button"
@@ -524,22 +536,47 @@ export const ScenariMasterListView: React.FC = () => {
                               </div>
 
                               <div className="flex items-center justify-between text-xs pt-0.5">
-                                <strong className="text-orange-300">
-                                  Sq. {patient.teamExtraAssigned} ({tcccTeam.teamName})
-                                </strong>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {patient.callsignExtra && (
+                                    <span className="px-1.5 py-0.5 bg-orange-600 text-black font-black font-mono text-[10px] uppercase">
+                                      {patient.callsignExtra}
+                                    </span>
+                                  )}
+                                  <strong className="text-orange-300">
+                                    Sq. {patient.teamExtraAssigned} ({tcccTeam.teamName})
+                                  </strong>
+                                </div>
                                 <span className="text-neutral-300 text-[11px]">
                                   TL: <strong className="text-white">{tcccTeam.tlBadge}</strong>
                                 </span>
                               </div>
 
+                              {patient.procedureExtraName && (
+                                <div className="text-[11px] font-black text-orange-200 bg-neutral-950 px-2 py-0.5 border border-orange-800/80">
+                                  🎯 {patient.procedureExtraName}
+                                </div>
+                              )}
+
                               <div className="flex items-center justify-between text-[11px] text-neutral-400 border-t border-orange-900/50 pt-1">
                                 <span>
-                                  Tutor: <strong className="text-amber-300">{tcccTeam.facCode}</strong>
+                                  Tutor:{' '}
+                                  <strong className="text-amber-300">
+                                    {patient.facultyExtraNames?.length ? patient.facultyExtraNames.join(', ') : tcccTeam.facCode}
+                                  </strong>
                                 </span>
                                 <span>
                                   Tech: <strong className="text-pink-300">{tcccTeam.techCode}</strong>
                                 </span>
                               </div>
+
+                              {(patient.actorNameExtra || patient.actorName) && (
+                                <div className="text-[10px] text-pink-300 flex items-center gap-1 pt-0.5">
+                                  <span>🎭 Attore:</span>
+                                  <strong className="text-white bg-neutral-900 px-1 py-0.5 border border-pink-700/60">
+                                    {patient.actorNameExtra || patient.actorName}
+                                  </strong>
+                                </div>
+                              )}
 
                               <div className="pt-1">
                                 <span className="text-[9px] uppercase text-orange-400/90 font-bold block">
@@ -576,22 +613,47 @@ export const ScenariMasterListView: React.FC = () => {
                               </div>
 
                               <div className="flex items-center justify-between text-xs pt-0.5">
-                                <strong className="text-cyan-300">
-                                  Sq. {patient.teamIntraAssigned} ({srTeam.teamName})
-                                </strong>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {patient.callsignIntra && (
+                                    <span className="px-1.5 py-0.5 bg-cyan-500 text-black font-black font-mono text-[10px] uppercase">
+                                      {patient.callsignIntra}
+                                    </span>
+                                  )}
+                                  <strong className="text-cyan-300">
+                                    Sq. {patient.teamIntraAssigned} ({srTeam.teamName})
+                                  </strong>
+                                </div>
                                 <span className="text-neutral-300 text-[11px]">
                                   TL: <strong className="text-white">{srTeam.tlBadge}</strong>
                                 </span>
                               </div>
 
+                              {patient.procedureIntraName && (
+                                <div className="text-[11px] font-black text-cyan-200 bg-neutral-950 px-2 py-0.5 border border-cyan-800/80">
+                                  🎯 {patient.procedureIntraName}
+                                </div>
+                              )}
+
                               <div className="flex items-center justify-between text-[11px] text-neutral-400 border-t border-cyan-900/50 pt-1">
                                 <span>
-                                  Tutor: <strong className="text-amber-300">{srTeam.facCode}</strong>
+                                  Tutor:{' '}
+                                  <strong className="text-amber-300">
+                                    {patient.facultyIntraNames?.length ? patient.facultyIntraNames.join(', ') : srTeam.facCode}
+                                  </strong>
                                 </span>
                                 <span>
                                   Tech: <strong className="text-pink-300">{srTeam.techCode}</strong>
                                 </span>
                               </div>
+
+                              {(patient.actorNameIntra || patient.actorName) && (
+                                <div className="text-[10px] text-cyan-300 flex items-center gap-1 pt-0.5">
+                                  <span>🎭 Attore:</span>
+                                  <strong className="text-white bg-neutral-900 px-1 py-0.5 border border-cyan-700/60">
+                                    {patient.actorNameIntra || patient.actorName}
+                                  </strong>
+                                </div>
+                              )}
 
                               <div className="pt-1">
                                 <span className="text-[9px] uppercase text-cyan-400/90 font-bold block">
@@ -1037,6 +1099,12 @@ export const ScenariMasterListView: React.FC = () => {
           setEditingPatientId(null);
         }}
         initialPatientId={editingPatientId}
+      />
+
+      {/* REGIA & MOULAGE COORDINATION MODAL (DEEPHITTER-VMK1 REV3) */}
+      <RegiaMoulageCoordinationModal
+        isOpen={isMoulageCoordinationOpen}
+        onClose={() => setIsMoulageCoordinationOpen(false)}
       />
     </div>
   );

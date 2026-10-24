@@ -48,8 +48,8 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
   const mascalStartMinutes = 1260; // 21:00
   const currentSlotMinutes = currentSlot?.startMinutes ?? 540;
 
-  const isBeforeMascalOnDay2 = activeDay === 2 && currentSlotMinutes < mascalStartMinutes;
-  const isAfterMascalOnDay2 = activeDay === 2 && currentSlotMinutes >= 1380; // dopo le 23:00
+  const isBeforeMascalOnDay3 = activeDay === 3 && currentSlotMinutes < mascalStartMinutes;
+  const isAfterMascalOnDay3 = activeDay === 3 && currentSlotMinutes >= 1380; // dopo le 23:00
 
   const timeRemainingLabel = useMemo(() => {
     // 1. Sincronizzazione con il Gate Apertura: se il corso non è ancora iniziato ed è attivo il countdown gate
@@ -74,7 +74,7 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
       return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
-    if (activeDay === 2 && isBeforeMascalOnDay2) {
+    if (activeDay === 3 && isBeforeMascalOnDay3) {
       const deltaMin = mascalStartMinutes - currentSlotMinutes;
       const hours = Math.floor(deltaMin / 60);
       const mins = deltaMin % 60;
@@ -84,23 +84,23 @@ export const RegiaMascalCountdownBadge: React.FC<RegiaMascalCountdownBadgeProps>
       return `T- ${mins}m 00s`;
     }
 
-    if (isAfterMascalOnDay2) {
+    if (isAfterMascalOnDay3) {
       return isEn ? 'COMPLETED' : 'CONCLUSA';
     }
 
-    if (activeDay === 1) {
-      return isEn ? 'SCHEDULED DAY 2' : 'PREVISTA DAY 2';
+    if (activeDay === 2) {
+      return isEn ? 'SCHEDULED DAY 3' : 'PREVISTA DAY 3';
     }
 
     return '21:00';
-  }, [isMascalActive, timerSeconds, activeDay, isBeforeMascalOnDay2, isAfterMascalOnDay2, currentSlotMinutes, isEn]);
+  }, [isMascalActive, timerSeconds, activeDay, isBeforeMascalOnDay3, isAfterMascalOnDay3, currentSlotMinutes, isEn]);
 
   const handleQuickJump = () => {
     if (mascalSlotIndex === -1) return;
 
-    // Cambia al Day 2 se attualmente in Day 1
-    if (activeDay !== 2) {
-      setActiveDay(2);
+    // Cambia al Day 3 se attualmente in Day 2
+    if (activeDay !== 3) {
+      setActiveDay(3);
     }
 
     // Imposta lo slot attivo su MASCAL

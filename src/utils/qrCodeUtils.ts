@@ -374,6 +374,275 @@ export interface ParticipantAuthVerificationResult {
   source: 'url_token' | 'url_hash' | 'url_badge_qr' | 'session_storage' | 'none';
 }
 
+export interface SanitizedUrlResult {
+  rawInput: string;
+  healedUrl: string;
+  healedQueryString: string;
+  params: Record<string, string>;
+  corrections: string[];
+}
+
+/**
+ * Auto-guarigione (sanitization) per normalizzare URL o stringhe di query corrotte.
+ * Corregge:
+ * - Spazi bianchi accidentali, a capo, tabulazioni e spazi non-breaking (\u00A0)
+ * - Spazi attorno a delimitatori '=' e '&' (es. "? token = HITTER... & badge = DISC-01")
+ * - Slash mancanti tra host e query string (es. "http://example.com?token=..." -> "http://example.com/?token=...")
+ * - Slash mancanti o frammenti hash in SPA (es. "/#?token=..." -> "/#/?token=...")
+ * - Punti interrogativi duplicati o sequenze anomale (es. "??token=...", "?&token=...")
+ * - Punti e virgola usati al posto di ampersand (es. "token=A;badge=B" -> "token=A&badge=B")
+ * - Entità HTML come '&amp;' convertite in '&'
+ * - Punteggiatura spuria finale attaccata da client di messaggistica o scanner (es. '.', ')', '/', ';')
+ * - Virgolette accidentali attorno ai valori dei parametri (es. token="DISC-01")
+ * - Mappatura di alias obsoleti o alternativi sui parametri canonici (es. 'auth_token' -> 'token', 'matricola' -> 'badge', 'student' -> 'discente', 'tutor' -> 'faculty', 'tech' -> 'tecnico')
+ */
+export function healUrlParameters(rawInput?: string): SanitizedUrlResult {
+  const corrections: string[] = [];
+  let input = (rawInput ?? '').trim();
+
+  // Se nessun input viene passato e siamo in ambiente browser, usa la location corrente
+  if (!input && typeof window !== 'undefined') {
+    input = window.location.href;
+  }
+
+  const originalInput = input;
+  if (!input) {
+    return {
+      rawInput: '',
+      healedUrl: '',
+      healedQueryString: '',
+      params: {},
+      corrections: [],
+    };
+  }
+
+  // 1. Rimuovi caratteri invisibili, zero-width e spazi non-breaking
+  const cleanInvisible = input.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ');
+  if (cleanInvisible !== input) {
+    corrections.push('Rimossi caratteri invisibili/spazi non standard');
+    input = cleanInvisible;
+  }
+
+  // 2. Decodifica entità HTML nella query string (&amp; -> &)
+  if (input.includes('&amp;')) {
+    input = input.replace(/&amp;/g, '&');
+    corrections.push('Sostituito &amp; con &');
+  }
+
+  // 3. Normalizza punti interrogativi multipli o sequenze non valide (?? -> ?, ?& -> ?)
+  const cleanQuestionMarks = input.replace(/\?{2,}/g, '?').replace(/\?&+/g, '?');
+  if (cleanQuestionMarks !== input) {
+    corrections.push('Normalizzati punti interrogativi multipli');
+    input = cleanQuestionMarks;
+  }
+
+  // 4. Estrazione prefisso e porzione di query
+  let prefix = '';
+  let queryPart = '';
+
+  if (input.includes('?')) {
+    const qIndex = input.indexOf('?');
+    prefix = input.substring(0, qIndex);
+    queryPart = input.substring(qIndex + 1);
+  } else if (input.includes('#') && input.substring(input.indexOf('#')).includes('=')) {
+    // Frammento hash contenente parametri senza '?' esplicito (es. /#token=... o /#discente=...)
+    const hIndex = input.indexOf('#');
+    prefix = input.substring(0, hIndex);
+    queryPart = input.substring(hIndex + 1);
+    if (queryPart.includes('/')) {
+      const slashIndex = queryPart.lastIndexOf('/');
+      queryPart = queryPart.substring(slashIndex + 1);
+    }
+    corrections.push('Convertito frammento hash in parametri query');
+  } else if (input.includes('=')) {
+    // Stringa di parametri isolata senza '?' (es. "token=XYZ&badge=DISC-01")
+    queryPart = input.startsWith('&') ? input.substring(1) : input;
+    corrections.push('Aggiunto prefisso ? a parametri isolati');
+  } else {
+    prefix = input;
+  }
+
+  // 5. Correzione slash mancante dopo il dominio (es. http://host?token -> http://host/?token)
+  if (prefix && /^https?:\/\/[^\/]+$/i.test(prefix)) {
+    prefix = `${prefix}/`;
+    corrections.push('Aggiunto slash finale mancante all\'host');
+  }
+
+  // Correzione slash mancante in hash router (es. /#?token -> /#/?token)
+  if (prefix && prefix.endsWith('/#')) {
+    prefix = `${prefix}/`;
+    corrections.push('Aggiunto slash mancante dopo hash fragment (/#/)');
+  }
+
+  // 6. Sostituzione punti e virgola usati come delimitatori (token=A;badge=B -> token=A&badge=B)
+  if (queryPart.includes(';')) {
+    queryPart = queryPart.replace(/;/g, '&');
+    corrections.push('Sostituiti punti e virgola (;) con ampersand (&)');
+  }
+
+  // 7. Eliminazione punteggiatura spuria finale (es. '.', ')', '/', ';')
+  const cleanTrailing = queryPart.replace(/[.,/);]+$/, '');
+  if (cleanTrailing !== queryPart) {
+    corrections.push('Rimossa punteggiatura spuria finale dal query string');
+    queryPart = cleanTrailing;
+  }
+
+  // 8. Normalizzazione spazi attorno a '=' e '&' (es. "token = ABC & badge = DISC" -> "token=ABC&badge=DISC")
+  const cleanDelimiters = queryPart
+    .replace(/\s*=\s*/g, '=')
+    .replace(/\s*&\s*/g, '&')
+    .trim();
+  if (cleanDelimiters !== queryPart) {
+    corrections.push('Normalizzati spazi attorno ai delimitatori = e &');
+    queryPart = cleanDelimiters;
+  }
+
+  // 9. Mappa degli alias obsoleti o alternativi verso i parametri canonici
+  const ALIAS_MAP: Record<string, string> = {
+    // Token autorizzativo
+    'auth_token': 'token',
+    'authtoken': 'token',
+    'auth-token': 'token',
+    'token_id': 'token',
+    'api_token': 'token',
+    'auth': 'token',
+    't': 'token',
+    'key': 'token',
+
+    // Fingerprint Hash compatto
+    'hash': 'h',
+    'hash_code': 'h',
+    'hashcode': 'h',
+    'fingerprint': 'h',
+
+    // Badge / Matricola
+    'matricola': 'badge',
+    'codice': 'badge',
+    'code': 'badge',
+    'badge_id': 'badge',
+    'badge_code': 'badge',
+    'user_id': 'badge',
+    'userid': 'badge',
+    'user-id': 'badge',
+
+    // Discente
+    'student': 'discente',
+    'studente': 'discente',
+    'allievo': 'discente',
+    'allievi': 'discente',
+    'discenti': 'discente',
+
+    // Faculty
+    'tutor': 'faculty',
+    'docente': 'faculty',
+    'fac': 'faculty',
+    'facultad': 'faculty',
+    'instructor': 'faculty',
+    'instructors': 'faculty',
+
+    // Tecnico
+    'technician': 'tecnico',
+    'tech': 'tecnico',
+    'tecnici': 'tecnico',
+    'tecn': 'tecnico',
+
+    // Direttore
+    'director': 'direttore',
+    'direzione': 'direttore',
+    'dir': 'direttore',
+
+    // Regia
+    'regista': 'regia',
+    'control_room': 'regia',
+    'controlroom': 'regia',
+
+    // Ospite
+    'guest': 'ospite',
+    'invitato': 'ospite',
+    'ospiti': 'ospite',
+
+    // Truccatore
+    'trucco': 'truccatore',
+    'makeup': 'truccatore',
+    'makeup_artist': 'truccatore',
+    'moulage': 'truccatore',
+    'moulage_artist': 'truccatore',
+
+    // Attore
+    'actor': 'attore',
+    'simulated_patient': 'attore',
+    'paziente_simulato': 'attore',
+
+    // Flag QR
+    'qr_code': 'qr',
+    'qrcode': 'qr',
+    'is_qr': 'qr',
+    'isqr': 'qr',
+  };
+
+  const parsedPairs: [string, string][] = [];
+  const normalizedParams: Record<string, string> = {};
+
+  if (queryPart) {
+    const rawPairs = queryPart.split('&').filter(Boolean);
+    for (const pair of rawPairs) {
+      const eqIdx = pair.indexOf('=');
+      let key = (eqIdx !== -1 ? pair.substring(0, eqIdx) : pair).trim();
+      let val = (eqIdx !== -1 ? pair.substring(eqIdx + 1) : '').trim();
+
+      // Rimozione virgolette accidentali attorno al valore (es. badge="DISC-01")
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.substring(1, val.length - 1).trim();
+        corrections.push(`Rimosse virgolette dal valore del parametro ${key}`);
+      }
+
+      // Decodifica sicura da percent-encoding se presente
+      try {
+        if (val.includes('%')) {
+          val = decodeURIComponent(val);
+        }
+      } catch (_) {}
+
+      const lowerKey = key.toLowerCase();
+      if (ALIAS_MAP[lowerKey] && ALIAS_MAP[lowerKey] !== key) {
+        corrections.push(`Normalizzato alias obsoleto '${key}' -> '${ALIAS_MAP[lowerKey]}'`);
+        key = ALIAS_MAP[lowerKey];
+      }
+
+      // Normalizzazione flag qr=true o qr=yes in qr=1
+      if (key === 'qr' && (val.toLowerCase() === 'true' || val.toLowerCase() === 'yes')) {
+        val = '1';
+        corrections.push('Normalizzato flag qr=true in qr=1');
+      }
+
+      parsedPairs.push([key, val]);
+      normalizedParams[key] = val;
+    }
+  }
+
+  // Ricostruzione query string normalizzata e pulita
+  const healedQueryString = parsedPairs.length > 0
+    ? `?${parsedPairs.map(([k, v]) => (v ? `${k}=${encodeURIComponent(v)}` : k)).join('&')}`
+    : '';
+
+  const healedUrl = prefix ? `${prefix}${healedQueryString}` : healedQueryString;
+
+  return {
+    rawInput: originalInput,
+    healedUrl,
+    healedQueryString,
+    params: normalizedParams,
+    corrections,
+  };
+}
+
+/**
+ * Funzione helper per ottenere direttamente la stringa URL auto-guarita.
+ */
+export function sanitizeAndHealUrl(rawUrlOrQuery?: string): string {
+  return healUrlParameters(rawUrlOrQuery).healedUrl;
+}
+
 /**
  * Verifies if the given URL or search query contains a valid pre-generated authorization token,
  * data hash fingerprint, or QR parameters matching an official course participant.
@@ -392,34 +661,16 @@ export function verifyParticipantAuthToken(
     actors?: CourseActor[];
   }
 ): ParticipantAuthVerificationResult {
-  let searchStr = '';
+  // Esecuzione immediata di auto-guarigione (sanitization)
+  const healed = healUrlParameters(urlOrSearch);
+  let searchStr = healed.healedQueryString;
   const currentHref = typeof window !== 'undefined' ? window.location.href : 'SSR';
 
-  try {
-    if (typeof urlOrSearch === 'string' && urlOrSearch.trim().length > 0) {
-      if (urlOrSearch.includes('?')) {
-        searchStr = urlOrSearch.substring(urlOrSearch.indexOf('?'));
-      } else if (urlOrSearch.startsWith('&')) {
-        searchStr = `?${urlOrSearch.substring(1)}`;
-      } else if (urlOrSearch.includes('=')) {
-        searchStr = urlOrSearch.startsWith('?') ? urlOrSearch : `?${urlOrSearch}`;
-      } else {
-        searchStr = urlOrSearch;
-      }
-    }
-
-    // Fallback: if searchStr is empty or just '?', inspect window.location
-    if ((!searchStr || searchStr === '?') && typeof window !== 'undefined') {
-      if (window.location.search && window.location.search.length > 1) {
-        searchStr = window.location.search;
-      } else if (window.location.hash && window.location.hash.includes('?')) {
-        searchStr = window.location.hash.substring(window.location.hash.indexOf('?'));
-      } else if (window.location.href && window.location.href.includes('?')) {
-        searchStr = window.location.href.substring(window.location.href.indexOf('?'));
-      }
-    }
-  } catch (parseErr) {
-    console.error('[QR_AUTH_VERIFY] ⚠️ Errore critico durante la risoluzione della stringa URL/Search:', parseErr);
+  if (healed.corrections.length > 0) {
+    console.log('[QR_URL_HEALER] 🩹 Auto-guarigione URL completata:', healed.corrections, {
+      originale: urlOrSearch || currentHref,
+      guarito: healed.healedQueryString,
+    });
   }
 
   // Diagnostic Log 1: Input interception
@@ -427,6 +678,7 @@ export function verifyParticipantAuthToken(
     parametroRicevuto: urlOrSearch,
     stringaQueryRisolta: searchStr,
     urlCompleto: currentHref,
+    autoGuarigioni: healed.corrections,
   });
 
   if (!searchStr || searchStr === '?') {
@@ -442,59 +694,41 @@ export function verifyParticipantAuthToken(
     };
   }
 
-  let tokenParam = '';
-  let hashParam = '';
-  let idParam = '';
-  let badgeParam = '';
-  let discenteParam = '';
-  let facultyParam = '';
-  let techParam = '';
-  let dirParam = '';
-  let regParam = '';
-  let trucParam = '';
-  let actParam = '';
-  let isQrParam = false;
-  let candidateKeys: string[] = [];
+  // Parametri estratti direttamente dall'oggetto normalizzato dell'auto-guarigione
+  const tokenParam = (healed.params['token'] || '').trim();
+  const hashParam = (healed.params['h'] || '').trim();
+  const idParam = (healed.params['id'] || '').trim();
+  const badgeParam = (healed.params['badge'] || '').trim();
+  const discenteParam = (healed.params['discente'] || '').trim();
+  const facultyParam = (healed.params['faculty'] || '').trim();
+  const techParam = (healed.params['tecnico'] || '').trim();
+  const dirParam = (healed.params['direttore'] || '').trim();
+  const regParam = (healed.params['regia'] || '').trim();
+  const trucParam = (healed.params['truccatore'] || '').trim();
+  const actParam = (healed.params['attore'] || '').trim();
+  const isQrParam = healed.params['qr'] === '1' || healed.params['qr'] === 'true';
 
-  try {
-    const params = new URLSearchParams(searchStr);
-    tokenParam = (params.get('token') || params.get('auth_token') || params.get('authToken') || params.get('t') || params.get('auth') || '').trim();
-    hashParam = (params.get('h') || params.get('hash') || '').trim();
-    idParam = (params.get('id') || '').trim();
-    badgeParam = (params.get('badge') || params.get('matricola') || params.get('code') || '').trim();
-    discenteParam = (params.get('discente') || params.get('student') || '').trim();
-    facultyParam = (params.get('faculty') || params.get('tutor') || '').trim();
-    techParam = (params.get('tecnico') || params.get('tech') || params.get('technician') || '').trim();
-    dirParam = (params.get('direttore') || params.get('director') || '').trim();
-    regParam = (params.get('regia') || '').trim();
-    trucParam = (params.get('truccatore') || '').trim();
-    actParam = (params.get('attore') || '').trim();
-    isQrParam = params.get('qr') === '1' || params.get('qr') === 'true';
+  const candidateKeys = [
+    idParam,
+    badgeParam,
+    discenteParam,
+    facultyParam,
+    techParam,
+    dirParam,
+    regParam,
+    trucParam,
+    actParam,
+    healed.params['ospite'] || '',
+  ].filter(Boolean);
 
-    candidateKeys = [
-      idParam,
-      badgeParam,
-      discenteParam,
-      facultyParam,
-      techParam,
-      dirParam,
-      regParam,
-      trucParam,
-      actParam,
-      params.get('ospite') || '',
-    ].filter(Boolean);
-
-    console.log('[QR_AUTH_VERIFY] Parametri estratti con successo:', {
-      token: tokenParam || '(assente)',
-      hash: hashParam || '(assente)',
-      badge: badgeParam || '(assente)',
-      id: idParam || '(assente)',
-      isQr: isQrParam,
-      candidateKeys,
-    });
-  } catch (paramErr) {
-    console.error('[QR_AUTH_VERIFY] ⚠️ Errore durante il parsing con URLSearchParams:', paramErr);
-  }
+  console.log('[QR_AUTH_VERIFY] Parametri estratti e normalizzati con successo:', {
+    token: tokenParam || '(assente)',
+    hash: hashParam || '(assente)',
+    badge: badgeParam || '(assente)',
+    id: idParam || '(assente)',
+    isQr: isQrParam,
+    candidateKeys,
+  });
 
   const allDiscenti = customData?.discenti || INITIAL_DISCENTI;
   const allFaculty = customData?.faculty || INITIAL_FACULTY;

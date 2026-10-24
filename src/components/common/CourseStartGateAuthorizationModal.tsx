@@ -92,12 +92,12 @@ export const CourseStartGateAuthorizationModal: React.FC = () => {
             <Radio className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5 animate-pulse" />
             <div className="space-y-1">
               <strong className="text-sm font-black uppercase text-amber-300 block">
-                {isEn ? 'AWAITING REGIA / DIRECTION AUTHORIZATION' : 'IN ATTESA DI AUTORIZZAZIONE DELLA REGIA / DIREZIONE'}
+                {isEn ? 'AWAITING REGIA / DIRECTION AUTHORIZATION (DAY 2)' : 'IN ATTESA DI AUTORIZZAZIONE REGIA / DIREZIONE (DAY 2)'}
               </strong>
               <p className="text-neutral-300 text-[11px] leading-relaxed">
                 {isEn
-                  ? 'The gate countdown has completed. The course timeline and stations remain locked in standby mode until you explicitly confirm the start signal. Upon confirmation, a 3-second synchronized acoustic alert will be broadcast to all student and faculty tablets.'
-                  : 'Il countdown di apertura gate è terminato. Il cronoprogramma del corso e le aule rimangono bloccati in modalità Standby finché non confermi il via libera ufficiale. Alla conferma, verrà trasmesso il buzzer acustico sincronizzato di 3 secondi su tutti i tablet di allievi, tutor e tecnici.'}
+                  ? 'Authorizing the start will reset all functions to origin (Day 2, Slot 0), reset simulator technical checklists to nominal state, automatically start the timer, and broadcast the synchronized T0 signal across all screens.'
+                  : 'L\'autorizzazione ufficiale reimposta tutte le funzioni all\'origine (Day 2, Slot 0: Setup Staff ore 08:00), azzera le checklist tecniche dei 24 simulatori, avvia automaticamente il timer del primo slot ed emette il segnale acustico T0 su tutti i terminali.'}
               </p>
             </div>
           </div>
@@ -150,11 +150,11 @@ export const CourseStartGateAuthorizationModal: React.FC = () => {
             />
             <span className="text-[11px] text-neutral-200 select-none">
               <strong className="text-white block uppercase">
-                {isEn ? 'Verify Station Readiness' : 'Conferma Operativa Regia'}
+                {isEn ? 'Verify Station Readiness & Day 2 Reset' : 'Conferma Operativa Regia & Reset Day 2'}
               </strong>
               {isEn
-                ? 'I confirm that all tutors, technicians, and simulated casualties are in position and ready for immediate engagement.'
-                : 'Confermo che tutti i tutor (FAC-01 – FAC-12), tecnici e simulatori sono operativi e pronti all\'ingaggio immediato.'}
+                ? 'I confirm that all tutors (FAC-01 – FAC-12), technicians, and simulator patients are ready. The course timeline will reset to Day 2 Slot 0 and the timer will start automatically.'
+                : 'Confermo che tutti i tutor (FAC-01 – FAC-12), tecnici e simulatori sono operativi. Il cronoprogramma ripartirà dal Day 2 Slot 0 con timer attivo e checklist ripristinate.'}
             </span>
           </label>
         </div>
@@ -164,7 +164,7 @@ export const CourseStartGateAuthorizationModal: React.FC = () => {
           <div className="flex items-center gap-2 text-neutral-400 text-[10px]">
             <Clock className="w-3.5 h-3.5 text-amber-400" />
             <span>
-              Data: {courseStartSchedule?.scheduledDate || 'Day 02'} • {courseStartSchedule?.scheduledTime || '08:30'}
+              Data: {courseStartSchedule?.scheduledDate || 'Day 02'} • {courseStartSchedule?.scheduledTime || '08:00'}
             </span>
           </div>
 
@@ -182,8 +182,8 @@ export const CourseStartGateAuthorizationModal: React.FC = () => {
             <Play className="w-4 h-4 fill-current" />
             <span>
               {isEn
-                ? 'AUTHORIZE & BROADCAST COURSE START'
-                : 'AUTORIZZA E TRASMETTI AVVIO CORSO (START)'}
+                ? 'AUTHORIZE & START COURSE (DAY 2 ORIGIN)'
+                : 'AUTORIZZA E AVVIA CORSO (ORIGINE DAY 2)'}
             </span>
           </button>
         </div>

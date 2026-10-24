@@ -611,8 +611,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     openedByRole === 'master';
 
   const [activeDay, setActiveDayState] = useState<CourseDay>(() => {
-    const stored = getStoredOrDefault('activeDay', 1);
-    return stored === 1 || stored === 2 ? stored : 1;
+    const stored = getStoredOrDefault('activeDay', 2);
+    return stored === 2 || stored === 3 ? stored : 2;
   });
   const [activeSlotIndex, setActiveSlotIndexState] = useState<number>(() => getStoredOrDefault('activeSlotIndex', 0));
 
@@ -1781,7 +1781,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // Document does not exist yet; initialize it in Firestore if not quota exhausted
             if (!isQuotaExhausted()) {
               const initialCourseState = {
-                activeDay: 1,
+                activeDay: 2,
                 activeSlotIndex: 0,
                 isTimerRunning: false,
                 timerSeconds: 30 * 60,
@@ -4061,15 +4061,101 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       localStorage.setItem(STORAGE_KEY_PREFIX + 'courseStartSchedule', JSON.stringify(updated));
     } catch (e) {}
-    syncCourseStateToFirestore({ courseStartSchedule: updated });
 
-    logAuditAction('resume', 'Apertura Gate & Avvio Corso Autorizzato', byBadge, {
-      reason: 'Autorizzazione ufficiale apertura gate e avvio corso trasmessa dalla Regia/Direzione',
+    // --- FULL RESET TO ORIGIN (DAY 2, SLOT 0, ACTIVE TIMER, TECH CHECKLISTS, NOMINAL PHASES) ---
+    // 1. Reset timeline slots to official canonical configuration
+    setTimelineSlots(INITIAL_TIMELINE_SLOTS);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'timelineSlots', JSON.stringify(INITIAL_TIMELINE_SLOTS));
+    } catch (e) {}
+
+    // 2. Set active day to Day 2 (Day 2 24 Ottobre d2-* in canonical slots)
+    const targetDay: CourseDay = 2;
+    setActiveDayState(targetDay);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'activeDay', JSON.stringify(targetDay));
+    } catch (e) {}
+
+    // 3. Set active slot index to origin (0: d2-setup-1)
+    const targetSlotIdx = 0;
+    setActiveSlotIndexState(targetSlotIdx);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'activeSlotIndex', JSON.stringify(targetSlotIdx));
+    } catch (e) {}
+
+    // 4. Set timer seconds to origin slot duration (30 mins / 1800s)
+    const slot0 = INITIAL_TIMELINE_SLOTS[0];
+    const initialSecs = getSlotDurationSeconds(slot0);
+    setTimerSeconds(initialSecs);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'timerSeconds', JSON.stringify(initialSecs));
+    } catch (e) {}
+
+    // 5. Automatically start the timer in play mode as requested
+    setIsTimerRunning(true);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'isTimerRunning', JSON.stringify(true));
+    } catch (e) {}
+
+    // 6. Reset simulation phase to nominal initial phase ('idle')
+    setSimulationPhaseState('idle');
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'simulationPhase', JSON.stringify('idle'));
+    } catch (e) {}
+
+    // 7. Reset all 24 simulator patients checklists & progress to origin
+    const resetPatients: SimulatorPatient[] = INITIAL_SIMULATOR_PATIENTS.map((p) => {
+      const def = DEFAULT_PATIENT_TRUCCO_ASSIGNMENTS[p.id];
+      return {
+        ...p,
+        assignedActorId: p.assignedActorId || def?.assignedActorId || 'actor-1',
+        assignedMakeupArtistId: p.assignedMakeupArtistId || def?.assignedMakeupArtistId || 'truc-1',
+        actorProgressStatus: (p.id === 1 || p.id === 2 ? 'IN_PREPARAZIONE' : 'STANDBY') as ActorProgressStatus,
+        techChecklist: { preDone: false, intraDone: false, postDone: false },
+        techNotes: p.techNotes,
+      };
+    });
+    setSimulatorPatients(resetPatients);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'simulatorPatients', JSON.stringify(resetPatients));
+    } catch (e) {}
+    resetPatients.forEach((p) => {
+      setDoc(doc(db, 'simulator_patients', String(p.id)), p).catch(() => {});
+    });
+
+    // 8. Broadcast immediate sync to all local windows/tabs
+    broadcastTimelineUpdate({
+      activeDay: targetDay,
+      activeSlotIndex: targetSlotIdx,
+      timerSeconds: initialSecs,
+      isTimerRunning: true,
+    });
+
+    // 9. Sync complete origin state to Firestore Cloud
+    syncCourseStateToFirestore({
+      courseStartSchedule: updated,
+      activeDay: targetDay,
+      activeSlotIndex: targetSlotIdx,
+      timerSeconds: initialSecs,
+      isTimerRunning: true,
+      simulationPhase: 'idle',
+      timelineSlots: INITIAL_TIMELINE_SLOTS,
+      isCourseSuspended: false,
+    });
+
+    logAuditAction('resume', 'Avvio Ufficiale del Corso & Reset Integrale all\'Origine (Day 2 Slot 0)', byBadge, {
+      reason: 'Avvio ufficiale trasmesso dalla Regia/Direzione. Cronoprogramma reimpostato a Day 2 Slot 0, timer avviato e checklist azzerate all\'origine.',
       synced: typeof navigator !== 'undefined' ? navigator.onLine : true,
     });
 
     triggerLongBeepWithAnimation();
-  }, [courseStartSchedule, syncCourseStateToFirestore, triggerLongBeepWithAnimation]);
+  }, [
+    courseStartSchedule,
+    syncCourseStateToFirestore,
+    triggerLongBeepWithAnimation,
+    broadcastTimelineUpdate,
+    logAuditAction,
+  ]);
 
   const startCourseImmediately = useCallback(() => {
     authorizeCourseStart('REGIA-01');
@@ -4354,7 +4440,7 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           break;
         }
         case 'night_scenario': {
-          setActiveDayState(2);
+          setActiveDayState(3);
           const idx = INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd3-mascal-scenario' || s.id === 'd2-mascal-scenario');
           const targetIdx = idx !== -1 ? idx : INITIAL_TIMELINE_SLOTS.findIndex((s) => s.id === 'd3-gate-discenti-notturno' || s.id === 'd2-gate-discenti-notturno');
           const resolvedIdx = targetIdx !== -1 ? targetIdx : 0;
@@ -4364,8 +4450,8 @@ export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setTimerSeconds(secs);
           setIsTimerRunning(true);
           playAirRaidSiren();
-          broadcastTimelineUpdate({ activeDay: 2, activeSlotIndex: resolvedIdx, timerSeconds: secs, isTimerRunning: true });
-          syncCourseStateToFirestore({ activeDay: 2, activeSlotIndex: resolvedIdx, timerSeconds: secs, isTimerRunning: true });
+          broadcastTimelineUpdate({ activeDay: 3, activeSlotIndex: resolvedIdx, timerSeconds: secs, isTimerRunning: true });
+          syncCourseStateToFirestore({ activeDay: 3, activeSlotIndex: resolvedIdx, timerSeconds: secs, isTimerRunning: true });
           break;
         }
 

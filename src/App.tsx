@@ -35,7 +35,7 @@ import { CourseStartGateAuthorizationModal } from './components/common/CourseSta
 import { ScenarioBlockConfirmationModal } from './components/regia/ScenarioBlockConfirmationModal';
 import { MacroBlockStandbyIndicator } from './components/common/MacroBlockStandbyIndicator';
 import { TacticalMapModal } from './components/common/TacticalMapModal';
-import { resolveParticipantByQuery, isParticipantMatch, verifyParticipantAuthToken } from './utils/qrCodeUtils';
+import { resolveParticipantByQuery, isParticipantMatch, verifyParticipantAuthToken, healUrlParameters } from './utils/qrCodeUtils';
 
 const CourseMainContent: React.FC = () => {
   const {
@@ -128,11 +128,14 @@ const CourseMainContent: React.FC = () => {
       openedByRole,
     });
 
-    // STEP 2: Determine effective query string (fallback to hash if search is empty)
-    let effectiveSearch = rawSearch;
-    if ((!effectiveSearch || effectiveSearch === '?') && rawHash && rawHash.includes('?')) {
-      effectiveSearch = rawHash.substring(rawHash.indexOf('?'));
-      console.log('[APP_URL_PARSER] [Step 2: Effective query extracted from hash fragment]', effectiveSearch);
+    // STEP 2: Determine effective query string with Auto-Healing (Sanitization)
+    const healed = healUrlParameters(rawSearch || rawHash || rawHref);
+    const effectiveSearch = healed.healedQueryString;
+    if (healed.corrections.length > 0) {
+      console.log('[APP_URL_PARSER] [Step 2: Auto-guarigione URL completata]', healed.corrections, {
+        originale: rawSearch || rawHref,
+        guarito: effectiveSearch,
+      });
     } else {
       console.log('[APP_URL_PARSER] [Step 2: Effective query from search]', effectiveSearch || '(empty)');
     }

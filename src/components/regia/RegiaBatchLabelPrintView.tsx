@@ -469,37 +469,31 @@ export const RegiaBatchLabelPrintView: React.FC = () => {
               <label className="text-[11px] font-bold text-neutral-300 uppercase block">
                 {isEn ? 'Physical Size' : 'Dimensione Etichetta'}
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLabelSize('50x80');
-                    setOrientation('portrait');
-                  }}
-                  className={`px-3 py-2 text-xs font-black uppercase tracking-wider border transition-all text-left flex flex-col gap-0.5 cursor-pointer ${
-                    labelSize === '50x80'
-                      ? 'bg-pink-600 text-white border-pink-400 shadow-md ring-1 ring-pink-400'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
-                  }`}
-                >
-                  <span className="font-mono text-sm font-black">50 × 80 mm</span>
-                  <span className="text-[10px] opacity-80">{isEn ? 'Standard Uniform/Vest' : 'Standard Divisa / Pettorina'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLabelSize('40x30');
-                    setOrientation('landscape');
-                  }}
-                  className={`px-3 py-2 text-xs font-black uppercase tracking-wider border transition-all text-left flex flex-col gap-0.5 cursor-pointer ${
-                    labelSize === '40x30'
-                      ? 'bg-pink-600 text-white border-pink-400 shadow-md ring-1 ring-pink-400'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
-                  }`}
-                >
-                  <span className="font-mono text-sm font-black">40 × 30 mm</span>
-                  <span className="text-[10px] opacity-80">{isEn ? 'Compact Helmet/Equipment' : 'Compatto Elmetto / Materiale'}</span>
-                </button>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {[
+                  { id: '40x30' as const, label: '40 × 30 mm', desc: 'Portatile PM240' },
+                  { id: '50x30' as const, label: '50 × 30 mm', desc: 'Ospedaliero / Badge' },
+                  { id: '50x25' as const, label: '50 × 25 mm', desc: 'Slim Tattico' },
+                  { id: '60x40' as const, label: '60 × 40 mm', desc: 'Grande Visibilità' },
+                  { id: '50x80' as const, label: '50 × 80 mm', desc: 'Badge Verticale' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setLabelSize(item.id);
+                      setOrientation(item.id === '50x80' ? 'portrait' : 'landscape');
+                    }}
+                    className={`px-2.5 py-2 text-xs font-black uppercase tracking-wider border transition-all text-left flex flex-col gap-0.5 cursor-pointer rounded ${
+                      labelSize === item.id
+                        ? 'bg-pink-600 text-white border-pink-400 shadow-md ring-1 ring-pink-400'
+                        : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    <span className="font-mono text-xs font-black">{item.label}</span>
+                    <span className="text-[9px] opacity-80 truncate">{item.desc}</span>
+                  </button>
+                ))}
               </div>
 
               {/* Quick Hardware Profile: Labelnize PM240 */}

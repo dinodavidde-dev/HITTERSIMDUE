@@ -10,23 +10,87 @@ export interface BatchThermalItem {
   teamName?: string;
 }
 
-export type LabelSizeOption = '50x80' | '40x30';
+export type LabelSizeOption = '40x30' | '50x30' | '50x25' | '60x40' | '50x80' | 'custom';
 export type LabelOrientation = 'portrait' | 'landscape';
 export type ThermalDpi = 203 | 300;
 export type ThermalPrinterModel = 'generic' | 'pm240';
+export type ThermalLabelLayout = 'horizontal_split' | 'vertical_stack' | 'vertical_badge_50x80';
+
+export interface LabelPresetInfo {
+  id: LabelSizeOption;
+  label: string;
+  widthMm: number;
+  heightMm: number;
+  description: string;
+  recommendedFor: string;
+}
+
+export const STANDARD_LABEL_PRESETS: LabelPresetInfo[] = [
+  {
+    id: '40x30',
+    label: '40 × 30 mm',
+    widthMm: 40,
+    heightMm: 30,
+    description: 'Standard portatile (Labelnize PM240, Typonos, Niimbot)',
+    recommendedFor: 'Tasca mimetica / Cartellino rapido',
+  },
+  {
+    id: '50x30',
+    label: '50 × 30 mm',
+    widthMm: 50,
+    heightMm: 30,
+    description: 'Standard ospedaliero & trauma badge',
+    recommendedFor: 'Badge operatore / Bracciale triage',
+  },
+  {
+    id: '50x25',
+    label: '50 × 25 mm',
+    widthMm: 50,
+    heightMm: 25,
+    description: 'Slim tattico compatto',
+    recommendedFor: 'Fettuccia uniforme / Casco / Strumentario',
+  },
+  {
+    id: '60x40',
+    label: '60 × 40 mm',
+    widthMm: 60,
+    heightMm: 40,
+    description: 'Formato grande ad alta visibilità',
+    recommendedFor: 'Cartella clinica shock room / Zaino trauma',
+  },
+  {
+    id: '50x80',
+    label: '50 × 80 mm',
+    widthMm: 50,
+    heightMm: 80,
+    description: 'Badge esteso verticale con intestazione completa',
+    recommendedFor: 'Pass collo / Identificativo completo',
+  },
+  {
+    id: 'custom',
+    label: 'Personalizzato',
+    widthMm: 40,
+    heightMm: 30,
+    description: 'Dimensioni personalizzate in millimetri',
+    recommendedFor: 'Misure su misura',
+  },
+];
 
 export interface ThermalLabelConfig {
-  size: LabelSizeOption; // '50x80' | '40x30'
-  orientation: LabelOrientation; // 'portrait' | 'landscape'
-  dpi: ThermalDpi; // 203 | 300
-  printerModel?: ThermalPrinterModel; // 'generic' | 'pm240'
+  size: LabelSizeOption;
+  orientation: LabelOrientation;
+  dpi: ThermalDpi;
+  printerModel?: ThermalPrinterModel;
   includeHeader?: boolean;
   includeFooter?: boolean;
+  customWidthMm?: number;
+  customHeightMm?: number;
+  rotated90?: boolean;
 }
 
 export const DEFAULT_THERMAL_CONFIG: ThermalLabelConfig = {
-  size: '50x80',
-  orientation: 'portrait',
+  size: '40x30',
+  orientation: 'landscape',
   dpi: 300,
   printerModel: 'generic',
   includeHeader: true,
@@ -38,7 +102,7 @@ export const DEFAULT_THERMAL_CONFIG: ThermalLabelConfig = {
  * - Direct thermal 203 DPI (8 dots/mm)
  * - 40mm x 30mm continuous or gap die-cut adhesive label roll (4cm x 3cm)
  * - Horizontal landscape feeding matching the 2-inch printhead
- * - 1.5mm anti-clipping margin preventing physical edge cutoff
+ * - 1.0mm strict perimeter margin preventing cutoff while maximizing usable surface
  */
 export const LABELNIZE_PM240_CONFIG: ThermalLabelConfig = {
   size: '40x30',
@@ -50,6 +114,25 @@ export const LABELNIZE_PM240_CONFIG: ThermalLabelConfig = {
 };
 
 /**
+ * Evaluates whether layout should be horizontal split (QR left, text right)
+ * or vertical stack based on the aspect ratio of the label in millimeters.
+ */
+export function determineLabelLayout(
+  widthMm: number,
+  heightMm: number,
+  size?: LabelSizeOption
+): ThermalLabelLayout {
+  if (size === '50x80' && heightMm > widthMm) {
+    return 'vertical_badge_50x80';
+  }
+  const ratio = widthMm / heightMm;
+  if (ratio >= 1.25) {
+    return 'horizontal_split';
+  }
+  return 'vertical_stack';
+}
+
+/**
  * Calculates pixel dimensions given width and height in millimeters and DPI.
  * Standard thermal density:
  * - 203 DPI = 8.00 dots/mm
@@ -58,36 +141,60 @@ export const LABELNIZE_PM240_CONFIG: ThermalLabelConfig = {
 export function getLabelPixelDimensions(
   size: LabelSizeOption,
   orientation: LabelOrientation,
-  dpi: ThermalDpi
-): { width: number; height: number; widthMm: number; heightMm: number } {
+  dpi: ThermalDpi,
+  customWidthMm?: number,
+  customHeightMm?: number
+): { width: number; height: number; widthMm: number; heightMm: number; rawWidthMm: number; rawHeightMm: number } {
   const dotsPerMm = dpi === 300 ? 11.811 : 8.0;
+
+  let rawW = 40;
+  let rawH = 30;
+
+  switch (size) {
+    case '40x30':
+      rawW = 40;
+      rawH = 30;
+      break;
+    case '50x30':
+      rawW = 50;
+      rawH = 30;
+      break;
+    case '50x25':
+      rawW = 50;
+      rawH = 25;
+      break;
+    case '60x40':
+      rawW = 60;
+      rawH = 40;
+      break;
+    case '50x80':
+      rawW = 50;
+      rawH = 80;
+      break;
+    case 'custom':
+      rawW = Math.max(15, Math.min(200, customWidthMm || 40));
+      rawH = Math.max(15, Math.min(200, customHeightMm || 30));
+      break;
+    default:
+      rawW = 40;
+      rawH = 30;
+  }
 
   let widthMm: number;
   let heightMm: number;
 
-  if (size === '50x80') {
-    if (orientation === 'portrait') {
-      widthMm = 50;
-      heightMm = 80;
-    } else {
-      widthMm = 80;
-      heightMm = 50;
-    }
+  if (orientation === 'landscape') {
+    widthMm = Math.max(rawW, rawH);
+    heightMm = Math.min(rawW, rawH);
   } else {
-    // 40x30
-    if (orientation === 'landscape') {
-      widthMm = 40;
-      heightMm = 30;
-    } else {
-      widthMm = 30;
-      heightMm = 40;
-    }
+    widthMm = Math.min(rawW, rawH);
+    heightMm = Math.max(rawW, rawH);
   }
 
   const width = Math.round(widthMm * dotsPerMm);
   const height = Math.round(heightMm * dotsPerMm);
 
-  return { width, height, widthMm, heightMm };
+  return { width, height, widthMm, heightMm, rawWidthMm: rawW, rawHeightMm: rawH };
 }
 
 /**
@@ -191,6 +298,188 @@ export function drawFittedText(
 }
 
 /**
+ * Dynamic thermal sticker drawing routine:
+ * - 1.0mm strict perimeter margin (inset = 1.0 * dotsPerMm)
+ * - Automatically adapts layout to 'horizontal_split' (aspect ratio >= 1.25)
+ *   or 'vertical_stack' (aspect ratio < 1.25).
+ * - For horizontal split (40x30, 50x30, 50x25, 60x40, etc.):
+ *   QR code on the LEFT (square filling available height ~heightMm - 2mm),
+ *   vertical dividing line,
+ *   Matricola (badge code) in high-contrast solid black block on the right,
+ *   Large Name auto-fitted with zero clipping,
+ *   Micro-subline with role/team/ref hash.
+ * - For vertical stack:
+ *   Top: Matricola badge + Name
+ *   Divider line
+ *   Centered QR code filling remaining space
+ *   Micro-subline.
+ */
+export function drawDynamicThermalSticker(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  dotsPerMm: number,
+  scale: number,
+  display: ReturnType<typeof getPersonDisplayDetails>,
+  qrImage: HTMLImageElement,
+  dataHash: string,
+  layout: ThermalLabelLayout = 'horizontal_split'
+) {
+  // 1.0mm strict perimeter margins (reducing dead zones and maximizing usable sticker surface)
+  const marginMm = 1.0;
+  const inset = Math.max(4, Math.round(marginMm * dotsPerMm));
+
+  // Outer safety hairline border (1mm inset)
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = Math.max(1, Math.round(1 * scale));
+  ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2);
+
+  const availW = w - inset * 2;
+  const availH = h - inset * 2;
+
+  if (layout === 'horizontal_split') {
+    // -------------------------------------------------------------------------
+    // HORIZONTAL SPLIT: QR ON LEFT, NAME & MATRICOLA ON RIGHT
+    // -------------------------------------------------------------------------
+    const qrPadding = Math.round(0.4 * dotsPerMm);
+    const qrSize = Math.max(12, availH - qrPadding * 2);
+    const qrX = inset + qrPadding;
+    const qrY = inset + qrPadding;
+
+    ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+
+    // Vertical dividing hairline
+    const dividerX = qrX + qrSize + Math.round(1.0 * dotsPerMm);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = Math.max(1, Math.round(1 * scale));
+    ctx.beginPath();
+    ctx.moveTo(dividerX, inset + Math.round(0.8 * dotsPerMm));
+    ctx.lineTo(dividerX, h - inset - Math.round(0.8 * dotsPerMm));
+    ctx.stroke();
+
+    // RIGHT SIDE: Matricola, Name, Micro Details
+    const rightX = dividerX + Math.round(1.2 * dotsPerMm);
+    const rightW = w - rightX - inset - Math.round(0.5 * dotsPerMm);
+
+    // 1. High-Contrast Bold Matricola (Badge Code) Box
+    const badgeH = Math.min(Math.round(availH * 0.32), Math.round(9.5 * dotsPerMm));
+    const badgeY = inset + Math.round(1.0 * dotsPerMm);
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(rightX, badgeY, rightW, badgeH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    const badgeFontPt = Math.max(11, Math.round(badgeH * 0.68));
+    ctx.font = `900 ${badgeFontPt}px monospace`;
+    ctx.fillText(display.badgeCode, rightX + rightW / 2, badgeY + Math.round(badgeH * 0.72));
+
+    // 2. Large Prominent Participant Name (Fitted to available width)
+    const nameY = badgeY + badgeH + Math.round(2.0 * dotsPerMm);
+    const availNameH = h - inset - nameY - Math.round(3.0 * dotsPerMm);
+
+    const baseNameFont = Math.max(13, Math.round(availNameH * 0.58));
+    drawFittedText(
+      ctx,
+      display.name.toUpperCase(),
+      rightX,
+      nameY + Math.round(availNameH * 0.52),
+      rightW,
+      baseNameFont,
+      Math.max(9, Math.round(10 * scale)),
+      'sans-serif',
+      '900',
+      'left'
+    );
+
+    // 3. Micro Sub-line (Role / Team / Hash) at bottom
+    const microY = h - inset - Math.round(1.0 * dotsPerMm);
+    ctx.fillStyle = '#333333';
+    ctx.textAlign = 'left';
+    ctx.font = `bold ${Math.max(7, Math.round(8 * scale))}px monospace`;
+    const subText = display.roleTitle ? display.roleTitle.slice(0, 24) : `REF: #${dataHash}`;
+    ctx.fillText(subText.toUpperCase(), rightX, microY);
+
+  } else {
+    // -------------------------------------------------------------------------
+    // VERTICAL STACK: TOP TEXT, BOTTOM / CENTER QR
+    // -------------------------------------------------------------------------
+    const centerX = w / 2;
+    let curY = inset + Math.round(1.0 * dotsPerMm);
+
+    // 1. High-contrast Badge Bar
+    const badgeH = Math.min(Math.round(availH * 0.16), Math.round(7.5 * dotsPerMm));
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(inset + Math.round(1 * dotsPerMm), curY, availW - Math.round(2 * dotsPerMm), badgeH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    const badgeFontPt = Math.max(10, Math.round(badgeH * 0.7));
+    ctx.font = `900 ${badgeFontPt}px monospace`;
+    ctx.fillText(display.badgeCode, centerX, curY + Math.round(badgeH * 0.72));
+    curY += badgeH + Math.round(1.5 * dotsPerMm);
+
+    // 2. Name
+    drawFittedText(
+      ctx,
+      display.name.toUpperCase(),
+      centerX,
+      curY + Math.round(11 * scale),
+      availW - Math.round(2 * dotsPerMm),
+      Math.max(12, Math.round(15 * scale)),
+      Math.max(8, Math.round(9 * scale)),
+      'sans-serif',
+      '900',
+      'center'
+    );
+    curY += Math.round(14 * scale);
+
+    // Divider
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = Math.max(1, Math.round(1 * scale));
+    ctx.beginPath();
+    ctx.moveTo(inset + Math.round(2 * dotsPerMm), curY);
+    ctx.lineTo(w - inset - Math.round(2 * dotsPerMm), curY);
+    ctx.stroke();
+    curY += Math.round(1.5 * dotsPerMm);
+
+    // 3. Centered QR Code filling remaining vertical space
+    const remainingH = h - inset - curY - Math.round(4 * dotsPerMm);
+    const qrDim = Math.min(availW - Math.round(2 * dotsPerMm), remainingH);
+    const qX = (w - qrDim) / 2;
+    const qY = curY + Math.max(0, (remainingH - qrDim) / 2);
+
+    ctx.drawImage(qrImage, qX, qY, qrDim, qrDim);
+
+    // Micro footer
+    const microY = h - inset - Math.round(0.8 * dotsPerMm);
+    ctx.fillStyle = '#333333';
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${Math.max(6.5, Math.round(7.5 * scale))}px monospace`;
+    ctx.fillText(display.roleTitle ? display.roleTitle.slice(0, 20).toUpperCase() : `REF: #${dataHash}`, centerX, microY);
+  }
+}
+
+/**
+ * Renders the high-contrast 40mm x 30mm layout (backward compatibility wrapper):
+ * - 1mm strict margin (padding: 1mm)
+ * - Large QR code on the LEFT (~28mm square)
+ * - Nome and Matricola on the RIGHT for maximum legibility
+ */
+export function draw40x30HorizontalStickerContent(
+  ctx: CanvasRenderingContext2D,
+  w: number, // 40mm in pixels
+  h: number, // 30mm in pixels
+  dotsPerMm: number,
+  scale: number,
+  display: ReturnType<typeof getPersonDisplayDetails>,
+  qrImage: HTMLImageElement,
+  dataHash: string
+) {
+  drawDynamicThermalSticker(ctx, w, h, dotsPerMm, scale, display, qrImage, dataHash, 'horizontal_split');
+}
+
+/**
  * Renders a pixel-perfect, thermal-optimized monochrome label onto an HTML5 Canvas.
  * Configured specifically for 50x80mm and 40x30mm thermal adhesive label media.
  */
@@ -202,10 +491,13 @@ export async function renderThermalLabelToCanvas(
   customBaseUrl?: string
 ): Promise<HTMLCanvasElement> {
   const mergedConfig: ThermalLabelConfig = { ...DEFAULT_THERMAL_CONFIG, ...config };
+  const dotsPerMm = mergedConfig.dpi === 300 ? 11.811 : 8.0;
   const { width, height, widthMm, heightMm } = getLabelPixelDimensions(
     mergedConfig.size,
     mergedConfig.orientation,
-    mergedConfig.dpi
+    mergedConfig.dpi,
+    mergedConfig.customWidthMm,
+    mergedConfig.customHeightMm
   );
 
   const canvas = document.createElement('canvas');
@@ -223,7 +515,7 @@ export async function renderThermalLabelToCanvas(
   ctx.imageSmoothingEnabled = false;
 
   // Scale factor relative to 300 DPI
-  const scale = width / (mergedConfig.size === '50x80' ? (mergedConfig.orientation === 'portrait' ? 591 : 945) : (mergedConfig.orientation === 'landscape' ? 472 : 354));
+  const scale = dotsPerMm / 11.811;
 
   const display = getPersonDisplayDetails(person, category, teamName);
   const targetUrl = getParticipantPersonalPageUrl(person, category, customBaseUrl);
@@ -248,18 +540,13 @@ export async function renderThermalLabelToCanvas(
     img.src = qrDataUrl;
   });
 
-  // Draw outer border frame (gives clean margin on adhesive peel)
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
-
-  // Anti-clipping safety margin:
-  // Calibrated to 1.0mm - 1.2mm physical edge margin (8-10px at 203 DPI, 12-14px at 300 DPI)
-  // to prevent clipping by thermal printhead dead-zone while maximizing printable content area.
-  const inset = mergedConfig.size === '40x30'
-    ? Math.max(8, Math.round(10 * scale))
-    : Math.max(10, Math.round(12 * scale));
-
-  ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+  // For 50x80 badge layout: use standard 10-12px padding
+  const inset = Math.max(10, Math.round(12 * scale));
+  if (mergedConfig.size === '50x80') {
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+  }
 
   if (mergedConfig.size === '50x80' && mergedConfig.orientation === 'portrait') {
     // =========================================================================
@@ -407,225 +694,49 @@ export async function renderThermalLabelToCanvas(
     ctx.fillText('SCANSIONA PAGINA', qrX + qrSize / 2, qrY + qrSize + Math.round(14 * scale));
     ctx.fillText(`REF: #${dataHash}`, qrX + qrSize / 2, qrY + qrSize + Math.round(26 * scale));
 
-  } else if (mergedConfig.size === '40x30' && mergedConfig.orientation === 'landscape') {
+  } else if (
+    mergedConfig.rotated90 ||
+    (mergedConfig.orientation === 'portrait' && mergedConfig.size !== '50x80')
+  ) {
     // =========================================================================
-    // LAYOUT: 40mm x 30mm LANDSCAPE (Standard Horizontal Thermal Sticker)
+    // ROTATED 90° CLOCKWISE FOR VERTICAL ROLL FEED PRINTERS
     // =========================================================================
-    // 40x30 is compact: 2-column layout with vertical divider
-    const colSplitX = Math.round(width * 0.53);
-
-    // Vertical dividing hairline
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
-    ctx.beginPath();
-    ctx.moveTo(colSplitX, inset + Math.round(4 * scale));
-    ctx.lineTo(colSplitX, height - inset - Math.round(4 * scale));
-    ctx.stroke();
-
-    // -------------------------------------------------------------------------
-    // LEFT COLUMN: Identification & Roster Metadata
-    // -------------------------------------------------------------------------
-    const leftX = inset + Math.round(8 * scale);
-    const colWidth = colSplitX - leftX - Math.round(8 * scale);
-    let leftY = inset + Math.round(6 * scale);
-
-    // 1. Header Banner
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'left';
-    ctx.font = `900 ${Math.max(10, Math.round(13 * scale))}px sans-serif`;
-    ctx.fillText('HITTER • EM', leftX, leftY + Math.max(10, Math.round(12 * scale)));
-
-    // Category tag right-aligned against the divider
-    ctx.textAlign = 'right';
-    ctx.font = `bold ${Math.max(8, Math.round(9 * scale))}px monospace`;
-    ctx.fillText(display.categoryLabel, leftX + colWidth, leftY + Math.max(10, Math.round(12 * scale)));
-
-    // Hairline divider below header
-    leftY += Math.max(14, Math.round(18 * scale));
-    ctx.beginPath();
-    ctx.moveTo(leftX, leftY);
-    ctx.lineTo(leftX + colWidth, leftY);
-    ctx.stroke();
-    leftY += Math.max(4, Math.round(6 * scale));
-
-    // 2. High-Contrast Inverted Badge Code Block
-    const badgeBoxH = Math.max(28, Math.round(42 * scale));
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(leftX, leftY, colWidth, badgeBoxH);
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.font = `900 ${Math.max(17, Math.round(26 * scale))}px monospace`;
-    ctx.fillText(display.badgeCode, leftX + colWidth / 2, leftY + Math.round(badgeBoxH * 0.72));
-    leftY += badgeBoxH + Math.max(6, Math.round(9 * scale));
-
-    // 3. Full Participant Name (Auto-scaled to prevent truncation)
-    drawFittedText(
+    ctx.save();
+    // Move to top-right and rotate 90 degrees clockwise
+    ctx.translate(width, 0);
+    ctx.rotate(Math.PI / 2);
+    // In rotated coordinate system: width parameter = canvas height, height parameter = canvas width
+    const rotatedLayout = determineLabelLayout(heightMm, widthMm, mergedConfig.size);
+    drawDynamicThermalSticker(
       ctx,
-      display.name.toUpperCase(),
-      leftX,
-      leftY + Math.max(12, Math.round(15 * scale)),
-      colWidth,
-      Math.max(13, Math.round(18 * scale)),
-      10,
-      'sans-serif',
-      '900',
-      'left'
+      height,
+      width,
+      dotsPerMm,
+      scale,
+      display,
+      qrImage,
+      dataHash,
+      rotatedLayout
     );
-    leftY += Math.max(17, Math.round(22 * scale));
-
-    // 4. Role Title
-    drawFittedText(
-      ctx,
-      display.roleTitle.toUpperCase(),
-      leftX,
-      leftY + Math.max(9, Math.round(12 * scale)),
-      colWidth,
-      Math.max(10, Math.round(13 * scale)),
-      8,
-      'sans-serif',
-      'bold',
-      'left'
-    );
-    leftY += Math.max(14, Math.round(17 * scale));
-
-    // 5. Squadra & SubDetails
-    drawFittedText(
-      ctx,
-      display.subDetails.toUpperCase(),
-      leftX,
-      leftY + Math.max(8, Math.round(10 * scale)),
-      colWidth,
-      Math.max(9, Math.round(11 * scale)),
-      7,
-      'monospace',
-      '600',
-      'left'
-    );
-
-    // -------------------------------------------------------------------------
-    // RIGHT COLUMN: Prominent Scannable QR Code & Caption
-    // -------------------------------------------------------------------------
-    const rightAvailW = width - colSplitX - inset;
-    const rightAvailH = height - inset * 2;
-    const footerSpace = Math.round(34 * scale);
-    const qrSize = Math.min(rightAvailW - Math.round(16 * scale), rightAvailH - footerSpace);
-    const qrX = colSplitX + (rightAvailW - qrSize) / 2;
-    const qrY = inset + Math.max(0, (rightAvailH - footerSpace - qrSize) / 2);
-
-    ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
-
-    // Right Column Micro Footer
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'center';
-    ctx.font = `900 ${Math.round(10 * scale)}px sans-serif`;
-    ctx.fillText('PAGINA PERSONALE', qrX + qrSize / 2, qrY + qrSize + Math.round(14 * scale));
-    ctx.font = `bold ${Math.round(8 * scale)}px monospace`;
-    ctx.fillText(`REF: #${dataHash}`, qrX + qrSize / 2, qrY + qrSize + Math.round(26 * scale));
+    ctx.restore();
 
   } else {
     // =========================================================================
-    // LAYOUT: 30mm x 40mm PORTRAIT (Vertical Compact Sticker)
+    // DYNAMIC MONOCHROME THERMAL STICKER (40x30, 50x30, 50x25, 60x40, Custom)
+    // 1.0mm Perimeter Margins, Automatic Layout Adaptation
     // =========================================================================
-    const contentW = width - inset * 2 - Math.round(12 * scale);
-    const centerX = width / 2;
-    let curY = inset + Math.round(8 * scale);
-
-    // 1. Header Row
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'center';
-    ctx.font = `900 ${Math.round(14 * scale)}px sans-serif`;
-    ctx.fillText('HITTER • INTUBATI EM', centerX, curY + Math.round(13 * scale));
-    curY += Math.round(18 * scale);
-
-    ctx.font = `bold ${Math.round(9 * scale)}px monospace`;
-    ctx.fillText('CORSO EMERGENZE TATTICHE', centerX, curY + Math.round(9 * scale));
-    curY += Math.round(14 * scale);
-
-    // Divider line
-    ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
-    ctx.beginPath();
-    ctx.moveTo(inset + Math.round(8 * scale), curY);
-    ctx.lineTo(width - inset - Math.round(8 * scale), curY);
-    ctx.stroke();
-    curY += Math.round(8 * scale);
-
-    // 2. High-Contrast Badge Code Block
-    const bHeight = Math.round(42 * scale);
-    const bWidth = contentW;
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(centerX - bWidth / 2, curY, bWidth, bHeight);
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.font = `900 ${Math.round(28 * scale)}px monospace`;
-    ctx.fillText(display.badgeCode, centerX, curY + Math.round(30 * scale));
-    curY += bHeight + Math.round(10 * scale);
-
-    // 3. Full Participant Name (Auto-scaled)
-    drawFittedText(
+    const dynamicLayout = determineLabelLayout(widthMm, heightMm, mergedConfig.size);
+    drawDynamicThermalSticker(
       ctx,
-      display.name.toUpperCase(),
-      centerX,
-      curY + Math.round(17 * scale),
-      contentW,
-      19 * scale,
-      12 * scale,
-      'sans-serif',
-      '900',
-      'center'
+      width,
+      height,
+      dotsPerMm,
+      scale,
+      display,
+      qrImage,
+      dataHash,
+      dynamicLayout
     );
-    curY += Math.round(24 * scale);
-
-    // 4. Role Title & Squadra
-    drawFittedText(
-      ctx,
-      display.roleTitle.toUpperCase(),
-      centerX,
-      curY + Math.round(11 * scale),
-      contentW,
-      12 * scale,
-      9 * scale,
-      'sans-serif',
-      'bold',
-      'center'
-    );
-    curY += Math.round(16 * scale);
-
-    drawFittedText(
-      ctx,
-      display.subDetails.toUpperCase(),
-      centerX,
-      curY + Math.round(10 * scale),
-      contentW,
-      10 * scale,
-      8 * scale,
-      'monospace',
-      '600',
-      'center'
-    );
-    curY += Math.round(16 * scale);
-
-    // Divider line before QR
-    ctx.beginPath();
-    ctx.moveTo(inset + Math.round(12 * scale), curY);
-    ctx.lineTo(width - inset - Math.round(12 * scale), curY);
-    ctx.stroke();
-    curY += Math.round(8 * scale);
-
-    // 5. Scannable QR Code
-    const remainingH = height - curY - inset - Math.round(24 * scale);
-    const qrDim = Math.min(contentW - Math.round(16 * scale), remainingH);
-    const qX = (width - qrDim) / 2;
-    const qY = curY + Math.max(0, (remainingH - qrDim) / 2);
-
-    ctx.drawImage(qrImage, qX, qY, qrDim, qrDim);
-
-    // Micro Footer
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'center';
-    ctx.font = `bold ${Math.round(8 * scale)}px monospace`;
-    ctx.fillText(`REF: #${dataHash} • TERMO ADESIVO`, centerX, height - inset - Math.round(6 * scale));
   }
 
   return canvas;
@@ -697,7 +808,9 @@ export async function downloadSinglePdf1to1(
   const { widthMm, heightMm } = getLabelPixelDimensions(
     mergedConfig.size,
     mergedConfig.orientation,
-    mergedConfig.dpi
+    mergedConfig.dpi,
+    mergedConfig.customWidthMm,
+    mergedConfig.customHeightMm
   );
 
   const orientation = mergedConfig.orientation === 'portrait' ? 'portrait' : 'landscape';
@@ -726,7 +839,7 @@ export async function downloadSinglePdf1to1(
 
   const badgeCode = (person as any).badgeCode || person.id || 'PASS';
   const cleanName = (person.name || 'operatore').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const sizeName = mergedConfig.size || '50x80';
+  const sizeName = mergedConfig.size === 'custom' ? `${widthMm}x${heightMm}` : mergedConfig.size;
   const filename = `ETICHETTA_1a1_${badgeCode}_${cleanName}_${sizeName}mm.pdf`;
 
   doc.save(filename);
@@ -740,7 +853,13 @@ export async function downloadSinglePdf1to1(
 export function printThermalLabel(
   canvas: HTMLCanvasElement,
   size: LabelSizeOption,
-  orientation?: LabelOrientation
+  orientation?: LabelOrientation,
+  person?: AnyParticipant,
+  category?: ParticipantCategory,
+  teamName?: string,
+  customWidthMm?: number,
+  customHeightMm?: number,
+  rotated90?: boolean
 ): void {
   const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
   const win = window.open('', '_blank');
@@ -751,7 +870,18 @@ export function printThermalLabel(
 
   const derivedOrientation: LabelOrientation =
     orientation || (canvas.width >= canvas.height ? 'landscape' : 'portrait');
-  const { widthMm, heightMm } = getLabelPixelDimensions(size, derivedOrientation, 300);
+  const { widthMm, heightMm } = getLabelPixelDimensions(
+    size,
+    derivedOrientation,
+    300,
+    customWidthMm,
+    customHeightMm
+  );
+
+  const isRotated = rotated90 ?? (derivedOrientation === 'portrait' && size !== '50x80');
+  const is40x30 = size === '40x30';
+  const pageW = isRotated ? heightMm : widthMm;
+  const pageH = isRotated ? widthMm : heightMm;
 
   win.document.write(`
     <!DOCTYPE html>
@@ -759,10 +889,10 @@ export function printThermalLabel(
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Stampa Etichetta Termoadesiva HITTER (${widthMm}x${heightMm} mm)</title>
+        <title>Stampa Etichetta Termoadesiva HITTER (${is40x30 ? '40x30 mm - Rotata 90°' : `${widthMm}x${heightMm} mm`})</title>
         <style>
           @page {
-            size: ${widthMm}mm ${heightMm}mm;
+            size: ${pageW}mm ${pageH}mm;
             margin: 0mm !important;
           }
           * {
@@ -772,8 +902,8 @@ export function printThermalLabel(
           }
           @media print {
             html, body {
-              width: ${widthMm}mm !important;
-              height: ${heightMm}mm !important;
+              width: ${pageW}mm !important;
+              height: ${pageH}mm !important;
               margin: 0mm !important;
               padding: 0mm !important;
               overflow: hidden !important;
@@ -781,6 +911,92 @@ export function printThermalLabel(
             }
             .screen-guide {
               display: none !important;
+            }
+            .print-label-page {
+              width: ${pageW}mm !important;
+              height: ${pageH}mm !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              overflow: hidden !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              background: #FFFFFF !important;
+            }
+            .print-label-container {
+              width: 40mm !important;
+              height: 30mm !important;
+              box-sizing: border-box !important;
+              padding: 1mm !important;
+              margin: 0mm !important;
+              background: #FFFFFF !important;
+              color: #000000 !important;
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              gap: 1.5mm !important;
+              overflow: hidden !important;
+              transform: rotate(90deg) !important;
+              transform-origin: center center !important;
+              border: 1px solid #000000 !important;
+            }
+            .print-label-qr {
+              width: 28mm !important;
+              height: 28mm !important;
+              flex-shrink: 0 !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            }
+            .print-label-qr img {
+              width: 100% !important;
+              height: 100% !important;
+              object-fit: contain !important;
+              image-rendering: -webkit-optimize-contrast !important;
+              image-rendering: crisp-edges !important;
+            }
+            .print-label-details {
+              flex: 1 !important;
+              height: 28mm !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: center !important;
+              align-items: flex-start !important;
+              overflow: hidden !important;
+              padding-left: 0.5mm !important;
+            }
+            .print-label-badge {
+              background-color: #000000 !important;
+              color: #FFFFFF !important;
+              font-family: monospace !important;
+              font-weight: 900 !important;
+              font-size: 11pt !important;
+              line-height: 1.1 !important;
+              padding: 1.2mm 2.2mm !important;
+              border-radius: 0.8mm !important;
+              white-space: nowrap !important;
+            }
+            .print-label-name {
+              color: #000000 !important;
+              font-family: sans-serif !important;
+              font-weight: 900 !important;
+              font-size: 10.5pt !important;
+              line-height: 1.15 !important;
+              text-transform: uppercase !important;
+              margin-top: 1.8mm !important;
+              word-break: break-word !important;
+            }
+            .print-label-sub {
+              color: #333333 !important;
+              font-family: monospace !important;
+              font-size: 6.5pt !important;
+              font-weight: 700 !important;
+              margin-top: 1mm !important;
+              text-transform: uppercase !important;
+              white-space: nowrap !important;
             }
             .label-wrapper {
               width: ${widthMm}mm !important;
@@ -792,8 +1008,8 @@ export function printThermalLabel(
               break-inside: avoid !important;
             }
             .label-img {
-              width: ${widthMm}mm !important;
-              height: ${heightMm}mm !important;
+              width: 100% !important;
+              height: 100% !important;
               display: block !important;
               object-fit: fill !important;
               margin: 0mm !important;
@@ -830,6 +1046,34 @@ export function printThermalLabel(
             .screen-guide strong {
               color: #F59E0B;
             }
+            .print-label-page {
+              background: #FFFFFF;
+              border: 1px solid #6B7280;
+              box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+              width: ${pageW}mm;
+              height: ${pageH}mm;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: hidden;
+            }
+            .print-label-container {
+              width: 40mm;
+              height: 30mm;
+              box-sizing: border-box;
+              padding: 1mm;
+              background: #FFFFFF;
+              color: #000000;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: flex-start;
+              gap: 1.5mm;
+              overflow: hidden;
+              transform: rotate(90deg);
+              transform-origin: center center;
+              border: 1px solid #000000;
+            }
             .label-wrapper {
               background: #FFFFFF;
               border: 1px solid #6B7280;
@@ -865,14 +1109,28 @@ export function printThermalLabel(
       <body>
         <div class="screen-guide">
           <strong>ISTRUZIONI PERFEZIONAMENTO STAMPANTE TERMICA:</strong><br />
-          • Formato carta nel driver: <strong>${widthMm} × ${heightMm} mm</strong><br />
-          • Margini di stampa: <strong>Nessuno (0 mm)</strong><br />
+          • Formato carta nel driver: <strong>${pageW} × ${pageH} mm</strong><br />
+          • Orientamento: <strong>Rotazione 90° a destra (landscape su rotolo)</strong><br />
+          • Margini di stampa: <strong>Nessuno (0 mm)</strong> [1mm già incorporato]<br />
+          • Disposizione: <strong>QR a sinistra, Nome/Matricola a destra</strong><br />
           • Scala: <strong>100% (Effettiva / Dimensione reale)</strong>
         </div>
 
-        <div class="label-wrapper">
-          <img class="label-img" src="${dataUrl}" alt="Etichetta Termica" />
-        </div>
+        ${
+          is40x30
+            ? `
+          <div class="print-label-page">
+            <div class="print-label-container">
+              <img class="label-img" src="${dataUrl}" alt="Etichetta Termica 40x30 Rotata" />
+            </div>
+          </div>
+        `
+            : `
+          <div class="label-wrapper">
+            <img class="label-img" src="${dataUrl}" alt="Etichetta Termica" />
+          </div>
+        `
+        }
 
         <button class="btn-reprint screen-guide" onclick="window.print()">
           Riapri Dialogo Stampa
@@ -905,7 +1163,9 @@ export async function generateMultiPagePdfForThermalRoll(
   const { widthMm, heightMm } = getLabelPixelDimensions(
     mergedConfig.size,
     mergedConfig.orientation,
-    mergedConfig.dpi
+    mergedConfig.dpi,
+    mergedConfig.customWidthMm,
+    mergedConfig.customHeightMm
   );
 
   const orientation = mergedConfig.orientation === 'portrait' ? 'portrait' : 'landscape';
@@ -956,9 +1216,15 @@ export async function generateMultiPagePdfForThermalRoll(
 export function printBatchThermalRoll(
   canvases: { canvas: HTMLCanvasElement; name: string }[],
   size: LabelSizeOption,
-  orientation: LabelOrientation
+  orientation: LabelOrientation,
+  customWidthMm?: number,
+  customHeightMm?: number
 ): void {
-  const { widthMm, heightMm } = getLabelPixelDimensions(size, orientation, 300);
+  const { widthMm, heightMm } = getLabelPixelDimensions(size, orientation, 300, customWidthMm, customHeightMm);
+  const isRotated = orientation === 'portrait' && size !== '50x80';
+  const is40x30 = size === '40x30';
+  const pageW = isRotated ? heightMm : widthMm;
+  const pageH = isRotated ? widthMm : heightMm;
 
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
@@ -969,6 +1235,15 @@ export function printBatchThermalRoll(
   const pagesHtml = canvases
     .map(({ canvas, name }) => {
       const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      if (is40x30) {
+        return `
+          <div class="print-label-page">
+            <div class="print-label-container">
+              <img class="label-img" src="${dataUrl}" alt="${name}" />
+            </div>
+          </div>
+        `;
+      }
       return `
         <div class="label-page">
           <img class="label-img" src="${dataUrl}" alt="${name}" />
@@ -982,10 +1257,10 @@ export function printBatchThermalRoll(
     <html lang="it">
       <head>
         <meta charset="utf-8" />
-        <title>Stampa Rotolo Termico (${canvases.length} Etichette - ${widthMm}x${heightMm} mm)</title>
+        <title>Stampa Rotolo Termico (${canvases.length} Etichette - ${is40x30 ? '40x30 mm Rotata 90°' : `${widthMm}x${heightMm} mm`})</title>
         <style>
           @page {
-            size: ${widthMm}mm ${heightMm}mm;
+            size: ${pageW}mm ${pageH}mm;
             margin: 0mm !important;
           }
           * {
@@ -1002,6 +1277,39 @@ export function printBatchThermalRoll(
             .screen-guide {
               display: none !important;
             }
+            .print-label-page {
+              width: ${pageW}mm !important;
+              height: ${pageH}mm !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              margin: 0mm !important;
+              padding: 0mm !important;
+              overflow: hidden !important;
+              background: #FFFFFF !important;
+            }
+            .print-label-container {
+              width: 40mm !important;
+              height: 30mm !important;
+              box-sizing: border-box !important;
+              padding: 1mm !important;
+              margin: 0mm !important;
+              background: #FFFFFF !important;
+              color: #000000 !important;
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              gap: 1.5mm !important;
+              overflow: hidden !important;
+              transform: rotate(90deg) !important;
+              transform-origin: center center !important;
+              border: 1px solid #000000 !important;
+            }
             .label-page {
               width: ${widthMm}mm !important;
               height: ${heightMm}mm !important;
@@ -1017,8 +1325,8 @@ export function printBatchThermalRoll(
               overflow: hidden !important;
             }
             .label-img {
-              width: ${widthMm}mm !important;
-              height: ${heightMm}mm !important;
+              width: 100% !important;
+              height: 100% !important;
               object-fit: fill !important;
               display: block !important;
               margin: 0mm !important;
@@ -1053,6 +1361,35 @@ export function printBatchThermalRoll(
             .screen-guide strong {
               color: #F59E0B;
             }
+            .print-label-page {
+              width: ${pageW}mm;
+              height: ${pageH}mm;
+              background: #FFFFFF;
+              border: 1px solid #4B5563;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+              margin-bottom: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: hidden;
+            }
+            .print-label-container {
+              width: 40mm;
+              height: 30mm;
+              box-sizing: border-box;
+              padding: 1mm;
+              background: #FFFFFF;
+              color: #000000;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: flex-start;
+              gap: 1.5mm;
+              overflow: hidden;
+              transform: rotate(90deg);
+              transform-origin: center center;
+              border: 1px solid #000000;
+            }
             .label-page {
               width: ${widthMm}mm;
               height: ${heightMm}mm;
@@ -1086,8 +1423,10 @@ export function printBatchThermalRoll(
       <body>
         <div class="screen-guide">
           <strong>ROTOLO TERMICO (${canvases.length} ETICHETTE):</strong><br />
-          • Formato carta: <strong>${widthMm} × ${heightMm} mm</strong><br />
-          • Margini: <strong>Nessuno (0 mm)</strong><br />
+          • Formato carta: <strong>${pageW} × ${pageH} mm</strong><br />
+          • Orientamento: <strong>Rotazione 90° a destra (landscape su rotolo)</strong><br />
+          • Margini: <strong>Nessuno (0 mm)</strong> [1mm incorporato]<br />
+          • Disposizione: <strong>QR a sinistra, Nome/Matricola a destra</strong><br />
           • Scala: <strong>100% (Effettiva)</strong>
         </div>
 

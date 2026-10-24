@@ -1,0 +1,67 @@
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+DAY 2 — SCENARI CLINICI,,,,,,,,,,,,,,,,,,,,,,
+SCENARIO,GIORNO,ORA INIZIO,FASE TCCC,FACULTY,SQUADRA,GRUPPO,ATTORE,HANDOVER (T+30'),ORA INIZIO,FASE SHOCK ROOM,FACULTY,SQUADRA,GRUPPO,ATTORE,,,,,,,,
+S1,DAY2 - MATTINA,09:00,cricotomia d'urgenza HAZMAT,JAN/HUGO/KEVIN,EAGLE,ALPHA,JANO,T+30',09:35,toracostomia,JUSTIN / PORTIA,FALCON,CHARLIE,JANO,,,,,,,,
+,,,Decompressione PNX con ago,LJUBA/XAVIER,VIPER,,MICHELE ,T+30',,Toracotomia resuscitativa,RUDO/MARISSA/LISA,RANGER,,MANUEL,,,,,,,,
+,,,Gestione eviscerato,DIRK/PETER,TITAN,,ELISA F,T+30',,REBOA,ANDREU/GULLIEM/SEAN,PHOENIX,,TINA,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+S2,DAY2 - MATTINA,11:05,cricotomia d'urgenza HAZMAT,JAN/HUGO/KEVIN,SPARTAN,BRAVO,JANO,T+30',11:40,toracostomia,JUSTIN / PORTIA,COBRA,DELTA,JANO,,,,,,,,
+,,,Decompressione PNX con ago,LJUBA/XAVIER,WOLF,,MICHELE,T+30',,Toracotomia resuscitativa,RUDO/MARISSA/LISA,RAPTOR,,MANUEL,,,,,,,,
+,,,Gestione eviscerato,DIRK/PIETER,SENTINEL,,ELISA F,T+30',,REBOA,ANDREU/GULLIEM/SEAN,THUNDER,,ELISA DB,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+S3,DAY2 - POMERIGIO,14:10,"pediatric tbi, gunshot abd",DIRK/PORTIA,FALCON,CHARLIE,MARIO ROSSI,T+30',14:45,PED management,XAVIER/LJUBA/JAN,EAGLE,ALPHA,MARIO ROSSI,,,,,,,,
+,,,Decompressione PNX con ago,KEVIN/GULLIEM/JUSTIN,RANGER,,MICHELE,T+30',,Drenaggio toracico,PIETER/LISA,VIPER,,MANUEL,,,,,,,,
+,,,Amputazione,RUDO/ANDREU,PHOENIX,,AARON,T+30',,REBOA,MARISSA/HUGO/SEAN,TITAN,,AARON,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+S4,DAY2 - POMERIGIO,16:10,"pediatric tbi, gunshot abd",DIRK/PORTIA,COBRA,DELTA,MARIO ROSSI,T+30',16:45,PED management,XAVIER/LJUBA/JAN,SPARTAN,BRAVO,MARIO ROSSI,,,,,,,,
+,,,Decompressione PNX con ago,KEVIN/GULLIEM/JUSTIN,RAPTOR,,ELISA F,T+30',,Drenaggio toracico,PIETER/LISA,WOLF,,TINA,,,,,,,,
+,,,Amputazione,RUDO/ANDREU,THUNDER,,AARON,T+30',,REBOA,MARISSA/HUGO/SEAN,SENTINEL,,AARON,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+DAY 3 — SCENARI CLINICI,,,,,,,,,,,,,,,,,,,,,,
+SCENARIO,GIORNO,ORA INIZIO,FASE TCCC,FACULTY,SQUADRA,GRUPPO,ATTORE,HANDOVER (T+30'),ORA INIZIO,FASE SHOCK ROOM,FACULTY,SQUADRA,GRUPPO,ATTORE,,,,,,,,
+S5,DAY3 - MATTINA,09:00,PELVIC FRACTURE AND GUNSHOTS PEDIATRIC,GULLIEM/LISA,EAGLE,ALPHA,MARIO ROSSI,T+30',09:35,PEDIATRIC MANAGMENT,XAVIER/HUGO,FALCON,CHARLIE,MARIO ROSSI,,,,,,,,
+,,,Decompressione PNX con ago,LJUBA/DIRK,VIPER,,MANUEL,T+30',,Toracotomia resuscitativa,MARISSA/SEAN//PORTIA,RANGER,,JANO,,,,,,,,
+,,,Collo sanguinante,KEVIN/JUSTIN/JAN,TITAN,,ELISA DB,T+30',,REBOA,RUDO/ANDREU/PIETER,PHOENIX,,ANGELICA,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+S6,DAY3 - MATTINA,11:05,PELVIC FRACTURE AND GUNSHOTS PEDIATRIC,GULLIEM/LISA,SPARTAN,BRAVO,MARIO ROSSI,T+30',11:40,PEDIATRIC MANAGMENT,XAVIER/HUGO,COBRA,DELTA,MARIO ROSSI,,,,,,,,
+,,,Decompressione PNX con ago,LJUBA/DIRK,WOLF,,MICHELE,T+30',,Toracotomia resuscitativa,MARISSA/SEAN/PORTIA,RAPTOR,,JANO,,,,,,,,
+,,,Collo sanguinante,KEVIN/JAN/JUSTIN,SENTINEL,,ELISA F,T+30',,REBOA,RUDO/ANDREU/PIETER,THUNDER,,ANGELICA,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+S7,DAY3 - POMERIGIO,14:10,Cricotomia d'urgenza,PORTIA/JAN,FALCON,CHARLIE,MICHELE,T+30',14:45,Toracotomia resuscitativa,MARISSA/HUGO/SEAN,EAGLE,ALPHA,JANO,,,,,,,,
+,,,Cricotomia d'urgenza,LISA/KEVIN,RANGER,,ELISA F,T+30',,Toracotomia resuscitativa,RUDO/XAVIER/PIETER,VIPER,,ELISA DB,,,,,,,,
+,,,Amputazione,DIRK/LJUBA,PHOENIX,,ARON,T+30',,REBOA,ANDREU/GUILLEM/JUSTIN,TITAN,,ARON,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+S8,DAY3 - POMERIGIO,16:10,Cricotomia d'urgenza,PORTIA/JAN,COBRA,DELTA,MANUEL,T+30',16:45,Toracotomia resuscitativa,MARISSA/HUGO/SEAN,SPARTAN,BRAVO,MICHELE,,,,,,,,
+,,,Cricotomia d'urgenza,LISA/KEVIN,RAPTOR,,ANGELICA,T+30',,Toracotomia resuscitativa,RUDO/XAVIER/PIETER,WOLF,,ELISA F,,,,,,,,
+,,,Amputazione,DIRK/LJUBA,THUNDER,,ARON,T+30',,REBOA,ANDREU/GUILLEM/JUSTIN,SENTINEL,,ARON,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,ELENCO PROCEDURE,ATTORI COINVOLTI,,,,,TOTALE ATTORI ASSOCIATI
+,,,,,,,,,,,,,,,,Cricotomia d'urgenza (HAZMAT / Standard),JANO,MICHELE,ELISA F,MANUEL,ANGELICA,5
+,,,,,,,,,,,,,,,,Decompressione PNX con ago,MICHELE,ELISA F,MANUEL,,,3
+,,,,,,,,,,,,,,,,Gestione eviscerato,ELISA F,,,,,1
+,,,,,,,,,,,,,,,,Trauma pediatrico (TBI / Gunshot abd),MARIO ROSSI,,,,,1
+,,,,,,,,,,,,,,,,Amputazione d'arto,ARON,,,,,1
+,,,,,,,,,,,,,,,,Frattura pelvica & ferite d'arma pediatriche,MARIO ROSSI,,,,,1
+,,,,,,,,,,,,,,,,Collo sanguinante,ELISA DB,ELISA F,,,,2
+,,,,,,,,,,,,,,,,Toracostomia,JANO,,,,,1
+,,,,,,,,,,,,,,,,Toracotomia resuscitativa,MANUEL,JANO,ELISA DB,MICHELE,ELISA F,5
+,,,,,,,,,,,,,,,,REBOA,TINA,ELISA DB,ARON,ANGELICA,,4
+,,,,,,,,,,,,,,,,Gestione avanzata pediatrica (PED Management),MARIO ROSSI,,,,,1
+,,,,,,,,,,,,,,,,Drenaggio toracico,MANUEL,TINA,,,,2
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,DIRETTORI,,REGIA,,TECNICI,,ATTORE,,TRUCCO,,,,,,,
+,,,,,,,MAQSHUDA KAJEE,,DINO DAVIDDE,,LUCA MONTAGNA,,ATTORI,,SILVIA CASTELLUCCI ,,,,,,,
+,,,,,,,MANSOOR KHAN,,MARCO MARROCCO,,FABIO ANTONUCCI,,ARON,,ASIA PROIETTI,,,,,,,
+,,,,,,,CARMINE DELLA VELLA,,,,DARIO ZAMPELLA,,MARIO ROSSI,,ALESSANDRA AMICI,,,,,,,
+,,,,,,,,,,,"LUCA S,GIOVANNI",,MANUEL,,CHIARA COLACE,,,,,,,
+,,,,,,,,,,,CLAUDIO BUCCIAERELLI,,ELISA DB,,ALICE ARMENI,,,,,,,
+,,,,,,,,,,,LUCIANO STENTELLA,,JANO,,RAFFAELLA DEL BENE,,,,,,,
+,,,,,,,,,,,,,MICHELE,,,,,,,,,
+,,,,,,,,,,,,,ELISA F,,,,,,,,,
+,,,,,,,,,,,,,ANGELICA,,,,,,,,,
+,,,,,,,,,,,,,TINA,,,,,,,,,

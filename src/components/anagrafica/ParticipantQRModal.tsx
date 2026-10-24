@@ -21,6 +21,7 @@ import {
   Wrench,
   UserCheck,
   Eye,
+  FileText,
 } from 'lucide-react';
 import {
   AnyParticipant,
@@ -33,6 +34,13 @@ import { useCourse } from '../../context/CourseContext';
 import { getTeamCodeName } from '../../utils/teamUtils';
 import { getCountryFlag } from './MasterAnagraficaManager';
 import { ThermalLabelGeneratorModal } from './ThermalLabelGeneratorModal';
+import {
+  LabelSizeOption,
+  STANDARD_LABEL_PRESETS,
+  downloadSinglePdf1to1,
+  renderThermalLabelToCanvas,
+  printThermalLabel,
+} from '../../utils/thermalLabelGenerator';
 
 interface ParticipantQRModalProps {
   isOpen: boolean;
@@ -60,11 +68,45 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [justRegenerated, setJustRegenerated] = useState(false);
   const [showThermalModal, setShowThermalModal] = useState(false);
+  const [singleLabelSize, setSingleLabelSize] = useState<LabelSizeOption>('40x30');
+  const [isExportingThermal, setIsExportingThermal] = useState(false);
 
   // Find team if applicable
   const teamId = (person as any)?.teamId || (person as any)?.assignedTeamId;
   const matchedTeam = teamId ? teams.find((t) => t.id === teamId) : undefined;
   const teamName = matchedTeam ? getTeamCodeName(matchedTeam) : undefined;
+
+  const handleQuickThermalPdf = async () => {
+    if (!person) return;
+    setIsExportingThermal(true);
+    try {
+      await downloadSinglePdf1to1(
+        person,
+        category,
+        { size: singleLabelSize, orientation: 'landscape', dpi: 300 },
+        teamName
+      );
+    } catch (err) {
+      console.error('Failed to export single thermal PDF:', err);
+    } finally {
+      setIsExportingThermal(false);
+    }
+  };
+
+  const handleQuickThermalPrint = async () => {
+    if (!person) return;
+    try {
+      const canvas = await renderThermalLabelToCanvas(
+        person,
+        category,
+        { size: singleLabelSize, orientation: 'landscape', dpi: 300 },
+        teamName
+      );
+      printThermalLabel(canvas, singleLabelSize, 'landscape', person, category, teamName);
+    } catch (err) {
+      console.error('Failed to print single thermal label:', err);
+    }
+  };
 
   // Generate QR code whenever person, category, or format changes
   useEffect(() => {
@@ -481,6 +523,77 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Quick Thermal Label Format Selection & Actions Box */}
+          <div className="bg-neutral-900 border border-amber-500/40 p-3 rounded space-y-2">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-amber-400 font-black flex items-center gap-1.5 uppercase">
+                <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>{isEn ? 'Thermal Label Format (1:1 Print):' : 'Etichetta Termoadesiva (Formati Standard 1:1):'}</span>
+              </span>
+              <span className="text-neutral-400 text-[10px]">
+                1mm Margini • Layout Automatico
+              </span>
+            </div>
+
+            {/* Standard Format Selector Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              {STANDARD_LABEL_PRESETS.filter((p) => p.id !== 'custom' && p.id !== '50x80').map((preset) => {
+                const isSelected = singleLabelSize === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setSingleLabelSize(preset.id)}
+                    className={`px-2 py-1.5 text-xs font-mono rounded border transition-all cursor-pointer flex flex-col items-center justify-center ${
+                      isSelected
+                        ? 'bg-amber-500 text-black border-amber-400 font-black shadow-sm'
+                        : 'bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    <span className="font-black">{preset.label}</span>
+                    <span className="text-[9px] opacity-80 truncate">
+                      {preset.id === '40x30' ? 'Portatile' : preset.id === '50x30' ? 'Ospedale' : preset.id === '50x25' ? 'Slim' : 'Grande'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Actions for Selected Format */}
+            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isExportingThermal}
+                  onClick={handleQuickThermalPdf}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold uppercase rounded border border-emerald-400/50 flex items-center gap-1.5 shadow transition-colors cursor-pointer disabled:opacity-50"
+                  title="Scarica PDF geometrico 1:1 calibrato senza ridimensionamento del browser"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>{isExportingThermal ? 'Generazione...' : `Scarica PDF 1:1 (${singleLabelSize} mm)`}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleQuickThermalPrint}
+                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-mono text-xs font-bold uppercase rounded border border-neutral-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Invia direttamente al dialogo di stampa termica (0mm margini)"
+                >
+                  <Printer className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Stampa Rapida 0mm</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowThermalModal(true)}
+                className="text-xs font-mono text-amber-400 hover:text-amber-300 underline font-bold cursor-pointer"
+              >
+                ⚙️ {isEn ? 'Open Full Roll Generator...' : 'Apri Generatore & Rotolo Massivo...'}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Modal Actions Footer */}
@@ -518,10 +631,10 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
               type="button"
               onClick={() => setShowThermalModal(true)}
               className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-black uppercase rounded shadow flex items-center gap-1.5 transition-colors cursor-pointer"
-              title={isEn ? 'Generate thermal adhesive label (50x80 / 40x30 mm - 1:1 PDF & JPG)' : 'Genera etichetta termoadesiva (50x80 / 40x30 mm - PDF 1:1 & JPG)'}
+              title={isEn ? 'Generate thermal adhesive label (Standard / Custom mm - 1:1 PDF & JPG)' : 'Genera etichetta termoadesiva (Standard / Custom mm - PDF 1:1 & JPG)'}
             >
               <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{isEn ? 'Thermal Label (PDF 1:1 / JPG)' : 'Etichetta Termoadesiva (PDF 1:1)'}</span>
+              <span>{isEn ? 'Thermal Generator (Roll / PDF)' : 'Generatore Termico (Rotolo / PDF)'}</span>
             </button>
 
             <button
@@ -551,6 +664,7 @@ export const ParticipantQRModal: React.FC<ParticipantQRModalProps> = ({
           onClose={() => setShowThermalModal(false)}
           initialPerson={person}
           initialCategory={category}
+          initialSize={singleLabelSize}
         />
       )}
     </div>

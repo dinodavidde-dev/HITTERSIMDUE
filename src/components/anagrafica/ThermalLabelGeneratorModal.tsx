@@ -13,6 +13,7 @@ import {
   Filter,
   CheckCircle2,
   RefreshCw,
+  RotateCw,
   Users,
   Eye,
   Sliders,
@@ -38,15 +39,19 @@ import {
   printThermalLabel,
   getLabelPixelDimensions,
   getPersonDisplayDetails,
+  determineLabelLayout,
+  STANDARD_LABEL_PRESETS,
   LABELNIZE_PM240_CONFIG,
 } from '../../utils/thermalLabelGenerator';
 import { getTeamCodeName } from '../../utils/teamUtils';
+import { PrintLabelContainer } from './PrintLabelContainer';
 
 interface ThermalLabelGeneratorModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialPerson?: AnyParticipant | null;
   initialCategory?: ParticipantCategory;
+  initialSize?: LabelSizeOption;
 }
 
 export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProps> = ({
@@ -54,6 +59,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
   onClose,
   initialPerson,
   initialCategory = 'discenti',
+  initialSize = '40x30',
 }) => {
   const {
     discenti,
@@ -72,9 +78,12 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
   const isEn = language === 'en';
 
   // Config state
-  const [labelSize, setLabelSize] = useState<LabelSizeOption>('50x80');
-  const [orientation, setOrientation] = useState<LabelOrientation>('portrait');
+  const [labelSize, setLabelSize] = useState<LabelSizeOption>(initialSize);
+  const [customWidthMm, setCustomWidthMm] = useState<number>(40);
+  const [customHeightMm, setCustomHeightMm] = useState<number>(30);
+  const [orientation, setOrientation] = useState<LabelOrientation>('landscape');
   const [dpi, setDpi] = useState<ThermalDpi>(300);
+  const [rotated90, setRotated90] = useState<boolean>(false);
 
   // Filter & Selected person state
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'ALL' | ParticipantCategory>('ALL');
@@ -87,6 +96,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [previewMode40x30, setPreviewMode40x30] = useState<'standard' | 'rotated_90'>('standard');
 
   // Batch progress state
   const [isBatchExporting, setIsBatchExporting] = useState<boolean>(false);
@@ -204,6 +214,19 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
     return matched ? getTeamCodeName(matched) : undefined;
   }, [selectedPerson, teams]);
 
+  // Active thermal config reflecting all selected settings
+  const activeConfig: Partial<ThermalLabelConfig> = {
+    size: labelSize,
+    orientation,
+    dpi,
+    customWidthMm,
+    customHeightMm,
+    rotated90: labelSize === '40x30' ? previewMode40x30 === 'rotated_90' : rotated90,
+    printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
+    includeHeader: true,
+    includeFooter: true,
+  };
+
   // Render canvas whenever person or config changes
   useEffect(() => {
     if (!isOpen || !selectedPerson) return;
@@ -211,16 +234,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
     let isMounted = true;
     setIsRendering(true);
 
-    const config: ThermalLabelConfig = {
-      size: labelSize,
-      orientation,
-      dpi,
-      printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
-      includeHeader: true,
-      includeFooter: true,
-    };
-
-    renderThermalLabelToCanvas(selectedPerson, selectedCategory, config, currentTeamName)
+    renderThermalLabelToCanvas(selectedPerson, selectedCategory, activeConfig, currentTeamName)
       .then((canvas) => {
         if (!isMounted) return;
         setPreviewCanvas(canvas);
@@ -235,7 +249,19 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
     return () => {
       isMounted = false;
     };
-  }, [isOpen, selectedPerson, selectedCategory, labelSize, orientation, dpi, currentTeamName]);
+  }, [
+    isOpen,
+    selectedPerson,
+    selectedCategory,
+    labelSize,
+    customWidthMm,
+    customHeightMm,
+    orientation,
+    dpi,
+    rotated90,
+    previewMode40x30,
+    currentTeamName,
+  ]);
 
   if (!isOpen) return null;
 
@@ -249,8 +275,11 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
   const { width: pixelWidth, height: pixelHeight, widthMm, heightMm } = getLabelPixelDimensions(
     labelSize,
     orientation,
-    dpi
+    dpi,
+    customWidthMm,
+    customHeightMm
   );
+  const detectedLayout = determineLabelLayout(widthMm, heightMm, labelSize);
 
   // Single download handler
   const handleDownloadSingle = async () => {
@@ -259,12 +288,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
       await downloadThermalLabelJpg(
         selectedPerson,
         selectedCategory,
-        {
-          size: labelSize,
-          orientation,
-          dpi,
-          printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
-        },
+        activeConfig,
         currentTeamName
       );
     } catch (e) {
@@ -279,12 +303,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
       await downloadSinglePdf1to1(
         selectedPerson,
         selectedCategory,
-        {
-          size: labelSize,
-          orientation,
-          dpi,
-          printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
-        },
+        activeConfig,
         currentTeamName
       );
     } catch (e) {
@@ -295,7 +314,17 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
   // Direct print handler
   const handlePrint = () => {
     if (!previewCanvas) return;
-    printThermalLabel(previewCanvas, labelSize, orientation);
+    printThermalLabel(
+      previewCanvas,
+      labelSize,
+      orientation,
+      selectedPerson || undefined,
+      selectedCategory,
+      currentTeamName,
+      customWidthMm,
+      customHeightMm,
+      labelSize === '40x30' ? previewMode40x30 === 'rotated_90' : rotated90
+    );
   };
 
   // Batch 1:1 Multi-page PDF download handler (all filtered figures)
@@ -314,18 +343,13 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
 
       const doc = await generateMultiPagePdfForThermalRoll(
         batchItems,
-        {
-          size: labelSize,
-          orientation,
-          dpi,
-          printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
-        },
+        activeConfig,
         (current, total, name) => {
           setBatchProgress({ current, total, currentName: name });
         }
       );
 
-      const sizeStr = `${labelSize}mm`;
+      const sizeStr = labelSize === 'custom' ? `${widthMm}x${heightMm}mm` : `${labelSize}mm`;
       doc.save(`ROTOLO_ETICHETTE_1a1_${itemsToExport.length}_FIGURE_${sizeStr}.pdf`);
     } catch (e) {
       console.error('Batch PDF export error:', e);
@@ -354,18 +378,13 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
         const canvas = await renderThermalLabelToCanvas(
           item.person,
           item.category,
-          {
-            size: labelSize,
-            orientation,
-            dpi,
-            printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
-          },
+          activeConfig,
           item.teamName
         );
         canvases.push({ canvas, name: item.person.name });
       }
 
-      printBatchThermalRoll(canvases, labelSize, orientation);
+      printBatchThermalRoll(canvases, labelSize, orientation, customWidthMm, customHeightMm);
     } catch (e) {
       console.error('Batch print roll error:', e);
     } finally {
@@ -392,12 +411,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
         await downloadThermalLabelJpg(
           item.person,
           item.category,
-          {
-            size: labelSize,
-            orientation,
-            dpi,
-            printerModel: labelSize === '40x30' && dpi === 203 ? 'pm240' : 'generic',
-          },
+          activeConfig,
           item.teamName
         );
 
@@ -474,52 +488,90 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
               <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
                 <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
                   <Sliders className="w-3.5 h-3.5" />
-                  <span>{isEn ? 'LABEL DIMENSIONS & SETTINGS' : 'DIMENSIONI & RISOLUZIONE ETICHETTA'}</span>
+                  <span>{isEn ? 'LABEL MEDIA FORMAT & SETTINGS' : 'FORMATO ETICHETTA & RISOLUZIONE'}</span>
                 </span>
                 <span className="text-[10px] text-neutral-400 font-bold">
                   {pixelWidth} × {pixelHeight} px ({widthMm} × {heightMm} mm)
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {/* 1. Size Choice: 50x80 vs 40x30 */}
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-neutral-400 block">
-                    {isEn ? 'Label Size:' : 'Formato Adesivo:'}
-                  </label>
-                  <div className="grid grid-cols-2 gap-1 bg-neutral-900 p-1 rounded border border-neutral-800">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLabelSize('50x80');
-                        setOrientation('portrait');
-                      }}
-                      className={`px-2 py-1.5 text-xs font-black uppercase rounded transition-all cursor-pointer ${
-                        labelSize === '50x80'
-                          ? 'bg-amber-500 text-black shadow'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      50 × 80 mm
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLabelSize('40x30');
-                        setOrientation('landscape');
-                      }}
-                      className={`px-2 py-1.5 text-xs font-black uppercase rounded transition-all cursor-pointer ${
-                        labelSize === '40x30'
-                          ? 'bg-amber-500 text-black shadow'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      40 × 30 mm
-                    </button>
+              {/* Standard Format Presets Grid */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-neutral-400 block flex items-center justify-between">
+                  <span>{isEn ? 'Select Standard Media Format:' : 'Seleziona Formato Standard Adesivo:'}</span>
+                  <span className="text-amber-400/90 text-[9px] font-mono">1:1 CALIBRATO (1MM MARGINI)</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  {STANDARD_LABEL_PRESETS.map((preset) => {
+                    const isSelected = labelSize === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          setLabelSize(preset.id);
+                          if (preset.id === '50x80') {
+                            setOrientation('portrait');
+                          } else if (preset.id !== 'custom') {
+                            setOrientation('landscape');
+                          }
+                        }}
+                        className={`p-2 text-left rounded border transition-all cursor-pointer flex flex-col justify-between min-h-[48px] ${
+                          isSelected
+                            ? 'bg-amber-500 text-black border-amber-400 shadow-md ring-1 ring-amber-400/60'
+                            : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-mono text-xs font-black tracking-tight">{preset.label}</span>
+                          {isSelected && <span className="text-[9px] font-black uppercase">✓ ATTIVO</span>}
+                        </div>
+                        <span className={`text-[9px] truncate block ${isSelected ? 'text-black/80 font-bold' : 'text-neutral-400'}`}>
+                          {preset.recommendedFor}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Dimensions Input Row (shown when 'custom' is selected) */}
+              {labelSize === 'custom' && (
+                <div className="p-2.5 bg-neutral-900/90 border border-amber-500/50 rounded space-y-2">
+                  <span className="text-[10px] font-bold uppercase text-amber-300 flex items-center gap-1.5">
+                    <Sliders className="w-3 h-3 text-amber-400" />
+                    <span>DIMENSIONI PERSONALIZZATE (MILLIMETRI)</span>
+                  </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-neutral-400 font-mono block">Larghezza (mm):</label>
+                      <input
+                        type="number"
+                        min={15}
+                        max={150}
+                        value={customWidthMm}
+                        onChange={(e) => setCustomWidthMm(Math.max(15, Math.min(150, Number(e.target.value) || 40)))}
+                        className="w-full bg-neutral-950 border border-neutral-700 text-white font-mono text-xs px-2.5 py-1.5 rounded focus:border-amber-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-neutral-400 font-mono block">Altezza (mm):</label>
+                      <input
+                        type="number"
+                        min={15}
+                        max={150}
+                        value={customHeightMm}
+                        onChange={(e) => setCustomHeightMm(Math.max(15, Math.min(150, Number(e.target.value) || 30)))}
+                        className="w-full bg-neutral-950 border border-neutral-700 text-white font-mono text-xs px-2.5 py-1.5 rounded focus:border-amber-400 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
+              )}
 
-                {/* 2. Orientation */}
+              {/* Orientation, DPI, and Layout Detection */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                {/* 1. Orientation */}
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase font-bold text-neutral-400 block">
                     {isEn ? 'Orientation:' : 'Orientamento:'}
@@ -527,30 +579,30 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                   <div className="grid grid-cols-2 gap-1 bg-neutral-900 p-1 rounded border border-neutral-800">
                     <button
                       type="button"
-                      onClick={() => setOrientation('portrait')}
-                      className={`px-2 py-1.5 text-xs font-black uppercase rounded transition-all cursor-pointer ${
-                        orientation === 'portrait'
-                          ? 'bg-neutral-800 text-white border border-neutral-700'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      {isEn ? 'Vert.' : 'Verticale'}
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setOrientation('landscape')}
                       className={`px-2 py-1.5 text-xs font-black uppercase rounded transition-all cursor-pointer ${
                         orientation === 'landscape'
-                          ? 'bg-neutral-800 text-white border border-neutral-700'
+                          ? 'bg-amber-500 text-black font-black'
                           : 'text-neutral-400 hover:text-white'
                       }`}
                     >
                       {isEn ? 'Horiz.' : 'Orizzontale'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrientation('portrait')}
+                      className={`px-2 py-1.5 text-xs font-black uppercase rounded transition-all cursor-pointer ${
+                        orientation === 'portrait'
+                          ? 'bg-amber-500 text-black font-black'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {isEn ? 'Vert.' : 'Verticale'}
+                    </button>
                   </div>
                 </div>
 
-                {/* 3. Thermal Print Density (DPI) */}
+                {/* 2. Thermal Print Density (DPI) */}
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase font-bold text-neutral-400 block">
                     {isEn ? 'Thermal DPI:' : 'Densità DPI:'}
@@ -580,51 +632,78 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                     </button>
                   </div>
                 </div>
+
+                {/* 3. 90° Clockwise Rotation Toggle (for vertical roll feeds) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-neutral-400 block">
+                    {isEn ? 'Roll Feed Rotation:' : 'Rotazione Rotolo:'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !rotated90;
+                      setRotated90(next);
+                      setPreviewMode40x30(next ? 'rotated_90' : 'standard');
+                    }}
+                    className={`w-full py-1.5 px-2 text-xs font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      rotated90 || (labelSize === '40x30' && previewMode40x30 === 'rotated_90')
+                        ? 'bg-amber-950 text-amber-300 border-amber-400 shadow-sm'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                    }`}
+                    title="Ruota l'etichetta di 90° a destra per adattarla all'avanzamento verticale sui rotoli da stampante termica"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    <span>{rotated90 || (labelSize === '40x30' && previewMode40x30 === 'rotated_90') ? '90° ATTIVA' : '0° STANDARD'}</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Quick Hardware Profile: Labelnize PM240 */}
-              <div className="pt-2 border-t border-neutral-850">
+              {/* Dynamic Layout & Margins Status Card */}
+              <div className="p-2.5 bg-neutral-900/90 border border-neutral-800 rounded space-y-1.5 text-xs font-mono">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-1 flex-wrap gap-1">
+                  <span className="text-[10px] font-bold text-amber-400 uppercase flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>
+                      {detectedLayout === 'horizontal_split'
+                        ? 'LAYOUT ORIZZONTALE (QR SX • NOME E MATRICOLA DX)'
+                        : detectedLayout === 'vertical_badge_50x80'
+                        ? 'BADGE VERTICALE ESTESO (50×80 MM)'
+                        : 'LAYOUT VERTICALE COMPATTO (QR CENTRATO IN BASSO)'}
+                    </span>
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-bold">1MM MARGINI STRICT</span>
+                </div>
+                <div className="text-[11px] space-y-0.5 text-neutral-300 font-sans">
+                  <p>• <strong>Adattamento Automatico</strong>: Rapporto W/H = <strong>{(widthMm / heightMm).toFixed(2)}</strong>. {detectedLayout === 'horizontal_split' ? 'QR Code a sinistra massimizzato e Nome/Matricola ben leggibili a destra.' : 'Disposizione impilata verticale ottimizzata per etichette strette/quadrate.'}</p>
+                  <p>• <strong>Margini di Stampa</strong>: 1.0mm perimetrale (zero sprechi di spazio, nessun taglio meccanico).</p>
+                  <p>• <strong>Driver Stampante Termica</strong>: Selezionare formato <em>{widthMm} × {heightMm} mm</em> (o <em>{heightMm} × {widthMm} mm</em> con rotazione 90°), scala <em>100% (Effettiva)</em>, margini <em>0 mm</em>.</p>
+                </div>
+              </div>
+
+              {/* Quick Profile Button: Labelnize PM240 */}
+              <div className="pt-1 border-t border-neutral-850 flex items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setLabelSize('40x30');
                     setOrientation('landscape');
                     setDpi(203);
+                    setRotated90(false);
+                    setPreviewMode40x30('standard');
                   }}
-                  className={`w-full py-1.5 px-3 text-xs font-black uppercase tracking-wider border transition-all flex items-center justify-between cursor-pointer rounded ${
+                  className={`py-1 px-2.5 text-[11px] font-black uppercase tracking-wider border rounded transition-all flex items-center gap-1.5 cursor-pointer ${
                     labelSize === '40x30' && orientation === 'landscape' && dpi === 203
-                      ? 'bg-amber-950/80 text-amber-200 border-amber-400 ring-1 ring-amber-400/50 shadow'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-amber-500/50 hover:text-white'
+                      ? 'bg-amber-950/90 text-amber-200 border-amber-400'
+                      : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                   }`}
-                  title={isEn ? 'Activate Labelnize PM240 calibrated profile (40x30mm, 203 DPI, 1.5mm margins)' : 'Attiva profilo calibrato per stampante Labelnize PM240 (40x30mm, 203 DPI, margini 1.5mm)'}
                 >
-                  <div className="flex items-center gap-2">
-                    <Printer className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="font-mono font-bold">PROFILO LABELNIZE PM240</span>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-neutral-950 text-amber-300 border border-amber-800 rounded">
-                    {labelSize === '40x30' && orientation === 'landscape' && dpi === 203
-                      ? '✓ ATTIVO (40×30 / 203 DPI)'
-                      : '40×30 mm • 203 DPI'}
-                  </span>
+                  <Printer className="w-3 h-3 text-amber-400" />
+                  <span>PROFILO RAPIDO PM240 (40×30 / 203 DPI)</span>
                 </button>
 
-                {labelSize === '40x30' && (
-                  <div className="mt-2 p-2.5 bg-neutral-900/90 border border-amber-500/40 text-neutral-300 space-y-1.5 text-xs font-mono rounded">
-                    <div className="flex items-center justify-between border-b border-neutral-800 pb-1">
-                      <span className="text-[10px] font-bold text-amber-400 uppercase flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>RAPPORTO 1:1 CALIBRATO 40 × 30 MM</span>
-                      </span>
-                      <span className="text-[10px] text-emerald-400 font-bold">PDF VETTORIALE 1:1 ATTIVO</span>
-                    </div>
-                    <div className="text-[11px] space-y-0.5 text-neutral-300 font-sans">
-                      <p>• <strong>Geometria PDF 1:1</strong>: Pagina PDF bloccata a <strong>40.0 × 30.0 mm</strong> esatti con direttiva <code>/PrintScaling None</code> per impedire il rimpicciolimento automatico del visualizzatore.</p>
-                      <p>• <strong>Risoluzione</strong>: {pixelWidth} × {pixelHeight} px ({dpi} DPI • 1.5mm margine anti-ritaglio).</p>
-                      <p>• <strong>Driver Stampante</strong>: Selezionare formato <em>40×30 mm</em>, scala <em>100% (Effettiva)</em>, margini <em>Nessuno (0 mm)</em>.</p>
-                    </div>
-                  </div>
-                )}
+                <span className="text-[10px] text-neutral-400 font-mono">
+                  {widthMm} × {heightMm} mm • {dpi} DPI
+                </span>
               </div>
             </div>
 
@@ -860,9 +939,39 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                   {isEn ? 'REAL-TIME THERMAL PREVIEW' : 'ANTEPRIMA TERMICA REAL-TIME'}
                 </span>
               </div>
-              <span className="text-[10px] text-neutral-400 font-mono">
-                {widthMm} × {heightMm} mm
-              </span>
+              <div className="flex items-center gap-2">
+                {labelSize === '40x30' && (
+                  <div className="flex items-center bg-neutral-900 rounded p-0.5 border border-neutral-700">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode40x30('standard')}
+                      className={`px-2 py-0.5 text-[9px] font-black uppercase rounded transition-colors cursor-pointer ${
+                        previewMode40x30 === 'standard'
+                          ? 'bg-amber-500 text-black'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {isEn ? 'Flat 40x30' : 'Orizzontale'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode40x30('rotated_90')}
+                      className={`px-2 py-0.5 text-[9px] font-black uppercase rounded transition-colors cursor-pointer flex items-center gap-1 ${
+                        previewMode40x30 === 'rotated_90'
+                          ? 'bg-amber-500 text-black'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                      title="Anteprima con classe .print-label-container ruotata di 90° a destra"
+                    >
+                      <RotateCw className="w-2.5 h-2.5" />
+                      <span>{isEn ? 'Rotated 90°' : 'Rotata 90°'}</span>
+                    </button>
+                  </div>
+                )}
+                <span className="text-[10px] text-neutral-400 font-mono">
+                  {widthMm} × {heightMm} mm
+                </span>
+              </div>
             </div>
 
             {/* Canvas Preview Area with pure white background simulator */}
@@ -871,6 +980,25 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                 <div className="flex flex-col items-center gap-2 text-neutral-400">
                   <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
                   <span className="text-xs">{isEn ? 'Rendering label...' : 'Rendering etichetta...'}</span>
+                </div>
+              ) : (rotated90 || (labelSize === '40x30' && previewMode40x30 === 'rotated_90')) && selectedPerson ? (
+                <div className="relative group p-4 bg-neutral-800/80 rounded-lg shadow-inner max-w-full flex flex-col items-center">
+                  <div className="bg-white p-3 rounded shadow-2xl border border-neutral-300 flex items-center justify-center min-w-[200px] min-h-[260px] overflow-hidden">
+                    <div className="print-label-page" style={{ transform: 'scale(1.8)', transformOrigin: 'center center' }}>
+                      <PrintLabelContainer
+                        person={selectedPerson}
+                        category={selectedCategory}
+                        teamName={currentTeamName}
+                        rotated={true}
+                        widthMm={widthMm}
+                        heightMm={heightMm}
+                        size={labelSize}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-400 mt-2 block text-center font-bold">
+                    ✓ .print-label-container • Rotazione 90° Destra ({widthMm}×{heightMm} mm)
+                  </span>
                 </div>
               ) : previewDataUrl ? (
                 <div className="relative group p-2 bg-neutral-800/80 rounded-lg shadow-inner max-w-full flex flex-col items-center">
@@ -889,7 +1017,7 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                     />
                   </div>
                   <span className="text-[10px] font-mono text-neutral-400 mt-2 block text-center">
-                    {pixelWidth} × {pixelHeight} px • {dpi} DPI • JPG Monocromatico
+                    {pixelWidth} × {pixelHeight} px • {dpi} DPI • 1mm Margini • Monocromatico
                   </span>
                 </div>
               ) : (
@@ -934,8 +1062,8 @@ export const ThermalLabelGeneratorModal: React.FC<ThermalLabelGeneratorModalProp
                 <div className="flex flex-col items-center">
                   <span>
                     {isEn
-                      ? `DOWNLOAD PDF 1:1 CALIBRATED (${labelSize} MM)`
-                      : `SCARICA PDF 1:1 CALIBRATO (${labelSize} MM)`}
+                      ? `DOWNLOAD PDF 1:1 CALIBRATED (${labelSize === 'custom' ? `${widthMm}x${heightMm}` : labelSize} MM)`
+                      : `SCARICA PDF 1:1 CALIBRATO (${labelSize === 'custom' ? `${widthMm}x${heightMm}` : labelSize} MM)`}
                   </span>
                   <span className="text-[9px] font-sans font-bold normal-case text-emerald-950 opacity-90">
                     {isEn ? 'Exact millimeters • Zero scaling distortion' : 'Dimensione millimetrica esatta • Nessun rimpicciolimento'}

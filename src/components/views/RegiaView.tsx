@@ -39,6 +39,7 @@ import { openVisualeInNewWindow } from '../../utils/qrCodeUtils';
 import { RegiaAssetDashboardView } from './RegiaAssetDashboardView';
 import { RegiaMascalCountdownBadge } from '../regia/RegiaMascalCountdownBadge';
 import { RegiaBatchLabelPrintView } from '../regia/RegiaBatchLabelPrintView';
+import { RegiaMoulageCoordinationModal } from '../regia/RegiaMoulageCoordinationModal';
 
 export const RegiaView: React.FC = () => {
   const {
@@ -88,7 +89,7 @@ export const RegiaView: React.FC = () => {
       isMaster: true,
     };
 
-  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'asset' | 'scenari' | 'trucco' | 'suspension' | 'anagrafica' | 'batch_labels'>('timeline');
+  const [activeSubTab, setActiveSubTab] = useState<'timeline' | 'devices' | 'asset' | 'scenari' | 'trucco' | 'moulage_coordination' | 'suspension' | 'anagrafica' | 'batch_labels'>('timeline');
   const [isSuspensionModalOpen, setIsSuspensionModalOpen] = useState(false);
   const [isFreeAccessModalOpen, setIsFreeAccessModalOpen] = useState(false);
   const [isStartStopConfirmOpen, setIsStartStopConfirmOpen] = useState(false);
@@ -344,7 +345,7 @@ export const RegiaView: React.FC = () => {
 
       {/* Regia Navigation Menu */}
       <nav aria-label="Menu Regia" className="bg-neutral-950 border border-neutral-800 p-1 sm:p-1.5 shadow-xl">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1 sm:gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-10 gap-1 sm:gap-1.5">
           <button
             onClick={() => setActiveSubTab('timeline')}
             className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
@@ -421,6 +422,25 @@ export const RegiaView: React.FC = () => {
             <div className="min-w-0">
               <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
                 {isEn ? 'MAKEUP TIMELINE' : 'VISUALE TRUCCO'}
+              </span>
+            </div>
+          </button>
+
+          {/* Coordinamento Regia & Moulage S1-S8 (DEEPHITTER-VMK1 REV3) */}
+          <button
+            id="regia-nav-moulage-coordination-btn"
+            onClick={() => setActiveSubTab('moulage_coordination')}
+            className={`min-h-[42px] p-2 text-left sm:text-center transition-all flex items-center sm:flex-col sm:justify-center gap-1.5 sm:gap-0.5 cursor-pointer border ${
+              activeSubTab === 'moulage_coordination'
+                ? 'bg-gradient-to-r from-pink-600 to-rose-700 text-white border-pink-300 shadow-md font-black'
+                : 'bg-neutral-900 text-pink-300 border-neutral-800 hover:text-white hover:bg-neutral-850 hover:border-pink-500/50'
+            }`}
+            title="Matrice Scenari S1-S8, Assegnazioni Attori e 12 Procedure"
+          >
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-pink-300" />
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-xs uppercase tracking-wider block truncate">
+                {isEn ? 'MOULAGE S1–S8' : 'COORD. MOULAGE'}
               </span>
             </div>
           </button>
@@ -526,6 +546,12 @@ export const RegiaView: React.FC = () => {
       {activeSubTab === 'trucco' && (
         <div className="space-y-6">
           <TruccoView />
+        </div>
+      )}
+
+      {activeSubTab === 'moulage_coordination' && (
+        <div className="space-y-6">
+          <RegiaMoulageCoordinationModal isInlineTab={true} />
         </div>
       )}
 

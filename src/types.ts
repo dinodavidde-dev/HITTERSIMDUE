@@ -47,6 +47,7 @@ export interface Team {
   groupId: GroupType;
   facultyId: string;
   color: string;
+  callsign?: string;
   notes?: string;
 }
 
@@ -191,6 +192,17 @@ export interface SimulatorPatient {
   attoreDettagli?: string;
   assignedActorId?: string; // e.g. 'actor-1' (ATT-01 .. ATT-08)
   assignedMakeupArtistId?: string; // e.g. 'truc-1' (TRUC-01 .. TRUC-08)
+  scenarioId?: 'S1' | 'S2' | 'S3' | 'S4' | 'S5' | 'S6' | 'S7' | 'S8';
+  callsignExtra?: string; // e.g. 'EAGLE'
+  callsignIntra?: string; // e.g. 'FALCON'
+  procedureExtraName?: string; // e.g. "cricotomia d'urgenza HAZMAT"
+  procedureIntraName?: string; // e.g. "toracostomia"
+  facultyExtraNames?: string[]; // e.g. ['JAN', 'HUGO', 'KEVIN']
+  facultyIntraNames?: string[]; // e.g. ['JUSTIN', 'PORTIA']
+  actorNameExtra?: string; // e.g. 'JANO'
+  actorNameIntra?: string; // e.g. 'JANO' or 'MANUEL'
+  actorName?: string;
+  makeupArtistName?: string;
   actorProgressStatus?: ActorProgressStatus; // 5-stage progress status for this scenario
   actorProgressUpdatedAt?: string;
   actorProgressUpdatedBy?: string;

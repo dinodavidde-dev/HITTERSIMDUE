@@ -955,10 +955,11 @@ export const DiscenteView: React.FC = () => {
         const act = studentCurrentActivity;
         if (!act) return null;
 
-        // Verifica fasi speciali notturne del Day 2
-        const isMascalActive = currentSlot?.id === 'd3-mascal-scenario' || currentSlot?.id === 'd2-mascal-scenario' || ((currentSlot?.id === 'd3-gate-discenti-notturno' || currentSlot?.id === 'd2-gate-discenti-notturno') && activeDay === 2);
-        const isNightClassifiedPreGate = activeDay === 2 && (currentSlot?.id === 'd3-staff-briefing-notturno' || currentSlot?.id === 'd2-staff-briefing-notturno' || currentSlot?.id === 'd3-pausa-cena' || currentSlot?.id === 'd2-pausa-cena');
-        const isNightChiusuraDay2 = activeDay === 2 && (currentSlot?.id === 'd3-chiusura' || (currentSlot?.period === 'notturno' && currentSlot?.id.includes('chiusura')));
+        // Verifica fasi speciali notturne del Day 3 (MASCAL)
+        const isMascalActive = currentSlot?.id === 'd3-mascal-scenario' || currentSlot?.id === 'd2-mascal-scenario' || ((currentSlot?.id === 'd3-gate-discenti-notturno' || currentSlot?.id === 'd2-gate-discenti-notturno') && (activeDay === 2 || activeDay === 3));
+        const isNightClassifiedPreGate = (activeDay === 2 || activeDay === 3) && (currentSlot?.id === 'd3-staff-briefing-notturno' || currentSlot?.id === 'd2-staff-briefing-notturno' || currentSlot?.id === 'd3-pausa-cena' || currentSlot?.id === 'd2-pausa-cena');
+        const isNightChiusuraDay2 = (activeDay === 2 || activeDay === 3) && (currentSlot?.id === 'd3-chiusura' || (currentSlot?.period === 'notturno' && currentSlot?.id.includes('chiusura')));
+        const isNightChiusura = isNightChiusuraDay2;
 
         if (isNightClassifiedPreGate) {
           return (
@@ -972,7 +973,7 @@ export const DiscenteView: React.FC = () => {
                       <span>{isEn ? 'SECURITY CLEARANCE: CLASSIFIED' : 'LIVELLO DI SICUREZZA: CLASSIFICATO'}</span>
                     </span>
                     <span className="px-2 py-0.5 bg-neutral-950 border border-red-500/60 text-red-300 font-mono text-[10px] sm:text-xs font-bold rounded">
-                      DAY 02 • 20:00 - 23:00
+                      DAY 0{activeDay} • 20:00 - 23:00
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2">
